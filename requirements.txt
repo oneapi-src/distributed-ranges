@@ -1,0 +1,8 @@
+# Testing
+pre-commit
+
+# Documentation
+breathe
+sphinx
+sphinx-book-theme
+sphinxcontribu-spelling
