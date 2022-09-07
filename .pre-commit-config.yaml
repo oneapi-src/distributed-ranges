@@ -40,9 +40,3 @@ repos:
   rev: 5.10.1
   hooks:
   - id: isort
-
-- repo: https://github.com/sirosen/check-jsonschema
-  rev: 0.18.2
-  hooks:
-  - id: check-github-actions
-  - id: check-github-workflows

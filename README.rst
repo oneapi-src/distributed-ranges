@@ -23,3 +23,7 @@ Open in your browser: ``doc/spec/build/html/index.html``
 Pre-commit testing::
 
   pre-commit
+
+Do pre-commit testing as part of commit::
+
+  pre-commit install

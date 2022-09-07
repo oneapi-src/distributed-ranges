@@ -1,4 +1,8 @@
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   checks:
@@ -31,7 +35,7 @@ jobs:
         rm -rf gh-pages/*
         touch gh-pages/.nojekyll
 
-        cp -r doc/spec/build/html/* gh-pages/spec
+        cp -r doc/spec/build/html gh-pages/spec
 
         cd gh-pages
         git config user.name github-actions
