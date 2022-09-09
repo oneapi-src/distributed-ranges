@@ -5,4 +5,4 @@ pre-commit
 breathe
 sphinx
 sphinx-book-theme
-sphinxcontribu-spelling
+sphinxcontrib-spelling
