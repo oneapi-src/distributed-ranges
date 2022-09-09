@@ -24,7 +24,7 @@ Activate virtual environment::
 
 Build the spec::
 
-  make -C doc/spec
+  make -C doc/spec html
 
 Open in your browser: ``doc/spec/build/html/index.html``
 
