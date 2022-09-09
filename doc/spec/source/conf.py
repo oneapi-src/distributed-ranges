@@ -44,10 +44,26 @@ exclude_patterns = []
 #
 html_theme = 'sphinx_book_theme'
 
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+#
+html_theme_options = {
+    'repository_url': (
+        'https://github.com/intel-sandbox/'
+        'personal.rscohn1.distributed-ranges.git'
+    ),
+    'path_to_docs': 'docs/spec/source',
+    'use_issues_button': True,
+    'use_edit_page_button': True,
+    'repository_branch': 'main',
+    'search_bar_text': 'Search the spec...',
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # -- Options for spelling extension-------------------------------------------
 spelling_warning = True
