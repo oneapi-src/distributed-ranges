@@ -30,7 +30,7 @@ Open in your browser: ``doc/spec/build/html/index.html``
 
 Pre-commit testing::
 
-  pre-commit
+  pre-commit run --all
 
 Do pre-commit testing as part of commit::
 
