@@ -13,6 +13,17 @@ jobs:
       run: |
         source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
         pre-commit run --all
+    - name: Build/run examples
+      run: |
+        source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
+        mkdir build
+        cd build
+        cmake ..
+        make -j all test
+    - name: Build doc
+      run: |
+        source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
+        make -C doc/spec html
 
   publish:
     needs: [checks]
