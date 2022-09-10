@@ -7,8 +7,8 @@
 
 Proposal and reference implementation for Distributed Ranges.
 
-The specification is built from main branch on every commit and
-published at `latest spec`_.
+The documentation is built from main branch on every commit and
+published at `latest spec`_ and `latest doxygen`_.
 
 Environment Setup
 =================
@@ -65,3 +65,4 @@ Do pre-commit testing as part of commit::
   pre-commit install
 
 .. _`latest spec`: https://stunning-fortnight-c2e7e025.pages.github.io/spec
+.. _`latest doxygen`: https://stunning-fortnight-c2e7e025.pages.github.io/doxygen

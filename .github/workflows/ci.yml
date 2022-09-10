@@ -47,6 +47,7 @@ jobs:
         touch gh-pages/.nojekyll
 
         cp -r doc/spec/build/html gh-pages/spec
+        cp -r doc/spec/build/doxygen-html gh-pages/doxygen
 
         cd gh-pages
         git config user.name github-actions
