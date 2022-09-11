@@ -14,7 +14,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   # C++: generic configuration
   #
   set(CMAKE_CXX_EXTENSIONS OFF)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 20)
 
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
@@ -29,7 +29,17 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g")
 
   include(CTest)
+
+  #
+  # Common dependencies for examples
+  #
+  find_package(MPI REQUIRED)
+  find_package(OpenMP)
 endif()
+
+function(add_mpi_test test_name name processes)
+  add_test(NAME ${test_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+endfunction()
 
 add_subdirectory(include)
 
@@ -38,6 +48,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include_directories(examples/include)
 
+  add_subdirectory(examples/serial)
   add_subdirectory(examples/cpu)
 
 endif()

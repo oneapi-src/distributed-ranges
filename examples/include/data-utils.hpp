@@ -1,4 +1,6 @@
-#include <cassert>
+inline size_t partition_up(size_t num, size_t multiple) {
+  return (num + multiple - 1) / multiple;
+}
 
 template <typename Seq> void show(std::string title, const Seq &seq) {
   std::cout << title;

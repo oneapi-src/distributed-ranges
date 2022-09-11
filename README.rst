@@ -32,6 +32,8 @@ Build the spec::
 
 Open in your browser: ``doc/spec/build/html/index.html``
 
+Doxygen html is at: ``doc/spec/build/doxygen-html/index.html``
+
 Examples
 ========
 
@@ -63,6 +65,9 @@ Run pre-commit checks::
 Do pre-commit testing as part of commit::
 
   pre-commit install
+
+``pre-commit`` will automatically fix most issues. Do a ``git add`` to
+add the changes and run ``pre-commit`` or ``git commit`` again.
 
 .. _`latest spec`: https://stunning-fortnight-c2e7e025.pages.github.io/spec
 .. _`latest doxygen`: https://stunning-fortnight-c2e7e025.pages.github.io/doxygen

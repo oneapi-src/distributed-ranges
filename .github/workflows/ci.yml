@@ -14,6 +14,8 @@ jobs:
         source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
         pre-commit run --all
     - name: Build/run examples
+      env:
+        CXX: g++-10
       run: |
         source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
         mkdir build
