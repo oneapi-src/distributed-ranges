@@ -1,25 +1,30 @@
-template <typename T> class distributed_span {
+template <typename T, remote_contiguous_iterator Iter = remote_ptr<T>>
+class distributed_span {
 public:
-  using local_span_type = remote_span<T>;
+  using local_span_type = remote_span<T, std::dynamic_extent, Iter>;
 
   using element_type = T;
+
+  /// Type of values stored in the array
   using value_type = std::remove_cv_t<T>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  using pointer = typename local_span_type::pointer;
-  using const_pointer = typename local_span_type::const_pointer;
+  /// Type of pointers
+  using pointer = Iter;
 
-  using reference = typename local_span_type::reference;
-  using const_reference = typename local_span_type::const_reference;
+  /// Type of references
+  using reference = std::iter_reference_t<Iter>;
 
   using joined_view_type = std::ranges::join_view<
       std::ranges::ref_view<std::vector<local_span_type>>>;
 
-  using iterator = distributed_span_iterator<T>;
-  using const_iterator = typename iterator::const_iterator;
+  /// Type of distributed_span iterators
+  using iterator = distributed_span_iterator<T, Iter>;
 
+  /// Create an empty distributed_span
   constexpr distributed_span() noexcept = default;
+
   constexpr distributed_span(const distributed_span &) noexcept = default;
   constexpr distributed_span &
   operator=(const distributed_span &) noexcept = default;
@@ -43,11 +48,13 @@ public:
     return spans_[rank].size();
   }
 
+  /// Whether the span is empty
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
 
   /// Retrieve a view of the subspans that comprise the distributed_span
   /* view of remote_spans */ get_subspans() const noexcept;
 
+  /// distributed_span representing elements [Offset, Offset + Count)
   constexpr distributed_span<element_type>
   subspan(size_type Offset, size_type Count = std::dynamic_extent) const {
     std::vector<local_span_type> new_spans;
@@ -70,16 +77,20 @@ public:
     return distributed_span<element_type>(new_spans);
   }
 
+  /// distributed_span to first `Count` elements
   constexpr distributed_span<element_type> first(size_type Count) const {
     return subspan(0, Count);
   }
 
+  /// distributed_span to last `Count` elements
   constexpr distributed_span<element_type> last(size_type Count) const {
     return subspan(size() - Count, Count);
   }
 
+  /// Iterator to beginning
   iterator begin() const { return iterator(spans_, 0); }
 
+  /// Iterator to end
   iterator end() const { return iterator(spans_, size()); }
 
   /*
@@ -91,8 +102,10 @@ public:
     }
     */
 
+  /// First element
   constexpr reference front() const { return spans_.front().front(); }
 
+  /// Last element
   constexpr reference back() const { return spans_.back().back(); }
 
 private:

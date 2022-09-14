@@ -42,7 +42,8 @@ concept remote_contiguous_range = std::ranges::random_access_range<T> &&
 template <typename T>
 concept distributed_contiguous_range = std::ranges::random_access_range<T> &&
     requires(T t) {
-  { t.subranges() } -> std::ranges::random_access_range {
-      std::declval<std::ranges::range_value_t<decltype(t.subranges())>>()
-      } -> remote_contiguous_range;
+  { t.get_subranges() } -> std::ranges::random_access_range;
+  {
+    std::declval<std::ranges::range_value_t<decltype(t.subranges())>>()
+    } -> remote_contiguous_range;
 };
