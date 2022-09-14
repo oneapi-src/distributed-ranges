@@ -14,6 +14,7 @@ Welcome to the Distributed Ranges Specificaiton.
    intro
    arch
    api
+   concepts
 
 
 
