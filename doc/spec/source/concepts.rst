@@ -1,8 +1,8 @@
 .. _concepts:
 
-===========================
-Distributed Ranges Concepts
-===========================
+========
+Concepts
+========
 
 lib::remote_contiguous_iterator
 ===============================

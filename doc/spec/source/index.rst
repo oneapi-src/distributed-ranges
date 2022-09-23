@@ -13,9 +13,12 @@ Welcome to the Distributed Ranges Specificaiton.
 
    intro
    arch
-   api
    concepts
-
+   execution_policies/execution_policies
+   decompositions/decompositions
+   containers/containers
+   views/views
+   collectives/collectives
 
 
 Indices and tables
