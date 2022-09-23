@@ -19,8 +19,17 @@ public:
   using joined_view_type = std::ranges::join_view<
       std::ranges::ref_view<std::vector<local_span_type>>>;
 
+#ifdef DR_SPEC
+
   /// Type of distributed_span iterators
-  using iterator = distributed_span_iterator<T, Iter>;
+  using iterator = remote_contiguous_iterator;
+
+#else
+
+  /// Type of distributed_span iterators
+  class iterator {};
+
+#endif
 
   /// Create an empty distributed_span
   constexpr distributed_span() noexcept = default;
@@ -52,7 +61,7 @@ public:
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
 
   /// Retrieve a view of the subspans that comprise the distributed_span
-  /* view of remote_spans */ get_subspans() const noexcept;
+  const std::span<remote_span<T>> &get_subspans() const noexcept;
 
   /// distributed_span representing elements [Offset, Offset + Count)
   constexpr distributed_span<element_type>
@@ -113,7 +122,9 @@ private:
   set_local_views(const std::vector<local_span_type> &spans) {
     my_spans_.resize(0);
     for (auto &&span : spans_) {
-      if (span.data().rank == BCL::rank()) {
+      assert(false);
+      if (span.data().rank == 0 // BCL::rank()
+      ) {
         my_spans_.push_back(span);
       }
     }

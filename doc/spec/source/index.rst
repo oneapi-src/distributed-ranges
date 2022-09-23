@@ -18,7 +18,7 @@ Welcome to the Distributed Ranges Specificaiton.
    decompositions/decompositions
    containers/containers
    views/views
-   collectives/collectives
+   algorithms/algorithms
 
 
 Indices and tables

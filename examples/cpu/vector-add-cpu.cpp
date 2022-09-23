@@ -1,5 +1,7 @@
 #include "mpi.h"
 
+#include "distributed-ranges.hpp"
+
 #include "utils.hpp"
 #include "vector-add-serial.hpp"
 
@@ -11,7 +13,7 @@ void vector_add() {
   using T = int;
 
   // size of distributed vector
-  const size_t n = 5 * comm_size;
+  const std::size_t n = 5 * comm_size;
 
   // Compute the reference data
   vector_add_serial<T> ref_adder;
@@ -30,8 +32,9 @@ void vector_add() {
   // lib::block_cyclic(2) - cyclic with blocks of two elements
   // lib::block_cyclic(8) - cyclic with blocks of eight elements
   // etc.
-  auto dist = lib::block_cyclic(lib::div(), comm);
-  lib::distributed_vector<T> a(n, dist), b(n, dist), c(n, dist);
+  auto dist = lib::block_cyclic(lib::partition::div, comm);
+  lib::distributed_vector<T, lib::block_cyclic> a(n, dist), b(n, dist),
+      c(n, dist);
 
   // Distribute the data
   a = ref_adder.a;
@@ -48,7 +51,8 @@ void vector_add() {
   //      In general, C++ does the correct thing---lib::foreach() can call
   //      `std::for_each()` with the `par_unseq` policy on the local ranges and
   //      it will run in parallel if it has the cores/hyperthreads allocated.
-  lib::for_each(lib::parallel_explicit(), std::ranges::iota_view<size_t>(0, n),
+  lib::for_each(lib::parallel_explicit(),
+                std::ranges::iota_view<std::size_t, std::size_t>{0, n},
                 [&](size_t i) { c[i] = a[i] + b[i]; });
 
   // Collect the results
@@ -56,14 +60,13 @@ void vector_add() {
   // No way to say that I only need the result on root?
   // Ben: We should probably be able to express this with the following.
   //      Whether this is a collective call or not I'm not 100% sure.
-  // lib::copy(c.begin(), c.end(), result.begin());
-  result = c;
+  lib::copy(lib::parallel_explicit(), c, result.begin());
 
   // Check
   if (comm_rank == 0) {
     show("a: ", ref_adder.a);
     show("b: ", ref_adder.b);
-    show("c: ", c_full);
+    show("c: ", result);
     ref_adder.check(result);
   }
 }

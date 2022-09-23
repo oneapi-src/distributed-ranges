@@ -1,9 +1,3 @@
-#pragma once
-
-#include <concepts>
-#include <iterator>
-#include <ranges>
-
 template <typename I>
 concept remote_contiguous_iterator = std::random_access_iterator<I> &&
     requires(I i) {
