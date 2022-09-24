@@ -3,9 +3,11 @@
 #include <cassert>
 #include <concepts>
 #include <iterator>
-#include <ranges>
 #include <span>
 #include <vector>
+
+// clang++/icpx do not work with /usr/include/c++/11/ranges
+#include "range/v3/all.hpp"
 
 namespace lib {
 

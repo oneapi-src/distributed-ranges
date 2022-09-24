@@ -1,6 +1,6 @@
 #include "mpi.h"
 
-#include "distributed-ranges.hpp"
+#include "dr/distributed-ranges.hpp"
 
 #include "utils.hpp"
 #include "vector-add-serial.hpp"
@@ -13,7 +13,7 @@ void vector_add() {
   using T = int;
 
   // size of distributed vector
-  const std::size_t n = 5 * comm_size;
+  const size_t n = 5 * comm_size;
 
   // Compute the reference data
   vector_add_serial<T> ref_adder;
@@ -51,8 +51,7 @@ void vector_add() {
   //      In general, C++ does the correct thing---lib::foreach() can call
   //      `std::for_each()` with the `par_unseq` policy on the local ranges and
   //      it will run in parallel if it has the cores/hyperthreads allocated.
-  lib::for_each(lib::parallel_explicit(),
-                std::ranges::iota_view<std::size_t, std::size_t>{0, n},
+  lib::for_each(lib::parallel_explicit(), ranges::views::iota(0u, n),
                 [&](size_t i) { c[i] = a[i] + b[i]; });
 
   // Collect the results

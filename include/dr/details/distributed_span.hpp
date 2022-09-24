@@ -16,8 +16,8 @@ public:
   /// Type of references
   using reference = std::iter_reference_t<Iter>;
 
-  using joined_view_type = std::ranges::join_view<
-      std::ranges::ref_view<std::vector<local_span_type>>>;
+  using joined_view_type =
+      ranges::join_view<ranges::ref_view<std::vector<local_span_type>>>;
 
 #ifdef DR_SPEC
 
