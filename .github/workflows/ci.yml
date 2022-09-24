@@ -33,19 +33,20 @@ jobs:
     env:
       CXX: ${{ matrix.cxx }}
     steps:
+    - uses: actions/checkout@v2
     - name: configure
       run: |
         source /opt/intel/oneapi/setvars.sh
-        mkdir -p build/${{ matrix.cxx }}
-        cd build/${{ matrix.cxx }}
-        cmake ../..
+        mkdir build
+        cd build
+        cmake ..
     - name: build
       run: |
-        cd build/${{ matrix.cxx }}
+        cd build
         make -j all
     - name: test
       run: |
-        cd build/${{ matrix.cxx }}
+        cd build
         make test
 
   publish:
