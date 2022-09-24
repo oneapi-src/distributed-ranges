@@ -51,9 +51,9 @@ html_theme = 'sphinx_book_theme'
 html_theme_options = {
     'repository_url': (
         'https://github.com/intel-sandbox/'
-        'personal.rscohn1.distributed-ranges.git'
+        'personal.rscohn1.distributed-ranges'
     ),
-    'path_to_docs': 'docs/spec/source',
+    'path_to_docs': 'doc/spec/source',
     'use_issues_button': True,
     'use_edit_page_button': True,
     'repository_branch': 'main',
