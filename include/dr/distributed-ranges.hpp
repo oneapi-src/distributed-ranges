@@ -6,6 +6,9 @@
 #include <span>
 #include <vector>
 
+// MPI should be optional
+#include "mpi.h"
+
 // clang++/icpx do not work with /usr/include/c++/11/ranges
 #include "range/v3/all.hpp"
 

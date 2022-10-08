@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "mpi.h"
-
 #include "dr/distributed-ranges.hpp"
 
 MPI_Comm comm;
@@ -16,22 +14,9 @@ TEST(CpuTest, BasicAssertions) {
   EXPECT_EQ(7 * 6, 42);
 }
 
-// Basic functions for distributed_vector
-TEST(CpuTest, DISABLED_DistributedVector) {
-  auto dist = lib::block_cyclic(lib::partition::div, comm);
-  lib::distributed_vector<int, lib::block_cyclic> a(10, dist);
-}
-
 int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-  comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &comm_rank);
-  MPI_Comm_size(comm, &comm_size);
-
   ::testing::InitGoogleTest(&argc, argv);
   auto res = RUN_ALL_TESTS();
-
-  MPI_Finalize();
 
   return res;
 }
