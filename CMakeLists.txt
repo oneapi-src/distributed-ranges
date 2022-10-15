@@ -25,9 +25,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-tautological-constant-compare)
   endif()
 
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-fconcepts-diagnostics-depth=2)
+  endif()
+
   # Debugging support
-  #set(CMAKE_BUILD_TYPE "DEBUG")
-  set(CMAKE_BUILD_TYPE "RELEASE")
+  #set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_BUILD_TYPE "Release")
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
@@ -51,6 +55,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   # For Windows: Prevent overriding the parent project's compiler/linker settings
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
+
+  FetchContent_Declare(
+    range-v3
+    GIT_REPOSITORY https://github.com/ericniebler/range-v3.git
+    GIT_TAG 0.12.0
+  )
+  FetchContent_MakeAvailable(range-v3)
+
+  link_libraries(range-v3)
 
 endif()
 

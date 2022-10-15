@@ -1,6 +1,6 @@
 
 template <typename T, std::size_t Extent = std::dynamic_extent,
-          remote_contiguous_iterator Iter = remote_ptr<T>>
+          remote_contiguous_iterator Iter = remote_pointer<T>>
 class remote_span {
 public:
   using element_type = T;

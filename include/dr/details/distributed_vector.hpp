@@ -1,4 +1,6 @@
-template <typename T, typename D> class distributed_vector {
+template <typename T, typename D = block_cyclic> class distributed_vector {
+  using rptr = remote_pointer<T>;
+
 public:
   using element_type = T;
 
@@ -27,7 +29,7 @@ public:
   // specialization
 
   /// Pointer type
-  using pointer = T *;
+  using pointer = rptr;
   /// Const pointer type
   using const_pointer = const pointer;
 
@@ -50,11 +52,9 @@ public:
 
 #else
 
+  // placeholder
   /// Iterator type
-  class iterator {
-    std::size_t index;
-    distributed_vector *dv;
-  };
+  using iterator = T *;
 
   /// Const iterator type
   using const_iterator = const iterator;
@@ -72,4 +72,9 @@ public:
 
   /// Index into a distributed vector
   T &operator[](const size_t index);
+
+  iterator begin() const;
+  iterator end() const;
+
+  const std::vector<lib::remote_vector<T>> &segments() const;
 };

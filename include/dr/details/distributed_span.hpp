@@ -1,4 +1,4 @@
-template <typename T, remote_contiguous_iterator Iter = remote_ptr<T>>
+template <typename T, remote_contiguous_iterator Iter = remote_pointer<T>>
 class distributed_span {
 public:
   using local_span_type = remote_span<T, std::dynamic_extent, Iter>;
@@ -17,7 +17,7 @@ public:
   using reference = std::iter_reference_t<Iter>;
 
   using joined_view_type =
-      ranges::join_view<ranges::ref_view<std::vector<local_span_type>>>;
+      rng::join_view<rng::ref_view<std::vector<local_span_type>>>;
 
 #ifdef DR_SPEC
 
@@ -39,9 +39,9 @@ public:
   operator=(const distributed_span &) noexcept = default;
 
   /// Create a distributed span out of a range of remote_span objects
-  template <std::ranges::input_range R>
+  template <rng::input_range R>
   requires(
-      std::is_same_v<std::ranges::range_value_t<R>,
+      std::is_same_v<rng::range_value_t<R>,
                      local_span_type>) constexpr distributed_span(R &&spans);
 
   /// Number of elements

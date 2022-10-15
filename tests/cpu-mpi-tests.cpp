@@ -1,8 +1,4 @@
-#include <gtest/gtest.h>
-
-#include "mpi.h"
-
-#include "dr/distributed-ranges.hpp"
+#include "cpu-mpi-tests.hpp"
 
 MPI_Comm comm;
 int comm_rank;

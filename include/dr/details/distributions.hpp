@@ -14,7 +14,13 @@ public:
 
   /// Distribute according to partition
   ///
-  block_cyclic(partition partition, MPI_Comm comm = MPI_COMM_WORLD) {
-    assert(false);
-  }
+  block_cyclic(partition partition, MPI_Comm comm = MPI_COMM_WORLD)
+      : partition_(partition), comm_(comm) {}
+
+  partition part() { return partition_; }
+  MPI_Comm comm() { return comm_; }
+
+private:
+  partition partition_;
+  MPI_Comm comm_;
 };
