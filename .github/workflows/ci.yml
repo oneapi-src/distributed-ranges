@@ -8,7 +8,7 @@ jobs:
   checks:
     runs-on: dds-base
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Checks
       run: |
         source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
@@ -33,7 +33,7 @@ jobs:
     env:
       CXX: ${{ matrix.cxx }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: configure
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -54,9 +54,9 @@ jobs:
     runs-on: dds-base
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Checkout gh-pages
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: gh-pages
         path: gh-pages

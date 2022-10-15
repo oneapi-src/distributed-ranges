@@ -1,0 +1,57 @@
+#pragma once
+
+#include <shp/span.hpp>
+#include <span>
+
+namespace lib {
+
+// A `device_span` is simply a normal `std::span` that's
+// been decorated with an extra `rank()` function, showing
+// which rank its memory is located on.
+// (Thus fulfilling the `remote_range` concept.)
+/*
+template <class T,
+          std::size_t Extent = std::dynamic_extent>
+class device_span : public std::span<T, Extent> {
+public:
+  constexpr device_span() noexcept {}
+
+  template< class It >
+  explicit(Extent != std::dynamic_extent)
+  constexpr device_span(It first, std::size_t count, std::size_t rank)
+    : rank_(rank), std::span<T, Extent>(first, count) {}
+
+  template< class It, class End >
+  explicit(Extent != std::dynamic_extent)
+  constexpr device_span(It first, End last, std::size_t rank)
+    : rank_(rank), std::span<T, Extent>(first, last) {}
+
+  constexpr std::size_t rank() const noexcept {
+    return rank_;
+  }
+
+private:
+  std::size_t rank_;
+};
+*/
+
+template <typename T, typename Iter = T *>
+class device_span : public shp::span<T, Iter> {
+public:
+  constexpr device_span() noexcept {}
+
+  template <class It>
+  constexpr device_span(It first, std::size_t count, std::size_t rank)
+      : rank_(rank), shp::span<T, Iter>(first, count) {}
+
+  template <class It, class End>
+  constexpr device_span(It first, End last, std::size_t rank)
+      : rank_(rank), shp::span<T, Iter>(first, last) {}
+
+  constexpr std::size_t rank() const noexcept { return rank_; }
+
+private:
+  std::size_t rank_;
+};
+
+} // namespace lib
