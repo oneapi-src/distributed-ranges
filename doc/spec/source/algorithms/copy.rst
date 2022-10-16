@@ -5,7 +5,9 @@
 Interface
 =========
 
-.. doxygenfunction:: copy
+.. doxygenfunction:: copy(ExecutionPolicy e, R &&r, O result)
+.. doxygenfunction:: copy(device_ptr<const T> first, device_ptr<const T> last, T *d_first)
+.. doxygenfunction:: copy(const T *first, const T *last, device_ptr<T> d_first)
 
 Description
 ===========

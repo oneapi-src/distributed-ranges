@@ -5,7 +5,8 @@
 Interface
 =========
 
-.. doxygenfunction:: for_each
+.. doxygenfunction:: for_each(ExecutionPolicy &&policy, R range, UnaryFunction f)
+.. doxygenfunction:: for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn)
 
 Description
 ===========

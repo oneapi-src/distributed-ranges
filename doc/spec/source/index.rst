@@ -14,6 +14,8 @@ Welcome to the Distributed Ranges Specificaiton.
    intro
    arch
    concepts
+   remote_memory/remote_memory
+   device_memory/device_memory
    execution_policies/execution_policies
    decompositions/decompositions
    containers/containers

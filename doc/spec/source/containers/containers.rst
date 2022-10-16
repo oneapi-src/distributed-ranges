@@ -2,9 +2,20 @@
  Containers
 ============
 
-Containers own the storage.
+*Containers* own storage.
+
+The storage for a *distributed container* is divided over multiple
+processes and can be accessed by any process in the team.
 
 .. toctree::
    :maxdepth: 1
 
    distributed_vector
+
+The storage for a *remote container* resides in a single process and
+can be accessed by any process in the team.
+
+.. toctree::
+   :maxdepth: 1
+
+   remote_vector

@@ -1,0 +1,11 @@
+===============
+ Device Memory
+===============
+
+Device memory is accessible by an accelerator.
+
+.. toctree::
+   :maxdepth: 1
+
+   device_ptr
+   device_ref
