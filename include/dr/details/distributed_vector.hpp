@@ -79,11 +79,13 @@ public:
 
   /// copy a span to a distributed vector
   void scatter(const std::span<T> src, int root) {
+    assert(comm_.size() * local_size_ == src.size());
     comm_.scatter(src.data(), local_data_, local_size_ * sizeof(T), root);
   }
 
   /// copy a distributed vector to a span
   void gather(const std::span<T> dst, int root) {
+    assert(comm_.size() * local_size_ == dst.size());
     comm_.gather(local_data_, dst.data(), local_size_ * sizeof(T), root);
   }
 
