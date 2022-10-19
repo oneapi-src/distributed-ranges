@@ -1,3 +1,5 @@
+namespace lib {
+
 class communicator {
 public:
   communicator(MPI_Comm comm = MPI_COMM_WORLD) {
@@ -29,3 +31,5 @@ private:
   int rank_;
   int size_;
 };
+
+} // namespace lib

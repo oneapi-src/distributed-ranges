@@ -1,3 +1,5 @@
+namespace lib {
+
 template <typename I>
 concept remote_contiguous_iterator = std::random_access_iterator<I> &&
     requires(I i) {
@@ -20,3 +22,5 @@ concept distributed_contiguous_range = rng::random_access_range<T> &&
     std::declval<std::ranges::range_value_t<decltype(t.segments())>>()
     } -> remote_contiguous_range;
 };
+
+} // namespace lib

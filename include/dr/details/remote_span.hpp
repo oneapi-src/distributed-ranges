@@ -1,3 +1,4 @@
+namespace lib {
 
 template <typename T, std::size_t Extent = std::dynamic_extent,
           remote_contiguous_iterator Iter = remote_pointer<T>>
@@ -82,3 +83,5 @@ public:
   constexpr remote_span<element_type, std::dynamic_extent>
   subspan(size_type Offset, size_type Count = std::dynamic_extent) const;
 };
+
+} // namespace lib

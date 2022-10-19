@@ -1,3 +1,5 @@
+namespace lib {
+
 template <typename T> class remote_reference;
 
 template <typename T> class remote_pointer {
@@ -179,3 +181,5 @@ public:
 private:
   remote_pointer<T> pointer_ = nullptr;
 };
+
+} // namespace lib

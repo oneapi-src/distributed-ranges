@@ -1,3 +1,5 @@
+namespace lib {
+
 template <typename T, typename D = block_cyclic> class distributed_vector {
   using rptr = remote_pointer<T>;
 
@@ -99,3 +101,5 @@ private:
   size_type local_size_;
   T *local_data_;
 };
+
+} // namespace lib

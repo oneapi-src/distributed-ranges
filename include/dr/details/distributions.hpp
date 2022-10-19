@@ -1,3 +1,5 @@
+namespace lib {
+
 /// Constants to specify partitions
 enum class partition_method {
   /// Equal size blocks
@@ -24,3 +26,5 @@ private:
   partition_method method_;
   MPI_Comm comm_;
 };
+
+} // namespace lib

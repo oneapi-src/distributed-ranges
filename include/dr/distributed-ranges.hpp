@@ -18,8 +18,6 @@ namespace rng = std::ranges;
 namespace rng = ranges;
 #endif
 
-namespace lib {
-
 #include "details/common.hpp"
 #include "details/communicator.hpp"
 
@@ -39,6 +37,5 @@ namespace lib {
 
 #include "details/execution_policies.hpp"
 
+#include "algorithms/copy.hpp"
 #include "algorithms/for_each.hpp"
-#include "collectives/copy.hpp"
-} // namespace lib

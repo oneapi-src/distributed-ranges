@@ -1,3 +1,5 @@
+namespace lib {
+
 template <typename T> class remote_vector {
 public:
   using rptr = remote_pointer<T>;
@@ -63,3 +65,5 @@ private:
   pointer base_;
   size_type size_;
 };
+
+} // namespace lib

@@ -1,3 +1,5 @@
+namespace lib {
+
 template <typename T, remote_contiguous_iterator Iter = remote_pointer<T>>
 class distributed_span {
 public:
@@ -138,3 +140,5 @@ private:
   std::vector<local_span_type> my_spans_;
   joined_view_type local_joined_view_;
 };
+
+} // namespace lib
