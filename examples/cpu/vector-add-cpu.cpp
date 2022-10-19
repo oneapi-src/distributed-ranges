@@ -8,6 +8,9 @@
 MPI_Comm comm;
 int comm_rank;
 int comm_size;
+const int root_rank = 0;
+
+bool is_root() { return root_rank == comm_rank; }
 
 void vector_add() {
   using T = int;
@@ -17,7 +20,7 @@ void vector_add() {
 
   // Compute the reference data
   vector_add_serial<T> ref_adder;
-  if (comm_rank == 0) {
+  if (is_root()) {
     ref_adder.init(n);
     ref_adder.compute();
   }
@@ -32,13 +35,13 @@ void vector_add() {
   // lib::block_cyclic(2) - cyclic with blocks of two elements
   // lib::block_cyclic(8) - cyclic with blocks of eight elements
   // etc.
-  auto dist = lib::block_cyclic(lib::partition::div, comm);
+  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
   lib::distributed_vector<T, lib::block_cyclic> a(n, dist), b(n, dist),
       c(n, dist);
 
   // Distribute the data
-  a = ref_adder.a;
-  b = ref_adder.b;
+  a.scatter(ref_adder.a, root_rank);
+  b.scatter(ref_adder.b, root_rank);
 
   // This is ok for 1 rank/core.
   // What if I want to use 1 rank/node and openmp within the node?
@@ -59,10 +62,10 @@ void vector_add() {
   // No way to say that I only need the result on root?
   // Ben: We should probably be able to express this with the following.
   //      Whether this is a collective call or not I'm not 100% sure.
-  lib::copy(lib::parallel_explicit(), c, result.begin());
+  c.gather(result, root_rank);
 
   // Check
-  if (comm_rank == 0) {
+  if (is_root()) {
     show("a: ", ref_adder.a);
     show("b: ", ref_adder.b);
     show("c: ", result);

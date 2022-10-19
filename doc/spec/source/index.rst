@@ -6,7 +6,7 @@
 Distributed Ranges
 ==================
 
-Welcome to the Distributed Ranges Specificaiton.
+Welcome to the Distributed Ranges Specification.
 
 .. toctree::
    :maxdepth: 1

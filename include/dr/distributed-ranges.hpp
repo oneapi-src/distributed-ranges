@@ -20,6 +20,9 @@ namespace rng = ranges;
 
 namespace lib {
 
+#include "details/common.hpp"
+#include "details/communicator.hpp"
+
 #include "concepts/concepts.hpp"
 
 #include "details/distributions.hpp"

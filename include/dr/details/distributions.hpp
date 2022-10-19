@@ -1,5 +1,5 @@
 /// Constants to specify partitions
-enum class partition {
+enum class partition_method {
   /// Equal size blocks
   div
 };
@@ -14,13 +14,13 @@ public:
 
   /// Distribute according to partition
   ///
-  block_cyclic(partition partition, MPI_Comm comm = MPI_COMM_WORLD)
-      : partition_(partition), comm_(comm) {}
+  block_cyclic(partition_method pm, MPI_Comm comm = MPI_COMM_WORLD)
+      : method_(pm), comm_(comm) {}
 
-  partition part() { return partition_; }
-  MPI_Comm comm() { return comm_; }
+  partition_method method() { return method_; }
+  MPI_Comm mpi_comm() { return comm_; }
 
 private:
-  partition partition_;
+  partition_method method_;
   MPI_Comm comm_;
 };
