@@ -9,6 +9,7 @@ public:
   }
 
   int size() { return size_; }
+  int rank() { return rank_; }
 
   MPI_Win win_create(void *data, size_t size) {
     MPI_Win win;

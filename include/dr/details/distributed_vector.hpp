@@ -67,26 +67,30 @@ public:
   distributed_vector(size_type count, D decomp = D{})
       : comm_(decomp.mpi_comm()) {
     assert(decomp.method() == partition_method::div);
-    local_size_ = partition_up(count, comm_.size());
-    local_data_ = new T[local_size_];
+    auto sz = partition_up(count, comm_.size());
+    local_segment_ = std::span(new T[sz], sz);
     // win_ = comm_.win_create(local_data_, local_size_ * sizeof(T));
   }
 
   /// Construct a distributed vector with `count` elements equal to `value`.
   distributed_vector(size_type count, T value, D decomp) { assert(false); }
 
-  ~distributed_vector() { delete[] local_data_; }
+  ~distributed_vector() { delete[] local_segment_.data(); }
 
   /// copy a span to a distributed vector
   void scatter(const std::span<T> src, int root) {
-    assert(comm_.size() * local_size_ == src.size());
-    comm_.scatter(src.data(), local_data_, local_size_ * sizeof(T), root);
+    assert(comm_.rank() != root ||
+           comm_.size() * local_segment_.size() == src.size());
+    comm_.scatter(src.data(), local_segment_.data(),
+                  local_segment_.size() * sizeof(T), root);
   }
 
   /// copy a distributed vector to a span
   void gather(const std::span<T> dst, int root) {
-    assert(comm_.size() * local_size_ == dst.size());
-    comm_.gather(local_data_, dst.data(), local_size_ * sizeof(T), root);
+    assert(comm_.rank() != root ||
+           comm_.size() * local_segment_.size() == dst.size());
+    comm_.gather(local_segment_.data(), dst.data(),
+                 local_segment_.size() * sizeof(T), root);
   }
 
   /// Index into a distributed vector
@@ -95,13 +99,14 @@ public:
   iterator begin() const;
   iterator end() const;
 
+  const std::span<T> local_segment() const { return local_segment_; }
+
   const std::span<lib::remote_vector<T>> &segments() const;
 
 private:
   MPI_Win win_;
   communicator comm_;
-  size_type local_size_;
-  T *local_data_;
+  std::span<T> local_segment_;
 };
 
 } // namespace lib
