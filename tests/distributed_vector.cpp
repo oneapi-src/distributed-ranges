@@ -46,8 +46,8 @@ TEST(CpuMpiTest, DistributedVectorCopy) {
   std::vector<int> src(n), dst(n);
   std::iota(src.data(), src.data() + src.size(), 1);
 
-  lib::copy(lib::collective_root_policy{root}, src, dv);
-  lib::copy(lib::collective_root_policy{root}, dv, dst);
+  lib::collective::copy(root, src, dv);
+  lib::collective::copy(root, dv, dst);
 
   expect_range_eq(root, src, dst);
 }

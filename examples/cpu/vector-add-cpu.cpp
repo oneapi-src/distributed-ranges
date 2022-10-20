@@ -40,8 +40,8 @@ void vector_add() {
       c(n, dist);
 
   // Distribute the data
-  a.scatter(ref_adder.a, root_rank);
-  b.scatter(ref_adder.b, root_rank);
+  lib::collective::copy(root_rank, ref_adder.a, a);
+  lib::collective::copy(root_rank, ref_adder.b, b);
 
   // This is ok for 1 rank/core.
   // What if I want to use 1 rank/node and openmp within the node?
@@ -62,7 +62,7 @@ void vector_add() {
   // No way to say that I only need the result on root?
   // Ben: We should probably be able to express this with the following.
   //      Whether this is a collective call or not I'm not 100% sure.
-  c.gather(result, root_rank);
+  lib::collective::copy(root_rank, c, result);
 
   // Check
   if (is_root()) {
