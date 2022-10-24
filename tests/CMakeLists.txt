@@ -17,6 +17,7 @@ target_link_libraries(
 add_executable(
   cpu-mpi-tests
   cpu-mpi-tests.cpp
+  communicator.cpp
   remote_memory.cpp
   remote_vector.cpp
   distributed_vector.cpp

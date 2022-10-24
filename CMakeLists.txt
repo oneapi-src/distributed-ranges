@@ -65,6 +65,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   link_libraries(range-v3)
 
+  FetchContent_Declare(
+    cpp-format
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 9.1.0
+  )
+  FetchContent_MakeAvailable(cpp-format)
+
+  link_libraries(fmt::fmt)
+
 endif()
 
 function(add_mpi_test test_name name processes)

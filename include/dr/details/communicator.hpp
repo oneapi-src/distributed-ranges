@@ -2,22 +2,62 @@ namespace lib {
 
 class communicator {
 public:
+  class win {
+  public:
+    win() { win_ = MPI_WIN_NULL; }
+
+    void create(const communicator &comm, void *data, int size) {
+      MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
+    }
+
+    void free() { MPI_Win_free(&win_); }
+
+    bool operator==(const win other) const noexcept {
+      return this->win_ == other.win_;
+    }
+
+    void set_null() { win_ = MPI_INFO_NULL; }
+    bool null() const noexcept { return win_ == MPI_INFO_NULL; }
+
+    void get(void *dst, int size, int rank, int disp) const {
+      drlog.debug("get::size: {}, rank: {}, win: {}, disp: {}\n", size, rank,
+                  win_, disp);
+
+      MPI_Request request;
+      MPI_Rget(dst, size, MPI_CHAR, rank, disp, size, MPI_CHAR, win_, &request);
+      MPI_Wait(&request, MPI_STATUS_IGNORE);
+    }
+
+    void put(const void *src, int size, int rank, int disp) const {
+      drlog.debug("put:: size: {}, rank: {}, win: {}, disp: {}\n", size, rank,
+                  win_, disp);
+      MPI_Put(src, size, MPI_CHAR, rank, disp, size, MPI_CHAR, win_);
+    }
+
+    void fence() const {
+      drlog.debug("fence:: win: {}\n", win_);
+      MPI_Win_fence(0, win_);
+    }
+
+    void flush(int rank) const {
+      drlog.debug("flush:: rank: {}, win: {}\n", rank, win_);
+      MPI_Win_flush(rank, win_);
+    }
+
+  private:
+    MPI_Win win_;
+  };
+
   communicator(MPI_Comm comm = MPI_COMM_WORLD) {
     mpi_comm_ = comm;
     MPI_Comm_rank(comm, &rank_);
     MPI_Comm_size(comm, &size_);
   }
 
-  int size() { return size_; }
-  int rank() { return rank_; }
+  int size() const { return size_; }
+  int rank() const { return rank_; }
 
-  MPI_Win win_create(void *data, size_t size) {
-    MPI_Win win;
-    MPI_Win_create(data, size, 1, MPI_INFO_NULL, mpi_comm_, &win);
-    return win;
-  }
-
-  MPI_Comm mpi_comm() { return mpi_comm_; }
+  MPI_Comm mpi_comm() const { return mpi_comm_; }
 
   void scatter(const void *src, void *dst, int size, int root) {
     MPI_Scatter(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);

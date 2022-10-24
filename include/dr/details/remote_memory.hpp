@@ -3,7 +3,8 @@ namespace lib {
 template <typename T> class remote_reference;
 
 template <typename T> class remote_pointer {
-  // static_assert(std::forward_iterator<remote_pointer<int>>);
+  friend class remote_reference<T>;
+
 public:
   using difference_type = std::ptrdiff_t;
   using value_type = T;
@@ -19,17 +20,17 @@ public:
   remote_pointer(remote_pointer &&) = default;
   remote_pointer &operator=(remote_pointer &&) = default;
 
-  remote_pointer(std::size_t rank, std::size_t window, std::size_t offset)
-      : rank_(rank), window_(window), offset_(offset) {}
+  remote_pointer(std::size_t rank, communicator::win win, std::size_t offset)
+      : rank_(rank), win_(win), offset_(offset) {}
 
-  remote_pointer(std::nullptr_t null) : rank_(0), window_(0), offset_(0) {}
+  remote_pointer(std::nullptr_t null) : rank_(0), win_(), offset_(0) {}
 
   // TODO: convert SFINAE to requires() for C++20
   // template <__BCL_REQUIRES(!std::is_same_v<std::decay_t<T>, void> &&
   //! std::is_const_v<T> &&
   //! std::is_same_v<T, void>)>
   operator remote_pointer<void>() const noexcept {
-    return remote_pointer<void>(rank_, window_, offset_);
+    return remote_pointer<void>(rank_, win_, offset_);
   }
 
   // TODO: convert SFINAE to requires() for C++20
@@ -43,19 +44,19 @@ public:
 
   // template <__BCL_REQUIRES(!std::is_const_v<T>)>
   operator const_pointer() const noexcept {
-    return const_pointer(rank_, window_, offset_);
+    return const_pointer(rank_, win_, offset_);
   }
 
   remote_pointer &operator=(std::nullptr_t null) {
     rank_ = 0;
-    window_ = 0;
+    win_.set_null();
     offset_ = 0;
     return *this;
   }
 
   bool operator==(const remote_pointer<T> other) const noexcept {
     return (rank_ == other.rank_ && offset_ == other.offset_ &&
-            window_ == other.window_);
+            win_ == other.win_);
   }
 
   bool operator!=(const_pointer other) const noexcept {
@@ -63,7 +64,7 @@ public:
   }
 
   bool operator==(std::nullptr_t null) const noexcept {
-    return (rank_ == 0 && offset_ == 0 && window_ == 0);
+    return (rank_ == 0 && offset_ == 0 && win_.null());
   }
 
   bool operator!=(std::nullptr_t null) const noexcept {
@@ -79,16 +80,15 @@ public:
   }
 
   pointer operator+(difference_type offset) const noexcept {
-    // pointer operator+(long long int offset) const noexcept {
-    return pointer(rank_, window_, offset_ + offset * sizeof(T));
+    return pointer(rank_, win_, offset_ + offset);
   }
 
   pointer operator-(difference_type offset) const noexcept {
-    return pointer(rank_, window_, offset_ - offset * sizeof(T));
+    return pointer(rank_, win_, offset_ - offset);
   }
 
   difference_type operator-(const_pointer other) const noexcept {
-    return (offset_ - difference_type(other.offset_)) / sizeof(T);
+    return (offset_ - difference_type(other.offset_));
   }
 
   bool operator<(const_pointer other) const noexcept {
@@ -108,7 +108,7 @@ public:
   }
 
   pointer &operator++() noexcept {
-    offset_ += sizeof(T);
+    offset_++;
     return *this;
   }
 
@@ -119,7 +119,7 @@ public:
   }
 
   pointer &operator--() noexcept {
-    offset_ -= sizeof(T);
+    offset_--;
     return *this;
   }
 
@@ -130,12 +130,12 @@ public:
   }
 
   pointer &operator+=(difference_type offset) noexcept {
-    offset_ += offset * sizeof(T);
+    offset_ += offset;
     return *this;
   }
 
   pointer &operator-=(difference_type offset) noexcept {
-    offset_ -= offset * sizeof(T);
+    offset_ -= offset;
     return *this;
   }
 
@@ -147,7 +147,7 @@ public:
 
 private:
   std::size_t rank_;
-  std::size_t window_;
+  communicator::win win_;
   std::size_t offset_;
   T *local_pointer_;
 };
@@ -170,11 +170,20 @@ public:
     assert(ptr != nullptr);
   }
 
-  operator T() const;
+  operator T() const {
+    T value;
+    pointer_.win_.get(&value, sizeof(T), pointer_.rank_,
+                      pointer_.offset_ * sizeof(T));
+    return value;
+  }
 
   operator const_reference() const;
 
-  reference operator=(const T &value) const;
+  reference operator=(const T &value) const {
+    pointer_.win_.put(&value, sizeof(T), pointer_.rank_,
+                      pointer_.offset_ * sizeof(T));
+    return pointer_;
+  }
 
   pointer operator&() const noexcept { return pointer_; }
 

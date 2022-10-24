@@ -2,9 +2,14 @@
 
 #include <cassert>
 #include <concepts>
+#include <fstream>
+#include <iostream>
 #include <iterator>
 #include <span>
+#include <string>
 #include <vector>
+
+#include <fmt/core.h>
 
 // MPI should be optional
 #include "mpi.h"
@@ -17,6 +22,8 @@ namespace rng = std::ranges;
 #include "range/v3/all.hpp"
 namespace rng = ranges;
 #endif
+
+#include "details/logger.hpp"
 
 #include "details/common.hpp"
 #include "details/communicator.hpp"

@@ -9,20 +9,12 @@ TEST(CpuMpiTests, DistributedVectorRequirements) {
   // DV dv(10, lib::block_cyclic(lib::partition::div));
 }
 
-TEST(CpuMpiTest, DistributedVectorConstructors) {
+TEST(CpuMpiTests, DistributedVectorConstructors) {
   auto dist = lib::block_cyclic(lib::partition_method::div, comm);
   lib::distributed_vector<int, lib::block_cyclic> a(10, dist);
 }
 
-void expect_range_eq(int root, auto &r1, auto &r2) {
-  if (comm_rank == root) {
-    for (size_t i = 0; i < r1.size(); i++) {
-      EXPECT_EQ(r1[i], r2[i]);
-    }
-  }
-}
-
-TEST(CpuMpiTest, DistributedVectorGatherScatter) {
+TEST(CpuMpiTests, DistributedVectorGatherScatter) {
   const std::size_t n = 10;
   const int root = 0;
   auto dist = lib::block_cyclic(lib::partition_method::div, comm);
@@ -34,10 +26,50 @@ TEST(CpuMpiTest, DistributedVectorGatherScatter) {
   dv.scatter(src, root);
   dv.gather(dst, root);
 
-  expect_range_eq(root, src, dst);
+  expect_eq(root, src, dst);
 }
 
-TEST(CpuMpiTest, DistributedVectorCopy) {
+#if 0
+TEST(CpuMpiTests, DistributedVectorIterator) {
+  const std::size_t n = 10;
+  const int root = 1;
+  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
+  lib::distributed_vector<int, lib::block_cyclic> dv(n, dist);
+
+  std::vector<int> ref(n);
+  std::iota(ref.data(), ref.data() + ref.size(), 1);
+
+  std::iota(dv.begin(), dv.end(), 1);
+
+  expect_eq(root, dv, ref);
+}
+#endif
+
+TEST(CpuMpiTests, DistributedVectorIndex) {
+  const std::size_t n = 10;
+  // const int root = 1;
+  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
+  lib::distributed_vector<int, lib::block_cyclic> dv(n, dist);
+  dv.fence();
+
+  if (comm_rank == 0) {
+    for (size_t i = 0; i < n; i++) {
+      dv[i] = i + 10;
+    }
+  }
+  dv.fence();
+
+  if (comm_rank == 0) {
+    for (size_t i = 0; i < n; i++) {
+      EXPECT_EQ(dv[i], i + 10);
+    }
+  }
+
+  dv.fence();
+  lib::drlog.debug("Done\n");
+}
+
+TEST(CpuMpiTests, DistributedVectorCollectiveCopy) {
   const std::size_t n = 10;
   const int root = 0;
   auto dist = lib::block_cyclic(lib::partition_method::div, comm);
@@ -49,5 +81,5 @@ TEST(CpuMpiTest, DistributedVectorCopy) {
   lib::collective::copy(root, src, dv);
   lib::collective::copy(root, dv, dst);
 
-  expect_range_eq(root, src, dst);
+  expect_eq(root, src, dst);
 }
