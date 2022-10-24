@@ -15,7 +15,7 @@ concept remote_contiguous_range = std::ranges::random_access_range<T> &&
 };
 
 template <typename T>
-concept distributed_contiguous_range = rng::random_access_range<T> &&
+concept distributed_contiguous_range = std::ranges::random_access_range<T> &&
     requires(T t) {
   { t.segments() } -> std::ranges::random_access_range;
   {

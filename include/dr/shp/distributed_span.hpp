@@ -166,35 +166,38 @@ public:
 
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
 
-  /*
-    TODO: finish
-  constexpr distributed_span<element_type>
+  constexpr distributed_span
   subspan(size_type Offset, size_type Count = std::dynamic_extent) const {
-    Count = std::max(Count, size() - Offset);
+    Count = std::min(Count, size() - Offset);
 
     std::vector<segment_type> new_segments;
 
-    size_type cumulative_size = 0;
-
-    for (size_type segment_id = 0; cumulative_size < Offset + Count;
-  segment_id++) {
-
-      if
-
-      cumulative_size += segments()[segment_id].size();
+    // Forward to segment_id that contains global index `Offset`.
+    size_t segment_id = 0;
+    for (segment_id = 0; Offset >= segments()[segment_id].size(); segment_id++) {
+      Offset -= segments()[segment_id].size();
     }
 
-    return distributed_span<element_type>(new_spans);
+    // Our Offset begins at `segment_id, Offset`
+
+    while (Count > 0) {
+      size_t local_count = std::min(Count, segments()[segment_id].size() - Offset);
+      auto new_segment = segments()[segment_id].subspan(Offset, local_count);
+      new_segments.push_back(new_segment);
+      Count -= local_count;
+      Offset = 0;
+    }
+
+    return distributed_span(new_segments);
   }
 
-  constexpr distributed_span<element_type> first(size_type Count) const {
+  constexpr distributed_span first(size_type Count) const {
     return subspan(0, Count);
   }
 
-  constexpr distributed_span<element_type> last(size_type Count) const {
+  constexpr distributed_span last(size_type Count) const {
     return subspan(size() - Count, Count);
   }
-  */
 
   iterator begin() {
     return iterator(distributed_span_accessor<T, L>(segments(), 0, 0));

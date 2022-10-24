@@ -48,9 +48,13 @@ int main(int argc, char **argv) {
 
   // Get GPU devices.
   sycl::gpu_selector g;
+  // auto devices = shp::get_devices(g);
   auto devices = shp::get_numa_devices(g);
 
-  sycl::context context(devices);
+  shp::init(devices);
+
+  // sycl::context context(devices);
+  sycl::context context = shp::context();
 
   // Let's call `device[i]` rank `i`.
 
@@ -62,13 +66,18 @@ int main(int argc, char **argv) {
   // Elements per rank, ceil(size / devices.size())
   std::size_t size_per_segment = (size + devices.size() - 1) / devices.size();
 
+  printf("Allocating device segments...\n");
   auto segments =
       allocate_device_spans<int>(size_per_segment, context, devices);
 
+  printf("Device span...\n");
   lib::distributed_span dspan(segments);
 
-  for (auto &&segment : dspan.segments()) {
-    // sycl::queue q(devices[segment.rank()]);
+  printf("Launching on segments...\n");
+  size_t iteration = 0;
+  for (auto&& segment : dspan.segments()) {
+    printf("Segment %lu\n", iteration++);
+    // sycl::queue q(context, devices[segment.rank()]);
     sycl::queue q(devices[0]);
     int *ptr = segment.begin().local();
     q.parallel_for(sycl::range<1>(segment.size()), [=](auto id) {
@@ -76,17 +85,35 @@ int main(int argc, char **argv) {
      }).wait();
   }
 
+  auto subspan = dspan.subspan(25, 70);
+
+  printf("Subspan has %lu elements in it.\n", subspan.size());
+
+  shp::print_range(subspan);
+  shp::device_policy policy(devices);
+  auto r_sub = shp::reduce(policy, subspan, 0.0f, std::plus());
+  printf("Reduced to value %lf\n", r_sub);
+
+  printf("Printing range...\n");
   shp::print_range(dspan);
 
-  shp::device_policy policy(devices);
+  printf("Creating policy...\n");
 
-  shp::for_each(policy, dspan, [](auto &&elem) { elem = elem + 2; });
+  printf("Calling for_each...\n");
+  shp::for_each(policy, dspan, [](auto&& elem) { elem = elem + 2; });
 
   shp::print_range(dspan);
 
   auto r = shp::reduce(policy, dspan, 0.0f, std::plus());
 
-  printf("Reduced to the value %lf\n", r);
+  /*
+  shp::for_each(policy, shp::enumerate(dspan), [](auto&& elem) {
+                                                 auto&& [index, value] = elem;
+                                                 dspan[index] = 123;
+                                               });
+
+					       */
+
 
   return 0;
 }

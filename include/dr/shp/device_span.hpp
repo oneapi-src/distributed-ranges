@@ -50,6 +50,14 @@ public:
 
   constexpr std::size_t rank() const noexcept { return rank_; }
 
+  device_span first(std::size_t n) const { return device_span(this->begin(), this->begin() + n, rank_); }
+
+  device_span last(std::size_t n) const { return device_span(this->end() - n, this->end(), rank_); }
+
+  device_span subspan(std::size_t offset, std::size_t count) const {
+    return device_span(this->begin() + offset, this->begin() + offset + count, rank_);
+  }
+
 private:
   std::size_t rank_;
 };

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <CL/sycl.hpp>
-#include <oneapi/dpl/async>
+
 #include <oneapi/dpl/execution>
+#include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
 #include <shp/algorithms/execution_policy.hpp>
 #include <shp/distributed_span.hpp>
@@ -45,7 +46,7 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
         r.segments()[0].begin(), r.segments()[0].end(), init,
         std::forward<BinaryOp>(binary_op)));
 
-    auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
+    auto&& devices = std::forward<ExecutionPolicy>(policy).get_devices();
 
     std::vector<future_t> futures;
 

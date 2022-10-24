@@ -1,5 +1,6 @@
 #pragma once
 
+#include "init.hpp"
 #include "algorithms/execution_policy.hpp"
 #include "algorithms/for_each.hpp"
 #include "algorithms/reduce.hpp"
