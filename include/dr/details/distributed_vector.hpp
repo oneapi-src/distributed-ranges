@@ -1,5 +1,51 @@
 namespace lib {
 
+// Make a random access iterator for an object that supports index
+// reference
+template <typename O> class index_iterator {
+public:
+  using value_type = typename O::value_type;
+  using size_type = typename O::size_type;
+  using difference_type = typename O::difference_type;
+  using reference = typename O::reference;
+
+  index_iterator();
+  index_iterator(O &o, size_type index) : o_(&o), index_(index) {}
+
+  reference operator*() const { return (*o_)[index_]; }
+  reference operator*() { return (*o_)[index_]; }
+  reference operator[](difference_type n) const noexcept;
+  reference operator[](difference_type n);
+
+  bool operator==(const index_iterator &other) const noexcept {
+    return index_ == other.index_ && o_ == other.o_;
+  }
+
+  bool operator<=>(const index_iterator &other) const noexcept;
+
+  index_iterator &operator++() {
+    index_++;
+    return *this;
+  }
+  index_iterator operator++(int);
+  index_iterator &operator--();
+  index_iterator operator--(int);
+  difference_type operator-(const index_iterator &other) const noexcept;
+  index_iterator &operator-=(difference_type n) const noexcept;
+  index_iterator &operator+=(difference_type n) const noexcept;
+  index_iterator operator+(difference_type n) const noexcept;
+  index_iterator operator-(difference_type n) const noexcept;
+
+  friend index_iterator operator+(difference_type n,
+                                  const index_iterator &other) {
+    return other + n;
+  }
+
+private:
+  O *o_ = nullptr;
+  difference_type index_ = 0;
+};
+
 template <typename T, typename D = block_cyclic> class distributed_vector {
   using rptr = remote_pointer<T>;
 
@@ -56,7 +102,7 @@ public:
 
   // placeholder
   /// Iterator type
-  using iterator = T *;
+  using iterator = index_iterator<distributed_vector>;
 
   /// Const iterator type
   using const_iterator = const iterator;
@@ -65,7 +111,7 @@ public:
 
   /// Construct a distributed vector with `count` elements.
   distributed_vector(size_type count, D decomp = D{})
-      : comm_(decomp.mpi_comm()),
+      : size_(count), comm_(decomp.mpi_comm()),
         local_segment_(partition_up(count, comm_.size())) {
     win_.create(comm_, local_segment_.data(),
                 local_segment_.size() * sizeof(T));
@@ -99,8 +145,10 @@ public:
                 index % local_segment_.size());
   }
 
-  iterator begin() const;
-  iterator end() const;
+  iterator begin() { return iterator(*this, 0); }
+  const iterator begin() const { return iterator(*this, 0); }
+  iterator end() { return iterator(*this, size_); };
+  const iterator end() const { return iterator(*this, size_); };
 
   void fence() { win_.fence(); }
 
