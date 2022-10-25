@@ -7,7 +7,7 @@
 Interface
 =========
 
-.. doxygenclass:: remote_reference
+.. doxygenclass:: lib::remote_reference
    :members:
 
 Description

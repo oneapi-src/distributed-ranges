@@ -7,7 +7,7 @@
 Interface
 =========
 
-.. doxygenclass:: remote_pointer
+.. doxygenclass:: lib::remote_pointer
    :members:
 
 Description

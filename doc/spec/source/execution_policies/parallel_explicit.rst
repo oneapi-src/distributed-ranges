@@ -5,7 +5,7 @@
 Interface
 =========
 
-.. doxygenclass:: parallel_explicit
+.. doxygenclass:: lib::parallel_explicit
 
 Description
 ===========

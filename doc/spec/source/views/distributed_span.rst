@@ -5,7 +5,7 @@
 Interface
 =========
 
-.. doxygenclass:: distributed_span
+.. doxygenclass:: lib::distributed_span
    :members:
 
 Description

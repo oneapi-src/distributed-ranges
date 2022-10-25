@@ -4,6 +4,10 @@ on:
       - main
   pull_request:
 
+env:
+  ACTIVATE: source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
+  SPHINXOPTS: -q -W
+
 jobs:
   checks:
     runs-on: dds-base
@@ -11,11 +15,11 @@ jobs:
     - uses: actions/checkout@v3
     - name: Checks
       run: |
-        source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
+        ${ACTIVATE}
         pre-commit run --all
     - name: Build doc
       run: |
-        source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
+        ${ACTIVATE}
         make -C doc/spec html
 
   examples:
@@ -62,11 +66,11 @@ jobs:
         path: gh-pages
     - name: Build docs
       run: |
-        source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
+        ${ACTIVATE}
         make -C doc/spec html
     - name: Publish to github pages
       run: |
-        source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
+        ${ACTIVATE}
         rm -rf gh-pages/*
         touch gh-pages/.nojekyll
 

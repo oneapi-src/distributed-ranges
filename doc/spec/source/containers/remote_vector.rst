@@ -5,7 +5,7 @@
 Interface
 =========
 
-.. doxygenclass:: remote_vector
+.. doxygenclass:: lib::remote_vector
    :members:
 
 Description

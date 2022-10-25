@@ -5,9 +5,8 @@
 Interface
 =========
 
-.. doxygenfunction:: copy(ExecutionPolicy e, R &&r, O result)
-.. doxygenfunction:: copy(device_ptr<const T> first, device_ptr<const T> last, T *d_first)
-.. doxygenfunction:: copy(const T *first, const T *last, device_ptr<T> d_first)
+.. doxygenfunction:: lib::collective::copy(int root, R &&src, distributed_vector<rng::range_value_t<R>> &dst)
+.. doxygenfunction:: lib::collective::copy(int root, distributed_vector<rng::range_value_t<R>> &src, R &&dst)
 
 Description
 ===========

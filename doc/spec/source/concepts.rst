@@ -7,7 +7,7 @@ Concepts
 lib::remote_contiguous_iterator
 ===============================
 
-.. doxygenconcept:: remote_contiguous_iterator
+.. doxygenconcept:: lib::remote_contiguous_iterator
 
 A remote contiguous iterator acts as a pointer to some contiguous piece
 of remote memory.
@@ -45,7 +45,7 @@ fulfill ``remote_contiguous_iterator``.
 lib::remote_contiguous_range
 ============================
 
-.. doxygenconcept:: remote_contiguous_range
+.. doxygenconcept:: lib::remote_contiguous_range
 
 A remote contiguous range is a range located in a contiguous piece of remote
 memory.
@@ -82,7 +82,7 @@ to express that concisely.
 lib::distributed_contiguous_range
 =================================
 
-.. doxygenconcept:: distributed_contiguous_range
+.. doxygenconcept:: lib::distributed_contiguous_range
 
 A distributed contiguous range is a range consisting of multiple segments
 distributed over multiple processes, where each each segment is a

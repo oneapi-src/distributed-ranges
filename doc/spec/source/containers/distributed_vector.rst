@@ -5,7 +5,7 @@
 Interface
 =========
 
-.. doxygenclass:: distributed_vector
+.. doxygenclass:: lib::distributed_vector
    :members:
 
 Description

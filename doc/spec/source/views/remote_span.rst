@@ -7,7 +7,7 @@
 Interface
 =========
 
-.. doxygenclass:: remote_span
+.. doxygenclass:: lib::remote_span
    :members:
 
 Description
