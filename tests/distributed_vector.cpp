@@ -92,9 +92,17 @@ TEST(CpuMpiTests, DistributedVectorAlgorithms) {
 
     expect_eq(root, dv, ref);
 
-    // std::iota(ref.data(), ref.data() + ref.size(), 11);
-    // rng::copy(ref, dv);
-    // expect_eq(root, dv, ref);
+    std::iota(ref.begin(), ref.end(), 11);
+    std::copy(ref.begin(), ref.end(), dv.begin());
+    expect_eq(root, dv, ref);
+
+    std::iota(ref.begin(), ref.end(), 21);
+    rng::copy(ref, dv.begin());
+    expect_eq(root, dv, ref);
+
+    std::iota(dv.begin(), dv.end(), 31);
+    rng::copy(dv, ref.begin());
+    expect_eq(root, dv, ref);
   }
 
   dv.fence();
