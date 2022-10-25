@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 
   printf("Launching on segments...\n");
   size_t iteration = 0;
-  for (auto&& segment : dspan.segments()) {
+  for (auto &&segment : dspan.segments()) {
     printf("Segment %lu\n", iteration++);
     // sycl::queue q(context, devices[segment.rank()]);
     sycl::queue q(devices[0]);
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
   printf("Creating policy...\n");
 
   printf("Calling for_each...\n");
-  shp::for_each(policy, dspan, [](auto&& elem) { elem = elem + 2; });
+  shp::for_each(policy, dspan, [](auto &&elem) { elem = elem + 2; });
 
   shp::print_range(dspan);
 
@@ -112,8 +112,7 @@ int main(int argc, char **argv) {
                                                  dspan[index] = 123;
                                                });
 
-					       */
-
+                                               */
 
   return 0;
 }

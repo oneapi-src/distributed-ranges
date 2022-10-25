@@ -174,14 +174,16 @@ public:
 
     // Forward to segment_id that contains global index `Offset`.
     size_t segment_id = 0;
-    for (segment_id = 0; Offset >= segments()[segment_id].size(); segment_id++) {
+    for (segment_id = 0; Offset >= segments()[segment_id].size();
+         segment_id++) {
       Offset -= segments()[segment_id].size();
     }
 
     // Our Offset begins at `segment_id, Offset`
 
     while (Count > 0) {
-      size_t local_count = std::min(Count, segments()[segment_id].size() - Offset);
+      size_t local_count =
+          std::min(Count, segments()[segment_id].size() - Offset);
       auto new_segment = segments()[segment_id].subspan(Offset, local_count);
       new_segments.push_back(new_segment);
       Count -= local_count;
