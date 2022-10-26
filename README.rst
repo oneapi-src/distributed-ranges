@@ -7,6 +7,10 @@
 
 Proposal and reference implementation for Distributed Ranges.
 
+`Overview slides`_
+
+.. _`Overview slides`: doc/Distributed%20Ranges.pdf
+
 The documentation is built from main branch on every commit and
 published at `latest spec`_ and `latest doxygen`_.
 
