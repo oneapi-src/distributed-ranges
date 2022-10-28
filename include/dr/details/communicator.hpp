@@ -67,6 +67,24 @@ public:
     MPI_Gather(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
   }
 
+  void isend(const void *data, int size, int source, MPI_Request *request) {
+    MPI_Isend(data, size, MPI_CHAR, source, 0, mpi_comm_, request);
+  }
+
+  template <rng::contiguous_range R>
+  void isend(const R &data, int source, MPI_Request *request) {
+    isend(data.data(), data.size() * sizeof(data[0]), source, request);
+  }
+
+  void irecv(void *data, int size, int dest, MPI_Request *request) {
+    MPI_Irecv(data, size, MPI_CHAR, dest, 0, mpi_comm_, request);
+  }
+
+  template <rng::contiguous_range R>
+  void irecv(R &data, int source, MPI_Request *request) {
+    irecv(data.data(), data.size() * sizeof(data[0]), source, request);
+  }
+
 private:
   MPI_Comm mpi_comm_;
   int rank_;

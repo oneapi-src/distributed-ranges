@@ -21,6 +21,7 @@ add_executable(
   remote_memory.cpp
   remote_vector.cpp
   distributed_vector.cpp
+  halo.cpp
 )
 target_link_libraries(
   cpu-mpi-tests

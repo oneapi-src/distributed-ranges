@@ -46,3 +46,5 @@ namespace rng = ranges;
 
 #include "algorithms/copy.hpp"
 #include "algorithms/for_each.hpp"
+
+#include "details/halo.hpp"
