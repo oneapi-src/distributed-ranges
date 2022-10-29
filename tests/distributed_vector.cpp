@@ -35,7 +35,7 @@ TEST(CpuMpiTests, DistributedVectorGatherScatter) {
   dv.scatter(src, root);
   dv.gather(dst, root);
 
-  expect_eq(root, src, dst);
+  expect_eq(src, dst, root);
 }
 
 TEST(CpuMpiTests, DistributedVectorIndex) {
@@ -74,7 +74,7 @@ TEST(CpuMpiTests, DistributedVectorCollectiveCopy) {
   lib::collective::copy(root, src, dv);
   lib::collective::copy(root, dv, dst);
 
-  expect_eq(root, src, dst);
+  expect_eq(src, dst, root);
 }
 
 TEST(CpuMpiTests, DistributedVectorAlgorithms) {
@@ -90,19 +90,19 @@ TEST(CpuMpiTests, DistributedVectorAlgorithms) {
 
     std::iota(dv.begin(), dv.end(), 1);
 
-    expect_eq(root, dv, ref);
+    expect_eq(dv, ref);
 
     std::iota(ref.begin(), ref.end(), 11);
     std::copy(ref.begin(), ref.end(), dv.begin());
-    expect_eq(root, dv, ref);
+    expect_eq(dv, ref);
 
     std::iota(ref.begin(), ref.end(), 21);
     rng::copy(ref, dv.begin());
-    expect_eq(root, dv, ref);
+    expect_eq(dv, ref);
 
     std::iota(dv.begin(), dv.end(), 31);
     rng::copy(dv, ref.begin());
-    expect_eq(root, dv, ref);
+    expect_eq(dv, ref);
   }
 
   dv.fence();

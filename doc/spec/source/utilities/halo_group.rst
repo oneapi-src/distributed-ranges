@@ -1,19 +1,19 @@
-.. _halo_segment:
+.. _halo_group:
 
 ================
-``halo_segment``
+``halo::group``
 ================
 
 Interface
 =========
 
-.. doxygenclass:: lib::halo_segment
+.. doxygenclass:: lib::halo::group
    :members:
 
 Description
 ===========
 
-A ``halo_segment`` is a subset of a halo that must be communicated to
+A ``halo::group`` is a subset of a halo that must be communicated to
 another rank.
 
 .. seealso::

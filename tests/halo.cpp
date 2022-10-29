@@ -1,52 +1,34 @@
 #include "cpu-mpi-tests.hpp"
 
-TEST(CpuMpiTests, HaloSegment) {
-  const int n = 10;
-  std::vector<int> test_data(n);
-  std::iota(test_data.begin(), test_data.end(), n);
+using halo = lib::halo<int>;
 
-  lib::halo_segment<int> segment(2);
-  for (std::size_t i = 0; i < n; i++) {
-    segment.indices().push_back(i);
-  }
-  segment.finalize();
+const std::size_t n = 10;
+const int radius = 1;
 
-  EXPECT_EQ(segment.indices().size(), n);
-  for (std::size_t i = 0; i < n; i++) {
-    EXPECT_EQ(segment.indices()[i], i);
-  }
-
-  segment.pack(test_data.data());
-  std::vector<int> unpack_data(10);
-  segment.unpack(unpack_data.data());
-
-  expect_eq(comm_rank, test_data, unpack_data);
-}
+int initial_value(int rank) { return 100 * (rank + 1); }
 
 TEST(CpuMpiTests, Halo) {
-  const std::size_t n = 10;
-  std::vector<int> out(n);
-  std::iota(out.begin(), out.end(), comm_rank * 10);
+
+  std::vector<int> d(n);
+  std::iota(d.begin() + radius, d.end() - radius, initial_value(comm_rank));
 
   // Send a halo around a ring
   auto right = (comm_rank + 1) % comm_size;
-  lib::halo_segment<int> out_segment(right, {n - 1});
-  lib::halo<int> out_halo(comm, {out_segment});
-
   auto left = (comm_rank + comm_size - 1) % comm_size;
-  lib::halo_segment<int> in_segment(left, {0});
-  lib::halo<int> in_halo(comm, {in_segment});
 
-  std::vector<int> in(n, 0);
+  halo::group send_clockwise(right, {n - 1 - radius});
+  halo::group receive_clockwise(left, {0});
 
-  in_halo.receive();
-  // Pass an interator
-  out_halo.pack(out.begin());
-  out_halo.send();
+  halo::group send_counter_clockwise(left, {radius});
+  halo::group receive_counter_clockwise(right, {n - radius});
 
-  in_halo.wait();
-  // Pass a pointer
-  in_halo.unpack(in.data());
+  // pointer
+  halo h(comm, d.data(), {send_clockwise, send_counter_clockwise},
+         {receive_clockwise, receive_counter_clockwise});
 
-  EXPECT_EQ(in[0], left * n + n - 1);
+  h.exchange();
+  h.wait();
+
+  EXPECT_EQ(d[0], initial_value(left) + n - 2 * radius - 1);
+  EXPECT_EQ(d[n - 1], initial_value(right));
 }

@@ -6,4 +6,4 @@
    :maxdepth: 1
 
    halo
-   halo_segment
+   halo_group

@@ -18,7 +18,7 @@ manual synchronization.
 
 .. seealso::
 
-   :ref:`halo_segment`
+   :ref:`halo_group`
 
 Examples
 ========
