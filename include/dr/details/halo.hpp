@@ -8,7 +8,7 @@ public:
 
   public:
     /// Construct a halo segment from a vector of indices
-    group(std::size_t rank, const std::vector<std::size_t> &&indices)
+    group(std::size_t rank, const std::vector<std::size_t> &indices)
         : rank_(rank), indices_(indices), do_pack_(indices.size() > 1) {}
 
   private:
@@ -71,8 +71,7 @@ public:
   }
 
   /// Construct a halo from groups
-  halo(communicator comm, T *data, const groups &&sends,
-       const groups &&receives)
+  halo(communicator comm, T *data, const groups &sends, const groups &receives)
       : comm_(comm), data_(data), receives_(receives), sends_(sends) {
 
     // Compute size of buffer
