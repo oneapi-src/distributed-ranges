@@ -41,6 +41,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   #
   # Common dependencies for examples
   #
+  find_package(MKL REQUIRED)
   find_package(MPI REQUIRED)
   find_package(OpenMP)
 
