@@ -6,8 +6,11 @@
 
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
+#include <shp/init.hpp>
 #include <shp/algorithms/execution_policy.hpp>
 #include <shp/distributed_span.hpp>
+
+#include <concepts/concepts.hpp>
 
 namespace {
 
@@ -54,7 +57,8 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
     for (auto &&segment : r.segments()) {
       auto device = devices[segment.rank()];
 
-      oneapi::dpl::execution::device_policy local_policy(device);
+      sycl::queue q(shp::context(), device);
+      oneapi::dpl::execution::device_policy local_policy(q);
 
       auto dist =
           std::distance(std::ranges::begin(segment), std::ranges::end(segment));
@@ -77,6 +81,8 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
       init = std::forward<BinaryOp>(binary_op)(init, future.get());
     }
     return init;
+  } else {
+    assert(false);
   }
 }
 
