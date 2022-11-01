@@ -6,9 +6,9 @@
 
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
-#include <shp/init.hpp>
 #include <shp/algorithms/execution_policy.hpp>
 #include <shp/distributed_span.hpp>
+#include <shp/init.hpp>
 
 #include <concepts/concepts.hpp>
 
