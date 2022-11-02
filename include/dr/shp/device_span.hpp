@@ -3,7 +3,7 @@
 #include <shp/span.hpp>
 #include <span>
 
-namespace lib {
+namespace shp {
 
 // A `device_span` is simply a normal `std::span` that's
 // been decorated with an extra `rank()` function, showing
@@ -40,6 +40,11 @@ class device_span : public shp::span<T, Iter> {
 public:
   constexpr device_span() noexcept {}
 
+  using value_type = T;
+  using size_type = std::size_t;
+  using difference_type = std::size_t;
+  using reference = std::iter_reference_t<Iter>;
+
   template <class It>
   constexpr device_span(It first, std::size_t count, std::size_t rank)
       : rank_(rank), shp::span<T, Iter>(first, count) {}
@@ -67,4 +72,4 @@ private:
   std::size_t rank_;
 };
 
-} // namespace lib
+} // namespace shp

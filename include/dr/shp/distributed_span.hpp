@@ -5,7 +5,7 @@
 #include <ranges>
 #include <vector>
 
-namespace lib {
+namespace shp {
 
 template <typename T, typename L> class distributed_span_accessor {
 public:
@@ -110,9 +110,11 @@ private:
 
 template <typename T, typename L>
 using distributed_span_iterator =
-    iterator_adaptor<distributed_span_accessor<T, L>>;
+    lib::iterator_adaptor<distributed_span_accessor<T, L>>;
 
-template <typename T, typename L> class distributed_span {
+template <typename T, typename L>
+class distributed_span
+    : public std::ranges::view_interface<distributed_span<T, L>> {
 public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
@@ -142,7 +144,8 @@ public:
   operator=(const distributed_span &) noexcept = default;
 
   template <std::ranges::input_range R>
-  constexpr distributed_span(R &&segments)
+  requires(std::is_same_v<std::ranges::range_value_t<R>,
+                          L>) constexpr distributed_span(R &&segments)
       : segments_(std::ranges::begin(segments), std::ranges::end(segments)) {
     for (auto &&segment : segments_) {
       size_ += segment.size();
@@ -225,4 +228,4 @@ distributed_span(R &&segments) -> distributed_span<
     std::ranges::range_value_t<std::ranges::range_value_t<R>>,
     std::ranges::range_value_t<R>>;
 
-} // namespace lib
+} // namespace shp

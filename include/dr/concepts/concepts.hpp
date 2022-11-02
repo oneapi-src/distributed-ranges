@@ -1,3 +1,5 @@
+#pragma once
+
 namespace lib {
 
 template <typename I>
