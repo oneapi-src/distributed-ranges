@@ -14,8 +14,10 @@ public:
 
   reference operator*() const { return (*o_)[index_]; }
   reference operator*() { return (*o_)[index_]; }
-  reference operator[](difference_type n) const noexcept;
-  reference operator[](difference_type n);
+  reference operator[](difference_type n) const noexcept {
+    return (*o_)[index_ + n];
+  }
+  reference operator[](difference_type n) { return (*o_)[index_ + n]; }
 
   bool operator==(const index_iterator &other) const noexcept {
     return index_ == other.index_ && o_ == other.o_;
@@ -119,7 +121,9 @@ public:
   }
 
   /// Construct a distributed vector with `count` elements equal to `value`.
-  distributed_vector(size_type count, T value, D decomp) { assert(false); }
+  distributed_vector(size_type count, T value, D decomp = D{}) {
+    assert(false);
+  }
 
   ~distributed_vector() { win_.free(); }
 

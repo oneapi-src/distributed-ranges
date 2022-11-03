@@ -23,6 +23,9 @@ namespace rng = std::ranges;
 namespace rng = ranges;
 #endif
 
+#include <experimental/mdspan>
+namespace stdex = std::experimental;
+
 #include "details/logger.hpp"
 
 #include "details/common.hpp"

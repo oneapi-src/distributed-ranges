@@ -22,6 +22,7 @@ add_executable(
   remote_vector.cpp
   distributed_vector.cpp
   halo.cpp
+  mdspan.cpp
 )
 target_link_libraries(
   cpu-mpi-tests

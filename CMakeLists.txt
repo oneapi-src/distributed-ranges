@@ -57,25 +57,29 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
-  FetchContent_Declare(
-    range-v3
-    GIT_REPOSITORY https://github.com/ericniebler/range-v3.git
-    GIT_TAG 0.12.0
-  )
-  FetchContent_MakeAvailable(range-v3)
-
-  link_libraries(range-v3)
-
-  FetchContent_Declare(
-    cpp-format
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 9.1.0
-  )
-  FetchContent_MakeAvailable(cpp-format)
-
-  link_libraries(fmt::fmt)
 
 endif()
+
+FetchContent_Declare(
+  range-v3
+  GIT_REPOSITORY https://github.com/ericniebler/range-v3.git
+  GIT_TAG 0.12.0
+)
+FetchContent_MakeAvailable(range-v3)
+
+FetchContent_Declare(
+  cpp-format
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 9.1.0
+)
+FetchContent_MakeAvailable(cpp-format)
+
+FetchContent_Declare(
+  mdspan
+  GIT_REPOSITORY https://github.com/kokkos/mdspan.git
+  GIT_TAG a18c489
+)
+FetchContent_MakeAvailable(mdspan)
 
 function(add_mpi_test test_name name processes)
   add_test(NAME ${test_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)

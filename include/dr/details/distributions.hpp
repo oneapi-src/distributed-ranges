@@ -16,7 +16,8 @@ public:
 
   /// Distribute according to partition
   ///
-  block_cyclic(partition_method pm, MPI_Comm comm = MPI_COMM_WORLD)
+  block_cyclic(partition_method pm = partition_method::div,
+               MPI_Comm comm = MPI_COMM_WORLD)
       : method_(pm), comm_(comm) {}
 
   partition_method method() { return method_; }
