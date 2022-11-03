@@ -31,3 +31,7 @@ target_link_libraries(
 
 gtest_discover_tests(cpu-tests cpu-mpi-tests)
 add_mpi_test(cpu-mpi-2 cpu-mpi-tests 2)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  add_subdirectory(sycl)
+endif()
