@@ -1,4 +1,4 @@
-#include "cpu-mpi-tests.hpp"
+#include "cpu-tests.hpp"
 
 TEST(CpuMpiTests, DistributedVectorRequirements) {
   using DV = lib::distributed_vector<int>;

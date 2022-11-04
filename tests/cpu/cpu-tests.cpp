@@ -1,4 +1,4 @@
-#include "cpu-mpi-tests.hpp"
+#include "cpu-tests.hpp"
 
 MPI_Comm comm;
 int comm_rank;

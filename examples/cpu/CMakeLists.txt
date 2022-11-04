@@ -8,3 +8,7 @@ add_mpi_test(vector-add-cpu-ref vector-add-cpu-ref 2)
 
 add_executable(transpose-cpu-ref transpose-cpu-ref.cpp)
 target_link_libraries(transpose-cpu-ref PRIVATE MPI::MPI_CXX MKL::MKL)
+
+#add_executable(transpose-cpu transpose-cpu.cpp)
+#target_link_libraries(transpose-cpu DR::dr MKL::MKL)
+#add_mpi_test(transpose-cpu transpose-cpu 2)

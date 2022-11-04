@@ -1,11 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "dr/distributed-ranges.hpp"
-
-MPI_Comm comm;
-int comm_rank;
-int comm_size;
-
 // Demonstrate some basic assertions.
 TEST(CpuTest, BasicAssertions) {
   // Expect two strings not to be equal.

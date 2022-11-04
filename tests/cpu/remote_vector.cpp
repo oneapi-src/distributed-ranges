@@ -1,4 +1,4 @@
-#include "cpu-mpi-tests.hpp"
+#include "cpu-tests.hpp"
 
 TEST(CpuMpiTests, RemoteVectorRequirements) {
   using RV = lib::remote_vector<int>;

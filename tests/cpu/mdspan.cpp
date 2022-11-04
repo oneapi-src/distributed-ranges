@@ -1,6 +1,7 @@
-#include "cpu-mpi-tests.hpp"
+#include "cpu-tests.hpp"
 
 const std::size_t rows = 20, cols = 10, n = rows * cols;
+using dyn_2d = stdex::dextents<std::size_t, 2>;
 
 void check_mdspan(auto &v, auto &m) {
   if (comm_rank != 0)
@@ -18,17 +19,24 @@ TEST(CpuMpiTests, Mdspan) {
 
   std::vector<T> v(n);
 
-  stdex::mdspan<double, stdex::dextents<std::size_t, 2>, stdex::layout_right> m{
-      v.data(), rows, cols};
+  stdex::mdspan<T, dyn_2d, stdex::layout_right> m{v.data(), rows, cols};
   check_mdspan(v, m);
 
   using dvector = lib::distributed_vector<T>;
   dvector dv(n);
   dv.fence();
 
-  stdex::mdspan<double, stdex::dextents<std::size_t, 2>, stdex::layout_right,
+  stdex::mdspan<double, dyn_2d, stdex::layout_right,
                 lib::distributed_accessor<dvector>>
       dm{dv.begin(), rows, cols};
   check_mdspan(dv, dm);
   dv.fence();
+}
+
+TEST(CpuMpiTests, Mdarray) {
+  using T = double;
+
+  stdex::mdarray<T, dyn_2d> m(rows, cols);
+  stdex::mdarray<T, dyn_2d> mT(cols, rows);
+  // lib::transpose(m, mT);
 }

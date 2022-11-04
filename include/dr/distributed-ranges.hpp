@@ -23,6 +23,7 @@ namespace rng = std::ranges;
 namespace rng = ranges;
 #endif
 
+#include <experimental/mdarray>
 #include <experimental/mdspan>
 namespace stdex = std::experimental;
 

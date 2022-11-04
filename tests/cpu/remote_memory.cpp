@@ -1,4 +1,4 @@
-#include "cpu-mpi-tests.hpp"
+#include "cpu-tests.hpp"
 
 TEST(CpuMpiTests, RemotePointerRequirements) {
   using RP = lib::remote_pointer<int>;
