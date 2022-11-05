@@ -1,5 +1,11 @@
 namespace lib {
 
+template <typename T> T product(T first) { return first; }
+
+template <typename T, typename... Args> T product(T first, Args... args) {
+  return first * product(args...);
+}
+
 // Equal size partitions, exactly covers num
 inline size_t partition(size_t num, size_t denom) {
   assert(num % denom == 0);

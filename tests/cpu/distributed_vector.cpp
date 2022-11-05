@@ -2,17 +2,14 @@
 
 TEST(CpuMpiTests, DistributedVectorRequirements) {
   using DV = lib::distributed_vector<int>;
-
-  static_assert(std::random_access_iterator<lib::index_iterator<DV>>);
-  static_assert(rng::range<DV>);
-  static_assert(lib::distributed_contiguous_range<DV>);
-
-  // DV dv(10, lib::block_cyclic(lib::partition::div));
+  assert_distributed_range<DV>();
 }
 
 TEST(CpuMpiTests, DistributedVectorConstructors) {
+  lib::distributed_vector<int> a1(10);
+
   auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<int, lib::block_cyclic> a(10, dist);
+  lib::distributed_vector<int, lib::block_cyclic> a2(10, dist);
 }
 
 TEST(CpuMpiTests, DistributedVectorQuery) {

@@ -191,22 +191,4 @@ private:
   remote_pointer<T> pointer_ = nullptr;
 };
 
-template <typename DistributedVector> class distributed_accessor {
-public:
-  using element_type = typename DistributedVector::element_type;
-  using offset_policy = distributed_accessor;
-  using reference = typename DistributedVector::reference;
-  using data_handle_type = typename DistributedVector::iterator;
-
-  constexpr distributed_accessor() noexcept = default;
-  constexpr reference access(data_handle_type p, size_t i) const {
-    return p[i];
-  }
-
-  constexpr data_handle_type offset(data_handle_type p,
-                                    size_t i) const noexcept {
-    return p + i;
-  }
-};
-
 } // namespace lib

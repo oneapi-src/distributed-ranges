@@ -1,3 +1,5 @@
+.. _distributed_vector:
+
 ======================
 ``distributed_vector``
 ======================

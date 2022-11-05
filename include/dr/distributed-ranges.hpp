@@ -42,6 +42,8 @@ namespace stdex = std::experimental;
 
 #include "details/distributed_vector.hpp"
 
+#include "details/distributed_mdspan.hpp"
+
 #include "details/remote_span.hpp"
 
 #include "details/distributed_span.hpp"
