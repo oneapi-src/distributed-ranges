@@ -40,15 +40,15 @@ private:
 
 public:
 #ifdef DR_SPEC
-  ///
+  /// Reference type
   using reference = implementation_defined;
-  ///
+  /// Value type
   using value_type = implementation_defined;
-  ///
+  /// Size type
   using size_type = implementation_defined;
-  ///
+  /// Difference type
   using difference_type = implementation_defined;
-  ///
+  /// Iterator
   using iterator = implementation_defined;
 #else
   using reference = typename dmdspan::reference;
@@ -57,9 +57,9 @@ public:
   using difference_type = typename dvector::difference_type;
   using iterator = typename dvector::iterator;
 #endif
-  ///
-  using extents_type = D;
-  ///
+  /// Extents type
+  using extents_type = Extents;
+  /// Local segment type
   using local_type = stdex::mdspan<
       T, stdex::dextents<typename Extents::index_type, Extents::rank()>,
       Layout>;
@@ -84,7 +84,7 @@ public:
     assert(storage_size(extents_, decomp_.comm().size()) <= dvector.size());
   }
 
-  ///
+  /// Returns local segment
   local_type local() const { return local_mdspan_; }
 
   /// first element in layout order
@@ -101,6 +101,11 @@ public:
 
   /// multidimensional index operator
   template <typename... Args> reference operator()(Args... args) {
+    return dmdspan_(std::forward<Args>(args)...);
+  }
+
+  /// multidimensional index operator
+  template <typename... Args> reference operator()(Args... args) const {
     return dmdspan_(std::forward<Args>(args)...);
   }
 
@@ -126,9 +131,9 @@ public:
   using reference = implementation_defined;
   /// Reference to element
   using value_type = implementation_defined;
-  ///
+  /// Size type
   using size_type = implementation_defined;
-  ///
+  /// Difference type
   using difference_type = implementation_defined;
 #else
   using reference = typename dmdspan::reference;
@@ -137,9 +142,9 @@ public:
   using difference_type = typename dvector::difference_type;
   using iterator = typename dvector::iterator;
 #endif
-  ///
-  using extents_type = D;
-  ///
+  /// Extents type
+  using extents_type = Extents;
+  /// Type of local segment
   using local_type = stdex::mdspan<
       T, stdex::dextents<typename Extents::index_type, Extents::rank()>,
       Layout>;
@@ -162,7 +167,7 @@ public:
         local_mdspan_(dvector_.local().data(),
                       local_extents(extents_, decomp_.comm().size())) {}
 
-  ///
+  /// Returns local segment
   local_type local() const { return local_mdspan_; }
 
   /// first element in layout order
@@ -181,6 +186,14 @@ public:
   template <typename... Args> reference operator()(Args... args) {
     return dmdspan_(std::forward<Args>(args)...);
   }
+
+  /// multidimensional index operator
+  template <typename... Args> reference operator()(Args... args) const {
+    return dmdspan_(std::forward<Args>(args)...);
+  }
+
+  /// Returns extents
+  auto extents() const { return dmdspan_.extents(); }
 
 private:
   D decomp_;

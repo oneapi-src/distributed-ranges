@@ -113,3 +113,38 @@ TEST(CpuMpiTests, distributed_mdarray_local) {
 
   dm.fence();
 }
+
+TEST(CpuMpiTests, transpose) {
+  using T = double;
+
+  using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
+  dmatrix dsrc(rows, cols);
+  dmatrix ddst(cols, rows);
+  dsrc.fence();
+  ddst.fence();
+
+  if (comm_rank == 0) {
+    std::iota(dsrc.begin(), dsrc.end(), 10);
+  }
+  dsrc.fence();
+
+  lib::collective::transpose(dsrc, ddst);
+  ddst.fence();
+
+  if (comm_rank == 0) {
+    using lmatrix = stdex::mdarray<T, dyn_2d>;
+    lmatrix lsrc(rows, cols);
+    lmatrix ldst(cols, rows);
+    lib::collective::transpose(lsrc, ldst);
+
+    for (std::size_t i = 0; i < ldst.extents().extent(0); i++) {
+      for (std::size_t j = 0; j < ldst.extents().extent(1); j++) {
+        EXPECT_EQ(ldst(i, j), ddst(i, j));
+      }
+    }
+    // expect_eq(lsrc, dsrc);
+    // expect_eq(ldst, ddst);
+  }
+  dsrc.fence();
+  ddst.fence();
+}

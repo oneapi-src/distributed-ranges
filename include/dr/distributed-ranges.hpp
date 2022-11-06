@@ -52,5 +52,6 @@ namespace stdex = std::experimental;
 
 #include "algorithms/copy.hpp"
 #include "algorithms/for_each.hpp"
+#include "algorithms/transpose.hpp"
 
 #include "details/halo.hpp"
