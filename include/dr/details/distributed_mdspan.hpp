@@ -18,6 +18,18 @@ public:
   }
 };
 
+// Assumes partition on leading dimension
+template <typename Extents>
+Extents local_extents(Extents extents, std::size_t comm_size) {
+  std::array<typename Extents::index_type, extents.rank()> local;
+  local[0] = partition_up(extents.extent(0), comm_size);
+  for (std::size_t i = 1; i < Extents::rank(); i++) {
+    local[i] = extents.extent(i);
+  }
+
+  return local;
+}
+
 template <typename T, typename Extents, typename Layout = stdex::layout_right,
           typename D = block_cyclic>
 class distributed_mdspan {
@@ -47,12 +59,18 @@ public:
 #endif
   ///
   using extents_type = D;
+  ///
+  using local_type = stdex::mdspan<
+      T, stdex::dextents<typename Extents::index_type, Extents::rank()>,
+      Layout>;
 
   /// Construct from a distributed_vector with the requested dimesions
   template <typename... Args>
   distributed_mdspan(distributed_vector<T> &dvector, Args... args)
       : extents_(std::forward<Args>(args)...), dvector_(dvector),
-        dmdspan_(dvector.begin(), extents_) {
+        dmdspan_(dvector.begin(), extents_),
+        local_mdspan_(dvector_.local().data(),
+                      local_extents(extents_, decomp_.comm().size())) {
     assert(storage_size(extents_, decomp_.comm().size()) <= dvector.size());
   }
 
@@ -60,9 +78,14 @@ public:
   template <typename... Args>
   distributed_mdspan(D decomp, distributed_vector<T> &dvector, Args... args)
       : decomp_(decomp), extents_(std::forward<Args>(args)...),
-        dvector_(dvector), dmdspan_(dvector.begin(), extents_) {
+        dvector_(dvector), dmdspan_(dvector.begin(), extents_),
+        local_mdspan_(dvector_.local().data(),
+                      local_extents(extents_, decomp_.comm().size())) {
     assert(storage_size(extents_, decomp_.comm().size()) <= dvector.size());
   }
+
+  ///
+  local_type local() const { return local_mdspan_; }
 
   /// first element in layout order
   auto begin() { return dvector_.begin(); }
@@ -86,6 +109,7 @@ private:
   Extents extents_;
   distributed_vector<T> &dvector_;
   dmdspan dmdspan_;
+  local_type local_mdspan_;
 };
 
 template <typename T, typename Extents, typename Layout = stdex::layout_right,
@@ -115,20 +139,31 @@ public:
 #endif
   ///
   using extents_type = D;
+  ///
+  using local_type = stdex::mdspan<
+      T, stdex::dextents<typename Extents::index_type, Extents::rank()>,
+      Layout>;
 
   /// Construct an mdarray with requested dimensions
   template <typename... Args>
   distributed_mdarray(Args... args)
       : extents_(std::forward<Args>(args)...),
         dvector_(decomp_, storage_size(extents_, decomp_.comm().size())),
-        dmdspan_(dvector_.begin(), extents_) {}
+        dmdspan_(dvector_.begin(), extents_),
+        local_mdspan_(dvector_.local().data(),
+                      local_extents(extents_, decomp_.comm().size())) {}
 
   /// Construct an mdarray with requested dimensions
   template <typename... Args>
   distributed_mdarray(D decomp, Args... args)
       : decomp_(decomp), extents_(std::forward<Args>(args)...),
         dvector_(decomp_, storage_size(extents_, decomp_.comm().size())),
-        dmdspan_(dvector_.begin(), extents_) {}
+        dmdspan_(dvector_.begin(), extents_),
+        local_mdspan_(dvector_.local().data(),
+                      local_extents(extents_, decomp_.comm().size())) {}
+
+  ///
+  local_type local() const { return local_mdspan_; }
 
   /// first element in layout order
   auto begin() { return dvector_.begin(); }
@@ -152,6 +187,7 @@ private:
   Extents extents_;
   dvector dvector_;
   dmdspan dmdspan_;
+  local_type local_mdspan_;
 };
 
 } // namespace lib

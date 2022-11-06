@@ -47,6 +47,29 @@ TEST(CpuMpiTests, distributed_mdspan) {
   dv.fence();
 }
 
+TEST(CpuMpiTests, distributed_mdspan_local) {
+  using T = double;
+
+  std::vector<T> v(n);
+
+  using dvector = lib::distributed_vector<T>;
+  dvector dv(n);
+  dv.fence();
+
+  using dspan = lib::distributed_mdspan<T, dyn_2d>;
+  dspan dm(dv, rows, cols);
+  dm.fence();
+
+  auto local = dm.local();
+  local(0, 0) = 99;
+  dm.fence();
+
+  EXPECT_EQ(local(0, 0), 99);
+  EXPECT_EQ(dm(0, 0), 99);
+
+  dv.fence();
+}
+
 void check_mdarray(auto &m) {
   if (comm_rank != 0)
     return;
@@ -65,6 +88,28 @@ TEST(CpuMpiTests, distributed_mdarray) {
   dmatrix dm(rows, cols);
   dm.fence();
   check_mdarray(dm);
+
+  dm.fence();
+}
+
+TEST(CpuMpiTests, distributed_mdarray_local) {
+  using T = double;
+
+  using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
+  dmatrix dm(rows, cols);
+  dm.fence();
+
+  auto local = dm.local();
+  local(0, 0) = 100 + comm_rank;
+  EXPECT_EQ(local(0, 0), 100 + comm_rank);
+  dm.fence();
+  EXPECT_EQ(dm(0, 0), 100 + 0);
+  dm.fence();
+
+  *local.data_handle() = 200 + comm_rank;
+  EXPECT_EQ(local(0, 0), 200 + comm_rank);
+  dm.fence();
+  EXPECT_EQ(dm(0, 0), 200 + 0);
 
   dm.fence();
 }
