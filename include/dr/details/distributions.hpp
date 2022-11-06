@@ -20,12 +20,12 @@ public:
                MPI_Comm comm = MPI_COMM_WORLD)
       : method_(pm), comm_(comm) {}
 
-  partition_method method() { return method_; }
-  MPI_Comm mpi_comm() { return comm_; }
+  partition_method method() const { return method_; }
+  communicator comm() { return comm_; }
 
 private:
   partition_method method_;
-  MPI_Comm comm_;
+  communicator comm_;
 };
 
 } // namespace lib

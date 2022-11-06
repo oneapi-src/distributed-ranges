@@ -37,17 +37,17 @@ void vector_add() {
   // lib::block_cyclic(8) - cyclic with blocks of eight elements
   // etc.
   auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<T, lib::block_cyclic> dv_a(n, dist), dv_b(n, dist),
-      dv_c(n, dist);
+  lib::distributed_vector<T, lib::block_cyclic> dv_a(dist, n), dv_b(dist, n),
+      dv_c(dist, n);
 
   // Distribute the data
   lib::collective::copy(root_rank, ref_adder.a, dv_a);
   lib::collective::copy(root_rank, ref_adder.b, dv_b);
 
   // Add my local segment
-  auto a = dv_a.local_segment().data();
-  auto b = dv_b.local_segment().data();
-  auto c = dv_c.local_segment().data();
+  auto a = dv_a.local().data();
+  auto b = dv_b.local().data();
+  auto c = dv_c.local().data();
   for (auto i = 0u; i < segment_size; i++) {
     c[i] = a[i] + b[i];
   }

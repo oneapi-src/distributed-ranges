@@ -112,12 +112,17 @@ public:
 #endif
 
   /// Construct a distributed vector with `count` elements.
-  distributed_vector(size_type count, D decomp = D{})
-      : size_(count), comm_(decomp.mpi_comm()),
-        local_segment_(partition_up(count, comm_.size())) {
-    win_.create(comm_, local_segment_.data(),
-                local_segment_.size() * sizeof(T));
-    assert(decomp.method() == partition_method::div);
+  distributed_vector(D decomp, size_type count)
+      : decomp_(decomp), size_(count), comm_(decomp.comm()),
+        local_(storage_size(count, comm_.size()) / comm_.size()) {
+    init();
+  }
+
+  /// Construct a distributed vector with `count` elements.
+  distributed_vector(size_type count)
+      : size_(count), comm_(decomp_.comm()),
+        local_(storage_size(count, comm_.size()) / comm_.size()) {
+    init();
   }
 
   /// Construct a distributed vector with `count` elements equal to `value`.
@@ -129,24 +134,19 @@ public:
 
   /// copy a span to a distributed vector
   void scatter(const std::span<T> src, int root) {
-    assert(comm_.rank() != root ||
-           comm_.size() * local_segment_.size() == src.size());
-    comm_.scatter(src.data(), local_segment_.data(),
-                  local_segment_.size() * sizeof(T), root);
+    assert(comm_.rank() != root || comm_.size() * local_.size() == src.size());
+    comm_.scatter(src.data(), local_.data(), local_.size() * sizeof(T), root);
   }
 
   /// copy a distributed vector to a span
   void gather(const std::span<T> dst, int root) {
-    assert(comm_.rank() != root ||
-           comm_.size() * local_segment_.size() == dst.size());
-    comm_.gather(local_segment_.data(), dst.data(),
-                 local_segment_.size() * sizeof(T), root);
+    assert(comm_.rank() != root || comm_.size() * local_.size() == dst.size());
+    comm_.gather(local_.data(), dst.data(), local_.size() * sizeof(T), root);
   }
 
   /// Index into a distributed vector
   reference operator[](const size_t index) {
-    return rptr(index / local_segment_.size(), win_,
-                index % local_segment_.size());
+    return rptr(index / local_.size(), win_, index % local_.size());
   }
 
   iterator begin() { return iterator(*this, 0); }
@@ -158,16 +158,19 @@ public:
 
   void flush(int rank) { win_.flush(rank); }
 
-  const std::span<T> local_segment() { return std::span(local_segment_); }
+  const std::span<T> local() { return local_; }
 
   const std::span<lib::remote_vector<T>> &segments() const;
 
   size_type size() const { return size_; }
 
 private:
+  void init() { win_.create(comm_, local_.data(), local_.size() * sizeof(T)); }
+
+  D decomp_;
   size_type size_;
   communicator comm_;
-  std::vector<T> local_segment_;
+  std::vector<T> local_;
   communicator::win win_;
 };
 
