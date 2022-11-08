@@ -160,7 +160,6 @@ public:
   remote_reference() = delete;
   ~remote_reference() = default;
   remote_reference(const remote_reference &) = default;
-  remote_reference &operator=(const remote_reference &) = default;
   remote_reference(remote_reference &&) = default;
   remote_reference &operator=(remote_reference &r) {
     drlog.debug(nostd::source_location::current(), "remote ref operator=\n");

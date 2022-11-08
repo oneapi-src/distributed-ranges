@@ -55,7 +55,7 @@ inline void transpose(const src_type &src, dst_type &dst) {
     // Generic mdspan transpose
     for (std::size_t i = 0; i < src.extents().extent(0); i++) {
       for (std::size_t j = 0; j < src.extents().extent(1); j++) {
-        dst(j, i) = double(src(i, j));
+        dst(j, i) = src(i, j);
       }
     }
   }

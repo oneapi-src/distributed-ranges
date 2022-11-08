@@ -98,9 +98,7 @@ TEST(CpuMpiTests, distributed_mdarray_basic) {
   dmatrix dm2(rows, cols);
   dm2.fence();
   dm2(1, 2) = 99;
-  // Workaround for
-  // dm(2, 1) = dm2(1, 2);
-  dm(2, 1) = T(dm2(1, 2));
+  dm(2, 1) = dm2(1, 2);
   EXPECT_EQ(dm(2, 1), 99);
   EXPECT_EQ(dm2(1, 2), 99);
 

@@ -58,9 +58,7 @@ TEST(CpuMpiTests, distributed_vector_index) {
   dv2.fence();
 
   dv2[3] = 1000;
-  // workaround for:
-  // dv2[3] = dv[3];
-  dv2[3] = int(dv[3]);
+  dv2[3] = dv[3];
   EXPECT_EQ(dv2[3], dv[3]);
 
   dv.fence();
