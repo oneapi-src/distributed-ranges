@@ -73,7 +73,10 @@ public:
 
   /// Dereference the global pointer, returning a global reference `GlobalRef`
   /// that can be used to read or write to the memory location.
-  reference operator*() const noexcept { return reference(*this); }
+  reference operator*() const noexcept {
+    drlog.debug(nostd::source_location::current(), "remote pointer *\n");
+    return reference(*this);
+  }
 
   reference operator[](difference_type offset) const noexcept {
     return *(*this + offset);
@@ -159,7 +162,11 @@ public:
   remote_reference(const remote_reference &) = default;
   remote_reference &operator=(const remote_reference &) = default;
   remote_reference(remote_reference &&) = default;
-  remote_reference &operator=(remote_reference &&) = default;
+  remote_reference &operator=(remote_reference &r) {
+    drlog.debug(nostd::source_location::current(), "remote ref operator=\n");
+    *this = T(r);
+    return *this;
+  }
 
   using value_type = T;
   using pointer = remote_pointer<T>;
@@ -174,12 +181,14 @@ public:
     T value;
     pointer_.win_.get(&value, sizeof(T), pointer_.rank_,
                       pointer_.offset_ * sizeof(T));
+    drlog.debug(nostd::source_location::current(), "get: {}\n", value);
     return value;
   }
 
   operator const_reference() const;
 
   reference operator=(const T &value) const {
+    drlog.debug(nostd::source_location::current(), "put: {}\n", value);
     pointer_.win_.put(&value, sizeof(T), pointer_.rank_,
                       pointer_.offset_ * sizeof(T));
     return pointer_;

@@ -146,7 +146,9 @@ public:
 
   /// Index into a distributed vector
   reference operator[](const size_t index) {
-    return rptr(index / local_.size(), win_, index % local_.size());
+    drlog.debug(nostd::source_location::current(),
+                "distributed vector index\n");
+    return *rptr(index / local_.size(), win_, index % local_.size());
   }
 
   iterator begin() { return iterator(*this, 0); }

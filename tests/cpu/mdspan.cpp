@@ -44,6 +44,12 @@ TEST(CpuMpiTests, distributed_mdspan) {
   }
   EXPECT_EQ(dm(3, 2), 8);
 
+  if (comm_rank == 0) {
+    dm(4, 1) = 9;
+  }
+  dm.fence();
+  EXPECT_EQ(dm(4, 1), 9);
+
   dv.fence();
 }
 
@@ -79,7 +85,7 @@ void check_mdarray(auto &m) {
   EXPECT_EQ(m(1, 2), 3);
 }
 
-TEST(CpuMpiTests, distributed_mdarray) {
+TEST(CpuMpiTests, distributed_mdarray_basic) {
   using T = double;
 
   using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
@@ -89,6 +95,16 @@ TEST(CpuMpiTests, distributed_mdarray) {
   dm.fence();
   check_mdarray(dm);
 
+  dmatrix dm2(rows, cols);
+  dm2.fence();
+  dm2(1, 2) = 99;
+  // Workaround for
+  // dm(2, 1) = dm2(1, 2);
+  dm(2, 1) = T(dm2(1, 2));
+  EXPECT_EQ(dm(2, 1), 99);
+  EXPECT_EQ(dm2(1, 2), 99);
+
+  dm2.fence();
   dm.fence();
 }
 
@@ -114,7 +130,7 @@ TEST(CpuMpiTests, distributed_mdarray_local) {
   dm.fence();
 }
 
-TEST(CpuMpiTests, transpose) {
+TEST(CpuMpiTests, distributed_mdarray_transpose) {
   using T = double;
 
   using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
@@ -124,7 +140,11 @@ TEST(CpuMpiTests, transpose) {
   ddst.fence();
 
   if (comm_rank == 0) {
-    std::iota(dsrc.begin(), dsrc.end(), 10);
+    for (std::size_t i = 0; i < rows; i++) {
+      for (std::size_t j = 0; j < cols; j++) {
+        dsrc(i, j) = i * 100 + j;
+      }
+    }
   }
   dsrc.fence();
 
@@ -134,16 +154,20 @@ TEST(CpuMpiTests, transpose) {
   if (comm_rank == 0) {
     using lmatrix = stdex::mdarray<T, dyn_2d>;
     lmatrix lsrc(rows, cols);
+    for (std::size_t i = 0; i < rows; i++) {
+      for (std::size_t j = 0; j < cols; j++) {
+        lsrc(i, j) = i * 100 + j;
+      }
+    }
+
     lmatrix ldst(cols, rows);
     lib::collective::transpose(lsrc, ldst);
 
-    for (std::size_t i = 0; i < ldst.extents().extent(0); i++) {
-      for (std::size_t j = 0; j < ldst.extents().extent(1); j++) {
-        EXPECT_EQ(ldst(i, j), ddst(i, j));
-      }
-    }
-    // expect_eq(lsrc, dsrc);
-    // expect_eq(ldst, ddst);
+    EXPECT_EQ(lsrc(1, 2), ldst(2, 1));
+    EXPECT_EQ(lsrc(1, 2), dsrc(1, 2));
+    EXPECT_EQ(ldst(1, 2), ddst(1, 2));
+    expect_eq(lsrc, dsrc);
+    expect_eq(ldst, ddst);
   }
   dsrc.fence();
   ddst.fence();

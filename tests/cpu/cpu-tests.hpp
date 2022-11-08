@@ -2,6 +2,8 @@
 
 #include "mpi.h"
 
+#include "cxxopts.hpp"
+
 #include "dr/distributed-ranges.hpp"
 
 extern MPI_Comm comm;
@@ -13,6 +15,18 @@ inline void expect_eq(R1 &r1, R2 &r2, int root = comm_rank) {
   if (comm_rank == root) {
     for (size_t i = 0; i < r1.size(); i++) {
       EXPECT_EQ(r1[i], r2[i]);
+    }
+  }
+}
+
+inline void expect_eq(const lib::mdspan_2d auto &m1,
+                      const lib::mdspan_2d auto &m2, int root = comm_rank) {
+  if (comm_rank == root) {
+    EXPECT_TRUE(m1.extents() == m2.extents());
+    for (std::size_t i = 0; i < m1.extents().extent(0); i++) {
+      for (std::size_t j = 0; j < m1.extents().extent(1); j++) {
+        EXPECT_EQ(m1(i, j), m2(i, j));
+      }
     }
   }
 }

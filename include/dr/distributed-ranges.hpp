@@ -11,7 +11,10 @@
 
 #include <fmt/core.h>
 
+#include <source_location/source_location.hpp>
+
 // MPI should be optional
+#include "mkl.h"
 #include "mpi.h"
 
 #ifdef DR_STD_RNG

@@ -35,9 +35,8 @@ TEST(CpuMpiTests, DistributedVectorGatherScatter) {
   expect_eq(src, dst, root);
 }
 
-TEST(CpuMpiTests, DistributedVectorIndex) {
+TEST(CpuMpiTests, distributed_vector_index) {
   const std::size_t n = 10;
-  // const int root = 1;
   auto dist = lib::block_cyclic(lib::partition_method::div, comm);
   lib::distributed_vector<int, lib::block_cyclic> dv(dist, n);
   dv.fence();
@@ -55,7 +54,17 @@ TEST(CpuMpiTests, DistributedVectorIndex) {
     }
   }
 
+  lib::distributed_vector<int, lib::block_cyclic> dv2(dist, n);
+  dv2.fence();
+
+  dv2[3] = 1000;
+  // workaround for:
+  // dv2[3] = dv[3];
+  dv2[3] = int(dv[3]);
+  EXPECT_EQ(dv2[3], dv[3]);
+
   dv.fence();
+  dv2.fence();
   lib::drlog.debug("Done\n");
 }
 

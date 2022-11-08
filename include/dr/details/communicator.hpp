@@ -20,17 +20,12 @@ public:
     bool null() const noexcept { return win_ == MPI_INFO_NULL; }
 
     void get(void *dst, int size, int rank, int disp) const {
-      drlog.debug("get::size: {}, rank: {}, win: {}, disp: {}\n", size, rank,
-                  win_, disp);
-
       MPI_Request request;
       MPI_Rget(dst, size, MPI_CHAR, rank, disp, size, MPI_CHAR, win_, &request);
       MPI_Wait(&request, MPI_STATUS_IGNORE);
     }
 
     void put(const void *src, int size, int rank, int disp) const {
-      drlog.debug("put:: size: {}, rank: {}, win: {}, disp: {}\n", size, rank,
-                  win_, disp);
       MPI_Put(src, size, MPI_CHAR, rank, disp, size, MPI_CHAR, win_);
     }
 

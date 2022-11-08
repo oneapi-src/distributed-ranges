@@ -9,6 +9,14 @@ public:
 
   constexpr distributed_accessor() noexcept = default;
   constexpr reference access(data_handle_type p, size_t i) const {
+    drlog.debug(nostd::source_location::current(),
+                "distributed_accessor const reference\n");
+    return p[i];
+  }
+
+  reference access(data_handle_type p, size_t i) {
+    drlog.debug(nostd::source_location::current(),
+                "distributed_accessor reference\n");
     return p[i];
   }
 
@@ -63,6 +71,8 @@ public:
   using local_type = stdex::mdspan<
       T, stdex::dextents<typename Extents::index_type, Extents::rank()>,
       Layout>;
+  using accessor_type = typename dmdspan::accessor_type;
+  using layout_type = typename dmdspan::layout_type;
 
   /// Construct from a distributed_vector with the requested dimesions
   template <typename... Args>
@@ -112,7 +122,7 @@ public:
 private:
   D decomp_;
   Extents extents_;
-  distributed_vector<T> &dvector_;
+  dvector &dvector_;
   dmdspan dmdspan_;
   local_type local_mdspan_;
 };
@@ -148,6 +158,8 @@ public:
   using local_type = stdex::mdspan<
       T, stdex::dextents<typename Extents::index_type, Extents::rank()>,
       Layout>;
+  using accessor_type = typename dmdspan::accessor_type;
+  using layout_type = typename dmdspan::layout_type;
 
   /// Construct an mdarray with requested dimensions
   template <typename... Args>
@@ -184,11 +196,13 @@ public:
 
   /// multidimensional index operator
   template <typename... Args> reference operator()(Args... args) {
+    drlog.debug(nostd::source_location::current(), "mdarray reference\n");
     return dmdspan_(std::forward<Args>(args)...);
   }
 
   /// multidimensional index operator
   template <typename... Args> reference operator()(Args... args) const {
+    drlog.debug(nostd::source_location::current(), "mdarray reference const\n");
     return dmdspan_(std::forward<Args>(args)...);
   }
 
