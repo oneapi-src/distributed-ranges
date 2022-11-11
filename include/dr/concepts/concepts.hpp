@@ -1,12 +1,31 @@
 #pragma once
 
+#include "../details/ranges.hpp"
+#include <ranges>
+
 namespace lib {
 
 template <typename I>
+concept remote_iterator = std::forward_iterator<I> && requires(I &iter) {
+  lib::ranges::rank(iter);
+};
+
+template <typename R>
+concept remote_range = std::ranges::forward_range<R> && requires(R &r) {
+  lib::ranges::rank(r);
+};
+
+template <typename R>
+concept distributed_range = std::ranges::forward_range<R> && requires(R &r) {
+  { lib::ranges::segments(r) } -> std::ranges::forward_range;
+  { *std::ranges::begin(lib::ranges::segments(r)) } -> lib::remote_range;
+};
+
+template <typename I>
 concept remote_contiguous_iterator = std::random_access_iterator<I> &&
-    requires(I i) {
-  { i.rank() } -> std::convertible_to<std::size_t>;
-  { i.local() } -> std::contiguous_iterator;
+    requires(I &iter) {
+  lib::ranges::rank(iter);
+  { lib::ranges::local(iter) } -> std::contiguous_iterator;
 };
 
 template <typename T>

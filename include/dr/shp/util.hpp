@@ -116,4 +116,47 @@ template <typename Range> void print_range(Range &&r, std::string label = "") {
   std::cout << "]" << std::endl;
 }
 
+// Allocate spans on a number of devices.
+
+template <typename T>
+auto allocate_device_span(std::size_t size, std::size_t rank,
+                          cl::sycl::context context, auto &&devices) {
+  auto data = shp::device_allocator<T>(context, devices[rank]).allocate(size);
+
+  return shp::device_span<T, decltype(data)>(data, size, rank);
+}
+
+// Return a range of spans, with one span allocated on each device using
+// device memory.
+template <typename T>
+auto allocate_device_spans(std::size_t size, cl::sycl::context context,
+                           auto &&devices) {
+  std::vector<shp::device_span<T, shp::device_ptr<T>>> spans;
+  for (size_t rank = 0; rank < devices.size(); rank++) {
+    spans.push_back(allocate_device_span<T>(size, rank, context, devices));
+  }
+  return spans;
+}
+
+template <typename T>
+shp::device_span<T> allocate_shared_span(std::size_t size, std::size_t rank,
+                                         auto &&devices) {
+  cl::sycl::queue q(devices[rank]);
+  T *data = cl::sycl::malloc_shared<T>(size, q);
+
+  return shp::device_span<T>(data, size, rank);
+}
+
+// Return a range of spans, with one span allocated on each device using
+// shared memory.
+template <typename T>
+std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
+                                                       auto &&devices) {
+  std::vector<shp::device_span<T>> spans;
+  for (size_t rank = 0; rank < devices.size(); rank++) {
+    spans.push_back(allocate_shared_span<T>(size, rank, devices));
+  }
+  return spans;
+}
+
 } // namespace shp

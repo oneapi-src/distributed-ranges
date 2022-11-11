@@ -2,6 +2,7 @@
 
 #include "device_span.hpp"
 #include "iterator_adaptor.hpp"
+#include <details/ranges.hpp>
 #include <ranges>
 #include <vector>
 
@@ -119,7 +120,7 @@ public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
 
-  using segment_type = L;
+  using segment_type = shp::device_span<T, L>;
 
   using size_type = std::ranges::range_size_t<segment_type>;
   using difference_type = std::ranges::range_difference_t<segment_type>;
@@ -136,7 +137,7 @@ public:
   // std::ranges::join_view<std::ranges::ref_view<std::vector<segment_type>>>;
   // using iterator = std::ranges::iterator_t<joined_view_type>;
 
-  using iterator = distributed_span_iterator<T, L>;
+  using iterator = distributed_span_iterator<T, segment_type>;
 
   constexpr distributed_span() noexcept = default;
   constexpr distributed_span(const distributed_span &) noexcept = default;
@@ -144,11 +145,13 @@ public:
   operator=(const distributed_span &) noexcept = default;
 
   template <std::ranges::input_range R>
-  requires(std::is_same_v<std::ranges::range_value_t<R>,
-                          L>) constexpr distributed_span(R &&segments)
-      : segments_(std::ranges::begin(segments), std::ranges::end(segments)) {
-    for (auto &&segment : segments_) {
-      size_ += segment.size();
+  requires(lib::remote_contiguous_range<std::ranges::range_reference_t<
+               R>>) constexpr distributed_span(R &&segments) {
+    for (auto &&segment : segments) {
+      std::size_t size = std::ranges::size(segment);
+      segments_.push_back(segment_type(std::ranges::begin(segment), size,
+                                       lib::ranges::rank(segment)));
+      size_ += size;
     }
   }
 
@@ -204,9 +207,7 @@ public:
     return subspan(size() - Count, Count);
   }
 
-  iterator begin() {
-    return iterator(distributed_span_accessor<T, L>(segments(), 0, 0));
-  }
+  iterator begin() { return iterator(segments(), 0, 0); }
 
   iterator end() { return iterator(segments(), segments().size(), 0); }
 
@@ -226,6 +227,6 @@ private:
 template <std::ranges::input_range R>
 distributed_span(R &&segments) -> distributed_span<
     std::ranges::range_value_t<std::ranges::range_value_t<R>>,
-    std::ranges::range_value_t<R>>;
+    std::ranges::iterator_t<std::ranges::range_value_t<R>>>;
 
 } // namespace shp

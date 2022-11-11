@@ -117,6 +117,8 @@ public:
 
   value_type operator[](std::size_t idx) { return *(begin() + idx); }
 
+  size_type rank() const noexcept { return 0; }
+
 private:
   std::size_t segment_size_;
   std::size_t segment_id_;
