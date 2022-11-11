@@ -1,5 +1,5 @@
 add_executable(vector-add-cpu vector-add-cpu.cpp)
-target_link_libraries(vector-add-cpu DR::dr)
+target_link_libraries(vector-add-cpu DR::mpi)
 add_mpi_test(vector-add-cpu vector-add-cpu 2)
 
 add_executable(vector-add-cpu-ref vector-add-cpu-ref.cpp)
@@ -10,5 +10,5 @@ add_executable(transpose-cpu-ref transpose-cpu-ref.cpp)
 target_link_libraries(transpose-cpu-ref PRIVATE MPI::MPI_CXX MKL::MKL)
 
 #add_executable(transpose-cpu transpose-cpu.cpp)
-#target_link_libraries(transpose-cpu DR::dr MKL::MKL)
+#target_link_libraries(transpose-cpu DR::mpi MKL::MKL)
 #add_mpi_test(transpose-cpu transpose-cpu 2)

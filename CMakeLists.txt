@@ -101,6 +101,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_subdirectory(examples/serial)
   add_subdirectory(examples/cpu)
 
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR $(HIPSYCL_TARGETS))
+    #add_subdirectory(examples/sycl)
+  endif()
+
   add_subdirectory(tests)
 
 endif()

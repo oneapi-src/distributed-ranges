@@ -13,7 +13,7 @@ target_link_libraries(
   cpu-tests
   GTest::gtest_main
   cxxopts
-  DR::dr
+  DR::mpi
 )
 
 add_mpi_test(cpu-mpi-2 cpu-tests 2)

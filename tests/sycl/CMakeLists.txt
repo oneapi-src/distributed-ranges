@@ -6,7 +6,7 @@ add_executable(
 target_link_libraries(
   sycl-tests
   GTest::gtest_main
-  DR::dr
+  DR::mpi
 )
 
 target_compile_options(
