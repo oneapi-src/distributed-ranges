@@ -5,7 +5,6 @@ on:
   pull_request:
 
 env:
-  ACTIVATE: source /localdisk/work/rscohn1/github-runners/venv/distributed-ranges/bin/activate
   SPHINXOPTS: -q -W
 
 jobs:
@@ -13,27 +12,44 @@ jobs:
     runs-on: dds-base
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    - run: pip install -r requirements.txt
     - name: Checks
       run: |
-        ${ACTIVATE}
         pre-commit run --all
     - name: Build doc
       run: |
-        ${ACTIVATE}
         make -C doc/spec html
 
   examples:
     strategy:
       matrix:
         include:
-        - cxx: clang++
+        - name: "CPU: clang++"
+          cxx: clang++
           cc: clang
-        - cxx: g++-10
+          runner: dds-base
+          oneapi_device: cpu
+        - name: "CPU: g++10"
+          cxx: g++-10
           cc: gcc-10
-        - cxx: icpx
+          runner: dds-base
+          oneapi_device: cpu
+        - name: "CPU: icpx"
+          cxx: icpx
           cc: icx
-    name: Build/test examples (${{ matrix.cxx }})
-    runs-on: dds-base
+          runner: dds-base
+          oneapi_device: cpu
+        - name: "IGPU: icpx"
+          cxx: icpx
+          cc: icx
+          runner: gpu
+          oneapi_device: level_zero:gpu
+    name: Build/test examples (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
     env:
       CXX: ${{ matrix.cxx }}
     steps:
@@ -46,12 +62,14 @@ jobs:
         cmake ..
     - name: build
       run: |
+        # proper cmake config does not require source setvars.sh
         cd build
         make -j all
     - name: test
       run: |
+        source /opt/intel/oneapi/setvars.sh
         cd build
-        make test
+        ONEAPI_DEVICE_SELECTOR=${{ matrix.oneapi_device }} make test
 
   publish:
     needs: [checks, examples]
@@ -59,6 +77,11 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    - run: pip install -r requirements.txt
     - name: Checkout gh-pages
       uses: actions/checkout@v3
       with:
@@ -66,11 +89,9 @@ jobs:
         path: gh-pages
     - name: Build docs
       run: |
-        ${ACTIVATE}
         make -C doc/spec html
     - name: Publish to github pages
       run: |
-        ${ACTIVATE}
         rm -rf gh-pages/*
         touch gh-pages/.nojekyll
 
