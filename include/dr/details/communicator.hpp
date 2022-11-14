@@ -16,8 +16,8 @@ public:
       return this->win_ == other.win_;
     }
 
-    void set_null() { win_ = MPI_INFO_NULL; }
-    bool null() const noexcept { return win_ == MPI_INFO_NULL; }
+    void set_null() { win_ = MPI_WIN_NULL; }
+    bool null() const noexcept { return win_ == MPI_WIN_NULL; }
 
     void get(void *dst, int size, int rank, int disp) const {
       MPI_Request request;
@@ -30,12 +30,12 @@ public:
     }
 
     void fence() const {
-      drlog.debug("fence:: win: {}\n", win_);
+      drlog.debug("fence\n");
       MPI_Win_fence(0, win_);
     }
 
     void flush(int rank) const {
-      drlog.debug("flush:: rank: {}, win: {}\n", rank, win_);
+      drlog.debug("flush:: rank: {}\n", rank);
       MPI_Win_flush(rank, win_);
     }
 

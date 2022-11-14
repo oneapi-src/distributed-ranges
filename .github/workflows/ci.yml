@@ -24,56 +24,62 @@ jobs:
       run: |
         make -C doc/spec html
 
-  examples:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - name: "CPU: clang++"
-          cxx: clang++
-          cc: clang
-          runner: dds-base
-          oneapi_device: cpu
-        - name: "CPU: g++10"
-          cxx: g++-10
-          cc: gcc-10
-          runner: dds-base
-          oneapi_device: cpu
-        - name: "CPU: icpx"
-          cxx: icpx
-          cc: icx
-          runner: dds-base
-          oneapi_device: cpu
-        - name: "IGPU: icpx"
-          cxx: icpx
-          cc: icx
-          runner: gpu
-          oneapi_device: level_zero:gpu
-    name: Build/test examples (${{ matrix.name }})
-    runs-on: ${{ matrix.runner }}
+  clang:
+    runs-on: dds-base
     env:
-      CXX: ${{ matrix.cxx }}
+      CXX: clang++
     steps:
     - uses: actions/checkout@v3
-    - name: configure
-      run: |
+    - run: |
         source /opt/intel/oneapi/setvars.sh
-        mkdir build
-        cd build
-        cmake ..
-    - name: build
-      run: |
-        # proper cmake config does not require source setvars.sh
-        cd build
-        make -j all
-    - name: test
-      run: |
+        cmake -B build
+        make -j -C build all test
+
+  gcc:
+    runs-on: dds-base
+    env:
+      CXX: g++-10
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
         source /opt/intel/oneapi/setvars.sh
-        cd build
-        ONEAPI_DEVICE_SELECTOR=${{ matrix.oneapi_device }} make test
+        cmake -B build
+        make -j -C build all test
+
+  icpx:
+    runs-on: dds-base
+    env:
+      CXX: icpx
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j -C build all test
+
+  icpx_gpu:
+    runs-on: gpu
+    env:
+      CXX: icpx
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        ONEAPI_DEVICE_SELECTOR=level_zero:gpu make -j -C build all test
+
+  cuda:
+    runs-on: cuda
+    env:
+      CXX: g++-10
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        cmake -B build
+        make -j -C build all test
 
   publish:
-    needs: [checks, examples]
+    needs: [checks, clang, gcc, icpx, icpx_gpu, cuda]
     runs-on: dds-base
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
