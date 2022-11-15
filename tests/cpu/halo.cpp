@@ -76,16 +76,16 @@ TEST(CpuMpiTests, UnstructuredHaloReduce) {
     return;
   }
 
-  std::vector<halo::group> sends, receives;
+  std::vector<halo::group> owned, halos;
   if (comm_rank == 0) {
-    sends.emplace_back(halo::group(1, {2, 2}));
-    receives.emplace_back(halo::group(1, {7, 8, 9}));
+    owned.emplace_back(halo::group(1, {2, 2}));
+    halos.emplace_back(halo::group(1, {7, 8, 9}));
   } else {
-    sends.emplace_back(halo::group(0, {1, 3, 5}));
-    receives.emplace_back(halo::group(0, {8, 9}));
+    owned.emplace_back(halo::group(0, {1, 3, 5}));
+    halos.emplace_back(halo::group(0, {8, 9}));
   }
 
-  halo h(comm, d.data(), sends, receives);
+  halo h(comm, d.data(), owned, halos);
 
   h.reduce();
   h.wait();
@@ -110,16 +110,16 @@ TEST(CpuMpiTests, UnstructuredHaloReduceMax) {
     return;
   }
 
-  std::vector<halo::group> sends, receives;
+  std::vector<halo::group> owned, halos;
   if (comm_rank == 0) {
-    sends.emplace_back(halo::group(1, {2, 2}));
-    receives.emplace_back(halo::group(1, {7, 8, 9}));
+    owned.emplace_back(halo::group(1, {2, 2}));
+    halos.emplace_back(halo::group(1, {7, 8, 9}));
   } else {
-    sends.emplace_back(halo::group(0, {1, 3, 5}));
-    receives.emplace_back(halo::group(0, {8, 9}));
+    owned.emplace_back(halo::group(0, {1, 3, 5}));
+    halos.emplace_back(halo::group(0, {8, 9}));
   }
 
-  halo h(comm, d.data(), sends, receives);
+  halo h(comm, d.data(), owned, halos);
 
   h.reduce(halo::reduction_operator::MAX);
   h.wait();
