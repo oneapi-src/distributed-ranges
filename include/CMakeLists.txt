@@ -13,7 +13,12 @@ target_include_directories(dr_mpi INTERFACE . vendor)
 add_library(dr_shp INTERFACE)
 add_library(DR::shp ALIAS dr_shp)
 
-find_package(oneDPL REQUIRED)
+FetchContent_Declare(
+  dpl
+  GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
+  GIT_TAG oneDPL-2021.7.0-release
+  )
+FetchContent_MakeAvailable(dpl)
 
 target_include_directories(dr_shp INTERFACE dr)
 target_compile_definitions(dr_shp INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)

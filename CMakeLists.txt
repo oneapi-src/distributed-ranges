@@ -4,13 +4,14 @@ project(
   VERSION 0.1
   DESCRIPTION "Distributed ranges")
 
+include(FetchContent)
+
 # Project wide defaults, not needed when another project uses the
 # library
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include(CheckLanguage)
   include(CTest)
-  include(FetchContent)
 
   #
   # C++: generic configuration
