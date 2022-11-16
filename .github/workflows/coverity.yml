@@ -1,0 +1,21 @@
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+  - cron: '@weekly'
+
+jobs:
+  coverity:
+    runs-on: dds-base
+    env:
+      CXX: g++-10
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        source /opt/intel/oneapi/setvars.sh
+        /opt/coverity/analysis/bin/cov-configure --config coverity.xml --compiler ${CXX} --comptype gcc --template
+        /opt/coverity/analysis/bin/cov-build --config coverity.xml --dir idir cmake -B build
+        /opt/coverity/analysis/bin/cov-analyze --dir idir --concurrency --security --rule --enable-constraint-fpp --enable-fnptr --enable-virtual
+        echo ${COVERITY_AUTH} > auth.key
+        /opt/coverity/analysis/bin/cov-commit-defects --dir idir --stream "DR main" --url https://coverityent.devtools.intel.com/prod7 --auth-key-file auth.key
+        rm auth.key
