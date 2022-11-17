@@ -145,8 +145,8 @@ public:
   operator=(const distributed_span &) noexcept = default;
 
   template <std::ranges::input_range R>
-  requires(lib::remote_contiguous_range<std::ranges::range_reference_t<
-               R>>) constexpr distributed_span(R &&segments) {
+    requires(lib::remote_contiguous_range<std::ranges::range_reference_t<R>>)
+  constexpr distributed_span(R &&segments) {
     for (auto &&segment : segments) {
       std::size_t size = std::ranges::size(segment);
       segments_.push_back(segment_type(std::ranges::begin(segment), size,

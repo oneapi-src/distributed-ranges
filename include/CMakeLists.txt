@@ -24,9 +24,7 @@ target_include_directories(dr_shp INTERFACE dr)
 target_compile_definitions(dr_shp INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
 target_link_libraries(dr_shp INTERFACE oneDPL)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-  target_compile_options(dr_shp INTERFACE -fsycl -Wno-deprecated-declarations)
-endif()
+target_compile_options(dr_shp INTERFACE -fsycl -Wno-deprecated-declarations)
 
 # For use, see: https://github.com/illuhad/hipSYCL/blob/develop/doc/using-hipsycl.md#using-the-cmake-integration
 # example: cmake .. -DhipSYCL_DIR=</hipsycl/install/lib/cmake/hipSYCL> -DHIPSYCL_TARGETS="<targets>"

@@ -65,7 +65,7 @@ public:
   }
 
   vector(vector &&other) noexcept
-      requires(std::is_trivially_move_constructible_v<T>)
+    requires(std::is_trivially_move_constructible_v<T>)
       : allocator_(std::move(other.get_allocator())) {
     data_ = other.data_;
     other.data_ = nullptr;
@@ -76,7 +76,7 @@ public:
   }
 
   vector(vector &&other, const Allocator &alloc) noexcept
-      requires(std::is_trivially_move_constructible_v<T>)
+    requires(std::is_trivially_move_constructible_v<T>)
       : allocator_(alloc) {
     data_ = other.data_;
     other.data_ = nullptr;

@@ -14,8 +14,8 @@ struct device_policy {
   device_policy() : devices_({cl::sycl::queue{}.get_device()}) {}
 
   template <std::ranges::range R>
-  requires(std::is_same_v<std::ranges::range_value_t<R>, cl::sycl::device>)
-      device_policy(R &&devices)
+    requires(std::is_same_v<std::ranges::range_value_t<R>, cl::sycl::device>)
+  device_policy(R &&devices)
       : devices_(std::ranges::begin(std::forward<R>(devices)),
                  std::ranges::end(std::forward<R>(devices))) {}
 

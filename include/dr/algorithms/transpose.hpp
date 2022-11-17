@@ -1,8 +1,7 @@
 namespace lib {
 
 template <typename T>
-concept mdspan_2d = T::extents_type::rank()
-== 2;
+concept mdspan_2d = T::extents_type::rank() == 2;
 
 template <typename T>
 concept mdspan_pointer = std::is_same_v<typename T::container_type,
@@ -18,7 +17,7 @@ concept mdspan_col_major =
 
 template <typename T>
 concept mdspan_regular = mdspan_pointer<T> &&
-    (mdspan_row_major<T> || mdspan_col_major<T>);
+                         (mdspan_row_major<T> || mdspan_col_major<T>);
 
 template <typename A, typename B> constexpr inline bool mdspan_same_layout() {
   return std::is_same_v<typename A::layout_type, typename B::layout_type>;

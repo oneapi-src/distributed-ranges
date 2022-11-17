@@ -42,9 +42,8 @@ public:
 
   /// Create a distributed span out of a range of remote_span objects
   template <rng::input_range R>
-  requires(
-      std::is_same_v<rng::range_value_t<R>,
-                     local_span_type>) constexpr distributed_span(R &&spans);
+    requires(std::is_same_v<rng::range_value_t<R>, local_span_type>)
+  constexpr distributed_span(R &&spans);
 
   /// Number of elements
   constexpr size_type size() const noexcept;

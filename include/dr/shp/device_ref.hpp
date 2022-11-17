@@ -6,8 +6,8 @@
 namespace shp {
 
 template <typename T>
-requires(std::is_trivially_copyable_v<T> ||
-         std::is_void_v<T>) class device_ref {
+  requires(std::is_trivially_copyable_v<T> || std::is_void_v<T>)
+class device_ref {
 public:
   device_ref() = delete;
   ~device_ref() = default;
@@ -28,7 +28,9 @@ public:
 #endif
   }
 
-  device_ref operator=(const T &value) requires(!std::is_const_v<T>) {
+  device_ref operator=(const T &value)
+    requires(!std::is_const_v<T>)
+  {
 #ifdef __SYCL_DEVICE_ONLY__
     *pointer_ = value;
 #else

@@ -13,6 +13,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CheckLanguage)
   include(CTest)
 
+  option(ENABLE_SYCL "Build sycl examples" OFF)
+
   #
   # C++: generic configuration
   #
@@ -102,8 +104,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_subdirectory(examples/serial)
   add_subdirectory(examples/cpu)
 
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR $(HIPSYCL_TARGETS))
-    #add_subdirectory(examples/sycl)
+  if(ENABLE_SYCL)
+    add_subdirectory(examples/sycl)
   endif()
 
   add_subdirectory(tests)

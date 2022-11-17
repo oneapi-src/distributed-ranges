@@ -11,7 +11,8 @@ using shared_allocator =
     cl::sycl::usm_allocator<T, cl::sycl::usm::alloc::shared>;
 
 template <typename T, std::size_t Alignment = 0>
-requires(std::is_trivially_copyable_v<T>) class device_allocator {
+  requires(std::is_trivially_copyable_v<T>)
+class device_allocator {
 public:
   using value_type = T;
   using pointer = device_ptr<T>;

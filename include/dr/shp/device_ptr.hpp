@@ -7,8 +7,8 @@
 namespace shp {
 
 template <typename T>
-requires(std::is_trivially_copyable_v<T> ||
-         std::is_void_v<T>) class device_ptr {
+  requires(std::is_trivially_copyable_v<T> || std::is_void_v<T>)
+class device_ptr {
 public:
   using value_type = T;
   using size_type = std::size_t;
@@ -32,16 +32,21 @@ public:
     return *this;
   }
 
-  operator device_ptr<void>() const noexcept requires(!std::is_void_v<T>) {
+  operator device_ptr<void>() const noexcept
+    requires(!std::is_void_v<T>)
+  {
     return device_ptr<void>(reinterpret_cast<void *>(pointer_));
   }
 
   operator device_ptr<const void>() const noexcept
-      requires(!std::is_void_v<T>) {
+    requires(!std::is_void_v<T>)
+  {
     return device_ptr<const void>(reinterpret_cast<const void *>(pointer_));
   }
 
-  operator const_pointer() const noexcept requires(!std::is_const_v<T>) {
+  operator const_pointer() const noexcept
+    requires(!std::is_const_v<T>)
+  {
     return const_pointer(pointer_);
   }
 
@@ -59,7 +64,8 @@ public:
   }
 
   difference_type operator-(const_pointer other) const noexcept
-      requires(!std::is_const_v<T>) {
+    requires(!std::is_const_v<T>)
+  {
     return pointer_ - other.pointer_;
   }
   difference_type operator-(pointer other) const noexcept {
