@@ -23,14 +23,6 @@ jobs:
     - name: Build doc
       run: |
         make -C doc/spec html
-    - name: Save doc
-      uses: actions/upload-artifact@v3
-      if: ${{ github.ref == 'refs/heads/main' }}
-      with:
-        name: spec
-        path: |
-          doc/spec/build/html
-          doc/spec/build/doxygen-html
 
   clang:
     runs-on: dds-base
@@ -102,10 +94,15 @@ jobs:
     runs-on: dds-base
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-    - name: Download doc
-      uses: actions/download-artifact@v3
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
-        name: spec
+        python-version: '3.10'
+        cache: 'pip'
+    - run: pip install -r requirements.txt
+    - name: Build doc
+      run: |
+        make -C doc/spec html
     - name: Checkout gh-pages
       uses: actions/checkout@v3
       with:
