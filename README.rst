@@ -17,7 +17,23 @@ published at `latest spec`_ and `latest doxygen`_.
 Environment Setup
 =================
 
-Create a python virtual environment and install dependencies::
+CPU requires g++ 10 or higher, mpi, and MKL. On Ubuntu 20.04::
+
+  sudo apt install g++-10 openmpi
+
+SYCL requires g++ 12 standard library. On Ubuntu 22.04::
+
+  sudo apt install g++-12
+
+SYCL requires a nightly build from the dpcpp open source project::
+
+  wget https://github.com/intel/llvm/releases/download/sycl-nightly%2F20221029/dpcpp-compiler.tar.gz
+  tar zxf dpcpp-compiler.tar.gz
+  source dpcpp_cmpiler/startup.sh
+
+If you want to build the document, you must install some python
+packages. Create a python virtual environment and install
+dependencies::
 
   python -m venv venv
   source venv/bin/activate
@@ -41,15 +57,18 @@ Doxygen html is at: ``doc/spec/build/doxygen-html/index.html``
 Examples
 ========
 
-Build and test examples::
+Build and test examples with gcc on CPU::
 
-  mkdir build
-  cd build
-  cmake ..
-  make -j all test
+  CXX=g++-10 cmake -B build
+  make -C build -j all test
+
+Enable SYCL examples::
+
+  CXX=clang++ cmake -B build -DENABLE_SYCL=ON
 
 See how example is run and the output::
 
+  cd build
   ctest -VV
 
 Contributing
