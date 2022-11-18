@@ -14,6 +14,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CTest)
 
   option(ENABLE_SYCL "Build sycl examples" OFF)
+  option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
 
   #
   # C++: generic configuration
@@ -30,6 +31,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-fconcepts-diagnostics-depth=3)
+  endif()
+
+  if(GCC_TOOLCHAIN)
+    add_compile_options(--gcc-toolchain=${GCC_TOOLCHAIN})
   endif()
 
   # Debugging support
