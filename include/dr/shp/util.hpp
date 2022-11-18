@@ -57,7 +57,7 @@ template <typename Selector> void list_devices(Selector &&selector) {
 }
 
 template <typename Selector>
-std::vector<cl::sycl::device> get_numa_devices(Selector &&selector) {
+std::vector<cl::sycl::device> get_numa_devices_impl_(Selector &&selector) {
   namespace sycl = cl::sycl;
 
   std::vector<sycl::device> devices;
@@ -85,6 +85,17 @@ std::vector<cl::sycl::device> get_devices(Selector &&selector) {
 
   sycl::platform p(std::forward<Selector>(selector));
   return p.get_devices();
+}
+
+template <typename Selector>
+std::vector<cl::sycl::device> get_numa_devices(Selector &&selector) {
+  try {
+    return get_numa_devices_impl_(std::forward<Selector>(selector));
+  } catch (cl::sycl::feature_not_supported) {
+    std::cerr << "NUMA partitioning not supported, returning root devices..."
+              << std::endl;
+    return get_devices(std::forward<Selector>(selector));
+  }
 }
 
 template <typename Range> void print_range(Range &&r, std::string label = "") {

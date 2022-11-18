@@ -16,7 +16,7 @@ add_library(DR::shp ALIAS dr_shp)
 FetchContent_Declare(
   dpl
   GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
-  GIT_TAG oneDPL-2021.7.0-release
+  GIT_TAG c09390f9d57a7093f863d0dd381f94c214c40561
   )
 FetchContent_MakeAvailable(dpl)
 

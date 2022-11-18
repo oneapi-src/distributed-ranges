@@ -22,9 +22,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(CMAKE_CXX_EXTENSIONS OFF)
   set(CMAKE_CXX_STANDARD 20)
 
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
-
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     add_compile_options(-Wno-tautological-constant-compare)
   endif()
@@ -106,12 +103,16 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include_directories(examples/include)
 
-  add_subdirectory(examples/serial)
-  add_subdirectory(examples/cpu)
-
   if(ENABLE_SYCL)
     add_subdirectory(examples/sycl)
   endif()
+
+  # DPL has warnings, so do this for everything but sycl
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
+
+  add_subdirectory(examples/serial)
+  add_subdirectory(examples/cpu)
 
   add_subdirectory(tests)
 

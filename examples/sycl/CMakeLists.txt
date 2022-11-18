@@ -1,7 +1,9 @@
 function(add_shp_example example_name)
   add_executable(${example_name} ${example_name}.cpp)
   target_link_libraries(${example_name} DR::shp)
-  add_test(NAME ${example_name} COMMAND .${example_name})
+  target_compile_options(${example_name} PUBLIC -fsycl)
+  target_link_options(${example_name} PUBLIC -fsycl)
+  add_test(NAME ${example_name} COMMAND ./${example_name})
 endfunction()
 
 add_shp_example(vector_example)

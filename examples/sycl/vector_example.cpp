@@ -10,6 +10,11 @@ int main(int argc, char **argv) {
   auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
   shp::init(devices);
 
+  for (auto &device : devices) {
+    std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
+              << "\n";
+  }
+
   shp::distributed_vector<int> v(100);
 
   shp::for_each(shp::par_unseq, shp::enumerate(v), [](auto &&tuple) {
