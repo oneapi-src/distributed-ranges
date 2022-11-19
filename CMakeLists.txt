@@ -32,6 +32,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(GCC_TOOLCHAIN)
     add_compile_options(--gcc-toolchain=${GCC_TOOLCHAIN})
+    add_link_options(--gcc-toolchain=${GCC_TOOLCHAIN})
   endif()
 
   # Debugging support
