@@ -14,6 +14,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CTest)
 
   option(ENABLE_SYCL "Build sycl examples" OFF)
+  option(ENABLE_CUDA "Build for cuda" OFF)
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
 
   #
@@ -36,8 +37,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   endif()
 
   # Debugging support
-  #set(CMAKE_BUILD_TYPE "Debug")
-  set(CMAKE_BUILD_TYPE "Release")
+  set(CMAKE_BUILD_TYPE "Debug")
+  #set(CMAKE_BUILD_TYPE "Release")
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")

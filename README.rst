@@ -25,15 +25,38 @@ SYCL requires g++ 12 standard library. On Ubuntu 22.04::
 
   sudo apt install g++-12
 
-SYCL requires a nightly build from the dpcpp open source project::
+SYCL requires a nightly build from the dpcpp open source project. If
+you are targeting intel gpu::
 
   wget https://github.com/intel/llvm/releases/download/sycl-nightly%2F20221029/dpcpp-compiler.tar.gz
   tar zxf dpcpp-compiler.tar.gz
-  source dpcpp_cmpiler/startup.sh
+  source dpcpp_compiler/startup.sh
 
-If you want to build the document, you must install some python
-packages. Create a python virtual environment and install
-dependencies::
+If you are targeting cuda::
+
+  git clone https://github.com/intel/llvm
+  cd llvm
+  git checkout sycl-nightly/20221029
+  python buildbot/configure.py --cuda
+
+Copy `startup.sh` from the open source binary build, or create it at
+`build/install/startup.sh`::
+
+    export SYCL_BUNDLE_ROOT=$(realpath $(dirname "${BASH_SOURCE[0]}"))
+    export PATH=$SYCL_BUNDLE_ROOT/bin:$PATH
+    export CPATH=$SYCL_BUNDLE_ROOT/include:$CPATH
+    export LIBRARY_PATH=$SYCL_BUNDLE_ROOT/lib:$LIBRARY_PATH
+    export LD_LIBRARY_PATH=$SYCL_BUNDLE_ROOT/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$SYCL_BUNDLE_ROOT/linux/lib/x64:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$SYCL_BUNDLE_ROOT/lib/oclgpu:$LD_LIBRARY_PATH
+
+Then::
+
+  source build/isntall/startup.sh
+
+If you want to build the document or run the pre-commit checks, you
+must install some python packages. Create a python virtual environment
+and install dependencies::
 
   python -m venv venv
   source venv/bin/activate

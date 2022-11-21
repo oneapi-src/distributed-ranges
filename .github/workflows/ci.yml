@@ -82,11 +82,14 @@ jobs:
   cuda:
     runs-on: cuda
     env:
-      CXX: g++-10
+      CXX: clang++
     steps:
     - uses: actions/checkout@v3
     - run: |
-        cmake -B build
+        source /opt/intel/oneapi/compiler/latest/env/vars.sh
+        source /opt/intel/oneapi/mkl/latest/env/vars.sh
+        source /opt/intel/open-source-dpcpp/20221029/startup.sh
+        cmake -B build -DENABLE_SYCL=ON -DENABLE_CUDA=ON
         make -j -C build all test
 
   publish:
