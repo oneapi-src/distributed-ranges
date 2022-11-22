@@ -18,7 +18,7 @@ manual synchronization.
 
 .. seealso::
 
-   :ref:`halo_group`
+   :ref:`index_group`
 
 Examples
 ========

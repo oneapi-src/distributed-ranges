@@ -1,186 +1,143 @@
 namespace lib {
 
-// Halo consists of multiple segments
-template <typename T> class halo {
+template <typename T> class index_group {
 public:
-  enum class reduction_operator { SUM, REPLACE, MIN, MAX };
-  class group {
-    friend class halo;
+  using element_type = T;
+  std::size_t buffer_index;
+  std::size_t request_index;
+  bool receive;
 
-  public:
-    /// Construct a halo segment from a vector of indices
-    group(std::size_t rank, const std::vector<std::size_t> &indices)
-        : rank_(rank), indices_(indices), do_pack_(indices.size() > 1),
-          op_(reduction_operator::REPLACE) {}
+  index_group(T *data, std::size_t rank,
+              const std::vector<std::size_t> &indices)
+      : data_(data), rank_(rank), indices_(indices) {}
 
-  private:
-    std::size_t buffer_size() { return do_pack_ ? indices_.size() : 0; }
-
-    /// Copy a group to a buffer
-    void pack(T *data) {
-      if (do_pack_) {
-        auto b = buffer_;
-        for (auto &index : indices_)
-          *b++ = data[index];
-      }
-    }
-
-    /// Copy a buffer to a group
-    void unpack(T *data) {
-      if (do_pack_) {
-        auto b = buffer_;
-        switch (op_) {
-        case reduction_operator::REPLACE:
-          for (auto &index : indices_)
-            data[index] = *b++;
-          break;
-        case reduction_operator::SUM:
-          for (auto &index : indices_)
-            data[index] += *b++;
-          break;
-        case reduction_operator::MIN:
-          for (auto &index : indices_)
-            data[index] = std::min<T>(data[index], *b++);
-          break;
-        case reduction_operator::MAX:
-          for (auto &index : indices_)
-            data[index] = std::max<T>(data[index], *b++);
-          break;
-        }
-      }
-    }
-
-    /// Asynchronous send of group
-    void send(communicator comm, T *data) {
-      if (do_pack_) {
-        comm.isend(buffer_, indices_.size() * sizeof(T), rank_, request_);
-      } else {
-        comm.isend(&data[indices_[0]], sizeof(T), rank_, request_);
-      }
-    }
-
-    /// Asynchronous receive of group
-    void receive(communicator comm, T *data,
-                 reduction_operator op = reduction_operator::REPLACE) {
-      if (do_pack_) {
-        op_ = op;
-        comm.irecv(buffer_, indices_.size() * sizeof(T), rank_, request_);
-      } else {
-        assert(op == reduction_operator::REPLACE);
-        comm.irecv(&data[indices_[0]], sizeof(T), rank_, request_);
-      }
-    }
-
-    //// source/destination rank for this segment
-    std::size_t rank_;
-    std::vector<std::size_t> indices_;
-    bool do_pack_;
-    reduction_operator op_;
-    T *buffer_ = nullptr;
-    MPI_Request *request_ = nullptr;
-  };
-
-  using groups = std::vector<group>;
-
-  void allocate_storage(auto &gs, auto &bp, auto &rp) {
-    for (auto &g : gs) {
-      g.request_ = rp;
-      g.buffer_ = bp;
-
-      rp++;
-      bp += g.buffer_size();
+  void unpack(T *buffer, const auto &op) {
+    for (auto i : indices_) {
+      drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
+      data_[i] = op(data_[i], *buffer++);
+      drlog.debug("       after {}\n", data_[i]);
     }
   }
 
-  /// Construct a halo from groups
-  halo(communicator comm, T *data, const groups &owned, const groups &halos)
-      : comm_(comm), data_(data), halos_(halos), owned_(owned),
-        pending_exchange_(false), pending_reduction_(false) {
+  void pack(T *buffer) {
+    for (auto i : indices_) {
+      drlog.debug("pack {}, {}\n", i, data_[i]);
+      *buffer++ = data_[i];
+    }
+  }
+  std::size_t buffer_size() { return indices_.size(); }
 
-    // Compute size of buffer
+  std::size_t rank() { return rank_; }
+
+private:
+  T *data_;
+  std::size_t rank_;
+  std::vector<std::size_t> indices_;
+};
+
+template <typename Group> class halo {
+  using T = typename Group::element_type;
+
+public:
+  using group_type = Group;
+  halo(communicator comm, const std::vector<Group> &owned_groups,
+       const std::vector<Group> &halo_groups)
+      : comm_(comm), halo_groups_(halo_groups), owned_groups_(owned_groups) {
     std::size_t buffer_size = 0;
-    for (auto &r : halos_) {
-      buffer_size += r.buffer_size();
+    std::size_t i = 0;
+    for (auto &g : owned_groups_) {
+      g.buffer_index = buffer_size;
+      g.request_index = i++;
+      buffer_size += g.buffer_size();
+      map_.push_back(&g);
     }
-    for (auto &r : owned_) {
-      buffer_size += r.buffer_size();
+    for (auto &g : halo_groups_) {
+      g.buffer_index = buffer_size;
+      g.request_index = i++;
+      buffer_size += g.buffer_size();
+      map_.push_back(&g);
     }
-
     buffer_.resize(buffer_size);
-    requests_.resize(owned_.size() + halos_.size());
-
-    auto bp = buffer_.data();
-    auto rp = requests_.data();
-    allocate_storage(halos_, bp, rp);
-    allocate_storage(owned_, bp, rp);
+    requests_.resize(i);
   }
 
-  /// Asynchronous halo exchange
-  void exchange() {
-    assert(pending_reduction_ == false);
-    // Post the receives
-    for (auto &receive : halos_) {
-      receive.receive(comm_, data_);
-    }
-
-    // Send the data
-    for (auto &send : owned_) {
-      send.pack(data_);
-      send.send(comm_, data_);
-    }
-    pending_exchange_ = true;
+  /// Begin a halo exchange
+  void exchange_begin() {
+    receive(halo_groups_);
+    send(owned_groups_);
   }
 
-  /// Asynchronous halo reduction
-  void reduce(reduction_operator op = reduction_operator::SUM) {
-    assert(pending_exchange_ == false);
-    // Post the receives
-    for (auto &receive : owned_) {
-      receive.receive(comm_, data_, op);
-    }
+  /// Complete a halo exchange
+  void exchange_finalize() { reduce_finalize(second); }
 
-    // Send the data
-    for (auto &send : halos_) {
-      send.pack(data_);
-      send.send(comm_, data_);
-    }
-    pending_reduction_ = true;
+  /// Begin a halo reduction
+  void reduce_begin() {
+    receive(owned_groups_);
+    send(halo_groups_);
   }
 
-  /// Wait for halo exchange to complete
-  void wait() {
-    // below assumes receives are first in requests array
-    assert(owned_.size() == 0 || halos_.size() == 0 ||
-           owned_[0].request_ > halos_[0].request_);
-    assert(pending_exchange_ || pending_reduction_);
-
-    int pending = requests_.size();
-
-    while (pending > 0) {
+  /// Complete a halo reduction
+  void reduce_finalize(const auto &op) {
+    for (int pending = requests_.size(); pending > 0; pending--) {
       int completed;
       MPI_Waitany(requests_.size(), requests_.data(), &completed,
                   MPI_STATUS_IGNORE);
-      if (pending_exchange_ && std::size_t(completed) < halos_.size()) {
-        halos_[completed].unpack(data_);
+      drlog.debug("Completed: {}\n", completed);
+      auto &g = *map_[completed];
+      if (g.receive) {
+        g.unpack(&buffer_[g.buffer_index], op);
       }
-      if (pending_reduction_ && std::size_t(completed) >= halos_.size()) {
-        owned_[completed - halos_.size()].unpack(data_);
-      }
-      pending--;
     }
-    pending_exchange_ = false;
-    pending_reduction_ = false;
   }
 
+  struct second_op {
+    T operator()(T &a, T &b) const { return b; }
+  } second;
+
+  struct plus_op {
+    T operator()(T &a, T &b) const { return a + b; }
+  } plus;
+
+  struct max_op {
+    T operator()(T &a, T &b) const { return std::max(a, b); }
+  } max;
+
+  struct min_op {
+    T operator()(T &a, T &b) const { return std::min(a, b); }
+  } min;
+
+  struct multipllies_op {
+    T operator()(T &a, T &b) const { return a * b; }
+  } multiplies;
+
 private:
+  void send(std::vector<Group> &sends) {
+    for (auto &g : sends) {
+      auto b = &buffer_[g.buffer_index];
+      g.pack(b);
+      g.receive = false;
+      drlog.debug("Sending: {}\n", g.request_index);
+      comm_.isend(b, g.buffer_size() * sizeof(T), g.rank(),
+                  &requests_[g.request_index]);
+    }
+  }
+
+  void receive(std::vector<Group> &receives) {
+    for (auto &g : receives) {
+      g.receive = true;
+      drlog.debug("Receiving: {}\n", g.request_index);
+      comm_.irecv(&buffer_[g.buffer_index], g.buffer_size() * sizeof(T),
+                  g.rank(), &requests_[g.request_index]);
+    }
+  }
+
   communicator comm_;
-  T *data_;
-  groups halos_;
-  groups owned_;
-  bool pending_exchange_;
-  bool pending_reduction_;
+  std::vector<Group> halo_groups_, owned_groups_;
   std::vector<T> buffer_;
   std::vector<MPI_Request> requests_;
+  std::vector<Group *> map_;
 };
+
+template <typename T> using unstructured_halo = halo<index_group<T>>;
 
 } // namespace lib
