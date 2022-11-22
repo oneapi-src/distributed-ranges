@@ -2,14 +2,11 @@
 
 #include <CL/sycl.hpp>
 
-#include "dr/distributed-ranges.hpp"
-
-MPI_Comm comm;
-int comm_rank;
-int comm_size;
+#include <shp/shp.hpp>
 
 // Demonstrate some basic assertions.
 TEST(CpuTest, BasicAssertions) {
+  sycl::queue q;
   // Expect two strings not to be equal.
   EXPECT_STRNE("hello", "world");
   // Expect equality.

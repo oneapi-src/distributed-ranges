@@ -100,13 +100,20 @@ endfunction()
 
 add_subdirectory(include)
 
+function(add_mpi_test test_name name processes)
+  add_test(NAME ${test_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+endfunction()
+
 # Examples are not needed when another project uses the library
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include_directories(examples/include)
 
+  include(GoogleTest)
+
   if(ENABLE_SYCL)
     add_subdirectory(examples/sycl)
+    add_subdirectory(tests/sycl)
   endif()
 
   # DPL has warnings, so do this for everything but sycl
@@ -114,8 +121,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
 
   add_subdirectory(examples/serial)
+  add_subdirectory(tests/serial)
   add_subdirectory(examples/cpu)
-
-  add_subdirectory(tests)
+  add_subdirectory(tests/cpu)
 
 endif()

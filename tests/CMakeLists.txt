@@ -6,6 +6,6 @@ endfunction()
 
 add_subdirectory(serial)
 add_subdirectory(cpu)
-if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+if(ENABLE_SYCL)
   add_subdirectory(sycl)
 endif()
