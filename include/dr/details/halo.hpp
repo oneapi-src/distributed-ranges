@@ -1,45 +1,12 @@
 namespace lib {
 
-template <typename T> class index_group {
-public:
-  using element_type = T;
-  std::size_t buffer_index;
-  std::size_t request_index;
-  bool receive;
-
-  index_group(T *data, std::size_t rank,
-              const std::vector<std::size_t> &indices)
-      : data_(data), rank_(rank), indices_(indices) {}
-
-  void unpack(T *buffer, const auto &op) {
-    for (auto i : indices_) {
-      drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
-      data_[i] = op(data_[i], *buffer++);
-      drlog.debug("       after {}\n", data_[i]);
-    }
-  }
-
-  void pack(T *buffer) {
-    for (auto i : indices_) {
-      drlog.debug("pack {}, {}\n", i, data_[i]);
-      *buffer++ = data_[i];
-    }
-  }
-  std::size_t buffer_size() { return indices_.size(); }
-
-  std::size_t rank() { return rank_; }
-
-private:
-  T *data_;
-  std::size_t rank_;
-  std::vector<std::size_t> indices_;
-};
-
 template <typename Group> class halo {
   using T = typename Group::element_type;
 
 public:
   using group_type = Group;
+
+  /// halo constructor
   halo(communicator comm, const std::vector<Group> &owned_groups,
        const std::vector<Group> &halo_groups)
       : comm_(comm), halo_groups_(halo_groups), owned_groups_(owned_groups) {
@@ -138,6 +105,102 @@ private:
   std::vector<Group *> map_;
 };
 
+template <typename T> class index_group {
+public:
+  using element_type = T;
+  std::size_t buffer_index;
+  std::size_t request_index;
+  bool receive;
+
+  /// Constructor
+  index_group(T *data, std::size_t rank,
+              const std::vector<std::size_t> &indices)
+      : data_(data), rank_(rank), indices_(indices) {}
+
+  void unpack(T *buffer, const auto &op) {
+    for (auto i : indices_) {
+      drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
+      data_[i] = op(data_[i], *buffer++);
+      drlog.debug("       after {}\n", data_[i]);
+    }
+  }
+
+  void pack(T *buffer) {
+    for (auto i : indices_) {
+      drlog.debug("pack {}, {}\n", i, data_[i]);
+      *buffer++ = data_[i];
+    }
+  }
+  std::size_t buffer_size() { return indices_.size(); }
+
+  std::size_t rank() { return rank_; }
+
+private:
+  T *data_;
+  std::size_t rank_;
+  std::vector<std::size_t> indices_;
+};
+
+/// Unstructured halo
 template <typename T> using unstructured_halo = halo<index_group<T>>;
+
+template <typename T> class span_group {
+public:
+  using element_type = T;
+  std::size_t buffer_index;
+  std::size_t request_index;
+  bool receive;
+
+  span_group(T *data, std::size_t size, std::size_t rank)
+      : data_(data, size), rank_(rank) {}
+
+  void unpack(T *buffer, const auto &op) {
+    for (std::size_t i = 0; i < data_.size(); i++) {
+      drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
+      data_[i] = op(data_[i], *buffer++);
+      drlog.debug("       after {}\n", data_[i]);
+    }
+  }
+
+  void pack(T *buffer) { std::copy(data_.begin(), data_.end(), buffer); }
+  std::size_t buffer_size() { return data_.size(); }
+
+  std::size_t rank() { return rank_; }
+
+private:
+  std::span<T> data_;
+  std::size_t rank_;
+  std::size_t radius_;
+};
+
+template <typename T> using span_halo_impl = halo<span_group<T>>;
+
+template <typename T> class span_halo : public span_halo_impl<T> {
+public:
+  using group_type = span_group<T>;
+
+  span_halo(communicator comm, T *data, std::size_t size, std::size_t radius)
+      : span_halo_impl<T>(comm, owned_groups(comm, data, size, radius),
+                          halo_groups(comm, data, size, radius)) {}
+
+private:
+  static std::vector<group_type> owned_groups(communicator comm, T *data,
+                                              std::size_t size,
+                                              std::size_t radius) {
+    std::vector<group_type> owned;
+    owned.emplace_back(data + radius, radius, comm.prev());
+    owned.emplace_back(data + size - 2 * radius, radius, comm.next());
+    return owned;
+  }
+
+  static std::vector<group_type> halo_groups(communicator comm, T *data,
+                                             std::size_t size,
+                                             std::size_t radius) {
+    std::vector<group_type> halo;
+    halo.emplace_back(data, radius, comm.prev());
+    halo.emplace_back(data + size - radius, radius, comm.next());
+    return halo;
+  }
+};
 
 } // namespace lib

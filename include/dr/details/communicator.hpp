@@ -51,6 +51,8 @@ public:
 
   int size() const { return size_; }
   int rank() const { return rank_; }
+  int prev() const { return (rank() + size() - 1) % size(); }
+  int next() const { return (rank() + 1) % size(); }
 
   MPI_Comm mpi_comm() const { return mpi_comm_; }
 
