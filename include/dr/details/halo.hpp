@@ -152,11 +152,17 @@ class unstructured_halo : public unstructured_halo_impl<T> {
 public:
   using group_type = index_group<T>;
 
+  ///
+  /// Constructor that binds the data pointer
+  ///
   unstructured_halo(communicator comm, T *data,
                     const std::vector<group_type> &owned_groups,
                     const std::vector<group_type> &halo_groups)
       : unstructured_halo_impl<T>(comm, bind(data, owned_groups),
                                   bind(data, halo_groups)) {}
+  ///
+  /// Constructor
+  ///
   unstructured_halo(communicator comm,
                     const std::vector<group_type> &owned_groups,
                     const std::vector<group_type> &halo_groups)
@@ -178,6 +184,8 @@ public:
 
   span_group(T *data, std::size_t size, std::size_t rank)
       : data_(data, size), rank_(rank) {}
+
+  span_group(std::span<T> data, std::size_t rank) : data_(data), rank_(rank) {}
 
   void unpack(T *buffer, const auto &op) {
     for (std::size_t i = 0; i < data_.size(); i++) {
@@ -205,25 +213,26 @@ public:
   using group_type = span_group<T>;
 
   span_halo(communicator comm, T *data, std::size_t size, std::size_t radius)
-      : span_halo_impl<T>(comm, owned_groups(comm, data, size, radius),
-                          halo_groups(comm, data, size, radius)) {}
+      : span_halo_impl<T>(comm, owned_groups(comm, {data, size}, radius),
+                          halo_groups(comm, {data, size}, radius)) {}
+  span_halo(communicator comm, std::span<T> span, std::size_t radius)
+      : span_halo_impl<T>(comm, owned_groups(comm, span, radius),
+                          halo_groups(comm, span, radius)) {}
 
 private:
-  static std::vector<group_type> owned_groups(communicator comm, T *data,
-                                              std::size_t size,
-                                              std::size_t radius) {
+  static std::vector<group_type>
+  owned_groups(communicator comm, std::span<T> span, std::size_t radius) {
     std::vector<group_type> owned;
-    owned.emplace_back(data + radius, radius, comm.prev());
-    owned.emplace_back(data + size - 2 * radius, radius, comm.next());
+    owned.emplace_back(span.first(2 * radius).last(radius), comm.prev());
+    owned.emplace_back(span.last(2 * radius).first(radius), comm.next());
     return owned;
   }
 
-  static std::vector<group_type> halo_groups(communicator comm, T *data,
-                                             std::size_t size,
-                                             std::size_t radius) {
+  static std::vector<group_type>
+  halo_groups(communicator comm, std::span<T> span, std::size_t radius) {
     std::vector<group_type> halo;
-    halo.emplace_back(data, radius, comm.prev());
-    halo.emplace_back(data + size - radius, radius, comm.next());
+    halo.emplace_back(span.first(radius), comm.prev());
+    halo.emplace_back(span.last(radius), comm.next());
     return halo;
   }
 };

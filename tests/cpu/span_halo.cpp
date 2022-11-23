@@ -24,6 +24,29 @@ TEST(CpuMpiTests, SpanHalo) {
   h.exchange_begin();
   h.exchange_finalize();
 
+  if (comm_rank == 1) {
+    for (auto &v : d) {
+      std::cout << fmt::format(" {}", v);
+    }
+  }
+  std::cout << "\n";
+
+  EXPECT_EQ(d[0], initial_value(left) + n - 2 * radius - 1);
+  EXPECT_EQ(d[n - 1], initial_value(right));
+}
+
+TEST(CpuMpiTests, SpanHaloSpanConstructor) {
+  auto right = (comm_rank + 1) % comm_size;
+  auto left = (comm_rank + comm_size - 1) % comm_size;
+
+  std::vector<int> d(n);
+  std::iota(d.begin() + radius, d.end() - radius, initial_value(comm_rank));
+
+  halo h(comm, d, radius);
+
+  h.exchange_begin();
+  h.exchange_finalize();
+
   EXPECT_EQ(d[0], initial_value(left) + n - 2 * radius - 1);
   EXPECT_EQ(d[n - 1], initial_value(right));
 }
