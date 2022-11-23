@@ -125,6 +125,7 @@ private:
   std::size_t global_offset_;
 };
 
+/*
 template <std::ranges::forward_range R> auto distributed_iota_view(R &&r) {
   static_assert(lib::distributed_contiguous_range<R>);
   if constexpr (lib::distributed_contiguous_range<R>) {
@@ -142,5 +143,6 @@ template <std::ranges::forward_range R> auto distributed_iota_view(R &&r) {
     return segment_range(0, std::ranges::size(r), 0);
   }
 }
+*/
 
 } // namespace shp

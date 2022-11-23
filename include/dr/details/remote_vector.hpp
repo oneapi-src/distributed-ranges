@@ -32,7 +32,7 @@ public:
   ~remote_vector() {}
 
   /// Number of elements in span
-  constexpr size_type size();
+  constexpr size_type size() { return size_; }
 
   /// Size of span in bytes
   constexpr size_type size_bytes() const noexcept;

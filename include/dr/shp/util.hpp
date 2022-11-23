@@ -23,6 +23,21 @@ cl::sycl::device select_device(Selector &&selector) {
   return d;
 }
 
+void list_devices() {
+  auto platforms = sycl::platform::get_platforms();
+
+  for (auto &platform : platforms) {
+    std::cout << "Platform: " << platform.get_info<sycl::info::platform::name>()
+              << std::endl;
+
+    auto devices = platform.get_devices();
+    for (auto &device : devices) {
+      std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
+                << std::endl;
+    }
+  }
+}
+
 template <typename Selector> void list_devices(Selector &&selector) {
   namespace sycl = cl::sycl;
 
@@ -98,6 +113,25 @@ std::vector<cl::sycl::device> get_numa_devices(Selector &&selector) {
   }
 }
 
+// Return exactly `n` devices obtained using the selector `selector`.
+// May duplicate devices
+template <typename Selector>
+std::vector<cl::sycl::device> get_duplicated_devices(Selector &&selector,
+                                                     std::size_t n) {
+  auto devices = get_numa_devices(std::forward<Selector>(selector));
+
+  if (devices.size() >= n) {
+    return std::vector<cl::sycl::device>(devices.begin(), devices.begin() + n);
+  } else {
+    std::size_t i = 0;
+    while (devices.size() < n) {
+      auto d = devices[i++];
+      devices.push_back(d);
+    }
+    return devices;
+  }
+}
+
 template <typename Range> void print_range(Range &&r, std::string label = "") {
   size_t indent = 1;
 
@@ -125,6 +159,21 @@ template <typename Range> void print_range(Range &&r, std::string label = "") {
     ++count;
   }
   std::cout << "]" << std::endl;
+}
+
+template <typename R> void print_range_details(R &&r, std::string label = "") {
+  if (label != "") {
+    std::cout << "\"" << label << "\" ";
+  }
+
+  std::cout << "distributed range with " << r.segments().size() << " segments."
+            << std::endl;
+
+  std::size_t idx = 0;
+  for (auto &&segment : r.segments()) {
+    std::cout << "Seg " << idx++ << ", size " << segment.size() << " (rank "
+              << segment.rank() << ")" << std::endl;
+  }
 }
 
 // Allocate spans on a number of devices.

@@ -46,6 +46,6 @@ private:
 };
 
 template <std::ranges::random_access_range R>
-span(R &&) -> span<std::ranges::iterator_t<R>>;
+span(R &&) -> span<std::ranges::range_value_t<R>, std::ranges::iterator_t<R>>;
 
 } // namespace shp

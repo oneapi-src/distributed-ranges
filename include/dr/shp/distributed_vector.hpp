@@ -162,7 +162,8 @@ public:
   iterator begin() { return iterator(segments_, 0, 0, segment_size_); }
 
   iterator end() {
-    return iterator(segments_, segments_.size(), 0, segment_size_);
+    return iterator(segments_, size() / segment_size_, size() % segment_size_,
+                    segment_size_);
   }
 
 private:

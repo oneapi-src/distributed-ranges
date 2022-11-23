@@ -14,15 +14,13 @@ concept remote_range =
     std::ranges::forward_range<R> && requires(R &r) { lib::ranges::rank(r); };
 
 template <typename R>
-concept distributed_range = std::ranges::forward_range<R> &&
-                            requires(R &r) {
-                              {
-                                lib::ranges::segments(r)
-                                } -> std::ranges::forward_range;
-                              {
-                                *std::ranges::begin(lib::ranges::segments(r))
-                                } -> lib::remote_range;
-                            };
+concept distributed_range =
+    std::ranges::forward_range<R> &&
+    requires(R &r) {
+      { lib::ranges::segments(r) } -> std::ranges::forward_range;
+    } &&
+    remote_range<std::ranges::range_value_t<decltype(lib::ranges::segments(
+        std::declval<R>()))>>;
 
 template <typename I>
 concept remote_contiguous_iterator =
@@ -33,22 +31,21 @@ concept remote_contiguous_iterator =
                                           } -> std::contiguous_iterator;
                                       };
 
-template <typename T>
+template <typename R>
 concept remote_contiguous_range =
-    std::ranges::random_access_range<T> &&
-    /*remote_contiguous_iterator<std::ranges::iterator_t<T>> &&*/
-    requires(T t) {
-      { t.rank() } -> std::convertible_to<std::size_t>;
+    remote_range<R> && std::ranges::random_access_range<R> &&
+    requires(R &r) {
+      lib::ranges::rank(r);
+      { lib::ranges::local(r) } -> std::ranges::contiguous_range;
     };
 
-template <typename T>
+template <typename R>
 concept distributed_contiguous_range =
-    std::ranges::random_access_range<T> &&
-    requires(T t) {
-      { t.segments() } -> std::ranges::random_access_range;
-      {
-        std::declval<std::ranges::range_value_t<decltype(t.segments())>>()
-        } -> remote_contiguous_range;
-    };
+    distributed_range<R> && std::ranges::random_access_range<R> &&
+    requires(R &r) {
+      { lib::ranges::segments(r) } -> std::ranges::random_access_range;
+    } &&
+    remote_contiguous_range<std::ranges::range_value_t<
+        decltype(lib::ranges::segments(std::declval<R>()))>>;
 
 } // namespace lib

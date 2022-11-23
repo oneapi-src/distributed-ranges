@@ -3,6 +3,8 @@
 
 #include <ranges>
 
+#include <iostream>
+
 int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
 
@@ -28,11 +30,7 @@ int main(int argc, char **argv) {
 
   shp::print_range(v);
 
-  auto a = lib::ranges::local(v.segments()[0].begin());
-
-  shp::distributed_span dspan(v.segments());
-
-  shp::print_range(dspan);
+  std::cout << "Sum: " << sum << std::endl;
 
   return 0;
 }
