@@ -81,6 +81,40 @@ TEST(CpuMpiTests, UnstructuredHalo) {
   }
 }
 
+TEST(CpuMpiTests, UnstructuredHaloBind) {
+
+  std::vector<int> d(n);
+  std::iota(d.begin(), d.end(), initial_value(comm_rank));
+
+  if (comm_size != 2) {
+    return;
+  }
+
+  std::vector<group> owned_groups, halo_groups;
+  if (comm_rank == 0) {
+    owned_groups.push_back(group(1, {2, 2}));
+    halo_groups.push_back(group(1, {7, 8, 9}));
+  } else {
+    owned_groups.push_back(group(0, {1, 3, 5}));
+    halo_groups.push_back(group(0, {8, 9}));
+  }
+
+  halo h(comm, d.data(), owned_groups, halo_groups);
+
+  h.exchange_begin();
+  h.exchange_finalize();
+
+  if (comm_rank == 0) {
+    std::vector<int> correct = {100, 101, 102, 103, 104,
+                                105, 106, 201, 203, 205};
+    expect_eq(d, correct);
+  } else {
+    std::vector<int> correct = {200, 201, 202, 203, 204,
+                                205, 206, 207, 102, 102};
+    expect_eq(d, correct);
+  }
+}
+
 //
 // 100 101 102 103 104 105 106 107 108 109
 // 200 201 202 203 204 205 206 207 208 209

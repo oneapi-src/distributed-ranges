@@ -116,6 +116,8 @@ public:
   index_group(T *data, std::size_t rank,
               const std::vector<std::size_t> &indices)
       : data_(data), rank_(rank), indices_(indices) {}
+  index_group(std::size_t rank, const std::vector<std::size_t> &indices)
+      : rank_(rank), indices_(indices) {}
 
   void unpack(T *buffer, const auto &op) {
     for (auto i : indices_) {
@@ -135,14 +137,37 @@ public:
 
   std::size_t rank() { return rank_; }
 
+  void bind(T *data) { data_ = data; }
+
 private:
-  T *data_;
+  T *data_ = nullptr;
   std::size_t rank_;
   std::vector<std::size_t> indices_;
 };
 
-/// Unstructured halo
-template <typename T> using unstructured_halo = halo<index_group<T>>;
+template <typename T> using unstructured_halo_impl = halo<index_group<T>>;
+
+template <typename T>
+class unstructured_halo : public unstructured_halo_impl<T> {
+public:
+  using group_type = index_group<T>;
+
+  unstructured_halo(communicator comm, T *data,
+                    const std::vector<group_type> &owned_groups,
+                    const std::vector<group_type> &halo_groups)
+      : unstructured_halo_impl<T>(comm, bind(data, owned_groups),
+                                  bind(data, halo_groups)) {}
+  unstructured_halo(communicator comm,
+                    const std::vector<group_type> &owned_groups,
+                    const std::vector<group_type> &halo_groups)
+      : unstructured_halo_impl<T>(comm, owned_groups, halo_groups) {}
+
+private:
+  auto bind(T *data, std::vector<group_type> groups) {
+    rng::for_each(groups, [data](auto &g) { g.bind(data); });
+    return groups;
+  }
+};
 
 template <typename T> class span_group {
 public:
