@@ -84,7 +84,7 @@ private:
       g.pack(b);
       g.receive = false;
       drlog.debug("Sending: {}\n", g.request_index);
-      comm_.isend(b, g.buffer_size() * sizeof(T), g.rank(),
+      comm_.isend(b, g.buffer_size(), g.rank(), g.tag(),
                   &requests_[g.request_index]);
     }
   }
@@ -93,8 +93,8 @@ private:
     for (auto &g : receives) {
       g.receive = true;
       drlog.debug("Receiving: {}\n", g.request_index);
-      comm_.irecv(&buffer_[g.buffer_index], g.buffer_size() * sizeof(T),
-                  g.rank(), &requests_[g.request_index]);
+      comm_.irecv(&buffer_[g.buffer_index], g.buffer_size(), g.rank(), g.tag(),
+                  &requests_[g.request_index]);
     }
   }
 
@@ -136,6 +136,7 @@ public:
   std::size_t buffer_size() { return indices_.size(); }
 
   std::size_t rank() { return rank_; }
+  auto tag() { return tag_; }
 
   void bind(T *data) { data_ = data; }
 
@@ -143,6 +144,7 @@ private:
   T *data_ = nullptr;
   std::size_t rank_;
   std::vector<std::size_t> indices_;
+  communicator::tag tag_ = communicator::tag::halo_index;
 };
 
 template <typename T> using unstructured_halo_impl = halo<index_group<T>>;
@@ -182,10 +184,11 @@ public:
   std::size_t request_index;
   bool receive;
 
-  span_group(T *data, std::size_t size, std::size_t rank)
-      : data_(data, size), rank_(rank) {}
+  span_group(T *data, std::size_t size, std::size_t rank, communicator::tag tag)
+      : data_(data, size), rank_(rank), tag_(tag) {}
 
-  span_group(std::span<T> data, std::size_t rank) : data_(data), rank_(rank) {}
+  span_group(std::span<T> data, std::size_t rank, communicator::tag tag)
+      : data_(data), rank_(rank), tag_(tag) {}
 
   void unpack(T *buffer, const auto &op) {
     for (std::size_t i = 0; i < data_.size(); i++) {
@@ -200,10 +203,14 @@ public:
 
   std::size_t rank() { return rank_; }
 
+  auto tag() { return tag_; }
+
 private:
   std::span<T> data_;
   std::size_t rank_;
   std::size_t radius_;
+  communicator::tag tag_ = communicator::tag::invalid;
+  ;
 };
 
 template <typename T> using span_halo_impl = halo<span_group<T>>;
@@ -212,27 +219,46 @@ template <typename T> class span_halo : public span_halo_impl<T> {
 public:
   using group_type = span_group<T>;
 
-  span_halo(communicator comm, T *data, std::size_t size, std::size_t radius)
-      : span_halo_impl<T>(comm, owned_groups(comm, {data, size}, radius),
-                          halo_groups(comm, {data, size}, radius)) {}
-  span_halo(communicator comm, std::span<T> span, std::size_t radius)
-      : span_halo_impl<T>(comm, owned_groups(comm, span, radius),
-                          halo_groups(comm, span, radius)) {}
+  span_halo(communicator comm, T *data, std::size_t size, std::size_t radius,
+            bool periodic = false)
+      : span_halo_impl<T>(comm,
+                          owned_groups(comm, {data, size}, radius, periodic),
+                          halo_groups(comm, {data, size}, radius, periodic)) {}
+  span_halo(communicator comm, std::span<T> span, std::size_t radius,
+            bool periodic = false)
+      : span_halo_impl<T>(comm, owned_groups(comm, span, radius, periodic),
+                          halo_groups(comm, span, radius, periodic)) {}
 
 private:
-  static std::vector<group_type>
-  owned_groups(communicator comm, std::span<T> span, std::size_t radius) {
+  static std::vector<group_type> owned_groups(communicator comm,
+                                              std::span<T> span,
+                                              std::size_t radius,
+                                              bool periodic) {
     std::vector<group_type> owned;
-    owned.emplace_back(span.first(2 * radius).last(radius), comm.prev());
-    owned.emplace_back(span.last(2 * radius).first(radius), comm.next());
+    if (periodic || !comm.first()) {
+      owned.emplace_back(span.subspan(radius, radius), comm.prev(),
+                         communicator::tag::halo_reverse);
+    }
+    if (periodic || !comm.last()) {
+      owned.emplace_back(span.subspan(span.size() - 2 * radius, radius),
+                         comm.next(), communicator::tag::halo_forward);
+    }
     return owned;
   }
 
-  static std::vector<group_type>
-  halo_groups(communicator comm, std::span<T> span, std::size_t radius) {
+  static std::vector<group_type> halo_groups(communicator comm,
+                                             std::span<T> span,
+                                             std::size_t radius,
+                                             bool periodic) {
     std::vector<group_type> halo;
-    halo.emplace_back(span.first(radius), comm.prev());
-    halo.emplace_back(span.last(radius), comm.next());
+    if (periodic || !comm.first()) {
+      halo.emplace_back(span.first(radius), comm.prev(),
+                        communicator::tag::halo_forward);
+    }
+    if (periodic || !comm.last()) {
+      halo.emplace_back(span.last(radius), comm.next(),
+                        communicator::tag::halo_reverse);
+    }
     return halo;
   }
 };

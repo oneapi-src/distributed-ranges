@@ -2,6 +2,13 @@ namespace lib {
 
 class communicator {
 public:
+  enum class tag {
+    invalid,
+    halo_forward,
+    halo_reverse,
+    halo_index,
+  };
+
   class win {
   public:
     win() { win_ = MPI_WIN_NULL; }
@@ -53,6 +60,8 @@ public:
   int rank() const { return rank_; }
   int prev() const { return (rank() + size() - 1) % size(); }
   int next() const { return (rank() + 1) % size(); }
+  int first() const { return rank() == 0; }
+  int last() const { return rank() == size() - 1; }
 
   MPI_Comm mpi_comm() const { return mpi_comm_; }
 
@@ -64,22 +73,26 @@ public:
     MPI_Gather(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
   }
 
-  void isend(const void *data, int size, int source, MPI_Request *request) {
-    MPI_Isend(data, size, MPI_CHAR, source, 0, mpi_comm_, request);
+  template <typename T>
+  void isend(const T *data, int size, int source, tag t, MPI_Request *request) {
+    MPI_Isend(data, size * sizeof(T), MPI_CHAR, source, int(t), mpi_comm_,
+              request);
   }
 
   template <rng::contiguous_range R>
-  void isend(const R &data, int source, MPI_Request *request) {
-    isend(data.data(), data.size() * sizeof(data[0]), source, request);
+  void isend(const R &data, int source, tag t, MPI_Request *request) {
+    isend(data.data(), data.size(), source, int(t), request);
   }
 
-  void irecv(void *data, int size, int dest, MPI_Request *request) {
-    MPI_Irecv(data, size, MPI_CHAR, dest, 0, mpi_comm_, request);
+  template <typename T>
+  void irecv(T *data, int size, int dest, tag t, MPI_Request *request) {
+    MPI_Irecv(data, size * sizeof(T), MPI_CHAR, dest, int(t), mpi_comm_,
+              request);
   }
 
   template <rng::contiguous_range R>
-  void irecv(R &data, int source, MPI_Request *request) {
-    irecv(data.data(), data.size() * sizeof(data[0]), source, request);
+  void irecv(R &data, int source, tag t, MPI_Request *request) {
+    irecv(data.data(), data.size(), source, int(t), request);
   }
 
 private:

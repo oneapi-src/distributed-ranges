@@ -1,5 +1,6 @@
+# only tested with 2 ranks
 add_executable(
-  cpu-tests
+  cpu-tests-2
   cpu-tests.cpp
   communicator.cpp
   remote_memory.cpp
@@ -10,24 +11,28 @@ add_executable(
 )
 
 target_link_libraries(
-  cpu-tests
+  cpu-tests-2
   GTest::gtest_main
   cxxopts
   DR::mpi
 )
 
+# tested with a variable number of ranks
 add_executable(
-  cpu-tests-4
+  cpu-tests-n
   cpu-tests.cpp
   span_halo.cpp
 )
 
 target_link_libraries(
-  cpu-tests-4
+  cpu-tests-n
   GTest::gtest_main
   cxxopts
   DR::mpi
 )
 
-add_mpi_test(cpu-mpi-2 cpu-tests 2)
-add_mpi_test(cpu-mpi-4 cpu-tests-4 4)
+add_mpi_test(cpu-mpi cpu-tests-2 2)
+add_mpi_test(cpu-mpi-1 cpu-tests-n 1)
+add_mpi_test(cpu-mpi-2 cpu-tests-n 2)
+add_mpi_test(cpu-mpi-3 cpu-tests-n 3)
+add_mpi_test(cpu-mpi-4 cpu-tests-n 4)

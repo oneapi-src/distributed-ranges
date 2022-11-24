@@ -4,49 +4,101 @@ using halo = lib::span_halo<int>;
 using group = halo::group_type;
 
 const std::size_t n = 10;
-const int radius = 1;
 
-int initial_value(int rank) { return 100 * (rank + 1); }
+int value(int rank, int index) { return (rank + 1) * 100 + index; }
 
-//
-// 100 101 102 103 104 105 106 107 108 109
-// 200 201 202 203 204 205 206 207 208 209
-//
-TEST(CpuMpiTests, SpanHalo) {
-  auto right = (comm_rank + 1) % comm_size;
-  auto left = (comm_rank + comm_size - 1) % comm_size;
+struct stencil_data {
+  stencil_data(std::size_t size, int radius, bool periodic) {
+    initial.resize(n);
+    for (std::size_t i = 0; i < n; i++) {
+      initial[i] = value(comm_rank, i);
+    }
+    ref = test = initial;
 
-  std::vector<int> d(n);
-  std::iota(d.begin() + radius, d.end() - radius, initial_value(comm_rank));
+    auto prev = (comm_rank - 1 + comm_size) % comm_size;
+    ;
+    auto next = (comm_rank + 1) % comm_size;
 
-  halo h(comm, d.data(), d.size(), radius);
-
-  h.exchange_begin();
-  h.exchange_finalize();
-
-  if (comm_rank == 1) {
-    for (auto &v : d) {
-      std::cout << fmt::format(" {}", v);
+    if (periodic || comm_rank != 0) {
+      std::iota(ref.begin(), ref.begin() + radius, value(prev, n - 2 * radius));
+    }
+    if (periodic || comm_rank != comm_size - 1) {
+      std::iota(ref.end() - radius, ref.end(), value(next, radius));
     }
   }
-  std::cout << "\n";
 
-  EXPECT_EQ(d[0], initial_value(left) + n - 2 * radius - 1);
-  EXPECT_EQ(d[n - 1], initial_value(right));
-}
+  void check() {
+    show();
+    if (ref != test) {
+      ADD_FAILURE();
+    }
+  }
 
-TEST(CpuMpiTests, SpanHaloSpanConstructor) {
-  auto right = (comm_rank + 1) % comm_size;
-  auto left = (comm_rank + comm_size - 1) % comm_size;
+  void show(const auto &title, const auto &vec) {
+    fmt::print("{:9}", title);
+    for (auto d : vec) {
+      fmt::print("{:4} ", d);
+    }
+    fmt::print("\n");
+  }
 
-  std::vector<int> d(n);
-  std::iota(d.begin() + radius, d.end() - radius, initial_value(comm_rank));
+  void show() {
+    show("Initial", initial);
+    show("Reference", ref);
+    show("Test", test);
+  }
 
-  halo h(comm, d, radius);
+  std::vector<int> initial, test, ref;
+};
+
+TEST(CpuMpiTests, SpanHaloPeriodic) {
+  int radius = 2;
+  bool periodic = true;
+  stencil_data sd(n, radius, periodic);
+
+  halo h(comm, sd.test, radius, periodic);
 
   h.exchange_begin();
   h.exchange_finalize();
 
-  EXPECT_EQ(d[0], initial_value(left) + n - 2 * radius - 1);
-  EXPECT_EQ(d[n - 1], initial_value(right));
+  sd.check();
+}
+
+TEST(CpuMpiTests, SpanHaloPeriodicRadius1) {
+  int radius = 1;
+  bool periodic = true;
+  stencil_data sd(n, radius, periodic);
+
+  halo h(comm, sd.test, radius, periodic);
+
+  h.exchange_begin();
+  h.exchange_finalize();
+
+  sd.check();
+}
+
+TEST(CpuMpiTests, SpanHaloNonPeriodic) {
+  int radius = 2;
+  bool periodic = false;
+  stencil_data sd(n, radius, periodic);
+
+  halo h(comm, sd.test, radius);
+
+  h.exchange_begin();
+  h.exchange_finalize();
+
+  sd.check();
+}
+
+TEST(CpuMpiTests, SpanHaloPointer) {
+  int radius = 2;
+  bool periodic = false;
+  stencil_data sd(n, radius, periodic);
+
+  halo h(comm, sd.test.data(), sd.test.size(), radius);
+
+  h.exchange_begin();
+  h.exchange_finalize();
+
+  sd.check();
 }
