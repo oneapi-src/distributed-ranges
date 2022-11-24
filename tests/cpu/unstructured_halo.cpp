@@ -1,7 +1,7 @@
 #include "cpu-tests.hpp"
 
 using halo = lib::unstructured_halo<int>;
-using group = halo::group_type;
+using group = halo::index_map;
 
 const std::size_t n = 10;
 const int radius = 1;
@@ -21,14 +21,14 @@ TEST(CpuMpiTests, Halo) {
   auto right = (comm_rank + 1) % comm_size;
   auto left = (comm_rank + comm_size - 1) % comm_size;
 
-  group owned_clockwise(d.data(), right, {n - 1 - radius});
-  group owned_counter_clockwise(d.data(), left, {radius});
+  group owned_clockwise(right, {n - 1 - radius});
+  group owned_counter_clockwise(left, {radius});
 
-  group halos_clockwise(d.data(), left, {0});
-  group halos_counter_clockwise(d.data(), right, {n - radius});
+  group halos_clockwise(left, {0});
+  group halos_counter_clockwise(right, {n - radius});
 
   // pointer
-  halo h(comm, {owned_clockwise, owned_counter_clockwise},
+  halo h(comm, d.data(), {owned_clockwise, owned_counter_clockwise},
          {halos_clockwise, halos_counter_clockwise});
 
   h.exchange_begin();
@@ -48,40 +48,6 @@ TEST(CpuMpiTests, Halo) {
 //
 //
 TEST(CpuMpiTests, UnstructuredHalo) {
-
-  std::vector<int> d(n);
-  std::iota(d.begin(), d.end(), initial_value(comm_rank));
-
-  if (comm_size != 2) {
-    return;
-  }
-
-  std::vector<group> owned_groups, halo_groups;
-  if (comm_rank == 0) {
-    owned_groups.push_back(group(d.data(), 1, {2, 2}));
-    halo_groups.push_back(group(d.data(), 1, {7, 8, 9}));
-  } else {
-    owned_groups.push_back(group(d.data(), 0, {1, 3, 5}));
-    halo_groups.push_back(group(d.data(), 0, {8, 9}));
-  }
-
-  halo h(comm, owned_groups, halo_groups);
-
-  h.exchange_begin();
-  h.exchange_finalize();
-
-  if (comm_rank == 0) {
-    std::vector<int> correct = {100, 101, 102, 103, 104,
-                                105, 106, 201, 203, 205};
-    expect_eq(d, correct);
-  } else {
-    std::vector<int> correct = {200, 201, 202, 203, 204,
-                                205, 206, 207, 102, 102};
-    expect_eq(d, correct);
-  }
-}
-
-TEST(CpuMpiTests, UnstructuredHaloBind) {
 
   std::vector<int> d(n);
   std::iota(d.begin(), d.end(), initial_value(comm_rank));
@@ -136,14 +102,14 @@ TEST(CpuMpiTests, UnstructuredHaloReduce) {
 
   std::vector<group> owned_groups, halo_groups;
   if (comm_rank == 0) {
-    owned_groups.push_back(group(d.data(), 1, {2, 2}));
-    halo_groups.push_back(group(d.data(), 1, {7, 8, 9}));
+    owned_groups.push_back(group(1, {2, 2}));
+    halo_groups.push_back(group(1, {7, 8, 9}));
   } else {
-    owned_groups.push_back(group(d.data(), 0, {1, 3, 5}));
-    halo_groups.push_back(group(d.data(), 0, {8, 9}));
+    owned_groups.push_back(group(0, {1, 3, 5}));
+    halo_groups.push_back(group(0, {8, 9}));
   }
 
-  halo h(comm, owned_groups, halo_groups);
+  halo h(comm, d.data(), owned_groups, halo_groups);
 
   h.reduce_begin();
   h.reduce_finalize(h.plus);
@@ -170,14 +136,14 @@ TEST(CpuMpiTests, UnstructuredHaloReduceMax) {
 
   std::vector<group> owned_groups, halo_groups;
   if (comm_rank == 0) {
-    owned_groups.push_back(group(d.data(), 1, {2, 2}));
-    halo_groups.push_back(group(d.data(), 1, {7, 8, 9}));
+    owned_groups.push_back(group(1, {2, 2}));
+    halo_groups.push_back(group(1, {7, 8, 9}));
   } else {
-    owned_groups.push_back(group(d.data(), 0, {1, 3, 5}));
-    halo_groups.push_back(group(d.data(), 0, {8, 9}));
+    owned_groups.push_back(group(0, {1, 3, 5}));
+    halo_groups.push_back(group(0, {8, 9}));
   }
 
-  halo h(comm, owned_groups, halo_groups);
+  halo h(comm, d.data(), owned_groups, halo_groups);
 
   h.reduce_begin();
   h.reduce_finalize(h.max);
@@ -204,14 +170,14 @@ TEST(CpuMpiTests, UnstructuredHaloReduceMin) {
 
   std::vector<group> owned_groups, halo_groups;
   if (comm_rank == 0) {
-    owned_groups.push_back(group(d.data(), 1, {2, 2}));
-    halo_groups.push_back(group(d.data(), 1, {7, 8, 9}));
+    owned_groups.push_back(group(1, {2, 2}));
+    halo_groups.push_back(group(1, {7, 8, 9}));
   } else {
-    owned_groups.push_back(group(d.data(), 0, {1, 3, 5}));
-    halo_groups.push_back(group(d.data(), 0, {8, 9}));
+    owned_groups.push_back(group(0, {1, 3, 5}));
+    halo_groups.push_back(group(0, {8, 9}));
   }
 
-  halo h(comm, owned_groups, halo_groups);
+  halo h(comm, d.data(), owned_groups, halo_groups);
 
   h.reduce_begin();
   h.reduce_finalize(h.min);

@@ -116,8 +116,6 @@ public:
   index_group(T *data, std::size_t rank,
               const std::vector<std::size_t> &indices)
       : data_(data), rank_(rank), indices_(indices) {}
-  index_group(std::size_t rank, const std::vector<std::size_t> &indices)
-      : rank_(rank), indices_(indices) {}
 
   void unpack(T *buffer, const auto &op) {
     for (auto i : indices_) {
@@ -138,8 +136,6 @@ public:
   std::size_t rank() { return rank_; }
   auto tag() { return tag_; }
 
-  void bind(T *data) { data_ = data; }
-
 private:
   T *data_ = nullptr;
   std::size_t rank_;
@@ -153,26 +149,24 @@ template <typename T>
 class unstructured_halo : public unstructured_halo_impl<T> {
 public:
   using group_type = index_group<T>;
+  using index_map = std::pair<std::size_t, std::vector<std::size_t>>;
 
-  ///
-  /// Constructor that binds the data pointer
-  ///
-  unstructured_halo(communicator comm, T *data,
-                    const std::vector<group_type> &owned_groups,
-                    const std::vector<group_type> &halo_groups)
-      : unstructured_halo_impl<T>(comm, bind(data, owned_groups),
-                                  bind(data, halo_groups)) {}
   ///
   /// Constructor
   ///
-  unstructured_halo(communicator comm,
-                    const std::vector<group_type> &owned_groups,
-                    const std::vector<group_type> &halo_groups)
-      : unstructured_halo_impl<T>(comm, owned_groups, halo_groups) {}
+  unstructured_halo(communicator comm, T *data,
+                    const std::vector<index_map> &owned,
+                    const std::vector<index_map> &halo)
+      : unstructured_halo_impl<T>(comm, make_groups(comm, data, owned),
+                                  make_groups(comm, data, halo)) {}
 
 private:
-  auto bind(T *data, std::vector<group_type> groups) {
-    rng::for_each(groups, [data](auto &g) { g.bind(data); });
+  static std::vector<group_type>
+  make_groups(communicator comm, T *data, const std::vector<index_map> &map) {
+    std::vector<group_type> groups;
+    for (auto const &[rank, indices] : map) {
+      groups.emplace_back(data, rank, indices);
+    }
     return groups;
   }
 };
