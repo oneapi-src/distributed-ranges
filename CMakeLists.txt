@@ -15,6 +15,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   option(ENABLE_SYCL "Build sycl examples" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
+  option(ENABLE_FORMAT "Build with format library" ON)
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
 
   #

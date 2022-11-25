@@ -5,7 +5,11 @@ add_library(DR::mpi ALIAS dr_mpi)
 
 find_package(MPI REQUIRED)
 find_package(MKL REQUIRED)
-target_link_libraries(dr_mpi INTERFACE MPI::MPI_CXX fmt::fmt range-v3 std::mdspan MKL::MKL)
+target_link_libraries(dr_mpi INTERFACE MPI::MPI_CXX range-v3 std::mdspan MKL::MKL)
+if (ENABLE_FORMAT)
+  target_compile_definitions(dr_mpi INTERFACE DR_FORMAT)
+  target_link_libraries(dr_mpi INTERFACE fmt::fmt)
+endif()
 target_include_directories(dr_mpi INTERFACE . vendor)
 
 # shp: sycl, single process, multi-gpu

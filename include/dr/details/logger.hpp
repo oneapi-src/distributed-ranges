@@ -1,5 +1,7 @@
 namespace lib {
 
+#if DR_FORMAT
+
 class logger {
 public:
   void set_file(std::ofstream &fout) { fout_ = &fout; }
@@ -24,6 +26,23 @@ public:
 private:
   std::ofstream *fout_ = nullptr;
 };
+
+#else
+
+class logger {
+public:
+  void set_file(std::ofstream &fout) { fout_ = &fout; }
+
+  template <typename... Args>
+  void debug(const nostd::source_location &location, std::string format,
+             Args &&...args) {}
+  template <typename... Args> void debug(std::string format, Args &&...args) {}
+
+private:
+  std::ofstream *fout_ = nullptr;
+};
+
+#endif
 
 inline logger drlog;
 

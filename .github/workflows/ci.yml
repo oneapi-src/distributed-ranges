@@ -29,21 +29,33 @@ jobs:
       CXX: clang++
     steps:
     - uses: actions/checkout@v3
-    - run: |
+    - name: Build & test
+      run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j -C build all test
 
   gcc:
     runs-on: dds-base
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - cxx: g++-10
+        - cxx: g++-11
+        - cxx: g++-12
+    name: ${{ matrix.cxx }}
     env:
-      CXX: g++-10
+      CXX: ${{ matrix.cxx }}
     steps:
     - uses: actions/checkout@v3
-    - run: |
+    - name: Build & test
+      run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j -C build all test
+        cmake -B build-nofmt
+        make -j -C build-nofmt/examples/cpu all test
 
   icpx:
     runs-on: dds-base
@@ -51,7 +63,8 @@ jobs:
       CXX: icpx
     steps:
     - uses: actions/checkout@v3
-    - run: |
+    - name: Build & test
+      run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j -C build all test
@@ -62,7 +75,8 @@ jobs:
       CXX: icpx
     steps:
     - uses: actions/checkout@v3
-    - run: |
+    - name: Build & test
+      run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
         ONEAPI_DEVICE_SELECTOR=level_zero:gpu make -j -C build all test
@@ -73,7 +87,8 @@ jobs:
       CXX: clang++
     steps:
     - uses: actions/checkout@v3
-    - run: |
+    - name: Build & test
+      run: |
         source /opt/intel/oneapi/setvars.sh
         source /opt/intel/open-source-dpcpp/20221029/startup.sh
         cmake -B build -DENABLE_SYCL=ON
@@ -85,7 +100,8 @@ jobs:
       CXX: clang++
     steps:
     - uses: actions/checkout@v3
-    - run: |
+    - name: Build & test
+      run: |
         source /opt/intel/oneapi/compiler/latest/env/vars.sh
         source /opt/intel/oneapi/mkl/latest/env/vars.sh
         source /opt/intel/open-source-dpcpp/20221029/startup.sh
