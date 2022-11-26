@@ -111,17 +111,33 @@ public:
 
 #endif
 
+  /// Stencil specification
+  using stencil_type = stencil<1>;
+
   /// Construct a distributed vector with `count` elements.
   distributed_vector(D decomp, size_type count)
       : decomp_(decomp), size_(count), comm_(decomp.comm()),
-        local_(storage_size(count, comm_.size()) / comm_.size()) {
+        local_(local_storage_size()) {
+    init();
+  }
+
+  /// Construct a distributed vector with a halo and `count` elements.
+  distributed_vector(stencil_type s, size_type count)
+      : stencil_(s), size_(count), comm_(decomp_.comm()),
+        local_(local_storage_size()) {
+    init();
+  }
+
+  /// Construct a distributed vector with a halo and `count` elements.
+  distributed_vector(std::size_t radius, size_type count)
+      : stencil_(radius), size_(count), comm_(decomp_.comm()),
+        local_(local_storage_size()) {
     init();
   }
 
   /// Construct a distributed vector with `count` elements.
   distributed_vector(size_type count)
-      : size_(count), comm_(decomp_.comm()),
-        local_(storage_size(count, comm_.size()) / comm_.size()) {
+      : size_(count), comm_(decomp_.comm()), local_(local_storage_size()) {
     init();
   }
 
@@ -148,7 +164,18 @@ public:
   reference operator[](const size_t index) {
     drlog.debug(nostd::source_location::current(),
                 "distributed vector index\n");
-    return *rptr(index / local_.size(), win_, index % local_.size());
+    auto radius = stencil_.radius()[0];
+    std::size_t slice_size = local().size() - radius.prev - radius.next;
+    std::size_t rank, offset;
+    if (index < radius.prev) {
+      rank = 0;
+    } else if (index >= size() - radius.next) {
+      rank = comm_.size() - 1;
+    } else {
+      rank = (index - radius.prev) / slice_size;
+    }
+    offset = index - rank * slice_size;
+    return *rptr(rank, win_, offset);
   }
 
   iterator begin() { return iterator(*this, 0); }
@@ -167,8 +194,22 @@ public:
   size_type size() const { return size_; }
 
 private:
-  void init() { win_.create(comm_, local_.data(), local_.size() * sizeof(T)); }
+  void init() {
+#ifdef OMPI_MAJOR_VERSION
+    // openmpi cannot create a window when the size is 1
+    // Not sure if it is specific to the version that comes with ubuntu 22
+    assert(comm_.size() > 1);
+#endif
+    win_.create(comm_, local_.data(), local_.size() * sizeof(T));
+  }
 
+  auto local_storage_size() {
+    auto radius = stencil_.radius()[0];
+    return partition_up(size_ - radius.prev - radius.next, comm_.size()) +
+           radius.prev + radius.next;
+  }
+
+  stencil_type stencil_;
   D decomp_;
   size_type size_;
   communicator comm_;

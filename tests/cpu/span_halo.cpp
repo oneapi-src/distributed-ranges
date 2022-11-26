@@ -102,3 +102,22 @@ TEST(CpuMpiTests, SpanHaloPointer) {
 
   sd.check();
 }
+
+TEST(CpuMpiTests, SpanHaloDistributedVector) {
+  std::size_t radius = 2;
+  std::size_t slice = 4;
+  std::size_t n = comm_size * slice + 2 * radius;
+  lib::distributed_vector<int> dv(radius, n);
+  dv.fence();
+
+  if (comm_rank == 0) {
+    std::iota(dv.begin(), dv.end(), 1);
+  }
+  dv.fence();
+
+  for (std::size_t i = 0; i < slice; i++) {
+    EXPECT_EQ(dv.local()[i + radius], dv[comm_rank * slice + i + radius]);
+  }
+
+  dv.fence();
+}

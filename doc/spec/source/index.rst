@@ -21,7 +21,7 @@ Welcome to the Distributed Ranges Specification.
    containers/containers
    views/views
    algorithms/algorithms
-   utilities/utilities
+   communication/communication
 
 
 Indices and tables

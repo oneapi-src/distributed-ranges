@@ -1,14 +1,14 @@
 namespace lib {
 
-template <typename Group> class halo {
+template <typename Group> class halo_impl {
   using T = typename Group::element_type;
 
 public:
   using group_type = Group;
 
   /// halo constructor
-  halo(communicator comm, const std::vector<Group> &owned_groups,
-       const std::vector<Group> &halo_groups)
+  halo_impl(communicator comm, const std::vector<Group> &owned_groups,
+            const std::vector<Group> &halo_groups)
       : comm_(comm), halo_groups_(halo_groups), owned_groups_(owned_groups) {
     std::size_t buffer_size = 0;
     std::size_t i = 0;
@@ -143,7 +143,7 @@ private:
   communicator::tag tag_ = communicator::tag::halo_index;
 };
 
-template <typename T> using unstructured_halo_impl = halo<index_group<T>>;
+template <typename T> using unstructured_halo_impl = halo_impl<index_group<T>>;
 
 template <typename T>
 class unstructured_halo : public unstructured_halo_impl<T> {
@@ -207,7 +207,36 @@ private:
   ;
 };
 
-template <typename T> using span_halo_impl = halo<span_group<T>>;
+template <int Rank> class stencil {
+public:
+  struct dimension_type {
+    std::size_t prev, next;
+  };
+  using radius_type = std::array<dimension_type, Rank>;
+  /// Constructor
+  stencil(bool periodic, std::size_t radius = 0)
+      : radius_({dimension_type{radius, radius}}), periodic_(periodic) {
+    assert(Rank == 1);
+  }
+
+  /// Constructor
+  stencil(std::size_t radius = 0)
+      : radius_({dimension_type{radius, radius}}), periodic_(false) {
+    assert(Rank == 1);
+  }
+
+  /// Returns radius of stencil
+  const radius_type &radius() const { return radius_; }
+
+  /// Returns True if boundary is periodic (wraps around)
+  bool periodic() const { return periodic_; }
+
+private:
+  radius_type radius_;
+  bool periodic_;
+};
+
+template <typename T> using span_halo_impl = halo_impl<span_group<T>>;
 
 template <typename T> class span_halo : public span_halo_impl<T> {
 public:

@@ -18,7 +18,7 @@ another rank.
 
 .. seealso::
 
-   :ref:`halo`
+   :ref:`unstructured_halo`
 
 Examples
 ========

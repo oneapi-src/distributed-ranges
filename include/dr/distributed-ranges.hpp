@@ -45,6 +45,8 @@ namespace stdex = std::experimental;
 
 #include "details/remote_vector.hpp"
 
+#include "details/halo.hpp"
+
 #include "details/distributed_vector.hpp"
 
 #include "details/distributed_mdspan.hpp"
@@ -58,5 +60,3 @@ namespace stdex = std::experimental;
 #include "algorithms/copy.hpp"
 #include "algorithms/for_each.hpp"
 #include "algorithms/transpose.hpp"
-
-#include "details/halo.hpp"

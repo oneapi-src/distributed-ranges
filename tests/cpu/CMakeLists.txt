@@ -31,8 +31,14 @@ target_link_libraries(
   DR::mpi
 )
 
+cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
+
 add_mpi_test(cpu-mpi cpu-tests-2 2)
-add_mpi_test(cpu-mpi-1 cpu-tests-n 1)
+
+if (NOT MPI_IMPL STREQUAL "openmpi")
+  # MPI_Win_create fails for communicator with size 1
+  add_mpi_test(cpu-mpi-1 cpu-tests-n 1)
+endif()
 add_mpi_test(cpu-mpi-2 cpu-tests-n 2)
 add_mpi_test(cpu-mpi-3 cpu-tests-n 3)
 add_mpi_test(cpu-mpi-4 cpu-tests-n 4)
