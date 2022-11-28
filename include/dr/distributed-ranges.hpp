@@ -11,6 +11,7 @@
 
 #ifdef DR_FORMAT
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 #endif
 
 #include <source_location/source_location.hpp>

@@ -10,6 +10,9 @@ public:
   halo_impl(communicator comm, const std::vector<Group> &owned_groups,
             const std::vector<Group> &halo_groups)
       : comm_(comm), halo_groups_(halo_groups), owned_groups_(owned_groups) {
+    drlog.debug(nostd::source_location::current(),
+                "Halo constructed with {}/{} owned/halo\n", owned_groups.size(),
+                halo_groups.size());
     std::size_t buffer_size = 0;
     std::size_t i = 0;
     for (auto &g : owned_groups_) {
@@ -30,12 +33,16 @@ public:
 
   /// Begin a halo exchange
   void exchange_begin() {
+    drlog.debug(nostd::source_location::current(), "Halo exchange begin\n");
     receive(halo_groups_);
     send(owned_groups_);
   }
 
   /// Complete a halo exchange
-  void exchange_finalize() { reduce_finalize(second); }
+  void exchange_finalize() {
+    reduce_finalize(second);
+    drlog.debug(nostd::source_location::current(), "Halo exchange finalize\n");
+  }
 
   /// Begin a halo reduction
   void reduce_begin() {
@@ -214,14 +221,18 @@ public:
   };
   using radius_type = std::array<dimension_type, Rank>;
   /// Constructor
-  stencil(bool periodic, std::size_t radius = 0)
-      : radius_({dimension_type{radius, radius}}), periodic_(periodic) {
+  stencil(bool periodic, std::size_t radius = 0) {
+    radius_[0].prev = radius;
+    radius_[0].next = radius;
+    periodic_ = periodic;
     assert(Rank == 1);
   }
 
   /// Constructor
-  stencil(std::size_t radius = 0)
-      : radius_({dimension_type{radius, radius}}), periodic_(false) {
+  stencil(std::size_t radius = 0) {
+    radius_[0].prev = radius;
+    radius_[0].next = radius;
+    periodic_ = false;
     assert(Rank == 1);
   }
 
@@ -242,44 +253,45 @@ template <typename T> class span_halo : public span_halo_impl<T> {
 public:
   using group_type = span_group<T>;
 
-  span_halo(communicator comm, T *data, std::size_t size, std::size_t radius,
-            bool periodic = false)
-      : span_halo_impl<T>(comm,
-                          owned_groups(comm, {data, size}, radius, periodic),
-                          halo_groups(comm, {data, size}, radius, periodic)) {}
-  span_halo(communicator comm, std::span<T> span, std::size_t radius,
-            bool periodic = false)
-      : span_halo_impl<T>(comm, owned_groups(comm, span, radius, periodic),
-                          halo_groups(comm, span, radius, periodic)) {}
+  span_halo() : span_halo_impl<T>(communicator(), {}, {}) {}
+
+  span_halo(communicator comm, T *data, std::size_t size, stencil<1> stencl)
+      : span_halo_impl<T>(comm, owned_groups(comm, {data, size}, stencl),
+                          halo_groups(comm, {data, size}, stencl)) {}
+
+  span_halo(communicator comm, std::span<T> span, stencil<1> stencl)
+      : span_halo_impl<T>(comm, owned_groups(comm, span, stencl),
+                          halo_groups(comm, span, stencl)) {}
 
 private:
-  static std::vector<group_type> owned_groups(communicator comm,
-                                              std::span<T> span,
-                                              std::size_t radius,
-                                              bool periodic) {
+  static std::vector<group_type>
+  owned_groups(communicator comm, std::span<T> span, stencil<1> stencl) {
+    const auto &radius = stencl.radius()[0];
     std::vector<group_type> owned;
-    if (periodic || !comm.first()) {
-      owned.emplace_back(span.subspan(radius, radius), comm.prev(),
+    drlog.debug(nostd::source_location::current(),
+                "owned groups {}/{} first/last\n", comm.first(), comm.last());
+    if (stencl.periodic() || !comm.first()) {
+      owned.emplace_back(span.subspan(radius.prev, radius.prev), comm.prev(),
                          communicator::tag::halo_reverse);
     }
-    if (periodic || !comm.last()) {
-      owned.emplace_back(span.subspan(span.size() - 2 * radius, radius),
-                         comm.next(), communicator::tag::halo_forward);
+    if (stencl.periodic() || !comm.last()) {
+      owned.emplace_back(
+          span.subspan(span.size() - 2 * radius.next, radius.next), comm.next(),
+          communicator::tag::halo_forward);
     }
     return owned;
   }
 
-  static std::vector<group_type> halo_groups(communicator comm,
-                                             std::span<T> span,
-                                             std::size_t radius,
-                                             bool periodic) {
+  static std::vector<group_type>
+  halo_groups(communicator comm, std::span<T> span, stencil<1> stencl) {
+    const auto &radius = stencl.radius()[0];
     std::vector<group_type> halo;
-    if (periodic || !comm.first()) {
-      halo.emplace_back(span.first(radius), comm.prev(),
+    if (stencl.periodic() || !comm.first()) {
+      halo.emplace_back(span.first(radius.prev), comm.prev(),
                         communicator::tag::halo_forward);
     }
-    if (periodic || !comm.last()) {
-      halo.emplace_back(span.last(radius), comm.next(),
+    if (stencl.periodic() || !comm.last()) {
+      halo.emplace_back(span.last(radius.next), comm.next(),
                         communicator::tag::halo_reverse);
     }
     return halo;

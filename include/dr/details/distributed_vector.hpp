@@ -14,6 +14,7 @@ public:
 
   reference operator*() const { return (*o_)[index_]; }
   reference operator*() { return (*o_)[index_]; }
+
   reference operator[](difference_type n) const noexcept {
     return (*o_)[index_ + n];
   }
@@ -45,6 +46,54 @@ public:
 
 private:
   O *o_ = nullptr;
+  difference_type index_ = 0;
+};
+
+template <typename O> class xconst_index_iterator {
+public:
+  using value_type = typename O::value_type;
+  using size_type = typename O::size_type;
+  using difference_type = typename O::difference_type;
+  using reference = typename O::const_reference;
+
+  xconst_index_iterator();
+  xconst_index_iterator(O &o, size_type index) : o_(&o), index_(index) {}
+
+  reference operator*() const { return (*o_)[index_]; }
+
+  reference operator[](difference_type n) const noexcept {
+    return (*o_)[index_ + n];
+  }
+
+  bool operator==(index_iterator<O> &other) const noexcept {
+    return index_ == other.index_ && o_ == other.o_;
+  }
+  bool operator==(xconst_index_iterator<O> &other) const noexcept {
+    return index_ == other.index_ && o_ == other.o_;
+  }
+
+  bool operator<=>(const index_iterator<O> &other) const noexcept;
+
+  xconst_index_iterator &operator++() {
+    index_++;
+    return *this;
+  }
+  xconst_index_iterator operator++(int);
+  xconst_index_iterator &operator--();
+  xconst_index_iterator operator--(int);
+  difference_type operator-(const index_iterator<O> &other) const noexcept;
+  xconst_index_iterator &operator-=(difference_type n) const noexcept;
+  xconst_index_iterator &operator+=(difference_type n) const noexcept;
+  xconst_index_iterator operator+(difference_type n) const noexcept;
+  xconst_index_iterator operator-(difference_type n) const noexcept;
+
+  friend xconst_index_iterator operator+(difference_type n,
+                                         xconst_index_iterator &other) {
+    return other + n;
+  }
+
+private:
+  const O *o_ = nullptr;
   difference_type index_ = 0;
 };
 
@@ -107,7 +156,7 @@ public:
   using iterator = index_iterator<distributed_vector>;
 
   /// Const iterator type
-  using const_iterator = const iterator;
+  using const_iterator = const index_iterator<distributed_vector>;
 
 #endif
 
@@ -124,14 +173,14 @@ public:
   /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(stencil_type s, size_type count)
       : stencil_(s), size_(count), comm_(decomp_.comm()),
-        local_(local_storage_size()) {
+        local_(local_storage_size()), halo_(comm_, local_, stencil_) {
     init();
   }
 
   /// Construct a distributed vector with a halo and `count` elements.
-  distributed_vector(std::size_t radius, size_type count)
+  distributed_vector(std::size_t radius, bool periodic, size_type count)
       : stencil_(radius), size_(count), comm_(decomp_.comm()),
-        local_(local_storage_size()) {
+        local_(local_storage_size()), halo_(comm_, local_, stencil_) {
     init();
   }
 
@@ -162,8 +211,6 @@ public:
 
   /// Index into a distributed vector
   reference operator[](const size_t index) {
-    drlog.debug(nostd::source_location::current(),
-                "distributed vector index\n");
     auto radius = stencil_.radius()[0];
     std::size_t slice_size = local().size() - radius.prev - radius.next;
     std::size_t rank, offset;
@@ -179,9 +226,9 @@ public:
   }
 
   iterator begin() { return iterator(*this, 0); }
-  const iterator begin() const { return iterator(*this, 0); }
+  const_iterator begin() const { return const_iterator(*this, 0); }
   iterator end() { return iterator(*this, size_); };
-  const iterator end() const { return iterator(*this, size_); };
+  const_iterator end() const { return const_iterator(*this, size_); };
 
   void fence() { win_.fence(); }
 
@@ -192,6 +239,8 @@ public:
   const std::span<lib::remote_vector<T>> &segments() const;
 
   size_type size() const { return size_; }
+
+  span_halo<T> &halo() { return halo_; }
 
 private:
   void init() {
@@ -215,6 +264,7 @@ private:
   communicator comm_;
   std::vector<T> local_;
   communicator::win win_;
+  span_halo<T> halo_;
 };
 
 } // namespace lib
