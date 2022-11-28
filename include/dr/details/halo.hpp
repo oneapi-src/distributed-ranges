@@ -221,18 +221,10 @@ public:
   };
   using radius_type = std::array<dimension_type, Rank>;
   /// Constructor
-  stencil(bool periodic, std::size_t radius = 0) {
+  stencil(std::size_t radius = 0, bool periodic = false) {
     radius_[0].prev = radius;
     radius_[0].next = radius;
     periodic_ = periodic;
-    assert(Rank == 1);
-  }
-
-  /// Constructor
-  stencil(std::size_t radius = 0) {
-    radius_[0].prev = radius;
-    radius_[0].next = radius;
-    periodic_ = false;
     assert(Rank == 1);
   }
 
