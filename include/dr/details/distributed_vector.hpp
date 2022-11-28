@@ -49,46 +49,49 @@ private:
   difference_type index_ = 0;
 };
 
-template <typename O> class xconst_index_iterator {
+template <typename O> class const_index_iterator {
 public:
   using value_type = typename O::value_type;
   using size_type = typename O::size_type;
   using difference_type = typename O::difference_type;
-  using reference = typename O::const_reference;
+  using const_reference = typename O::const_reference;
 
-  xconst_index_iterator();
-  xconst_index_iterator(O &o, size_type index) : o_(&o), index_(index) {}
+  const_index_iterator();
+  const_index_iterator(const O &o, size_type index) : o_(&o), index_(index) {}
 
-  reference operator*() const { return (*o_)[index_]; }
+  const_reference operator*() const { return (*o_)[index_]; }
 
-  reference operator[](difference_type n) const noexcept {
+  const_reference operator[](difference_type n) const noexcept {
     return (*o_)[index_ + n];
   }
 
-  bool operator==(index_iterator<O> &other) const noexcept {
+  bool operator==(const index_iterator<O> &other) const noexcept {
     return index_ == other.index_ && o_ == other.o_;
   }
-  bool operator==(xconst_index_iterator<O> &other) const noexcept {
+  bool operator==(const const_index_iterator<O> &other) const noexcept {
     return index_ == other.index_ && o_ == other.o_;
   }
 
   bool operator<=>(const index_iterator<O> &other) const noexcept;
+  bool operator<=>(const const_index_iterator<O> &other) const noexcept;
 
-  xconst_index_iterator &operator++() {
+  const_index_iterator &operator++() {
     index_++;
     return *this;
   }
-  xconst_index_iterator operator++(int);
-  xconst_index_iterator &operator--();
-  xconst_index_iterator operator--(int);
+  const_index_iterator operator++(int);
+  const_index_iterator &operator--();
+  const_index_iterator operator--(int);
   difference_type operator-(const index_iterator<O> &other) const noexcept;
-  xconst_index_iterator &operator-=(difference_type n) const noexcept;
-  xconst_index_iterator &operator+=(difference_type n) const noexcept;
-  xconst_index_iterator operator+(difference_type n) const noexcept;
-  xconst_index_iterator operator-(difference_type n) const noexcept;
+  difference_type
+  operator-(const const_index_iterator<O> &other) const noexcept;
+  const_index_iterator &operator-=(difference_type n) const noexcept;
+  const_index_iterator &operator+=(difference_type n) const noexcept;
+  const_index_iterator operator+(difference_type n) const noexcept;
+  const_index_iterator operator-(difference_type n) const noexcept;
 
-  friend xconst_index_iterator operator+(difference_type n,
-                                         xconst_index_iterator &other) {
+  friend const_index_iterator operator+(difference_type n,
+                                        const_index_iterator &other) {
     return other + n;
   }
 
@@ -156,7 +159,7 @@ public:
   using iterator = index_iterator<distributed_vector>;
 
   /// Const iterator type
-  using const_iterator = const index_iterator<distributed_vector>;
+  using const_iterator = const const_index_iterator<distributed_vector>;
 
 #endif
 
@@ -211,17 +214,13 @@ public:
 
   /// Index into a distributed vector
   reference operator[](const size_t index) {
-    auto radius = stencil_.radius()[0];
-    std::size_t slice_size = local().size() - radius.prev - radius.next;
-    std::size_t rank, offset;
-    if (index < radius.prev) {
-      rank = 0;
-    } else if (index >= size() - radius.next) {
-      rank = comm_.size() - 1;
-    } else {
-      rank = (index - radius.prev) / slice_size;
-    }
-    offset = index - rank * slice_size;
+    auto [rank, offset] = rank_offset(index);
+    return *rptr(rank, win_, offset);
+  }
+
+  /// Index into a distributed vector
+  const_reference operator[](const size_t index) const {
+    auto [rank, offset] = rank_offset(index);
     return *rptr(rank, win_, offset);
   }
 
@@ -235,6 +234,7 @@ public:
   void flush(int rank) { win_.flush(rank); }
 
   const std::span<T> local() { return local_; }
+  const std::span<const T> local() const { return local_; }
 
   const std::span<lib::remote_vector<T>> &segments() const;
 
@@ -243,6 +243,22 @@ public:
   span_halo<T> &halo() { return halo_; }
 
 private:
+  auto rank_offset(std::size_t index) const {
+    auto radius = stencil_.radius()[0];
+    std::size_t slice_size = local().size() - radius.prev - radius.next;
+    std::size_t rank, offset;
+    if (index < radius.prev) {
+      rank = 0;
+    } else if (index >= size() - radius.next) {
+      rank = comm_.size() - 1;
+    } else {
+      rank = (index - radius.prev) / slice_size;
+    }
+    offset = index - rank * slice_size;
+
+    return std::pair(rank, offset);
+  }
+
   void init() {
 #ifdef OMPI_MAJOR_VERSION
     // openmpi cannot create a window when the size is 1
@@ -252,7 +268,7 @@ private:
     win_.create(comm_, local_.data(), local_.size() * sizeof(T));
   }
 
-  auto local_storage_size() {
+  auto local_storage_size() const {
     auto radius = stencil_.radius()[0];
     return partition_up(size_ - radius.prev - radius.next, comm_.size()) +
            radius.prev + radius.next;

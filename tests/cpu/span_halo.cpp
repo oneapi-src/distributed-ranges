@@ -119,10 +119,7 @@ TEST(CpuMpiTests, SpanHaloDistributedVector) {
   for (std::size_t i = 0; i < slice; i++) {
     if (dv.local()[i + radius] != dv[comm_rank * slice + i + radius]) {
       fmt::print("local: {}\n", dv.local());
-      std::vector<int> tv(dv.size());
-      ;
-      rng::copy(dv, tv.begin());
-      fmt::print("dist:  {}\n", tv);
+      fmt::print("dist:  {}\n", dv);
       EXPECT_EQ(dv.local()[i + radius], dv[comm_rank * slice + i + radius]);
       break;
     }
