@@ -100,7 +100,9 @@ private:
   difference_type index_ = 0;
 };
 
-template <typename T, typename D = block_cyclic> class distributed_vector {
+template <typename T, typename Alloc = std::allocator<T>,
+          typename D = block_cyclic>
+class distributed_vector {
   using rptr = remote_pointer<T>;
 
 public:
@@ -181,6 +183,13 @@ public:
   }
 
   /// Construct a distributed vector with a halo and `count` elements.
+  distributed_vector(stencil_type s, Alloc alloc, size_type count)
+      : stencil_(s), size_(count), comm_(decomp_.comm()),
+        local_(local_storage_size(), alloc), halo_(comm_, local_, stencil_) {
+    init();
+  }
+
+  /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(std::size_t radius, bool periodic, size_type count)
       : stencil_(radius), size_(count), comm_(decomp_.comm()),
         local_(local_storage_size()), halo_(comm_, local_, stencil_) {
@@ -190,6 +199,13 @@ public:
   /// Construct a distributed vector with `count` elements.
   distributed_vector(size_type count)
       : size_(count), comm_(decomp_.comm()), local_(local_storage_size()) {
+    init();
+  }
+
+  /// Construct a distributed vector with `count` elements.
+  distributed_vector(Alloc alloc, size_type count)
+      : size_(count), comm_(decomp_.comm()),
+        local_(local_storage_size(), alloc) {
     init();
   }
 
@@ -278,7 +294,7 @@ private:
   D decomp_;
   size_type size_;
   communicator comm_;
-  std::vector<T> local_;
+  std::vector<T, Alloc> local_;
   communicator::win win_;
   span_halo<T> halo_;
 };

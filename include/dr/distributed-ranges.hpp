@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
@@ -34,6 +35,8 @@ namespace rng = ranges;
 namespace stdex = std::experimental;
 
 #include "details/logger.hpp"
+
+#include "details/allocators.hpp"
 
 #include "details/common.hpp"
 #include "details/communicator.hpp"

@@ -13,7 +13,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CheckLanguage)
   include(CTest)
 
-  option(ENABLE_SYCL "Build sycl examples" OFF)
+  option(ENABLE_SYCL "Build sycl shp examples" OFF)
+  option(ENABLE_SYCL_MPI "Build sycl mpi examples" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
@@ -115,6 +116,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_subdirectory(examples/sycl)
     add_subdirectory(tests/sycl)
+  endif()
+
+  if (ENABLE_SYCL_MPI)
+    add_subdirectory(tests/sycl-mpi)
   endif()
 
   # DPL has warnings, so do this for everything but sycl
