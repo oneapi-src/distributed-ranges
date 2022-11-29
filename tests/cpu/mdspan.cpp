@@ -26,12 +26,11 @@ TEST(CpuMpiTests, distributed_mdspan) {
 
   using dvector = lib::distributed_vector<T>;
   dvector dv(n);
-  dv.fence();
 
   using dspan = lib::distributed_mdspan<T, dyn_2d>;
   assert_distributed_range<dspan>();
   dspan dm(dv, rows, cols);
-  dm.fence();
+
   check_mdspan(dv, dm);
   dm.fence();
   dv.fence();
@@ -49,8 +48,6 @@ TEST(CpuMpiTests, distributed_mdspan) {
   }
   dm.fence();
   EXPECT_EQ(dm(4, 1), 9);
-
-  dv.fence();
 }
 
 TEST(CpuMpiTests, distributed_mdspan_local) {
@@ -60,11 +57,9 @@ TEST(CpuMpiTests, distributed_mdspan_local) {
 
   using dvector = lib::distributed_vector<T>;
   dvector dv(n);
-  dv.fence();
 
   using dspan = lib::distributed_mdspan<T, dyn_2d>;
   dspan dm(dv, rows, cols);
-  dm.fence();
 
   auto local = dm.local();
   local(0, 0) = 99;
@@ -72,8 +67,6 @@ TEST(CpuMpiTests, distributed_mdspan_local) {
 
   EXPECT_EQ(local(0, 0), 99);
   EXPECT_EQ(dm(0, 0), 99);
-
-  dv.fence();
 }
 
 void check_mdarray(auto &m) {
@@ -92,18 +85,13 @@ TEST(CpuMpiTests, distributed_mdarray_basic) {
   assert_distributed_range<dmatrix>();
 
   dmatrix dm(rows, cols);
-  dm.fence();
   check_mdarray(dm);
 
   dmatrix dm2(rows, cols);
-  dm2.fence();
   dm2(1, 2) = 99;
   dm(2, 1) = dm2(1, 2);
   EXPECT_EQ(dm(2, 1), 99);
   EXPECT_EQ(dm2(1, 2), 99);
-
-  dm2.fence();
-  dm.fence();
 }
 
 TEST(CpuMpiTests, distributed_mdarray_local) {
@@ -111,7 +99,6 @@ TEST(CpuMpiTests, distributed_mdarray_local) {
 
   using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
   dmatrix dm(rows, cols);
-  dm.fence();
 
   auto local = dm.local();
   local(0, 0) = 100 + comm_rank;
@@ -124,8 +111,6 @@ TEST(CpuMpiTests, distributed_mdarray_local) {
   EXPECT_EQ(local(0, 0), 200 + comm_rank);
   dm.fence();
   EXPECT_EQ(dm(0, 0), 200 + 0);
-
-  dm.fence();
 }
 
 TEST(CpuMpiTests, distributed_mdarray_transpose) {
@@ -134,8 +119,6 @@ TEST(CpuMpiTests, distributed_mdarray_transpose) {
   using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
   dmatrix dsrc(rows, cols);
   dmatrix ddst(cols, rows);
-  dsrc.fence();
-  ddst.fence();
 
   if (comm_rank == 0) {
     for (std::size_t i = 0; i < rows; i++) {
@@ -167,6 +150,4 @@ TEST(CpuMpiTests, distributed_mdarray_transpose) {
     expect_eq(lsrc, dsrc);
     expect_eq(ldst, ddst);
   }
-  dsrc.fence();
-  ddst.fence();
 }

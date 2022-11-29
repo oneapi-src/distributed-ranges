@@ -217,7 +217,10 @@ public:
     assert(false);
   }
 
-  ~distributed_vector() { win_.free(); }
+  ~distributed_vector() {
+    fence();
+    win_.free();
+  }
 
   /// copy a span to a distributed vector
   void scatter(const std::span<T> src, int root) {
@@ -285,6 +288,7 @@ private:
     assert(comm_.size() > 1);
 #endif
     win_.create(comm_, local_.data(), local_.size() * sizeof(T));
+    fence();
   }
 
   auto local_storage_size() const {

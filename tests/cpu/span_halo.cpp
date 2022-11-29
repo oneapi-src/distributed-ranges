@@ -106,7 +106,7 @@ TEST(CpuMpiTests, SpanHaloDistributedVector) {
   std::size_t n = comm_size * slice + 2 * radius;
   lib::stencil<1> s(radius);
   lib::distributed_vector<int> dv(s, n);
-  dv.fence();
+
   EXPECT_EQ(dv.local().size(), slice + 2 * radius);
   EXPECT_EQ(s.radius()[0].next, radius);
   EXPECT_EQ(s.radius()[0].prev, radius);
@@ -140,6 +140,4 @@ TEST(CpuMpiTests, SpanHaloDistributedVector) {
       break;
     }
   }
-
-  dv.fence();
 }
