@@ -168,6 +168,9 @@ public:
   /// Stencil specification
   using stencil_type = stencil<1>;
 
+  /// Allocator
+  using allocator_type = Alloc;
+
   /// Construct a distributed vector with `count` elements.
   distributed_vector(D decomp, size_type count)
       : decomp_(decomp), size_(count), comm_(decomp.comm()),
