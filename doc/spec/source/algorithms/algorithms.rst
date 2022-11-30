@@ -9,3 +9,4 @@ Algorithms on distributed ranges.
 
    copy
    for_each
+   reduce

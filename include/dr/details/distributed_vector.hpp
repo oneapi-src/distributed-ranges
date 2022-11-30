@@ -264,6 +264,8 @@ public:
 
   span_halo<T> &halo() { return halo_; }
 
+  communicator &comm() { return comm_; }
+
 private:
   auto rank_offset(std::size_t index) const {
     auto radius = stencil_.radius()[0];
