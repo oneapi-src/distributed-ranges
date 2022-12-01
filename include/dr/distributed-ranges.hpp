@@ -61,7 +61,7 @@ namespace stdex = std::experimental;
 
 #include "details/execution_policies.hpp"
 
+#include "algorithms/algorithms.hpp"
 #include "algorithms/copy.hpp"
 #include "algorithms/for_each.hpp"
-#include "algorithms/reduce.hpp"
 #include "algorithms/transpose.hpp"

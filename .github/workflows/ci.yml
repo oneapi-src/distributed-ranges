@@ -22,6 +22,7 @@ jobs:
     - name: Build doc
       run: |
         make -C doc/spec html
+        make -C doc/spec linkcheck
 
   clang:
     runs-on: dds-base

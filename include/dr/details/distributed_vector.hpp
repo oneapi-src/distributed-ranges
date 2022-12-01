@@ -44,6 +44,9 @@ public:
     return other + n;
   }
 
+  // Restrict to friends?
+  O &object() { return *o_; }
+
 private:
   O *o_ = nullptr;
   difference_type index_ = 0;
@@ -265,6 +268,10 @@ public:
   span_halo<T> &halo() { return halo_; }
 
   communicator &comm() { return comm_; }
+
+  bool conforms(const distributed_vector &other) const noexcept {
+    return decomp_ == other.decomp_ && size_ == other.size_;
+  }
 
 private:
   auto rank_offset(std::size_t index) const {

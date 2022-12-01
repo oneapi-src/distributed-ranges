@@ -74,6 +74,13 @@ public:
   }
 
   template <typename T>
+  void gather(const T &src, std::vector<T> &dst, int root) {
+    dst.resize(size());
+    MPI_Gather(&src, sizeof(src), MPI_CHAR, dst.data(), sizeof(src), MPI_CHAR,
+               root, mpi_comm_);
+  }
+
+  template <typename T>
   void isend(const T *data, int size, int source, tag t, MPI_Request *request) {
     MPI_Isend(data, size * sizeof(T), MPI_CHAR, source, int(t), mpi_comm_,
               request);

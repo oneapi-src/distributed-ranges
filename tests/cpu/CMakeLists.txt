@@ -23,6 +23,7 @@ add_executable(
   cpu-tests.cpp
   span_halo.cpp
   reduce.cpp
+  transform.cpp
 )
 
 target_link_libraries(
