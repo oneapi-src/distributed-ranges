@@ -21,7 +21,10 @@ public:
       : method_(pm), comm_(comm) {}
 
   partition_method method() const { return method_; }
-  communicator comm() { return comm_; }
+  communicator comm() const { return comm_; }
+  bool operator==(const block_cyclic &other) const {
+    return method_ == other.method_ && comm_ == other.comm_;
+  }
 
 private:
   partition_method method_;

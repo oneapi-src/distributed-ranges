@@ -102,6 +102,10 @@ public:
     irecv(data.data(), data.size(), source, int(t), request);
   }
 
+  bool operator==(const communicator &other) const {
+    return mpi_comm_ == other.mpi_comm_;
+  }
+
 private:
   MPI_Comm mpi_comm_;
   int rank_;

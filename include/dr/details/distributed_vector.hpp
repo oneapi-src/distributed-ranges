@@ -1,5 +1,7 @@
 namespace lib {
 
+template <typename O> class const_index_iterator;
+
 // Make a random access iterator for an object that supports index
 // reference
 template <typename O> class index_iterator {
@@ -48,6 +50,7 @@ public:
   O &object() { return *o_; }
 
 private:
+  friend const_index_iterator<O>;
   O *o_ = nullptr;
   difference_type index_ = 0;
 };
@@ -99,6 +102,8 @@ public:
   }
 
 private:
+  friend index_iterator<O>;
+
   const O *o_ = nullptr;
   difference_type index_ = 0;
 };
@@ -271,6 +276,14 @@ public:
 
   bool conforms(const distributed_vector &other) const noexcept {
     return decomp_ == other.decomp_ && size_ == other.size_;
+  }
+
+  bool congruent(const iterator &first, const iterator &last) const noexcept {
+    return first == begin() && last == end();
+  }
+
+  bool congruent(const iterator &first) const noexcept {
+    return first == begin();
   }
 
 private:

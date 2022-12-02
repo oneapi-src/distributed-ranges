@@ -43,13 +43,8 @@ void vector_add() {
   lib::collective::copy(root_rank, ref_adder.a, dv_a);
   lib::collective::copy(root_rank, ref_adder.b, dv_b);
 
-  // Add my local segment
-  auto a = dv_a.local().data();
-  auto b = dv_b.local().data();
-  auto c = dv_c.local().data();
-  for (auto i = 0u; i < segment_size; i++) {
-    c[i] = a[i] + b[i];
-  }
+  // c = a + b
+  lib::transform(dv_a, dv_b, dv_c.begin(), std::plus<>());
 
   // Collect the results
   std::vector<T> result(n);
