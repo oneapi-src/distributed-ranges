@@ -68,4 +68,40 @@ auto transform(R &&input_range, OutputIterator output_iterator, UnaryOp op) {
   return transform(input_range.begin(), input_range.end(), output_iterator, op);
 }
 
+/// Collective transform_reduce on an iterator/sentinel for a distributed range
+template <typename I, class T, typename BinaryReductionOp,
+          typename UnaryTransformOp>
+T transform_reduce(int root, I input_iterator, I sentinel, T init,
+                   BinaryReductionOp reduction_op,
+                   UnaryTransformOp transform_op) {
+  auto &input = input_iterator.object();
+  auto &comm = input.comm();
+
+  if (input_iterator == input.begin() && sentinel == input.end()) {
+
+    // Each rank reduces its local segment
+    T val = std::transform_reduce(input.local().begin(), input.local().end(), 0,
+                                  reduction_op, transform_op);
+
+    // Gather segment values on root and reduce for final value
+    std::vector<T> vals;
+    comm.gather(val, vals, root);
+    if (comm.rank() == root) {
+      return std::reduce(vals.begin(), vals.end(), init, reduction_op);
+    } else {
+      return 0;
+    }
+
+  } else {
+
+    // Fall back to std::reduce performing elementwise operations
+    if (comm.rank() == root) {
+      return std::transform_reduce(input_iterator, sentinel, init, reduction_op,
+                                   transform_op);
+    } else {
+      return 0;
+    }
+  }
+}
+
 } // namespace lib

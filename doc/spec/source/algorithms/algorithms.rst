@@ -11,3 +11,4 @@ Algorithms on distributed ranges.
    for_each
    reduce
    transform
+   transform_reduce
