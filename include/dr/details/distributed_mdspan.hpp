@@ -74,7 +74,7 @@ public:
   using accessor_type = typename dmdspan::accessor_type;
   using layout_type = typename dmdspan::layout_type;
 
-  /// Construct from a distributed_vector with the requested dimesions
+  /// Construct from a distributed_vector with the requested dimensions
   template <typename... Args>
   distributed_mdspan(distributed_vector<T> &dvector, Args... args)
       : extents_(std::forward<Args>(args)...), dvector_(dvector),
@@ -84,7 +84,7 @@ public:
     assert(storage_size(extents_, decomp_.comm().size()) <= dvector.size());
   }
 
-  /// Construct from a distributed_vector with the requested dimesions
+  /// Construct from a distributed_vector with the requested dimensions
   template <typename... Args>
   distributed_mdspan(D decomp, distributed_vector<T> &dvector, Args... args)
       : decomp_(decomp), extents_(std::forward<Args>(args)...),
@@ -106,7 +106,7 @@ public:
   /// fence for updates
   void fence() { return dvector_.fence(); }
 
-  /// segments of mdspan
+  /// segments of distributed_mdspan
   auto segments() { return dvector_.segments(); }
 
   /// multidimensional index operator
@@ -161,7 +161,7 @@ public:
   using accessor_type = typename dmdspan::accessor_type;
   using layout_type = typename dmdspan::layout_type;
 
-  /// Construct an mdarray with requested dimensions
+  /// Construct a distributed_mdarray with requested dimensions
   template <typename... Args>
   distributed_mdarray(Args... args)
       : extents_(std::forward<Args>(args)...),
@@ -170,7 +170,7 @@ public:
         local_mdspan_(dvector_.local().data(),
                       local_extents(extents_, decomp_.comm().size())) {}
 
-  /// Construct an mdarray with requested dimensions
+  /// Construct an `mdarray` with requested dimensions
   template <typename... Args>
   distributed_mdarray(D decomp, Args... args)
       : decomp_(decomp), extents_(std::forward<Args>(args)...),
@@ -191,7 +191,7 @@ public:
   /// fence for updates
   void fence() { return dvector_.fence(); }
 
-  /// segments of mdspan
+  /// segments of distributed_mdspan
   auto segments() { return dvector_.segments(); }
 
   /// multidimensional index operator

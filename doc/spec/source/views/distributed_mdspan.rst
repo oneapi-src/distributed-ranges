@@ -1,3 +1,5 @@
+.. include:: ../include/distributed-ranges.rst
+
 .. _distributed_mdspan:
 
 ======================
@@ -19,10 +21,9 @@ objects may be distributed across multiple processes.
 
 .. seealso::
 
-   * `std::mdspan`_
-   * :ref:`distributed_mdarray`
+   `std::mdspan`_
 
-.. _`std::mdspan`: https://en.cppreference.com/w/cpp/container/mdspan
+   :ref:`distributed_mdarray`
 
 Examples
 ========

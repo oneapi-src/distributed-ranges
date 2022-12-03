@@ -1,3 +1,5 @@
+.. include:: ../include/distributed-ranges.rst
+
 .. _distributed_vector:
 
 ======================
@@ -19,10 +21,10 @@ across multiple processes.
 
 .. seealso::
 
-   * `std::vector`_
-   * :ref:`stencil`
+   `std::vector`_
 
-.. _`std::vector`: https://en.cppreference.com/w/cpp/container/vector
+   :ref:`stencil`
+
 
 Usage
 =====

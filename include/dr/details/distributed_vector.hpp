@@ -129,9 +129,9 @@ public:
 
 #ifdef DR_SPEC
 
-  /// Pointer type
+  /// Pointer
   using pointer = implementation_defined;
-  /// Const pointer type
+  /// Pointer to immutable
   using const_pointer = implementation_defined;
 
 #else
@@ -147,19 +147,19 @@ public:
 
 #endif
 
-  /// Reference type
+  /// Reference to element
   using reference = std::iter_reference_t<pointer>;
-  /// Const reference type
+  /// Reference to immutable element
   using const_reference = std::iter_reference_t<const_pointer>;
 
   // Placeholder
 
 #ifdef DR_SPEC
 
-  /// Iterator type
+  /// Iterator
   using iterator = implementation_defined;
 
-  /// Const iterator type
+  /// Read-only iterator
   using const_iterator = implementation_defined;
 
 #else

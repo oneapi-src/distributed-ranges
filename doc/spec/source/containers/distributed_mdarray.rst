@@ -1,3 +1,5 @@
+.. include:: ../include/distributed-ranges.rst
+
 .. _distributed_mdarray:
 
 =======================
@@ -19,11 +21,10 @@ be distributed across multiple processes.
 
 .. seealso::
 
-   * :ref:`distributed_mdspan`
-   * `std::mdarray`_
+   `std::mdarray`_
+     C++ model
+   :ref:`distributed_mdspan`
+     View for a ``distributed_mdarray``
 
-
-.. _`std::mdarray`: https://www.open-std.org/JTC1/SC22/WG21/docs/papers/2022/p1684r2.html
-
-Examples
-========
+Usage
+=====

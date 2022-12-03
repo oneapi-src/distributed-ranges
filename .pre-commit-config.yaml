@@ -40,3 +40,12 @@ repos:
   rev: 5.10.1
   hooks:
   - id: isort
+
+- repo: local
+  hooks:
+  - id: sphinx
+    name: sphinx
+    entry: make -C doc/spec spelling linkcheck html
+    language: system
+    pass_filenames: false
+    always_run: true

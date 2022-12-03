@@ -27,8 +27,8 @@ public:
 
   // TODO: convert SFINAE to requires() for C++20
   // template <__BCL_REQUIRES(!std::is_same_v<std::decay_t<T>, void> &&
-  //! std::is_const_v<T> &&
-  //! std::is_same_v<T, void>)>
+  // std::is_const_v<T> &&
+  // std::is_same_v<T, void>)>
   operator remote_pointer<void>() const noexcept {
     return remote_pointer<void>(rank_, win_, offset_);
   }
@@ -36,8 +36,8 @@ public:
   // TODO: convert SFINAE to requires() for C++20
   //       Extra checks for Intel compiler
   // template <__BCL_REQUIRES(!std::is_same_v<std::decay_t<T>, void> &&
-  //! std::is_same_v<T, void> &&
-  //! std::is_same_v<T, const void>)>
+  // std::is_same_v<T, void> &&
+  // std::is_same_v<T, const void>)>
   // operator remote_pointer<const void>() const noexcept {
   // return remote_pointer<const void>(rank, ptr);
   // }

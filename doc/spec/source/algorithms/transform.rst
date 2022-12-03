@@ -1,4 +1,6 @@
-.. transform_:
+.. include:: ../include/distributed-ranges.rst
+
+.. _transform:
 
 ===============
  ``transform``
@@ -18,11 +20,14 @@ Description
 
 .. seealso::
 
-   * `std::transform`_
-   * `std::ranges::transform`_
+   `std::transform`_
+     C++ model
+   `std::ranges::transform`_
+     C++ range-based model
+   :ref:`reduce`
+     related algorithm
+   :ref:`transform_reduce`
+     related algorithm
 
-.. _`std::transform`: https://en.cppreference.com/w/cpp/algorithm/transform
-.. _`std::ranges::transform`: https://en.cppreference.com/w/cpp/algorithm/ranges/transform
-
-Examples
-========
+Usage
+=====

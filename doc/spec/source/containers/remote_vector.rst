@@ -1,3 +1,7 @@
+.. include:: ../include/distributed-ranges.rst
+
+.. _remote_vector:
+
 =================
 ``remote_vector``
 =================
@@ -16,7 +20,9 @@ a sequence of objects where the objects reside in a single process and
 can be accessed by an process in the owning team.
 
 
-.. seealso:: `std::vector <https://en.cppreference.com/w/cpp/container/vector>`__
+.. seealso::
+
+   `std::vector`_
 
 Examples
 ========

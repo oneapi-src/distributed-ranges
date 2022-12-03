@@ -1,3 +1,7 @@
+.. include:: ../include/distributed-ranges.rst
+
+.. _parallel_explict:
+
 =======================
  ``parallel_explicit``
 =======================
@@ -10,7 +14,9 @@ Interface
 Description
 ===========
 
-.. seealso:: `Execution policies <https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t>`__
+.. seealso::
+
+   `C++ execution policies`_
 
 Examples
 ========

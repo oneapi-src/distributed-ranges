@@ -1,3 +1,7 @@
+.. include:: ../include/distributed-ranges.rst
+
+.. _for_each:
+
 ==============
  ``for_each``
 ==============
@@ -11,7 +15,7 @@ Interface
 Description
 ===========
 
-.. seealso:: `std::for_each <https://en.cppreference.com/w/cpp/algorithm/ranges/for_each>`__
+.. seealso:: `std::for_each`_
 
 Examples
 ========

@@ -6,7 +6,7 @@ namespace lib {
 //
 //
 
-/// Collective reduction on interator/sentinel for a distributed range
+/// Collective reduction on iterator/sentinel for a distributed range
 template <typename I, typename S, typename T, typename BinaryOp>
 T reduce(int root, I input_iterator, S sentinel, T init, BinaryOp &&binary_op) {
   auto &input = input_iterator.object();

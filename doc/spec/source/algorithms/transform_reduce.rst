@@ -1,4 +1,6 @@
-.. transform_reduce_:
+.. include:: ../include/distributed-ranges.rst
+
+.. _transform_reduce:
 
 ======================
  ``transform_reduce``
@@ -12,9 +14,14 @@ Interface
 Description
 ===========
 
-.. seealso:: `std::transform_reduce`_
+.. seealso::
 
-.. _`std::transform_reduce`: https://en.cppreference.com/w/cpp/algorithm/transform_reduce
+   `std::transform_reduce`_
+
+   :ref:`reduce`
+
+   :ref:`transform`
+
 
 Examples
 ========

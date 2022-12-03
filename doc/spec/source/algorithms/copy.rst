@@ -1,3 +1,7 @@
+.. include:: ../include/distributed-ranges.rst
+
+.. _copy:
+
 ==========
  ``copy``
 ==========
@@ -11,7 +15,7 @@ Interface
 Description
 ===========
 
-.. seealso:: `std::ranges::copy <https://en.cppreference.com/w/cpp/algorithm/ranges/copy>`__
+.. seealso:: `std::ranges::copy`_
 
 Examples
 ========
