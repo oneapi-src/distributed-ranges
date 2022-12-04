@@ -5,7 +5,7 @@ TEST(CpuMpiTests, TransformReduceDistributedVector) {
   int init = 10000;
   int lval, dval;
   auto reduce_op = std::plus<>();
-  auto transform_op = [](auto v) { return v * v; };
+  auto transform_op = [](auto &&v) { return v * v; };
 
   std::vector<int> v(n);
   lib::distributed_vector<int> dv(n);

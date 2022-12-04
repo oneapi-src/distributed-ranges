@@ -52,3 +52,34 @@ TEST(CpuMpiTests, TransformDistributedVector2) {
     expect_eq(dvr1, vr);
   }
 }
+
+TEST(CpuMpiTests, Stencil) {
+  std::size_t n = 10;
+  auto op = [](auto &&v) {
+    auto p = &v;
+    return p[-1] + p[0] + p[+1];
+  };
+
+  std::vector<int> v_in(n), v_out(n);
+  lib::stencil<1> s(1);
+  lib::distributed_vector<int> dv_in(s, n), dv_out1(s, n), dv_out2(s, n);
+
+  if (comm_rank == 0) {
+    rng::iota(v_in, 100);
+    rng::copy(v_in, dv_in.begin());
+  }
+  dv_in.fence();
+
+  if (comm_rank == 0) {
+    rng::transform(v_in.begin() + 1, v_in.end() - 1, v_out.begin() + 1, op);
+    rng::transform(dv_in.begin() + 1, dv_in.end() - 1, dv_out1.begin() + 1, op);
+    expect_eq(dv_out1, v_out);
+  }
+
+  fmt::print("Initial:   {}\n", v_in);
+  fmt::print("Reference: {}\n", v_out);
+  fmt::print("Test:      {}\n", dv_out1);
+  // lib::transform(dv_in.begin() + 1, dv_in.end() - 1, dv_out2.begin() + 1,
+  // op); if (comm_rank == 0) { expect_eq(dv_out2, v_out);
+  // }
+}

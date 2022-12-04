@@ -78,7 +78,10 @@ template <typename Container> struct xpointer {
   xpointer operator+(difference_type n) const noexcept {
     return xpointer{container_, index_ + n};
   }
-  xpointer operator-(difference_type n) const noexcept;
+  xpointer operator-(difference_type n) const noexcept {
+    return xpointer{container_, index_ - n};
+  }
+
   friend xpointer operator+(difference_type n, const xpointer &other) {
     return other + n;
   }
