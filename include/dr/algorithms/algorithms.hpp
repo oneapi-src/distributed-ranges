@@ -54,9 +54,9 @@ T reduce(int root, R &&r, T init, BinaryOp &&binary_op) {
 /// Collective transform on an iterator/sentinel for a distributed
 /// range: 1 in, 1 out
 template <typename DistObj, typename UnaryOp>
-auto transform(index_iterator<DistObj> input_iterator,
-               index_iterator<DistObj> sentinel,
-               index_iterator<DistObj> output_iterator, UnaryOp op) {
+auto transform(typename DistObj::const_iterator input_iterator,
+               typename DistObj::const_iterator sentinel,
+               typename DistObj::iterator output_iterator, UnaryOp op) {
   auto &input = input_iterator.object();
   auto &output = output_iterator.object();
 
@@ -86,9 +86,10 @@ auto transform(R &&input_range, OutputIterator output_iterator, UnaryOp op) {
 /// Collective transform on an iterator/sentinel for a distributed
 /// range: 2 in, 1 out
 template <typename DistObj, typename BinaryOp>
-auto transform(index_iterator<DistObj> first1, index_iterator<DistObj> last1,
-               index_iterator<DistObj> first2, index_iterator<DistObj> d_first,
-               BinaryOp op) {
+auto transform(typename DistObj::iterator first1,
+               typename DistObj::iterator last1,
+               typename DistObj::iterator first2,
+               typename DistObj::iterator d_first, BinaryOp op) {
   auto &input1 = first1.object();
   auto &input2 = first2.object();
   auto &output = d_first.object();

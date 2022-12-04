@@ -32,7 +32,6 @@ inline void expect_eq(const lib::mdspan_2d auto &m1,
 }
 
 template <typename DR> inline void assert_distributed_range() {
-  static_assert(std::random_access_iterator<lib::index_iterator<DR>>);
   static_assert(rng::range<DR>);
   static_assert(lib::distributed_contiguous_range<DR>);
 }

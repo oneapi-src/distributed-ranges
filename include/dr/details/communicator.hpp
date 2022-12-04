@@ -26,10 +26,20 @@ public:
     void set_null() { win_ = MPI_WIN_NULL; }
     bool null() const noexcept { return win_ == MPI_WIN_NULL; }
 
+    template <typename T> T get(int rank, int disp) const {
+      T dst;
+      get(&dst, sizeof(T), rank, disp * sizeof(T));
+      return dst;
+    }
+
     void get(void *dst, int size, int rank, int disp) const {
       MPI_Request request;
       MPI_Rget(dst, size, MPI_CHAR, rank, disp, size, MPI_CHAR, win_, &request);
       MPI_Wait(&request, MPI_STATUS_IGNORE);
+    }
+
+    void put(const auto &src, int rank, int disp) const {
+      put(&src, sizeof(src), rank, disp * sizeof(src));
     }
 
     void put(const void *src, int size, int rank, int disp) const {

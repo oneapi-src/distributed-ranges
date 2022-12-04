@@ -1,118 +1,140 @@
 namespace lib {
 
-template <typename O> class const_index_iterator;
+template <typename Container> struct xreference;
+template <typename Container> struct const_xreference;
 
-// Make a random access iterator for an object that supports index
-// reference
-template <typename O> class index_iterator {
-public:
-  using value_type = typename O::value_type;
-  using size_type = typename O::size_type;
-  using difference_type = typename O::difference_type;
-  using reference = typename O::reference;
+template <typename Container> struct const_xpointer {
+  using T = typename Container::element_type;
+  using const_reference = const_xreference<Container>;
 
-  index_iterator();
-  index_iterator(O &o, size_type index) : o_(&o), index_(index) {}
+  // Required for random access iterator
+  using value_type = typename Container::value_type;
+  using size_type = typename Container::size_type;
+  using difference_type = typename Container::difference_type;
 
-  reference operator*() const { return (*o_)[index_]; }
-  reference operator*() { return (*o_)[index_]; }
-
-  reference operator[](difference_type n) const noexcept {
-    return (*o_)[index_ + n];
+  // Pointer arithmetic
+  bool operator==(const const_xpointer &other) const noexcept {
+    return index_ == other.index_ && container_ == other.container_;
   }
-  reference operator[](difference_type n) { return (*o_)[index_ + n]; }
-
-  bool operator==(const index_iterator &other) const noexcept {
-    return index_ == other.index_ && o_ == other.o_;
-  }
-
-  bool operator<=>(const index_iterator &other) const noexcept;
-
-  index_iterator &operator++() {
+  bool operator<=>(const const_xpointer &other) const noexcept;
+  const_xpointer &operator++() {
     index_++;
     return *this;
   }
-  index_iterator operator++(int);
-  index_iterator &operator--();
-  index_iterator operator--(int);
-  difference_type operator-(const index_iterator &other) const noexcept;
-  index_iterator &operator-=(difference_type n) const noexcept;
-  index_iterator &operator+=(difference_type n) const noexcept;
-  index_iterator operator+(difference_type n) const noexcept;
-  index_iterator operator-(difference_type n) const noexcept;
-
-  friend index_iterator operator+(difference_type n,
-                                  const index_iterator &other) {
+  const_xpointer operator++(int);
+  const_xpointer &operator--();
+  const_xpointer operator--(int);
+  difference_type operator-(const const_xpointer &other) const noexcept;
+  const_xpointer &operator-=(difference_type n);
+  const_xpointer &operator+=(difference_type n);
+  const_xpointer operator+(difference_type n) const noexcept {
+    return const_xpointer{container_, index_ + n};
+  }
+  const_xpointer operator-(difference_type n) const noexcept;
+  friend const_xpointer operator+(difference_type n,
+                                  const const_xpointer &other) {
     return other + n;
   }
 
-  // Restrict to friends?
-  O &object() { return *o_; }
+  T get() const { return container_->get(index_); }
 
-private:
-  friend const_index_iterator<O>;
-  O *o_ = nullptr;
-  difference_type index_ = 0;
+  // dereference
+  const_reference operator*() const { return const_reference{*this}; }
+  const_reference operator[](difference_type n) const {
+    return const_reference{*this + n};
+  }
+
+  const Container &object() { return *container_; }
+  const Container *container_;
+  std::size_t index_;
 };
 
-template <typename O> class const_index_iterator {
-public:
-  using value_type = typename O::value_type;
-  using size_type = typename O::size_type;
-  using difference_type = typename O::difference_type;
-  using const_reference = typename O::const_reference;
+template <typename Container> struct xpointer {
+  using T = typename Container::element_type;
+  using reference = xreference<Container>;
+  using const_reference = const_xreference<Container>;
+  using const_pointer = const_xpointer<Container>;
 
-  const_index_iterator();
-  const_index_iterator(const O &o, size_type index) : o_(&o), index_(index) {}
+  // Required for random access iterator
+  using value_type = typename Container::value_type;
+  using size_type = typename Container::size_type;
+  using difference_type = typename Container::difference_type;
 
-  const_reference operator*() const { return (*o_)[index_]; }
-
-  const_reference operator[](difference_type n) const noexcept {
-    return (*o_)[index_ + n];
+  // Pointer arithmetic
+  bool operator==(const xpointer &other) const noexcept {
+    return index_ == other.index_ && container_ == other.container_;
   }
-
-  bool operator==(const index_iterator<O> &other) const noexcept {
-    return index_ == other.index_ && o_ == other.o_;
-  }
-  bool operator==(const const_index_iterator<O> &other) const noexcept {
-    return index_ == other.index_ && o_ == other.o_;
-  }
-
-  bool operator<=>(const index_iterator<O> &other) const noexcept;
-  bool operator<=>(const const_index_iterator<O> &other) const noexcept;
-
-  const_index_iterator &operator++() {
+  bool operator<=>(const xpointer &other) const noexcept;
+  xpointer &operator++() {
     index_++;
     return *this;
   }
-  const_index_iterator operator++(int);
-  const_index_iterator &operator--();
-  const_index_iterator operator--(int);
-  difference_type operator-(const index_iterator<O> &other) const noexcept;
-  difference_type
-  operator-(const const_index_iterator<O> &other) const noexcept;
-  const_index_iterator &operator-=(difference_type n) const noexcept;
-  const_index_iterator &operator+=(difference_type n) const noexcept;
-  const_index_iterator operator+(difference_type n) const noexcept;
-  const_index_iterator operator-(difference_type n) const noexcept;
-
-  friend const_index_iterator operator+(difference_type n,
-                                        const_index_iterator &other) {
+  xpointer operator++(int);
+  xpointer &operator--();
+  xpointer operator--(int);
+  difference_type operator-(const xpointer &other) const noexcept;
+  xpointer &operator-=(difference_type n) const noexcept;
+  xpointer &operator+=(difference_type n) const noexcept;
+  xpointer operator+(difference_type n) const noexcept {
+    return xpointer{container_, index_ + n};
+  }
+  xpointer operator-(difference_type n) const noexcept;
+  friend xpointer operator+(difference_type n, const xpointer &other) {
     return other + n;
   }
 
-private:
-  friend index_iterator<O>;
+  // dereference
+  reference operator*() const { return reference{*this}; }
+  reference operator[](difference_type n) const { return reference{*this + n}; }
 
-  const O *o_ = nullptr;
-  difference_type index_ = 0;
+  // get/set
+  T get() const { return container_->get(index_); }
+  void put(T val) const { container_->put(index_, val); }
+
+  operator const_pointer() const { return const_pointer{container_, index_}; }
+
+  Container &object() { return *container_; }
+
+  Container *container_;
+  std::size_t index_;
+};
+
+template <typename Container> struct const_xreference {
+  using T = typename Container::element_type;
+  using const_pointer = const_xpointer<Container>;
+
+  operator T() const { return pointer_.get(); }
+  const_pointer operator&() const { return pointer_; }
+
+  const_pointer pointer_;
+};
+
+template <typename Container> struct xreference {
+  using T = typename Container::element_type;
+  using const_reference = const_xreference<Container>;
+  using pointer = xpointer<Container>;
+  using const_pointer = const_xpointer<Container>;
+
+  operator T() const { return pointer_.get(); }
+  xreference operator=(xreference &r) {
+    *this = T(r);
+    return *this;
+  }
+  xreference operator=(const T &value) const {
+    pointer_.put(value);
+    return *this;
+  }
+  pointer operator&() const { return pointer_; }
+  operator const_reference() {
+    return const_reference{const_pointer(pointer_)};
+  }
+
+  pointer pointer_;
 };
 
 template <typename T, typename Alloc = std::allocator<T>,
           typename D = block_cyclic>
 class distributed_vector {
-  using rptr = remote_pointer<T>;
-
 public:
   using element_type = T;
 
@@ -141,37 +163,23 @@ public:
   // specialization
 
   /// Pointer type
-  using pointer = rptr;
+  using pointer = xpointer<distributed_vector>;
   /// Const pointer type
-  using const_pointer = const pointer;
+  using const_pointer = const_xpointer<distributed_vector>;
 
 #endif
 
   /// Reference to element
   using reference = std::iter_reference_t<pointer>;
+  // using reference = std::iter_reference_t<xpointer<distributed_vector>>;
   /// Reference to immutable element
   using const_reference = std::iter_reference_t<const_pointer>;
 
-  // Placeholder
-
-#ifdef DR_SPEC
-
-  /// Iterator
-  using iterator = implementation_defined;
+  /// Iterator type
+  using iterator = pointer;
 
   /// Read-only iterator
-  using const_iterator = implementation_defined;
-
-#else
-
-  // placeholder
-  /// Iterator type
-  using iterator = index_iterator<distributed_vector>;
-
-  /// Const iterator type
-  using const_iterator = const const_index_iterator<distributed_vector>;
-
-#endif
+  using const_iterator = const_pointer;
 
   /// Stencil specification
   using stencil_type = stencil<1>;
@@ -242,22 +250,31 @@ public:
     comm_.gather(local_.data(), dst.data(), local_.size() * sizeof(T), root);
   }
 
-  /// Index into a distributed vector
-  reference operator[](const size_t index) {
+  T get(std::size_t index) const {
     auto [rank, offset] = rank_offset(index);
-    return *rptr(rank, win_, offset);
+    auto val = win_.get<T>(rank, offset);
+    drlog.debug("get {} =  [{}]\n", val, index);
+    return val;
   }
+
+  void put(std::size_t index, const T &val) {
+    drlog.debug("put [{}] = {}\n", index, val);
+    auto [rank, offset] = rank_offset(index);
+    win_.put(val, rank, offset);
+  }
+
+  /// Index into a distributed vector
+  reference operator[](const size_t index) { return *iterator{this, index}; }
 
   /// Index into a distributed vector
   const_reference operator[](const size_t index) const {
-    auto [rank, offset] = rank_offset(index);
-    return *rptr(rank, win_, offset);
+    return *const_iterator{this, index};
   }
 
-  iterator begin() { return iterator(*this, 0); }
-  const_iterator begin() const { return const_iterator(*this, 0); }
-  iterator end() { return iterator(*this, size_); };
-  const_iterator end() const { return const_iterator(*this, size_); };
+  iterator begin() { return iterator{this, 0}; }
+  const_iterator begin() const { return const_iterator{this, 0}; }
+  iterator end() { return iterator{this, size_}; };
+  const_iterator end() const { return const_iterator{this, size_}; };
 
   void fence() { win_.fence(); }
 

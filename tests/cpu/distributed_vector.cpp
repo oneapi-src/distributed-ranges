@@ -102,3 +102,34 @@ TEST(CpuMpiTests, DistributedVectorAlgorithms) {
     expect_eq(dv, ref);
   }
 }
+
+using DVX = lib::distributed_vector<int>;
+
+int a;
+
+// Operations on a const distributed_vector
+void common_operations(auto &dv) {
+  a = dv[1];
+  EXPECT_EQ(dv[1], 101);
+  EXPECT_EQ(*(&(dv[1])), 101);
+
+  auto p = &dv[1];
+  EXPECT_EQ(*(p + 1), 102);
+}
+
+TEST(CpuMpiTests, DistributedVectorXreference) {
+  std::size_t n = 10;
+  DVX dv(n);
+  rng::iota(dv, 100);
+  const DVX &cdv = dv;
+  if (comm_rank == 0) {
+    common_operations(cdv);
+    common_operations(dv);
+  }
+
+  dv[2] = 2;
+  EXPECT_EQ(dv[2], 2);
+
+  static_assert(std::random_access_iterator<DVX::iterator>);
+  static_assert(std::random_access_iterator<DVX::const_iterator>);
+}

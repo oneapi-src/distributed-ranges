@@ -30,7 +30,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   endif()
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-fconcepts-diagnostics-depth=3)
+    add_compile_options(-fconcepts-diagnostics-depth=10)
   endif()
 
   if(GCC_TOOLCHAIN)
