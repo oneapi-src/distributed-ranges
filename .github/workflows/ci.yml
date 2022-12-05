@@ -104,8 +104,6 @@ jobs:
         make -j -C build all test
 
   cuda:
-    # cuda system unanavailable
-    if: false
     runs-on: cuda
     env:
       CXX: clang++
@@ -121,9 +119,7 @@ jobs:
 
   build-tests:
     runs-on: dds-base
-    # cuda system unanavailable
-    #needs: [clang, gcc, icpx, icpx_igpu, icpx_dg2, icpx_dg2_sycl_mpi, cuda]
-    needs: [clang, gcc, icpx, icpx_igpu, icpx_dg2, icpx_dg2_sycl_mpi]
+    needs: [clang, gcc, icpx, icpx_igpu, icpx_dg2, icpx_dg2_sycl_mpi, cuda]
     steps:
     - run: pwd
 
