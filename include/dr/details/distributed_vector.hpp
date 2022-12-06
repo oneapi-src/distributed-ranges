@@ -16,7 +16,11 @@ template <typename Container> struct const_xpointer {
   bool operator==(const const_xpointer &other) const noexcept {
     return index_ == other.index_ && container_ == other.container_;
   }
-  bool operator<=>(const const_xpointer &other) const noexcept;
+  auto operator<=>(const const_xpointer &other) const noexcept {
+    assert(container_ == other.container_);
+    return index_ <=> other.index_;
+  }
+
   const_xpointer &operator++() {
     index_++;
     return *this;
@@ -64,7 +68,10 @@ template <typename Container> struct xpointer {
   bool operator==(const xpointer &other) const noexcept {
     return index_ == other.index_ && container_ == other.container_;
   }
-  bool operator<=>(const xpointer &other) const noexcept;
+  auto operator<=>(const xpointer &other) const noexcept {
+    assert(container_ == other.container_);
+    return index_ <=> other.index_;
+  }
   xpointer &operator++() {
     index_++;
     return *this;
@@ -190,6 +197,9 @@ public:
   /// Allocator
   using allocator_type = Alloc;
 
+  distributed_vector(const distributed_vector &) = delete;
+  distributed_vector operator=(const distributed_vector &) = delete;
+
   /// Construct a distributed vector with `count` elements.
   distributed_vector(D decomp, size_type count)
       : decomp_(decomp), size_(count), comm_(decomp.comm()),
@@ -255,14 +265,18 @@ public:
 
   T get(std::size_t index) const {
     auto [rank, offset] = rank_offset(index);
+    assert(index < size());
+    assert(offset < local().size());
     auto val = win_.get<T>(rank, offset);
     drlog.debug("get {} =  [{}]\n", val, index);
     return val;
   }
 
   void put(std::size_t index, const T &val) {
-    drlog.debug("put [{}] = {}\n", index, val);
     auto [rank, offset] = rank_offset(index);
+    drlog.debug("put {} ({}:{}) = {}\n", index, rank, offset, val);
+    assert(index < size());
+    assert(offset < local().size());
     win_.put(val, rank, offset);
   }
 
@@ -306,24 +320,46 @@ public:
     return first == begin();
   }
 
+  /// Return local iterators that contain the intersection of local
+  /// data and requested range
+  auto select_local(auto range_first, auto range_last, int rank) const {
+    assert(range_first >= begin());
+    assert(range_last <= end());
+    return std::pair(clamp(range_first, rank), clamp(range_last, rank));
+  }
+
 private:
+  auto clamp(auto it, int my_rank) const {
+    auto radius = stencil_.radius()[0];
+    auto [rank, offset] = rank_offset(it.index_);
+    if (rank < my_rank) {
+      return radius.prev;
+    } else if (rank > my_rank) {
+      return local().size() - radius.next;
+    } else {
+      return offset;
+    }
+  }
+
   auto rank_offset(std::size_t index) const {
     auto radius = stencil_.radius()[0];
-    std::size_t slice_size = local().size() - radius.prev - radius.next;
     std::size_t rank, offset;
     if (index < radius.prev) {
       rank = 0;
     } else if (index >= size() - radius.next) {
       rank = comm_.size() - 1;
     } else {
-      rank = (index - radius.prev) / slice_size;
+      rank = (index - radius.prev) / slice_size_;
     }
-    offset = index - rank * slice_size;
+    offset = index - rank * slice_size_;
 
-    return std::pair(rank, offset);
+    return std::tuple<int, std::size_t>(rank, offset);
   }
 
   void init() {
+    auto radius = stencil_.radius()[0];
+    slice_size_ = local().size() - radius.prev - radius.next;
+
 #ifdef OMPI_MAJOR_VERSION
     // openmpi cannot create a window when the size is 1
     // Not sure if it is specific to the version that comes with ubuntu 22
@@ -342,6 +378,7 @@ private:
   stencil_type stencil_;
   D decomp_;
   size_type size_;
+  size_type slice_size_;
   communicator comm_;
   std::vector<T, Alloc> local_;
   communicator::win win_;

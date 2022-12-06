@@ -2,6 +2,7 @@
 
 .. _`C++ execution policies`: https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t
 
+.. _`std::fill`: https://en.cppreference.com/w/cpp/algorithm/fill
 .. _`std::for_each`: https://en.cppreference.com/w/cpp/algorithm/ranges/for_each
 .. _`std::mdspan`: https://en.cppreference.com/w/cpp/container/mdspan
 .. _`std::reduce`: https://en.cppreference.com/w/cpp/algorithm/reduce
@@ -11,6 +12,7 @@
 .. _`std::vector`: https://en.cppreference.com/w/cpp/container/vector
 
 .. _`std::ranges::copy`: https://en.cppreference.com/w/cpp/algorithm/ranges/copy
+.. _`std::ranges::fill`: https://en.cppreference.com/w/cpp/algorithm/ranges/fill
 .. _`std::ranges::transform`: https://en.cppreference.com/w/cpp/algorithm/ranges/transform
 
 .. C++ paper links

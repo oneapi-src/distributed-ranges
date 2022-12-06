@@ -2,40 +2,45 @@ namespace lib {
 
 //
 //
+// Fill
+//
+//
+
+/// Collective fill on iterator/sentinel for a distributed range
+template <typename I, typename T> void fill(I first, I last, T value) {
+  auto &container = first.object();
+  auto [begin_offset, end_offset] =
+      first.object().select_local(first, last, container.comm().rank());
+  auto base = container.local().begin();
+  std::fill(base + begin_offset, base + end_offset, value);
+}
+
+//
+//
 // Reduce
 //
 //
 
 /// Collective reduction on iterator/sentinel for a distributed range
 template <typename I, typename S, typename T, typename BinaryOp>
-T reduce(int root, I input_iterator, S sentinel, T init, BinaryOp &&binary_op) {
-  auto &input = input_iterator.object();
-  auto &comm = input.comm();
+T reduce(int root, I first, S last, T init, BinaryOp &&binary_op) {
+  auto &container = first.object();
+  auto &comm = container.comm();
+  auto [begin_offset, end_offset] =
+      container.select_local(first, last, container.comm().rank());
+  auto base = container.local().begin();
 
-  if (input.congruent(input_iterator, sentinel)) {
+  // Each rank reduces its local segment
+  T val = std::reduce(base + begin_offset, base + end_offset, 0, binary_op);
+  drlog.debug("local reduce: {}\n", val);
 
-    // Each rank reduces its local segment
-    T val =
-        std::reduce(input.local().begin(), input.local().end(), 0, binary_op);
-    drlog.debug("local reduce: {}\n", val);
-
-    // Gather segment values on root and reduce for final value
-    std::vector<T> vals;
-    comm.gather(val, vals, root);
-    if (comm.rank() == root) {
-      return std::reduce(vals.begin(), vals.end(), init, binary_op);
-    } else {
-      return 0;
-    }
-
+  // Gather segment values on root and reduce for final value
+  std::vector<T> vals;
+  comm.gather(val, vals, root);
+  if (comm.rank() == root) {
+    return std::reduce(vals.begin(), vals.end(), init, binary_op);
   } else {
-
-    // Fall back to std::reduce performing elementwise operations
-    if (comm.rank() == root) {
-      return std::reduce(input_iterator, sentinel, init, binary_op);
-    } else {
-      return 0;
-    }
+    return 0;
   }
 }
 

@@ -8,6 +8,7 @@ Algorithms on distributed ranges.
    :maxdepth: 1
 
    copy
+   fill
    for_each
    reduce
    transform
