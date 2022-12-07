@@ -1,34 +1,42 @@
 #include "cpu-tests.hpp"
 
-TEST(CpuMpiTests, TransformReduceDistributedVector) {
-  std::size_t n = 10;
-  int init = 10000;
-  int lval, dval;
+void check_transform_reduce(std::string title, std::size_t n, std::size_t b,
+                            std::size_t e) {
   auto reduce_op = std::plus<>();
   auto transform_op = [](auto &&v) { return v * v; };
+  int init = 10000;
+  int root = 0;
+  lib::drlog.debug("{}\n", title);
 
-  std::vector<int> v(n);
-  lib::distributed_vector<int> dv(n);
+  int iota_base = 100;
 
-  rng::iota(v, 100);
-  if (comm_rank == 0) {
-    rng::copy(v, dv.begin());
+  lib::distributed_vector<int> dvi1(n);
+  rng::iota(dvi1, iota_base);
+  dvi1.fence();
+
+  auto dval1 = lib::transform_reduce(root, dvi1.begin() + b, dvi1.begin() + e,
+                                     init, reduce_op, transform_op);
+
+  lib::distributed_vector<int> dvi2(n);
+  rng::iota(dvi2, iota_base);
+  dvi2.fence();
+
+  if (comm_rank == root) {
+    auto dval2 = std::transform_reduce(dvi2.begin() + b, dvi2.begin() + e, init,
+                                       reduce_op, transform_op);
+
+    std::vector<int> v(n);
+    rng::iota(v, iota_base);
+    auto val = std::transform_reduce(v.begin() + b, v.begin() + e, init,
+                                     reduce_op, transform_op);
+    EXPECT_EQ(val, dval1);
+    EXPECT_EQ(val, dval2);
   }
-  dv.fence();
+}
 
-  static_assert(
-      std::random_access_iterator<lib::distributed_vector<int>::iterator>);
-  if (comm_rank == 0) {
-    lval = std::transform_reduce(v.begin(), v.end(), init, reduce_op,
-                                 transform_op);
-    dval = std::transform_reduce(dv.begin(), dv.end(), init, reduce_op,
-                                 transform_op);
-    EXPECT_EQ(dval, lval);
-  }
+TEST(CpuMpiTests, TransformReduceDistributedVector) {
+  std::size_t n = 10;
 
-  dval = lib::transform_reduce(0, dv.begin(), dv.end(), init, reduce_op,
-                               transform_op);
-  if (comm_rank == 0) {
-    EXPECT_EQ(dval, lval);
-  }
+  check_transform_reduce("full vector", n, 0, n);
+  check_transform_reduce("partial vector", n, n / 2 - 1, n / 2 + 1);
 }

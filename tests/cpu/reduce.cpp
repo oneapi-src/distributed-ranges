@@ -1,28 +1,34 @@
 #include "cpu-tests.hpp"
 
-TEST(CpuMpiTests, ReduceDistributedVector) {
-  std::size_t n = 10;
+void check_reduce(std::size_t n, std::size_t b, std::size_t e) {
   auto op = std::plus<>();
   int init = 10000;
-  int lval, dval;
+  int iota_base = 100;
+  int root = 0;
 
-  std::vector<int> v(n);
-  lib::distributed_vector<int> dv(n);
+  lib::distributed_vector<int> dv1(n);
+  rng::iota(dv1, iota_base);
+  dv1.fence();
+  auto dv1_sum = lib::reduce(root, dv1.begin() + b, dv1.begin() + e, init, op);
 
-  rng::iota(v, 100);
+  lib::distributed_vector<int> dv2(n);
+  rng::iota(dv2, iota_base);
+  dv2.fence();
+
   if (comm_rank == 0) {
-    rng::copy(v, dv.begin());
-  }
-  dv.fence();
+    auto dv2_sum = std::reduce(dv2.begin() + b, dv2.begin() + e, init, op);
 
-  if (comm_rank == 0) {
-    lval = std::reduce(v.begin(), v.end(), init, op);
-    dval = std::reduce(dv.begin(), dv.end(), init, op);
-    EXPECT_EQ(dval, lval);
+    std::vector<int> v(n);
+    rng::iota(v, iota_base);
+    auto v_sum = std::reduce(v.begin() + b, v.begin() + e, init, op);
+    EXPECT_EQ(v_sum, dv1_sum);
+    EXPECT_EQ(v_sum, dv2_sum);
   }
+}
 
-  dval = lib::reduce(0, dv, init, op);
-  if (comm_rank == 0) {
-    EXPECT_EQ(dval, lval);
-  }
+TEST(CpuMpiTests, ReduceDistributedVector) {
+  std::size_t n = 10;
+
+  check_reduce(n, 0, n);
+  check_reduce(n, n / 2 - 1, n / 2 + 1);
 }

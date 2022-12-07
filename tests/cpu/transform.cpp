@@ -1,56 +1,82 @@
 #include "cpu-tests.hpp"
 
+void check_transform(std::string title, std::size_t n, std::size_t b,
+                     std::size_t e) {
+  lib::drlog.debug("{}\n", title);
+
+  auto op = [](auto n) { return n * n; };
+  int iota_base = 100;
+
+  lib::distributed_vector<int> dvi1(n), dvr1(n);
+  rng::iota(dvi1, iota_base);
+  dvi1.fence();
+  lib::transform(dvi1.begin() + b, dvi1.begin() + e, dvr1.begin(), op);
+  dvr1.fence();
+  lib::drlog.debug("dvr1 {}\n", dvr1);
+
+  lib::distributed_vector<int> dvi2(n), dvr2(n);
+  rng::iota(dvi2, iota_base);
+  dvi2.fence();
+
+  if (comm_rank == 0) {
+    std::transform(dvi2.begin() + b, dvi2.begin() + e, dvr2.begin(), op);
+
+    std::vector<int> v(n), vr(n);
+    rng::iota(v, iota_base);
+    std::transform(v.begin() + b, v.begin() + e, vr.begin(), op);
+    expect_eq(vr, dvr1);
+    expect_eq(vr, dvr2);
+  }
+}
+
 TEST(CpuMpiTests, TransformDistributedVector) {
   std::size_t n = 10;
-  auto square = [](auto n) { return n * n; };
 
-  std::vector<int> vi(n), vr(n);
-  lib::distributed_vector<int> dvi(n), dvr(n);
+  check_transform("full vector", n, 0, n);
+  check_transform("partial vector", n, n / 2 - 1, n / 2 + 1);
+}
 
-  rng::iota(vi, 100);
+void check_transform2(std::string title, std::size_t n, std::size_t b,
+                      std::size_t e) {
+  lib::drlog.debug("{}\n", title);
+
+  auto op = [](auto n, auto m) { return n * m; };
+  int iota_base1 = 100;
+  int iota_base2 = 1000;
+
+  lib::distributed_vector<int> dvi1_1(n), dvi2_1(n), dvr_1(n);
+  rng::iota(dvi1_1, iota_base1);
+  rng::iota(dvi2_1, iota_base2);
+  dvi1_1.fence();
+  dvi2_1.fence();
+  lib::transform(dvi1_1.begin() + b, dvi1_1.begin() + e, dvi2_1.begin() + b,
+                 dvr_1.begin() + b, op);
+
+  lib::distributed_vector<int> dvi1_2(n), dvi2_2(n), dvr_2(n);
+  rng::iota(dvi1_2, iota_base1);
+  rng::iota(dvi2_2, iota_base2);
+  dvi1_2.fence();
+  dvi2_2.fence();
+
   if (comm_rank == 0) {
-    rng::copy(vi, dvi.begin());
-  }
-  dvi.fence();
+    std::transform(dvi1_2.begin() + b, dvi1_2.begin() + e, dvi2_2.begin() + b,
+                   dvr_2.begin() + b, op);
 
-  if (comm_rank == 0) {
-    rng::transform(vi, vr.begin(), square);
-    rng::transform(dvi, dvr.begin(), square);
-    expect_eq(dvr, vr);
-  }
-
-  lib::transform(dvi, dvr.begin(), square);
-  if (comm_rank == 0) {
-    expect_eq(dvr, vr);
+    std::vector<int> v1(n), v2(n), vr(n);
+    rng::iota(v1, iota_base1);
+    rng::iota(v2, iota_base2);
+    std::transform(v1.begin() + b, v1.begin() + e, v2.begin() + b,
+                   vr.begin() + b, op);
+    expect_eq(vr, dvr_1);
+    expect_eq(vr, dvr_2);
   }
 }
 
 TEST(CpuMpiTests, TransformDistributedVector2) {
   std::size_t n = 10;
-  auto op = std::plus<>();
 
-  std::vector<int> v1(n), v2(n), vr(n);
-  lib::distributed_vector<int> dv1(n), dv2(n), dvr0(n), dvr1(n);
-
-  rng::iota(v1, 100);
-  rng::iota(v2, 200);
-  if (comm_rank == 0) {
-    rng::copy(v1, dv1.begin());
-    rng::copy(v2, dv2.begin());
-  }
-  dv1.fence();
-  dv2.fence();
-
-  if (comm_rank == 0) {
-    rng::transform(v1, v2, vr.begin(), op);
-    rng::transform(dv1, dv2, dvr0.begin(), op);
-    expect_eq(dvr0, vr);
-  }
-
-  lib::transform(dv1, dv2, dvr1.begin(), op);
-  if (comm_rank == 0) {
-    expect_eq(dvr1, vr);
-  }
+  check_transform("full vector", n, 0, n);
+  check_transform("partial vector", n, n / 2 - 1, n / 2 + 1);
 }
 
 TEST(CpuMpiTests, Stencil) {
@@ -76,10 +102,15 @@ TEST(CpuMpiTests, Stencil) {
     expect_eq(dv_out1, v_out);
   }
 
+  dv_in.halo().exchange_begin();
+  dv_in.halo().exchange_finalize();
+  lib::transform(dv_in.begin() + 1, dv_in.end() - 1, dv_out2.begin() + 1, op);
+  if (comm_rank == 0) {
+    expect_eq(dv_out2, v_out);
+  }
+
   fmt::print("Initial:   {}\n", v_in);
   fmt::print("Reference: {}\n", v_out);
   fmt::print("Test:      {}\n", dv_out1);
-  // lib::transform(dv_in.begin() + 1, dv_in.end() - 1, dv_out2.begin() + 1,
-  // op); if (comm_rank == 0) { expect_eq(dv_out2, v_out);
-  // }
+  fmt::print("Test2:      {}\n", dv_out2);
 }

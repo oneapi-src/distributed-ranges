@@ -12,8 +12,13 @@ extern int comm_size;
 
 template <rng::range R1, rng::range R2>
 inline void expect_eq(R1 &r1, R2 &r2, int root = comm_rank) {
+  bool error = false;
+
   if (comm_rank == root) {
     for (size_t i = 0; i < r1.size(); i++) {
+      if (r1[i] != r2[i] && !error) {
+        error = true;
+      }
       EXPECT_EQ(r1[i], r2[i]);
     }
   }

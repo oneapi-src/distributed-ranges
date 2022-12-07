@@ -268,7 +268,7 @@ public:
     assert(index < size());
     assert(offset < local().size());
     auto val = win_.get<T>(rank, offset);
-    drlog.debug("get {} =  [{}]\n", val, index);
+    drlog.debug("get {} =  {} ({}:{})\n", val, index, rank, offset);
     return val;
   }
 
