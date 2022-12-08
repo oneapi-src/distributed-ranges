@@ -31,6 +31,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-fconcepts-diagnostics-depth=10)
+    add_compile_options(-Wno-stringop-overflow)
   endif()
 
   if(GCC_TOOLCHAIN)
@@ -39,8 +40,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   endif()
 
   # Debugging support
-  set(CMAKE_BUILD_TYPE "Debug")
-  #set(CMAKE_BUILD_TYPE "Release")
+  #set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_BUILD_TYPE "Release")
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
