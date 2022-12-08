@@ -79,6 +79,7 @@ jobs:
         ONEAPI_DEVICE_SELECTOR=level_zero:gpu make -j -C build all test
 
   icpx_dg2:
+    if: false
     runs-on: xpu1
     env:
       CXX: clang++
@@ -92,6 +93,7 @@ jobs:
         make -j -C build all test
 
   icpx_dg2_sycl_mpi:
+    if: false
     runs-on: xpu1
     env:
       CXX: icpx
@@ -119,7 +121,8 @@ jobs:
 
   build-tests:
     runs-on: dds-base
-    needs: [clang, gcc, icpx, icpx_igpu, icpx_dg2, icpx_dg2_sycl_mpi, cuda]
+    #    needs: [clang, gcc, icpx, icpx_igpu, icpx_dg2, icpx_dg2_sycl_mpi, cuda]
+    needs: [clang, gcc, icpx, icpx_igpu,  cuda]
     steps:
     - run: pwd
 
