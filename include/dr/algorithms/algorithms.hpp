@@ -65,6 +65,8 @@ auto transform(InputIt first, InputIt last, OutputIt d_first, UnaryOp op) {
   auto &output = d_first.object();
   auto &comm = input.comm();
 
+  input.halo().exchange_begin();
+  input.halo().exchange_finalize();
   if (input.conforms(output) && first.index_ == d_first.index_) {
     auto [begin_offset, end_offset] =
         input.select_local(first, last, comm.rank());
@@ -102,6 +104,10 @@ auto transform(InputIt1 first1, InputIt1 last1, InputIt2 first2,
   auto &output = d_first.object();
   auto &comm = input1.comm();
 
+  input1.halo().exchange_begin();
+  input1.halo().exchange_finalize();
+  input2.halo().exchange_begin();
+  input2.halo().exchange_finalize();
   if (input1.conforms(output) && input1.conforms(input2) &&
       first1.index_ == first2.index_ && first2.index_ == d_first.index_) {
     auto [begin_offset, end_offset] =

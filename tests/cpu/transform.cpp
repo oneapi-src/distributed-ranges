@@ -102,8 +102,6 @@ TEST(CpuMpiTests, Stencil) {
     expect_eq(dv_out1, v_out);
   }
 
-  dv_in.halo().exchange_begin();
-  dv_in.halo().exchange_finalize();
   lib::transform(dv_in.begin() + 1, dv_in.end() - 1, dv_out2.begin() + 1, op);
   if (comm_rank == 0) {
     expect_eq(dv_out2, v_out);
