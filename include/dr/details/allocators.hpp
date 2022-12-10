@@ -1,9 +1,20 @@
 namespace lib {
 
-#ifdef SYCL_LANGUAGE_VERSION
 template <typename T>
-using shared_allocator = sycl::usm_allocator<T, sycl::usm::alloc::shared>;
+class sycl_shared_allocator
+    : public sycl::usm_allocator<T, sycl::usm::alloc::shared> {
+private:
+  using sycl_allocator_type = sycl::usm_allocator<T, sycl::usm::alloc::shared>;
 
-#endif
+public:
+  sycl_shared_allocator(sycl::queue q = sycl::queue())
+      : sycl_allocator_type(q), q_(q), policy_(q) {}
+
+  const auto &policy() const { return policy_; }
+
+private:
+  sycl::queue q_;
+  decltype(oneapi::dpl::execution::make_device_policy(sycl::queue{})) policy_;
+};
 
 } // namespace lib

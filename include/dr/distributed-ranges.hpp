@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef SYCL_LANGUAGE_VERSION
+#include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
+#include <oneapi/dpl/numeric>
+#endif
+
 #include <cassert>
 #include <concepts>
 #include <fstream>
@@ -36,7 +42,9 @@ namespace stdex = std::experimental;
 
 #include "details/logger.hpp"
 
+#ifdef SYCL_LANGUAGE_VERSION
 #include "details/allocators.hpp"
+#endif
 
 #include "details/common.hpp"
 #include "details/communicator.hpp"
@@ -60,6 +68,10 @@ namespace stdex = std::experimental;
 #include "details/distributed_span.hpp"
 
 #include "details/execution_policies.hpp"
+
+#ifdef SYCL_LANGUAGE_VERSION
+#include "algorithms/sycl_algorithms.hpp"
+#endif
 
 #include "algorithms/algorithms.hpp"
 #include "algorithms/copy.hpp"

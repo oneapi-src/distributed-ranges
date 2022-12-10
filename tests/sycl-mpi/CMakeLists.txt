@@ -2,6 +2,8 @@ add_executable(
   sycl-mpi-tests
   sycl-mpi-tests.cpp
   distributed_vector.cpp
+  dpl.cpp
+  reduce.cpp
 )
 
 target_link_libraries(

@@ -6,6 +6,7 @@ template <typename Container> struct const_xreference;
 template <typename Container> struct const_xpointer {
   using T = typename Container::element_type;
   using const_reference = const_xreference<Container>;
+  using container_type = Container;
 
   // Required for random access iterator
   using value_type = typename Container::value_type;
@@ -58,6 +59,7 @@ template <typename Container> struct xpointer {
   using reference = xreference<Container>;
   using const_reference = const_xreference<Container>;
   using const_pointer = const_xpointer<Container>;
+  using container_type = Container;
 
   // Required for random access iterator
   using value_type = typename Container::value_type;
@@ -216,7 +218,7 @@ public:
 
   /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(stencil_type s, Alloc alloc, size_type count)
-      : stencil_(s), size_(count), comm_(decomp_.comm()),
+      : allocator_(alloc), stencil_(s), size_(count), comm_(decomp_.comm()),
         local_(local_storage_size(), alloc), halo_(comm_, local_, stencil_) {
     init();
   }
@@ -236,7 +238,7 @@ public:
 
   /// Construct a distributed vector with `count` elements.
   distributed_vector(Alloc alloc, size_type count)
-      : size_(count), comm_(decomp_.comm()),
+      : allocator_(alloc), size_(count), comm_(decomp_.comm()),
         local_(local_storage_size(), alloc) {
     init();
   }
@@ -328,6 +330,8 @@ public:
     return std::pair(clamp(range_first, rank), clamp(range_last, rank));
   }
 
+  const Alloc &allocator() const { return allocator_; }
+
 private:
   auto clamp(auto it, int my_rank) const {
     auto radius = stencil_.radius()[0];
@@ -375,6 +379,7 @@ private:
            radius.prev + radius.next;
   }
 
+  Alloc allocator_;
   stencil_type stencil_;
   D decomp_;
   size_type size_;

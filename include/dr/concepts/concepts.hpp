@@ -55,5 +55,12 @@ concept distributed_contiguous_iterator =
                                           }
                                           -> lib::distributed_contiguous_range;
                                       };
+template <typename I>
+concept sycl_distributed_contiguous_iterator =
+    distributed_contiguous_iterator<I> && requires(I &iter) {
+                                            {
+                                              iter.object().allocator().policy()
+                                            };
+                                          };
 
 } // namespace lib

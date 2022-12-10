@@ -1,12 +1,12 @@
 #include "sycl-mpi-tests.hpp"
 
-using DV = lib::distributed_vector<int, lib::shared_allocator<int>>;
+using DV = lib::distributed_vector<int, lib::sycl_shared_allocator<int>>;
 
 TEST(SyclMpiTests, DistributedVector) {
   sycl::queue q;
-  lib::shared_allocator<int> q_alloc(q);
+  DV::allocator_type alloc(q);
 
-  DV dv(q_alloc, 10);
+  DV dv(alloc, 10);
   dv.fence();
 
   auto p = dv.local().data();
@@ -17,15 +17,14 @@ TEST(SyclMpiTests, DistributedVector) {
 }
 
 TEST(CpuMpiTests, DistributedVectorStencil) {
-  sycl::queue q;
-  DV::allocator_type q_alloc(q);
+  DV::allocator_type alloc;
 
   std::size_t radius = 2;
   DV::stencil_type s(radius);
 
   std::size_t slice = 4;
   std::size_t n = comm_size * slice + 2 * radius;
-  DV dv(s, q_alloc, n);
+  DV dv(s, alloc, n);
   dv.fence();
 
   EXPECT_EQ(dv.local().size(), slice + 2 * radius);
