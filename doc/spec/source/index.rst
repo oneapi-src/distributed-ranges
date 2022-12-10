@@ -17,7 +17,6 @@ Welcome to the Distributed Ranges Specification.
    remote_memory/remote_memory
    device_memory/device_memory
    execution_policies/execution_policies
-   decompositions/decompositions
    containers/containers
    views/views
    algorithms/algorithms

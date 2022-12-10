@@ -144,8 +144,7 @@ template <typename Container> struct xreference {
   pointer pointer_;
 };
 
-template <typename T, typename Alloc = std::allocator<T>,
-          typename D = block_cyclic>
+template <typename T, typename Alloc = std::allocator<T>>
 class distributed_vector {
 public:
   using element_type = T;
@@ -157,9 +156,6 @@ public:
   using size_type = std::size_t;
   /// Type used for storing differences
   using difference_type = std::ptrdiff_t;
-
-  /// Type of decomposition
-  using decomposition = D;
 
 #ifdef DR_SPEC
 
@@ -202,51 +198,42 @@ public:
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector operator=(const distributed_vector &) = delete;
 
-  /// Construct a distributed vector with `count` elements.
-  distributed_vector(D decomp, size_type count)
-      : decomp_(decomp), size_(count), comm_(decomp.comm()),
-        local_(local_storage_size()) {
-    init();
-  }
-
   /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(stencil_type s, size_type count)
-      : stencil_(s), size_(count), comm_(decomp_.comm()),
-        local_(local_storage_size()), halo_(comm_, local_, stencil_) {
+      : stencil_(s), size_(count), local_(local_storage_size()),
+        halo_(comm_, local_, stencil_) {
     init();
   }
 
   /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(stencil_type s, Alloc alloc, size_type count)
-      : allocator_(alloc), stencil_(s), size_(count), comm_(decomp_.comm()),
+      : allocator_(alloc), stencil_(s), size_(count),
         local_(local_storage_size(), alloc), halo_(comm_, local_, stencil_) {
     init();
   }
 
   /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(std::size_t radius, bool periodic, size_type count)
-      : stencil_(radius), size_(count), comm_(decomp_.comm()),
-        local_(local_storage_size()), halo_(comm_, local_, stencil_) {
+      : stencil_(radius), size_(count), local_(local_storage_size()),
+        halo_(comm_, local_, stencil_) {
     init();
   }
 
   /// Construct a distributed vector with `count` elements.
   distributed_vector(size_type count)
-      : size_(count), comm_(decomp_.comm()), local_(local_storage_size()) {
+      : size_(count), local_(local_storage_size()) {
     init();
   }
 
   /// Construct a distributed vector with `count` elements.
   distributed_vector(Alloc alloc, size_type count)
-      : allocator_(alloc), size_(count), comm_(decomp_.comm()),
+      : allocator_(alloc), size_(count), comm_(),
         local_(local_storage_size(), alloc) {
     init();
   }
 
   /// Construct a distributed vector with `count` elements equal to `value`.
-  distributed_vector(size_type count, T value, D decomp = D{}) {
-    assert(false);
-  }
+  distributed_vector(size_type count, T value) { assert(false); }
 
   ~distributed_vector() {
     fence();
@@ -311,7 +298,7 @@ public:
   communicator &comm() { return comm_; }
 
   bool conforms(const distributed_vector &other) const noexcept {
-    return decomp_ == other.decomp_ && size_ == other.size_;
+    return size_ == other.size_;
   }
 
   bool congruent(const iterator &first, const iterator &last) const noexcept {
@@ -381,7 +368,6 @@ private:
 
   Alloc allocator_;
   stencil_type stencil_;
-  D decomp_;
   size_type size_;
   size_type slice_size_;
   communicator comm_;

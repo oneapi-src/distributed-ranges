@@ -8,14 +8,12 @@ TEST(CpuMpiTests, DistributedVectorRequirements) {
 TEST(CpuMpiTests, DistributedVectorConstructors) {
   lib::distributed_vector<int> a1(10);
 
-  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<int> a2(dist, 10);
+  lib::distributed_vector<int> a2(10);
 }
 
 TEST(CpuMpiTests, DistributedVectorQuery) {
   const int n = 10;
-  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<int> a(dist, n);
+  lib::distributed_vector<int> a(n);
 
   EXPECT_EQ(a.size(), n);
 }
@@ -23,8 +21,7 @@ TEST(CpuMpiTests, DistributedVectorQuery) {
 TEST(CpuMpiTests, DistributedVectorGatherScatter) {
   const std::size_t n = 10;
   const int root = 0;
-  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<int> dv(dist, n);
+  lib::distributed_vector<int> dv(n);
 
   std::vector<int> src(n), dst(n);
   std::iota(src.data(), src.data() + src.size(), 1);
@@ -37,8 +34,7 @@ TEST(CpuMpiTests, DistributedVectorGatherScatter) {
 
 TEST(CpuMpiTests, distributed_vector_index) {
   const std::size_t n = 10;
-  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<int> dv(dist, n);
+  lib::distributed_vector<int> dv(n);
 
   if (comm_rank == 0) {
     for (size_t i = 0; i < n; i++) {
@@ -53,7 +49,7 @@ TEST(CpuMpiTests, distributed_vector_index) {
     }
   }
 
-  lib::distributed_vector<int> dv2(dist, n);
+  lib::distributed_vector<int> dv2(n);
 
   dv2[3] = 1000;
   dv2[3] = dv[3];
@@ -63,8 +59,7 @@ TEST(CpuMpiTests, distributed_vector_index) {
 TEST(CpuMpiTests, DistributedVectorCollectiveCopy) {
   const std::size_t n = 10;
   const int root = 0;
-  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<int> dv(dist, n);
+  lib::distributed_vector<int> dv(n);
 
   std::vector<int> src(n), dst(n);
   std::iota(src.data(), src.data() + src.size(), 1);
@@ -78,8 +73,7 @@ TEST(CpuMpiTests, DistributedVectorCollectiveCopy) {
 TEST(CpuMpiTests, DistributedVectorAlgorithms) {
   const std::size_t n = 10;
   const int root = 0;
-  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<int> dv(dist, n);
+  lib::distributed_vector<int> dv(n);
 
   if (comm_rank == root) {
     std::vector<int> ref(n);

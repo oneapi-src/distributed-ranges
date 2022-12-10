@@ -38,8 +38,7 @@ Extents local_extents(Extents extents, std::size_t comm_size) {
   return local;
 }
 
-template <typename T, typename Extents, typename Layout = stdex::layout_right,
-          typename D = block_cyclic>
+template <typename T, typename Extents, typename Layout = stdex::layout_right>
 class distributed_mdspan {
 private:
   using dvector = distributed_vector<T>;
@@ -80,18 +79,8 @@ public:
       : extents_(std::forward<Args>(args)...), dvector_(dvector),
         dmdspan_(dvector.begin(), extents_),
         local_mdspan_(dvector_.local().data(),
-                      local_extents(extents_, decomp_.comm().size())) {
-    assert(storage_size(extents_, decomp_.comm().size()) <= dvector.size());
-  }
-
-  /// Construct from a distributed_vector with the requested dimensions
-  template <typename... Args>
-  distributed_mdspan(D decomp, distributed_vector<T> &dvector, Args... args)
-      : decomp_(decomp), extents_(std::forward<Args>(args)...),
-        dvector_(dvector), dmdspan_(dvector.begin(), extents_),
-        local_mdspan_(dvector_.local().data(),
-                      local_extents(extents_, decomp_.comm().size())) {
-    assert(storage_size(extents_, decomp_.comm().size()) <= dvector.size());
+                      local_extents(extents_, comm_.size())) {
+    assert(storage_size(extents_, comm_.size()) <= dvector.size());
   }
 
   /// Returns local segment
@@ -120,15 +109,14 @@ public:
   }
 
 private:
-  D decomp_;
+  communicator comm_;
   Extents extents_;
   dvector &dvector_;
   dmdspan dmdspan_;
   local_type local_mdspan_;
 };
 
-template <typename T, typename Extents, typename Layout = stdex::layout_right,
-          typename D = block_cyclic>
+template <typename T, typename Extents, typename Layout = stdex::layout_right>
 class distributed_mdarray {
 private:
   using dvector = distributed_vector<T>;
@@ -165,19 +153,10 @@ public:
   template <typename... Args>
   distributed_mdarray(Args... args)
       : extents_(std::forward<Args>(args)...),
-        dvector_(decomp_, storage_size(extents_, decomp_.comm().size())),
+        dvector_(storage_size(extents_, comm_.size())),
         dmdspan_(dvector_.begin(), extents_),
         local_mdspan_(dvector_.local().data(),
-                      local_extents(extents_, decomp_.comm().size())) {}
-
-  /// Construct an `mdarray` with requested dimensions
-  template <typename... Args>
-  distributed_mdarray(D decomp, Args... args)
-      : decomp_(decomp), extents_(std::forward<Args>(args)...),
-        dvector_(decomp_, storage_size(extents_, decomp_.comm().size())),
-        dmdspan_(dvector_.begin(), extents_),
-        local_mdspan_(dvector_.local().data(),
-                      local_extents(extents_, decomp_.comm().size())) {}
+                      local_extents(extents_, comm_.size())) {}
 
   /// Returns local segment
   local_type local() const { return local_mdspan_; }
@@ -210,7 +189,7 @@ public:
   auto extents() const { return dmdspan_.extents(); }
 
 private:
-  D decomp_;
+  communicator comm_;
   Extents extents_;
   dvector dvector_;
   dmdspan dmdspan_;

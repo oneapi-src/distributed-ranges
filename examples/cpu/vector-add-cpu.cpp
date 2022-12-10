@@ -26,18 +26,7 @@ void vector_add() {
     ref_adder.compute();
   }
 
-  // Block cyclic distribution takes a block size and
-  // an optional team object (e.g. MPI communicator).
-
-  // `lib::div()` is a special constant that indicates
-  // a block size that evenly divides the vector amongst
-  // all procs.
-  // lib::block_cyclic(1) - true cyclic
-  // lib::block_cyclic(2) - cyclic with blocks of two elements
-  // lib::block_cyclic(8) - cyclic with blocks of eight elements
-  // etc.
-  auto dist = lib::block_cyclic(lib::partition_method::div, comm);
-  lib::distributed_vector<T> dv_a(dist, n), dv_b(dist, n), dv_c(dist, n);
+  lib::distributed_vector<T> dv_a(n), dv_b(n), dv_c(n);
 
   // Distribute the data
   lib::collective::copy(root_rank, ref_adder.a, dv_a);
