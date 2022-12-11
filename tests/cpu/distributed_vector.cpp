@@ -29,7 +29,9 @@ TEST(CpuMpiTests, DistributedVectorGatherScatter) {
   dv.scatter(src, root);
   dv.gather(dst, root);
 
-  expect_eq(src, dst, root);
+  if (comm_rank == root) {
+    EXPECT_TRUE(equal(src, dst));
+  }
 }
 
 TEST(CpuMpiTests, distributed_vector_index) {
@@ -67,7 +69,9 @@ TEST(CpuMpiTests, DistributedVectorCollectiveCopy) {
   lib::collective::copy(root, src, dv);
   lib::collective::copy(root, dv, dst);
 
-  expect_eq(src, dst, root);
+  if (comm_rank == root) {
+    EXPECT_TRUE(equal(src, dst));
+  }
 }
 
 TEST(CpuMpiTests, DistributedVectorAlgorithms) {
@@ -81,19 +85,19 @@ TEST(CpuMpiTests, DistributedVectorAlgorithms) {
 
     std::iota(dv.begin(), dv.end(), 1);
 
-    expect_eq(dv, ref);
+    EXPECT_TRUE(equal(dv, ref));
 
     std::iota(ref.begin(), ref.end(), 11);
     std::copy(ref.begin(), ref.end(), dv.begin());
-    expect_eq(dv, ref);
+    EXPECT_TRUE(equal(dv, ref));
 
     std::iota(ref.begin(), ref.end(), 21);
     rng::copy(ref, dv.begin());
-    expect_eq(dv, ref);
+    EXPECT_TRUE(equal(dv, ref));
 
     std::iota(dv.begin(), dv.end(), 31);
     rng::copy(dv, ref.begin());
-    expect_eq(dv, ref);
+    EXPECT_TRUE(equal(dv, ref));
   }
 }
 

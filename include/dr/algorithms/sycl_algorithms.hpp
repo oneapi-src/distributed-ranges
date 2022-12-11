@@ -34,4 +34,45 @@ T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
 }
 /// \endcond
 
+//
+//
+// Transform
+//
+//
+
+/// Exclude from doxygen
+/// \cond
+/// Collective transform on an iterator/sentinel for a distributed
+/// range: 1 in, 1 out
+template <sycl_distributed_contiguous_iterator InputIt,
+          sycl_distributed_contiguous_iterator OutputIt, typename UnaryOp>
+auto transform(InputIt first, InputIt last, OutputIt d_first, UnaryOp op) {
+  auto &input = first.object();
+  auto &output = d_first.object();
+  auto &comm = input.comm();
+
+  input.halo().exchange_begin();
+  input.halo().exchange_finalize();
+  if (input.conforms(output) && first.index_ == d_first.index_) {
+    auto [begin_offset, end_offset] =
+        input.select_local(first, last, comm.rank());
+    // if input and output conform and this is whole vector, then just
+    // do a segment-wise transform
+    std::transform(input.allocator().policy(),
+                   input.local().data() + begin_offset,
+                   input.local().data() + end_offset,
+                   output.local().data() + begin_offset, op);
+    drlog.debug("dpl local transform\n");
+
+  } else {
+    if (input.comm().rank() == 0) {
+      // This is slow, but will always work. Some faster
+      // specializations are possible if needed.
+      std::transform(first, last, d_first, op);
+    }
+  }
+  return output.end();
+}
+/// \endcond
+
 } // namespace lib

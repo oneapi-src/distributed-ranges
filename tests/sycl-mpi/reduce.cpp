@@ -30,7 +30,6 @@ void check_reduce(std::size_t n, std::size_t b, std::size_t e) {
     auto v_sum = std::reduce(v.begin() + b, v.begin() + e, init, op);
     EXPECT_EQ(v_sum, dv1_sum);
     EXPECT_EQ(v_sum, dv2_sum);
-    fmt::print("v: {}\nsum: {}\n", v, v_sum);
   }
 }
 

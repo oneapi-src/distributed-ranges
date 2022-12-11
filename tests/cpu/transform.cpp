@@ -24,8 +24,8 @@ void check_transform(std::string title, std::size_t n, std::size_t b,
     std::vector<int> v(n), vr(n);
     rng::iota(v, iota_base);
     std::transform(v.begin() + b, v.begin() + e, vr.begin(), op);
-    expect_eq(vr, dvr1);
-    expect_eq(vr, dvr2);
+    EXPECT_TRUE(equal(vr, dvr1));
+    EXPECT_TRUE(equal(vr, dvr2));
   }
 }
 
@@ -67,8 +67,8 @@ void check_transform2(std::string title, std::size_t n, std::size_t b,
     rng::iota(v2, iota_base2);
     std::transform(v1.begin() + b, v1.begin() + e, v2.begin() + b,
                    vr.begin() + b, op);
-    expect_eq(vr, dvr_1);
-    expect_eq(vr, dvr_2);
+    EXPECT_TRUE(equal(vr, dvr_1));
+    EXPECT_TRUE(equal(vr, dvr_2));
   }
 }
 
@@ -99,16 +99,11 @@ TEST(CpuMpiTests, Stencil) {
   if (comm_rank == 0) {
     rng::transform(v_in.begin() + 1, v_in.end() - 1, v_out.begin() + 1, op);
     rng::transform(dv_in.begin() + 1, dv_in.end() - 1, dv_out1.begin() + 1, op);
-    expect_eq(dv_out1, v_out);
+    EXPECT_TRUE(equal(dv_out1, v_out));
   }
 
   lib::transform(dv_in.begin() + 1, dv_in.end() - 1, dv_out2.begin() + 1, op);
   if (comm_rank == 0) {
-    expect_eq(dv_out2, v_out);
+    EXPECT_TRUE(equal(dv_out2, v_out));
   }
-
-  fmt::print("Initial:   {}\n", v_in);
-  fmt::print("Reference: {}\n", v_out);
-  fmt::print("Test:      {}\n", dv_out1);
-  fmt::print("Test2:      {}\n", dv_out2);
 }

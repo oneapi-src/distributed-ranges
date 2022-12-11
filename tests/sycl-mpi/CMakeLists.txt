@@ -4,6 +4,7 @@ add_executable(
   distributed_vector.cpp
   dpl.cpp
   reduce.cpp
+  transform.cpp
 )
 
 target_link_libraries(
@@ -19,4 +20,7 @@ if(ENABLE_CUDA)
   target_link_options(sycl-mpi-tests PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
 endif()
 
-add_test(NAME sycl-mpi COMMAND ./sycl-mpi-tests)
+add_mpi_test(sycl-mpi-1 sycl-mpi-tests 1)
+add_mpi_test(sycl-mpi-2 sycl-mpi-tests 2)
+add_mpi_test(sycl-mpi-3 sycl-mpi-tests 3)
+add_mpi_test(sycl-mpi-4 sycl-mpi-tests 4)

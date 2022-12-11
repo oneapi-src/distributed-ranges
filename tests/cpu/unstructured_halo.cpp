@@ -73,11 +73,11 @@ TEST(CpuMpiTests, UnstructuredHalo) {
   if (comm_rank == 0) {
     std::vector<int> correct = {100, 101, 102, 103, 104,
                                 105, 106, 201, 203, 205};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   } else {
     std::vector<int> correct = {200, 201, 202, 203, 204,
                                 205, 206, 207, 102, 102};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   }
 }
 
@@ -117,11 +117,11 @@ TEST(CpuMpiTests, UnstructuredHaloReduce) {
   if (comm_rank == 0) {
     std::vector<int> correct = {100, 101, 519, 103, 104,
                                 105, 106, 107, 108, 109};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   } else {
     std::vector<int> correct = {200, 308, 202, 311, 204,
                                 314, 206, 207, 208, 209};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   }
 }
 
@@ -151,11 +151,11 @@ TEST(CpuMpiTests, UnstructuredHaloReduceMax) {
   if (comm_rank == 0) {
     std::vector<int> correct = {100, 101, 209, 103, 104,
                                 105, 106, 107, 108, 109};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   } else {
     std::vector<int> correct = {200, 201, 202, 203, 204,
                                 205, 206, 207, 208, 209};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   }
 }
 
@@ -185,10 +185,10 @@ TEST(CpuMpiTests, UnstructuredHaloReduceMin) {
   if (comm_rank == 0) {
     std::vector<int> correct = {100, 101, 102, 103, 104,
                                 105, 106, 107, 108, 109};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   } else {
     std::vector<int> correct = {200, 107, 202, 108, 204,
                                 109, 206, 207, 208, 209};
-    expect_eq(d, correct);
+    EXPECT_TRUE(equal(d, correct));
   }
 }

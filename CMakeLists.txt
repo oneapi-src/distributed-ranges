@@ -111,6 +111,7 @@ endfunction()
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include_directories(examples/include)
+  include_directories(tests/include)
 
   include(GoogleTest)
 

@@ -14,8 +14,8 @@ void check_fill(std::size_t n, std::size_t b, std::size_t e) {
     std::vector<int> v(n);
     std::fill(v.begin() + b, v.begin() + e, val);
 
-    expect_eq(dv1, v);
-    expect_eq(dv2, v);
+    EXPECT_TRUE(equal(dv1, v));
+    EXPECT_TRUE(equal(dv2, v));
   }
 }
 
