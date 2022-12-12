@@ -157,9 +157,6 @@ public:
   /// Type used for storing differences
   using difference_type = std::ptrdiff_t;
 
-  /// Type of local container
-  using local_type = std::span<T>;
-
 #ifdef DR_SPEC
 
   /// Pointer

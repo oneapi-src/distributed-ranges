@@ -10,4 +10,3 @@ Views can reference collections of objects but do not own the storage.
    remote_span
    distributed_mdspan
    distributed_span
-   local_span

@@ -1,4 +1,3 @@
-adaptor
 Allocator
 Decompositions
 Dereference

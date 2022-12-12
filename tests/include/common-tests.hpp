@@ -10,13 +10,13 @@ extern MPI_Comm comm;
 extern int comm_rank;
 extern int comm_size;
 
-testing::AssertionResult equal(const rng::range auto &ref,
-                               const rng::range auto &test) {
-  if (rng::equal(ref, test)) {
+testing::AssertionResult equal(const rng::range auto &r1,
+                               const rng::range auto &r2) {
+  if (rng::equal(r1, r2)) {
     return testing::AssertionSuccess();
   } else {
     return testing::AssertionFailure()
-           << fmt::format("\n    ref: {}\n   tst: {}\n  ", ref, test);
+           << fmt::format("\n    {}\n    {}\n  ", r1, r2);
   }
 }
 

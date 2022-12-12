@@ -27,7 +27,6 @@ add_executable(
   span_halo.cpp
   transform.cpp
   transform_reduce.cpp
-  views.cpp
 )
 
 target_link_libraries(
