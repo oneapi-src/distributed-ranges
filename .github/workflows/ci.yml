@@ -119,15 +119,8 @@ jobs:
         cmake -B build -DENABLE_SYCL=ON -DENABLE_CUDA=ON
         make -j -C build all test
 
-  build-tests:
-    runs-on: dds-base
-    #    needs: [clang, gcc, icpx, icpx_igpu, icpx_dg2, icpx_dg2_sycl_mpi, cuda]
-    needs: [clang, gcc, icpx, icpx_igpu,  cuda]
-    steps:
-    - run: pwd
-
   publish:
-    needs: [checks, build-tests]
+    needs: [checks, clang, gcc, icpx, icpx_igpu, cuda]
     runs-on: dds-base
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
