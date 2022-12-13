@@ -55,6 +55,8 @@ namespace stdex = std::experimental;
 
 #include "details/remote_vector.hpp"
 
+#include "details/memory.hpp"
+
 #include "details/halo.hpp"
 
 #include "details/distributed_vector.hpp"

@@ -5,6 +5,7 @@ add_executable(
   dpl.cpp
   reduce.cpp
   transform.cpp
+  unstructured_halo.cpp
 )
 
 target_link_libraries(
