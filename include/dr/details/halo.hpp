@@ -227,9 +227,9 @@ template <typename T, typename Memory = default_memory<T>> class span_group {
 public:
   using element_type = T;
   using memory_type = Memory;
-  std::size_t buffer_index;
-  std::size_t request_index;
-  bool receive;
+  std::size_t buffer_index = 0;
+  std::size_t request_index = 0;
+  bool receive = false;
 
   span_group(T *data, std::size_t size, std::size_t rank, communicator::tag tag,
              const Memory &memory)
@@ -257,7 +257,6 @@ private:
   Memory memory_;
   std::span<T> data_;
   std::size_t rank_;
-  std::size_t radius_;
   communicator::tag tag_ = communicator::tag::invalid;
   ;
 };
