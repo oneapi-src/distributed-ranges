@@ -31,6 +31,7 @@ public:
       map_.push_back(&g);
     }
     buffer_ = memory_.allocate(buffer_size_);
+    assert(buffer_ != nullptr);
     requests_.resize(i);
   }
 
@@ -90,6 +91,7 @@ public:
   ~halo_impl() {
     if (buffer_) {
       memory_.deallocate(buffer_, buffer_size_);
+      buffer_ = nullptr;
     }
   }
 
@@ -137,6 +139,7 @@ public:
       : memory_(memory), data_(data), rank_(rank) {
     indices_size_ = indices.size();
     indices_ = memory_.template allocate<std::size_t>(indices_size_);
+    assert(indices_ != nullptr);
     memory_.memcpy(indices_, indices.data(),
                    indices_size_ * sizeof(std::size_t));
   }
@@ -146,6 +149,7 @@ public:
         receive(o.receive), memory_(o.memory_), data_(o.data_), rank_(o.rank_),
         indices_size_(o.indices_size_), tag_(o.tag_) {
     indices_ = memory_.template allocate<std::size_t>(indices_size_);
+    assert(indices_ != nullptr);
     memory_.memcpy(indices_, o.indices_, indices_size_ * sizeof(std::size_t));
   }
 
@@ -179,6 +183,7 @@ public:
   ~index_group() {
     if (indices_) {
       memory_.template deallocate<std::size_t>(indices_, indices_size_);
+      indices_ = nullptr;
     }
   }
 

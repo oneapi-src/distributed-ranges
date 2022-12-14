@@ -6,11 +6,19 @@ template <typename T> struct default_memory {
   using value_type = T;
   std::allocator<T> std_allocator;
 
-  T *allocate(size_t size) { return std_allocator.allocate(size); }
+  T *allocate(size_t size) {
+    auto p = std_allocator.allocate(size);
+    assert(p != nullptr);
+    memset(p, 0, sizeof(T) * size);
+    return p;
+  }
 
   template <typename F> F *allocate(size_t size) {
     std::allocator<F> allocator;
-    return allocator.allocate(size);
+    auto p = allocator.allocate(size);
+    assert(p != nullptr);
+    memset(p, 0, sizeof(F) * size);
+    return p;
   }
 
   constexpr void deallocate(T *p, size_t n) { std_allocator.deallocate(p, n); }
@@ -18,6 +26,7 @@ template <typename T> struct default_memory {
   template <typename F> void deallocate(F *p, size_t n) {
     std::allocator<F> allocator;
     allocator.deallocate(p, n);
+    p = nullptr;
   }
 
   void memcpy(void *dst, const void *src, size_t numBytes) {
@@ -45,20 +54,32 @@ template <typename T> struct sycl_memory {
         device_(queue.get_device()), context_(queue.get_context()) {}
 
   T *allocate(size_t n) {
-    return sycl::aligned_alloc<T>(alignment_, n, device_, context_, kind_);
+    auto p = sycl::aligned_alloc<T>(alignment_, n, device_, context_, kind_);
+    assert(p != nullptr);
+    return p;
   }
 
   template <typename F> F *allocate(size_t n) {
-    return sycl::aligned_alloc<F>(alignment_, n, device_, context_, kind_);
+    auto p = sycl::aligned_alloc<F>(alignment_, n, device_, context_, kind_);
+    assert(p != nullptr);
+    return p;
   }
 
-  void deallocate(T *p, std::size_t n) { sycl::free(p, context_); }
+  void deallocate(T *p, std::size_t n) {
+    assert(p != nullptr);
+    sycl::free(p, context_);
+    p = nullptr;
+  }
 
   template <typename F> void deallocate(F *p, std::size_t n) {
+    assert(p != nullptr);
     sycl::free(p, context_);
+    p = nullptr;
   }
 
   void memcpy(void *dst, const void *src, size_t numBytes) {
+    assert(dst != nullptr);
+    assert(src != nullptr);
     offload_queue_.memcpy(dst, src, numBytes).wait();
   }
 
