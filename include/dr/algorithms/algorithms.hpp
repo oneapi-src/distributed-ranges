@@ -129,8 +129,8 @@ auto transform(InputIt1 first1, InputIt1 last1, InputIt2 first2,
 }
 
 /// Collective transform on a distributed range: 2 in, 1 out
-template <distributed_contiguous_range R1, distributed_contiguous_range R2,
-          typename O, typename BinaryOp>
+// template <distributed_contiguous_range R1, distributed_contiguous_range R2,
+template <typename R1, typename R2, typename O, typename BinaryOp>
 auto transform(R1 &&r1, R2 &&r2, O output, BinaryOp op) {
   return transform(r1.begin(), r1.end(), r2.begin(), output, op);
 }

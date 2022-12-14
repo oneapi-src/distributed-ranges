@@ -2,6 +2,10 @@ add_executable(vector-add-cpu vector-add-cpu.cpp)
 target_link_libraries(vector-add-cpu DR::mpi)
 add_mpi_test(vector-add-cpu vector-add-cpu 2)
 
+add_executable(vector-add-presentation vector-add-presentation.cpp)
+target_link_libraries(vector-add-presentation DR::mpi)
+add_mpi_test(vector-add-presentation vector-add-presentation 2)
+
 add_executable(stencil-1d-cpu stencil-1d-cpu.cpp)
 target_link_libraries(
   stencil-1d-cpu
