@@ -101,11 +101,9 @@ function(add_mpi_test test_name name processes)
   add_test(NAME ${test_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
 endfunction()
 
-add_subdirectory(include)
+install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-function(add_mpi_test test_name name processes)
-  add_test(NAME ${test_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
-endfunction()
+add_subdirectory(include)
 
 # Examples are not needed when another project uses the library
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
