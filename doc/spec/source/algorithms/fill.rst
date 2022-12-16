@@ -9,7 +9,8 @@
 Interface
 =========
 
-.. doxygenfunction:: lib::fill
+.. doxygenfunction:: lib::fill(I first, I last, T value)
+.. doxygenfunction:: lib::fill(R &&r, T value)
 
 Description
 ===========

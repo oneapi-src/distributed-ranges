@@ -73,9 +73,9 @@ namespace stdex = std::experimental;
 #include "algorithms/sycl_algorithms.hpp"
 #endif
 
+#include "details/views.hpp"
+
 #include "algorithms/algorithms.hpp"
 #include "algorithms/copy.hpp"
 #include "algorithms/for_each.hpp"
 #include "algorithms/transpose.hpp"
-
-#include "details/views.hpp"

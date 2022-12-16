@@ -3,10 +3,9 @@
 void check_fill(std::size_t n, std::size_t b, std::size_t e) {
   int val = 33;
 
-  lib::distributed_vector<int> dv1(n);
+  lib::distributed_vector<int> dv1(n), dv2(n), dv3(n);
   lib::fill(dv1.begin() + b, dv1.begin() + e, val);
-
-  lib::distributed_vector<int> dv2(n);
+  lib::fill(rng::subrange(dv3.begin() + b, dv3.begin() + e), val);
 
   if (comm_rank == 0) {
     std::fill(dv2.begin() + b, dv2.begin() + e, val);
@@ -16,6 +15,7 @@ void check_fill(std::size_t n, std::size_t b, std::size_t e) {
 
     EXPECT_TRUE(equal(dv1, v));
     EXPECT_TRUE(equal(dv2, v));
+    EXPECT_TRUE(equal(dv3, v));
   }
 }
 

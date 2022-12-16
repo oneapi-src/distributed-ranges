@@ -6,16 +6,17 @@ namespace lib {
 //
 //
 
-/// Collective fill on iterator/sentinel for a distributed range
-template <typename I, typename T> void fill(I first, I last, T value) {
-  auto &container = first.object();
-  auto [begin_offset, end_offset] =
-      first.object().select_local(first, last, container.comm().rank());
-  auto base = container.local().begin();
-  std::fill(base + begin_offset, base + end_offset, value);
+/// Collective fill on distributed range
+template <typename R, typename T> void fill(R &&r, T value) {
+  rng::fill(r | local_span(), value);
 }
 
-//
+/// Collective fill on iterator/sentinel for a distributed range
+template <distributed_contiguous_iterator I, typename T>
+void fill(I first, I last, T value) {
+  lib::fill(rng::subrange(first, last), value);
+}
+
 //
 // Reduce
 //
