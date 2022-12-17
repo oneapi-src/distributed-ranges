@@ -130,4 +130,5 @@ TEST(CpuMpiTests, DistributedVectorXreference) {
 
   static_assert(std::random_access_iterator<DVX::iterator>);
   static_assert(std::random_access_iterator<DVX::const_iterator>);
+  static_assert(lib::mpi_distributed_contiguous_iterator<DVX::iterator>);
 }

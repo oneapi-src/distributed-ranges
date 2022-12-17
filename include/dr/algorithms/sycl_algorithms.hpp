@@ -6,11 +6,10 @@ namespace lib {
 //
 //
 
-/// Exclude this from doxygen because signature is identical to
-/// non-sycl version
 ///
-/// \cond
-template <sycl_distributed_contiguous_iterator I, typename T, typename BinaryOp>
+/// Reduce SYCL distributed vector
+template <sycl_mpi_distributed_contiguous_iterator I, typename T,
+          typename BinaryOp>
 T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
   auto &container = first.container();
   auto &comm = container.comm();
@@ -29,7 +28,6 @@ T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
     return 0;
   }
 }
-/// \endcond
 
 //
 //
@@ -37,13 +35,11 @@ T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
 //
 //
 
-/// Exclude from doxygen
-/// \cond
 /// Collective transform on an iterator/sentinel for a distributed
-/// range: 1 in, 1 out
-template <sycl_distributed_contiguous_iterator I,
-          sycl_distributed_contiguous_iterator O, typename UnaryOp>
-auto transform(I first, I last, O result, UnaryOp op) {
+/// SYCL vector. range: 1 in, 1 out
+template <sycl_mpi_distributed_contiguous_iterator I>
+auto transform(I first, I last,
+               sycl_mpi_distributed_contiguous_iterator auto result, auto op) {
   auto &input = first.container();
 
   input.halo().exchange_begin();
@@ -60,6 +56,5 @@ auto transform(I first, I last, O result, UnaryOp op) {
   }
   return result + (last - first);
 }
-/// \endcond
 
 } // namespace lib

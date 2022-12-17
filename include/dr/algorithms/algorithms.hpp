@@ -7,13 +7,13 @@ namespace lib {
 //
 
 /// Collective fill on distributed range
-template <typename R, typename T> void fill(R &&r, T value) {
+void fill(mpi_distributed_contiguous_range auto &&r, auto value) {
   rng::fill(r | local_span(), value);
 }
 
 /// Collective fill on iterator/sentinel for a distributed range
-template <distributed_contiguous_iterator I, typename T>
-void fill(I first, I last, T value) {
+template <mpi_distributed_contiguous_iterator I>
+void fill(I first, I last, auto value) {
   lib::fill(rng::subrange(first, last), value);
 }
 
@@ -24,8 +24,9 @@ void fill(I first, I last, T value) {
 //
 
 /// Collective reduction on a distributed range
-template <typename R, typename T, typename BinaryOp>
-T reduce(int root, R &&r, T init, BinaryOp &&binary_op) {
+template <typename T>
+T reduce(int root, mpi_distributed_contiguous_range auto &&r, T init,
+         auto &&binary_op) {
   auto lr = r | local_span();
   auto val = std::reduce(lr.begin(), lr.end(), 0, binary_op);
   drlog.debug("local reduce: {}\n", val);
@@ -44,8 +45,8 @@ T reduce(int root, R &&r, T init, BinaryOp &&binary_op) {
 }
 
 /// Collective reduction on iterator/sentinel for a distributed range
-template <distributed_contiguous_iterator I, typename T, typename BinaryOp>
-T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
+template <mpi_distributed_contiguous_iterator I, typename T>
+T reduce(int root, I first, I last, T init, auto &&binary_op) {
   return lib::reduce(root, rng::subrange(first, last), init, binary_op);
 }
 
@@ -56,19 +57,49 @@ T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
 //
 
 /// Collective copy from distributed range to distributed iterator
-template <typename R, distributed_contiguous_iterator O>
-void copy(R &&r, O result) {
+void copy(mpi_distributed_contiguous_range auto &&r,
+          mpi_distributed_contiguous_iterator auto result) {
   if (r.begin().conforms(result)) {
     rng::copy(r | local_span(), result.local());
   } else {
-    rng::copy(r, result);
+    if (r.begin().container().comm().rank() == 0) {
+      rng::copy(r, result);
+    }
   }
 }
 
 /// Collective copy from distributed iterator to distributed iterator
-template <distributed_contiguous_iterator I, distributed_contiguous_iterator O>
-void copy(I first, I last, O result) {
+template <mpi_distributed_contiguous_iterator I>
+void copy(I first, I last, mpi_distributed_contiguous_iterator auto result) {
   lib::copy(rng::subrange(first, last), result);
+}
+
+/// Collective copy from local range to distributed iterator
+void copy(int root, rng::contiguous_range auto &&r,
+          mpi_distributed_contiguous_iterator auto result) {
+  if (result.container().comm().rank() == root) {
+    rng::copy(r, result);
+  }
+}
+
+/// Collective copy from local begin/end to distributed
+template <typename I>
+void copy(int root, I first, I last,
+          mpi_distributed_contiguous_iterator auto result) {
+  lib::copy(root, rng::subrange(first, last), result);
+}
+
+/// Collective copy from local range to distributed iterator
+void copy(int root, mpi_distributed_contiguous_range auto &&r, auto result) {
+  if (r.begin().container().comm().rank() == root) {
+    rng::copy(r, result);
+  }
+}
+
+/// Collective copy from local begin/end to distributed
+template <mpi_distributed_contiguous_iterator I>
+void copy(int root, I first, I last, auto result) {
+  lib::copy(root, rng::subrange(first, last), result);
 }
 
 //
@@ -78,8 +109,8 @@ void copy(I first, I last, O result) {
 //
 
 /// Collective transform on a distributed range: 1 in, 1 out
-template <typename R, distributed_contiguous_iterator O, typename UnaryOp>
-auto transform(R &&r, O result, UnaryOp op) {
+auto transform(mpi_distributed_contiguous_range auto &&r,
+               mpi_distributed_contiguous_iterator auto result, auto op) {
   auto &input = r.begin().container();
 
   input.halo().exchange_begin();
@@ -96,17 +127,16 @@ auto transform(R &&r, O result, UnaryOp op) {
 
 /// Collective transform on an iterator/sentinel for a distributed
 /// range: 1 in, 1 out
-template <distributed_contiguous_iterator I, distributed_contiguous_iterator O,
-          typename UnaryOp>
-auto transform(I first, I last, O result, UnaryOp op) {
+template <mpi_distributed_contiguous_iterator I>
+auto transform(I first, I last, mpi_distributed_contiguous_iterator auto result,
+               auto op) {
   return lib::transform(rng::subrange(first, last), result, op);
 }
 
 /// Collective transform on a distributed range: 2 in, 1 out
-// template <distributed_contiguous_range R1, distributed_contiguous_range R2,
-template <typename R1, typename R2, distributed_contiguous_iterator O,
-          typename BinaryOp>
-auto transform(R1 &&r1, R2 &&r2, O result, BinaryOp op) {
+auto transform(mpi_distributed_contiguous_range auto &&r1,
+               mpi_distributed_contiguous_range auto &&r2,
+               mpi_distributed_contiguous_iterator auto result, auto op) {
   auto &input1 = r1.begin().container();
   auto &input2 = r2.begin().container();
 
@@ -128,12 +158,12 @@ auto transform(R1 &&r1, R2 &&r2, O result, BinaryOp op) {
 
 /// Collective transform on an iterator/sentinel for a distributed
 /// range: 2 in, 1 out
-template <distributed_contiguous_iterator I1,
-          distributed_contiguous_iterator I2, distributed_contiguous_iterator O,
-          typename BinaryOp>
-auto transform(I1 first1, I1 last1, I2 first2, O result, BinaryOp op) {
+template <mpi_distributed_contiguous_iterator I>
+auto transform(I first1, I last1,
+               mpi_distributed_contiguous_iterator auto first2,
+               mpi_distributed_contiguous_iterator auto result, auto op) {
   return lib::transform(rng::subrange(first1, last1),
-                        rng::subrange(first2, I2{}), result, op);
+                        rng::subrange(first2, decltype(first2){}), result, op);
 }
 
 //
@@ -143,11 +173,9 @@ auto transform(I1 first1, I1 last1, I2 first2, O result, BinaryOp op) {
 //
 
 /// Collective transform_reduce on an iterator/sentinel for a distributed range
-template <distributed_contiguous_iterator I, class T,
-          typename BinaryReductionOp, typename UnaryTransformOp>
-T transform_reduce(int root, I first, I last, T init,
-                   BinaryReductionOp reduction_op,
-                   UnaryTransformOp transform_op) {
+template <mpi_distributed_contiguous_iterator I, class T>
+T transform_reduce(int root, I first, I last, T init, auto reduction_op,
+                   auto transform_op) {
   // Each rank reduces its local segment
   auto val = std::transform_reduce(first.local(), last.local(), 0, reduction_op,
                                    transform_op);

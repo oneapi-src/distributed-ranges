@@ -5,7 +5,7 @@ using Alloc = lib::sycl_shared_allocator<T>;
 using DV = lib::distributed_vector<T, Alloc>;
 
 void check_reduce(std::size_t n, std::size_t b, std::size_t e) {
-  static_assert(lib::sycl_distributed_contiguous_iterator<DV::iterator>);
+  static_assert(lib::sycl_mpi_distributed_contiguous_iterator<DV::iterator>);
   Alloc alloc;
 
   auto op = std::plus<>();

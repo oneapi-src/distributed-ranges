@@ -9,8 +9,8 @@
 Interface
 =========
 
-.. doxygenfunction:: lib::fill(I first, I last, T value)
-.. doxygenfunction:: lib::fill(R &&r, T value)
+.. doxygenfunction:: lib::fill(mpi_distributed_contiguous_range auto &&r, auto value)
+.. doxygenfunction:: lib::fill(I first, I last, auto value)
 
 Description
 ===========
