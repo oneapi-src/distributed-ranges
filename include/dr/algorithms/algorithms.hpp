@@ -32,7 +32,7 @@ T reduce(int root, R &&r, T init, BinaryOp &&binary_op) {
 
   // Gather segment values on root and reduce for final value
   std::vector<T> vals;
-  auto &comm = r.begin().object().comm();
+  auto &comm = r.begin().container().comm();
   comm.gather(val, vals, root);
   if (comm.rank() == root) {
     auto gval = std::reduce(vals.begin(), vals.end(), init, binary_op);
@@ -77,82 +77,63 @@ void copy(I first, I last, O result) {
 //
 //
 
-/// Collective transform on an iterator/sentinel for a distributed
-/// range: 1 in, 1 out
-template <distributed_contiguous_iterator InputIt,
-          distributed_contiguous_iterator OutputIt, typename UnaryOp>
-auto transform(InputIt first, InputIt last, OutputIt d_first, UnaryOp op) {
-  auto &input = first.object();
-  auto &output = d_first.object();
-  auto &comm = input.comm();
+/// Collective transform on a distributed range: 1 in, 1 out
+template <typename R, distributed_contiguous_iterator O, typename UnaryOp>
+auto transform(R &&r, O result, UnaryOp op) {
+  auto &input = r.begin().container();
 
   input.halo().exchange_begin();
   input.halo().exchange_finalize();
-  if (first.conforms(d_first)) {
-    auto [begin_offset, end_offset] =
-        input.select_local(first, last, comm.rank());
-    // if input and output conform and this is whole vector, then just
-    // do a segment-wise transform
-    std::transform(input.local().begin() + begin_offset,
-                   input.local().begin() + end_offset,
-                   output.local().begin() + begin_offset, op);
+  if (result.conforms(r.begin())) {
+    rng::transform(r | local_span(), result.local(), op);
   } else {
     if (input.comm().rank() == 0) {
-      // This is slow, but will always work. Some faster
-      // specializations are possible if needed.
-      std::transform(first, last, d_first, op);
+      rng::transform(r, result, op);
     }
   }
-  return output.end();
-}
-
-/// Collective transform on a distributed range: 1 in, 1 out
-template <distributed_contiguous_range R, typename OutputIterator,
-          typename UnaryOp>
-auto transform(R &&input_range, OutputIterator output_iterator, UnaryOp op) {
-  return transform(input_range.begin(), input_range.end(), output_iterator, op);
+  return result + (r.end() - r.begin());
 }
 
 /// Collective transform on an iterator/sentinel for a distributed
-/// range: 2 in, 1 out
-template <distributed_contiguous_iterator InputIt1,
-          distributed_contiguous_iterator InputIt2,
-          distributed_contiguous_iterator OutputIt, typename BinaryOp>
-auto transform(InputIt1 first1, InputIt1 last1, InputIt2 first2,
-               OutputIt d_first, BinaryOp op) {
-  auto &input1 = first1.object();
-  auto &input2 = first2.object();
-  auto &output = d_first.object();
-  auto &comm = input1.comm();
-
-  input1.halo().exchange_begin();
-  input1.halo().exchange_finalize();
-  input2.halo().exchange_begin();
-  input2.halo().exchange_finalize();
-  if (first1.conforms(first2) && first1.conforms(d_first)) {
-    auto [begin_offset, end_offset] =
-        input1.select_local(first1, last1, comm.rank());
-    // if input and output conform and this is whole vector, then just
-    // do a segment-wise transform
-    std::transform(input1.local().begin() + begin_offset,
-                   input1.local().begin() + end_offset,
-                   input2.local().begin() + begin_offset,
-                   output.local().begin() + begin_offset, op);
-  } else {
-    if (input1.comm().rank() == 0) {
-      // This is slow, but will always work. Some faster
-      // specializations are possible if needed.
-      std::transform(first1, last1, first2, d_first, op);
-    }
-  }
-  return output.end();
+/// range: 1 in, 1 out
+template <distributed_contiguous_iterator I, distributed_contiguous_iterator O,
+          typename UnaryOp>
+auto transform(I first, I last, O result, UnaryOp op) {
+  return lib::transform(rng::subrange(first, last), result, op);
 }
 
 /// Collective transform on a distributed range: 2 in, 1 out
 // template <distributed_contiguous_range R1, distributed_contiguous_range R2,
-template <typename R1, typename R2, typename O, typename BinaryOp>
-auto transform(R1 &&r1, R2 &&r2, O output, BinaryOp op) {
-  return transform(r1.begin(), r1.end(), r2.begin(), output, op);
+template <typename R1, typename R2, distributed_contiguous_iterator O,
+          typename BinaryOp>
+auto transform(R1 &&r1, R2 &&r2, O result, BinaryOp op) {
+  auto &input1 = r1.begin().container();
+  auto &input2 = r2.begin().container();
+
+  input1.halo().exchange_begin();
+  input2.halo().exchange_begin();
+  input1.halo().exchange_finalize();
+  input2.halo().exchange_finalize();
+
+  if (result.conforms(r1.begin()) && result.conforms(r2.begin())) {
+    rng::transform(r1 | local_span(), r2 | local_span(), result.local(), op);
+  } else {
+    if (input1.comm().rank() == 0) {
+      rng::transform(r1, r2, result, op);
+    }
+  }
+
+  return result + (r1.end() - r1.begin());
+}
+
+/// Collective transform on an iterator/sentinel for a distributed
+/// range: 2 in, 1 out
+template <distributed_contiguous_iterator I1,
+          distributed_contiguous_iterator I2, distributed_contiguous_iterator O,
+          typename BinaryOp>
+auto transform(I1 first1, I1 last1, I2 first2, O result, BinaryOp op) {
+  return lib::transform(rng::subrange(first1, last1),
+                        rng::subrange(first2, I2{}), result, op);
 }
 
 //
@@ -167,18 +148,13 @@ template <distributed_contiguous_iterator I, class T,
 T transform_reduce(int root, I first, I last, T init,
                    BinaryReductionOp reduction_op,
                    UnaryTransformOp transform_op) {
-  auto &input = first.object();
-  auto &comm = input.comm();
-  auto [begin_offset, end_offset] =
-      input.select_local(first, last, comm.rank());
-  auto base = input.local().begin();
-
   // Each rank reduces its local segment
-  T val = std::transform_reduce(base + begin_offset, base + end_offset, 0,
-                                reduction_op, transform_op);
+  auto val = std::transform_reduce(first.local(), last.local(), 0, reduction_op,
+                                   transform_op);
 
   // Gather segment values on root and reduce for final value
   std::vector<T> vals;
+  auto &comm = first.container().comm();
   comm.gather(val, vals, root);
   if (comm.rank() == root) {
     return std::reduce(vals.begin(), vals.end(), init, reduction_op);

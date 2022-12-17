@@ -9,10 +9,10 @@
 Interface
 =========
 
-.. doxygenfunction:: lib::transform(InputIt first, InputIt last, OutputIt d_first, UnaryOp op)
-.. doxygenfunction:: lib::transform(R &&input_range, OutputIterator output_iterator, UnaryOp op)
-.. doxygenfunction:: lib::transform(InputIt1 first1, InputIt1 last1, InputIt2 first2, OutputIt d_first, BinaryOp op)
-.. doxygenfunction:: lib::transform(R1 &&r1, R2 &&r2, O output, BinaryOp op)
+.. doxygenfunction:: lib::transform(I first, I last, O result, UnaryOp op)
+.. doxygenfunction:: lib::transform(R &&r, O result, UnaryOp op)
+.. doxygenfunction:: lib::transform(I1 first1, I1 last1, I2 first2, O result, BinaryOp op)
+.. doxygenfunction:: lib::transform(R1 &&r1, R2 &&r2, O result, BinaryOp op)
 
 
 Description

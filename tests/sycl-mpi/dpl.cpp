@@ -9,7 +9,6 @@ TEST(SyclMpiTests, DplReduce) {
 
   std::size_t n = 10;
   std::vector<int, allocator> v(n, alloc);
-  int init = 1000;
 
   int dpl_sum = std::reduce(device_policy, v.cbegin(), v.cend(), 1000);
   int sum = std::reduce(v.cbegin(), v.cend(), 1000);

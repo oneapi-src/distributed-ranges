@@ -8,26 +8,14 @@ template <typename R> class view_local_span : public rng::view_base {
 
 public:
   /// Constructor
-  view_local_span(R &&r) {
-    auto first = r.begin();
-    auto last = r.end();
-    container_ = &first.object();
-    auto [fo, lo] =
-        container_->select_local(first, last, container_->comm().rank());
-    first_offset_ = fo;
-    last_offset_ = lo;
-  }
+  view_local_span(R &&r) : begin_(r.begin().local()), end_(r.end().local()) {}
 
-  /// Iterator for beginning of view
-  local_iterator begin() { return container_->local().begin() + first_offset_; }
-
-  /// Iterator for end of view
-  local_iterator end() { return container_->local().begin() + last_offset_; }
+  local_iterator begin() { return begin_; }
+  local_iterator end() { return end_; }
 
 private:
-  distributed_container_type *container_;
-  std::size_t first_offset_;
-  std::size_t last_offset_;
+  local_iterator begin_;
+  local_iterator end_;
 };
 
 template <typename R> view_local_span(R &&) -> view_local_span<R>;

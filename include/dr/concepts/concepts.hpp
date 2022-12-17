@@ -51,16 +51,15 @@ template <typename I>
 concept distributed_contiguous_iterator =
     std::random_access_iterator<I> && requires(I &iter) {
                                         {
-                                          iter.object()
+                                          iter.container()
                                           }
                                           -> lib::distributed_contiguous_range;
                                       };
 template <typename I>
 concept sycl_distributed_contiguous_iterator =
-    distributed_contiguous_iterator<I> && requires(I &iter) {
-                                            {
-                                              iter.object().allocator().policy()
-                                            };
-                                          };
+    distributed_contiguous_iterator<I> &&
+    requires(I &iter) {
+      { iter.container().allocator().policy() };
+    };
 
 } // namespace lib

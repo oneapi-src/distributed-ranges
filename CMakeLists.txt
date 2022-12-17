@@ -27,6 +27,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     add_compile_options(-Wno-tautological-constant-compare)
+    # DPL uses deprecated API
+    add_compile_options(-Wno-deprecated-declarations)
   endif()
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -118,13 +120,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_subdirectory(tests/sycl)
   endif()
 
+  # shp has warnings, but do for everything else
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
+
   if (ENABLE_SYCL_MPI)
     add_subdirectory(tests/sycl-mpi)
   endif()
-
-  # DPL has warnings, so do this for everything but sycl
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
 
   add_subdirectory(examples/serial)
   add_subdirectory(tests/serial)

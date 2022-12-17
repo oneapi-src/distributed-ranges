@@ -50,8 +50,8 @@ template <typename T> struct sycl_memory {
   sycl_memory(sycl::queue queue,
               sycl::usm::alloc kind = sycl::usm::alloc::shared,
               size_t alignment = 1)
-      : kind_(kind), alignment_(alignment), offload_queue_(queue),
-        device_(queue.get_device()), context_(queue.get_context()) {}
+      : device_(queue.get_device()), context_(queue.get_context()), kind_(kind),
+        alignment_(alignment), offload_queue_(queue) {}
 
   T *allocate(size_t n) {
     auto p = sycl::aligned_alloc<T>(alignment_, n, device_, context_, kind_);

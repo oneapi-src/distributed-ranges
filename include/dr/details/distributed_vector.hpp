@@ -29,7 +29,11 @@ template <typename Container> struct const_xpointer {
   const_xpointer operator++(int);
   const_xpointer &operator--();
   const_xpointer operator--(int);
-  difference_type operator-(const const_xpointer &other) const noexcept;
+  difference_type operator-(const const_xpointer &other) const noexcept {
+    assert(container_ == other.container_);
+    return index_ - other.index_;
+  }
+
   const_xpointer &operator-=(difference_type n);
   const_xpointer &operator+=(difference_type n);
   const_xpointer operator+(difference_type n) const noexcept {
@@ -49,13 +53,13 @@ template <typename Container> struct const_xpointer {
     return const_reference{*this + n};
   }
 
-  const Container &object() { return *container_; }
+  const Container &container() { return *container_; }
   bool conforms(const const_xpointer &other) const {
-    return object().conforms(other.object()) && index_ == other.index_;
+    return container().conforms(other.container()) && index_ == other.index_;
   }
 
-  const Container *container_;
-  std::size_t index_;
+  const Container *container_ = nullptr;
+  std::size_t index_ = 0;
 };
 
 template <typename Container> struct xpointer {
@@ -85,7 +89,10 @@ template <typename Container> struct xpointer {
   xpointer operator++(int);
   xpointer &operator--();
   xpointer operator--(int);
-  difference_type operator-(const xpointer &other) const noexcept;
+  difference_type operator-(const xpointer &other) const noexcept {
+    assert(container_ == other.container_);
+    return index_ - other.index_;
+  }
   xpointer &operator-=(difference_type n) const noexcept;
   xpointer &operator+=(difference_type n) const noexcept;
   xpointer operator+(difference_type n) const noexcept {
@@ -109,18 +116,32 @@ template <typename Container> struct xpointer {
 
   operator const_pointer() const { return const_pointer{container_, index_}; }
 
-  Container &object() { return *container_; }
+  Container &container() { return *container_; }
   bool conforms(xpointer other) {
-    return object().conforms(other.object()) && index_ == other.index_;
+    return container().conforms(other.container()) && index_ == other.index_;
   }
 
   auto local() {
-    return object().local().begin() +
-           object().clamp(*this, object().comm().rank());
+    auto &local_container = container_->local();
+    auto radius = container_->stencil_.radius()[0];
+    auto [rank, offset] = container_->rank_offset(index_);
+    auto my_rank = container_->comm().rank();
+
+    // If the iterator is pointing to an earlier rank, point to the
+    // beginning of my range
+    if (rank < my_rank) {
+      offset = radius.prev;
+      // If the iterator is pointing to a later rank, point to the
+      // end of my range
+    } else if (rank > my_rank) {
+      offset = local_container.size() - radius.next;
+    }
+
+    return local_container.begin() + offset;
   }
 
-  Container *container_;
-  std::size_t index_;
+  Container *container_ = nullptr;
+  std::size_t index_ = 0;
 };
 
 template <typename Container> struct const_xreference {
@@ -158,6 +179,9 @@ template <typename Container> struct xreference {
 
 template <typename T, typename Alloc = std::allocator<T>>
 class distributed_vector {
+  friend xpointer<distributed_vector>;
+  friend const_xpointer<distributed_vector>;
+
 public:
   using element_type = T;
 
@@ -316,27 +340,7 @@ public:
     return size_ == other.size_;
   }
 
-  /// Return local iterators that contain the intersection of local
-  /// data and requested range
-  auto select_local(auto range_first, auto range_last, int rank) const {
-    assert(range_first >= begin());
-    assert(range_last <= end());
-    return std::pair(clamp(range_first, rank), clamp(range_last, rank));
-  }
-
   const Alloc &allocator() const { return allocator_; }
-
-  auto clamp(auto it, int my_rank) const {
-    auto radius = stencil_.radius()[0];
-    auto [rank, offset] = rank_offset(it.index_);
-    if (rank < my_rank) {
-      return radius.prev;
-    } else if (rank > my_rank) {
-      return local().size() - radius.next;
-    } else {
-      return offset;
-    }
-  }
 
 private:
   auto rank_offset(std::size_t index) const {
