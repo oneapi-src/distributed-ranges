@@ -28,18 +28,7 @@ struct stencil_data {
     }
   }
 
-  void check() {
-    show();
-    if (ref != test) {
-      ADD_FAILURE();
-    }
-  }
-
-  void show() {
-    fmt::print("Initial:   {}\n", initial);
-    fmt::print("Reference: {}\n", ref);
-    fmt::print("Test:      {}\n", test);
-  }
+  void check() { EXPECT_TRUE(unary_check(initial, ref, test)); }
 
   std::vector<int> initial, test, ref;
 };

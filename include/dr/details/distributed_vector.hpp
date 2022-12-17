@@ -50,6 +50,10 @@ template <typename Container> struct const_xpointer {
   }
 
   const Container &object() { return *container_; }
+  bool conforms(const const_xpointer &other) const {
+    return object().conforms(other.object()) && index_ == other.index_;
+  }
+
   const Container *container_;
   std::size_t index_;
 };
@@ -106,6 +110,14 @@ template <typename Container> struct xpointer {
   operator const_pointer() const { return const_pointer{container_, index_}; }
 
   Container &object() { return *container_; }
+  bool conforms(xpointer other) {
+    return object().conforms(other.object()) && index_ == other.index_;
+  }
+
+  auto local() {
+    return object().local().begin() +
+           object().clamp(*this, object().comm().rank());
+  }
 
   Container *container_;
   std::size_t index_;
@@ -304,14 +316,6 @@ public:
     return size_ == other.size_;
   }
 
-  bool congruent(const iterator &first, const iterator &last) const noexcept {
-    return first == begin() && last == end();
-  }
-
-  bool congruent(const iterator &first) const noexcept {
-    return first == begin();
-  }
-
   /// Return local iterators that contain the intersection of local
   /// data and requested range
   auto select_local(auto range_first, auto range_last, int rank) const {
@@ -322,7 +326,6 @@ public:
 
   const Alloc &allocator() const { return allocator_; }
 
-private:
   auto clamp(auto it, int my_rank) const {
     auto radius = stencil_.radius()[0];
     auto [rank, offset] = rank_offset(it.index_);
@@ -335,6 +338,7 @@ private:
     }
   }
 
+private:
   auto rank_offset(std::size_t index) const {
     auto radius = stencil_.radius()[0];
     std::size_t rank, offset;

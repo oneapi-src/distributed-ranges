@@ -20,8 +20,9 @@ target_link_libraries(
 # tested with a variable number of ranks
 add_executable(
   cpu-tests-n
-
   cpu-tests.cpp
+
+  copy.cpp
   fill.cpp
   reduce.cpp
   span_halo.cpp

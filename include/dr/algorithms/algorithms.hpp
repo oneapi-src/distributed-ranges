@@ -18,37 +18,57 @@ void fill(I first, I last, T value) {
 }
 
 //
+//
 // Reduce
 //
 //
 
-/// Collective reduction on iterator/sentinel for a distributed range
-template <distributed_contiguous_iterator I, typename T, typename BinaryOp>
-T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
-  auto &container = first.object();
-  auto &comm = container.comm();
-  auto [begin_offset, end_offset] =
-      container.select_local(first, last, container.comm().rank());
-  auto base = container.local().begin();
-
-  // Each rank reduces its local segment
-  T val = std::reduce(base + begin_offset, base + end_offset, 0, binary_op);
+/// Collective reduction on a distributed range
+template <typename R, typename T, typename BinaryOp>
+T reduce(int root, R &&r, T init, BinaryOp &&binary_op) {
+  auto lr = r | local_span();
+  auto val = std::reduce(lr.begin(), lr.end(), 0, binary_op);
   drlog.debug("local reduce: {}\n", val);
 
   // Gather segment values on root and reduce for final value
   std::vector<T> vals;
+  auto &comm = r.begin().object().comm();
   comm.gather(val, vals, root);
   if (comm.rank() == root) {
-    return std::reduce(vals.begin(), vals.end(), init, binary_op);
+    auto gval = std::reduce(vals.begin(), vals.end(), init, binary_op);
+    drlog.debug("global reduce: {}\n", gval);
+    return gval;
   } else {
     return 0;
   }
 }
 
-/// Collective reduction on a distributed range
-template <distributed_contiguous_range R, typename T, typename BinaryOp>
-T reduce(int root, R &&r, T init, BinaryOp &&binary_op) {
-  return reduce(root, r.begin(), r.end(), init, binary_op);
+/// Collective reduction on iterator/sentinel for a distributed range
+template <distributed_contiguous_iterator I, typename T, typename BinaryOp>
+T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
+  return lib::reduce(root, rng::subrange(first, last), init, binary_op);
+}
+
+//
+//
+// Copy
+//
+//
+
+/// Collective copy from distributed range to distributed iterator
+template <typename R, distributed_contiguous_iterator O>
+void copy(R &&r, O result) {
+  if (r.begin().conforms(result)) {
+    rng::copy(r | local_span(), result.local());
+  } else {
+    rng::copy(r, result);
+  }
+}
+
+/// Collective copy from distributed iterator to distributed iterator
+template <distributed_contiguous_iterator I, distributed_contiguous_iterator O>
+void copy(I first, I last, O result) {
+  lib::copy(rng::subrange(first, last), result);
 }
 
 //
@@ -68,7 +88,7 @@ auto transform(InputIt first, InputIt last, OutputIt d_first, UnaryOp op) {
 
   input.halo().exchange_begin();
   input.halo().exchange_finalize();
-  if (input.conforms(output) && first.index_ == d_first.index_) {
+  if (first.conforms(d_first)) {
     auto [begin_offset, end_offset] =
         input.select_local(first, last, comm.rank());
     // if input and output conform and this is whole vector, then just
@@ -109,8 +129,7 @@ auto transform(InputIt1 first1, InputIt1 last1, InputIt2 first2,
   input1.halo().exchange_finalize();
   input2.halo().exchange_begin();
   input2.halo().exchange_finalize();
-  if (input1.conforms(output) && input1.conforms(input2) &&
-      first1.index_ == first2.index_ && first2.index_ == d_first.index_) {
+  if (first1.conforms(first2) && first1.conforms(d_first)) {
     auto [begin_offset, end_offset] =
         input1.select_local(first1, last1, comm.rank());
     // if input and output conform and this is whole vector, then just
