@@ -79,6 +79,12 @@ public:
     MPI_Scatter(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
   }
 
+  void scatterv(const void *src, int *counts, int *offsets, void *dst,
+                int root) {
+    MPI_Scatterv(src, counts, offsets, MPI_CHAR, dst, counts[rank()], MPI_CHAR,
+                 root, mpi_comm_);
+  }
+
   void gather(const void *src, void *dst, int size, int root) {
     MPI_Gather(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
   }
@@ -88,6 +94,12 @@ public:
     dst.resize(size());
     MPI_Gather(&src, sizeof(src), MPI_CHAR, dst.data(), sizeof(src), MPI_CHAR,
                root, mpi_comm_);
+  }
+
+  void gatherv(const void *src, int *counts, int *offsets, void *dst,
+               int root) {
+    MPI_Gatherv(src, counts[rank()], MPI_CHAR, dst, counts, offsets, MPI_CHAR,
+                root, mpi_comm_);
   }
 
   template <typename T>

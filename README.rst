@@ -17,7 +17,8 @@ published at `latest spec`_ and `latest doxygen`_.
 Environment Setup
 =================
 
-CPU requires g++ 10 or higher, mpi, and MKL. On Ubuntu 20.04::
+CPU & SYCL-MPI requires g++ 10 or higher, mpi, and MKL. On Ubuntu
+20.04::
 
   sudo apt install g++-10 openmpi
 
@@ -101,10 +102,23 @@ Enable SYCL examples::
 
   CXX=clang++ cmake -B build -DENABLE_SYCL=ON
 
+Enable SYCL-MPI examples::
+
+  CXX=clang++ cmake -B build -DENABLE_SYCL_MPI=ON
+
 See how example is run and the output::
 
   cd build
   ctest -VV
+
+Logging
+=======
+
+Add this to your main to enable logging::
+
+  std::ofstream logfile(fmt::format("dr.{}.log", comm_rank));
+  lib::drlog.set_file(logfile);
+
 
 Contributing
 ============

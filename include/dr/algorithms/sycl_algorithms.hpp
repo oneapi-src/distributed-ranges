@@ -8,9 +8,8 @@ namespace lib {
 
 ///
 /// Reduce SYCL distributed vector
-template <sycl_mpi_distributed_contiguous_iterator I, typename T,
-          typename BinaryOp>
-T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
+template <sycl_mpi_distributed_contiguous_iterator SDI, typename T>
+T reduce(int root, SDI first, SDI last, T init, auto &&binary_op) {
   auto &container = first.container();
   auto &comm = container.comm();
 
@@ -37,8 +36,8 @@ T reduce(int root, I first, I last, T init, BinaryOp &&binary_op) {
 
 /// Collective transform on an iterator/sentinel for a distributed
 /// SYCL vector. range: 1 in, 1 out
-template <sycl_mpi_distributed_contiguous_iterator I>
-auto transform(I first, I last,
+template <sycl_mpi_distributed_contiguous_iterator SDI>
+auto transform(SDI first, SDI last,
                sycl_mpi_distributed_contiguous_iterator auto result, auto op) {
   auto &input = first.container();
 

@@ -41,9 +41,9 @@ void vector_add() {
 
   // Check
   if (comm_rank == 0) {
-    show("a: ", ref_adder.a);
-    show("b: ", ref_adder.b);
-    show("c: ", c_full);
+    fmt::print("a: {}\n", ref_adder.a);
+    fmt::print("b: {}\n", ref_adder.b);
+    fmt::print("c: {}\n", c_full);
     ref_adder.check(c_full);
   }
 }

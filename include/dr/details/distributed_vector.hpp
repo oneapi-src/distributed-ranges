@@ -121,11 +121,10 @@ template <typename Container> struct xpointer {
     return container().conforms(other.container()) && index_ == other.index_;
   }
 
-  auto local() {
+  auto remote_offset(int my_rank) {
     auto &local_container = container_->local();
     auto radius = container_->stencil_.radius()[0];
     auto [rank, offset] = container_->rank_offset(index_);
-    auto my_rank = container_->comm().rank();
 
     // If the iterator is pointing to an earlier rank, point to the
     // beginning of my range
@@ -137,7 +136,12 @@ template <typename Container> struct xpointer {
       offset = local_container.size() - radius.next;
     }
 
-    return local_container.begin() + offset;
+    return offset;
+  }
+
+  auto local() {
+    return container_->local().begin() +
+           remote_offset(container_->comm().rank());
   }
 
   Container *container_ = nullptr;

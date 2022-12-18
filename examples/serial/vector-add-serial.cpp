@@ -7,9 +7,9 @@ int main(int argc, char *argv[]) {
   adder.init(10);
   adder.compute();
 
-  show("a: ", adder.a);
-  show("b: ", adder.b);
-  show("c: ", adder.c);
+  fmt::print("a: {}\n", adder.a);
+  fmt::print("b: {}\n", adder.b);
+  fmt::print("c: {}\n", adder.c);
 
   return 0;
 }

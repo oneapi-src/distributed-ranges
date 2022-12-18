@@ -7,8 +7,8 @@ int main(int argc, char *argv[]) {
   t.init(2, 6);
   t.compute();
 
-  show("a: ", t.a);
-  show("b: ", t.b);
+  fmt::print("a: {}\n", t.a);
+  fmt::print("b: {}\n", t.b);
 
   return 0;
 }

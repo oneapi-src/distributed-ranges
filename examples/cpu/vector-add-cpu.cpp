@@ -29,21 +29,23 @@ void vector_add() {
   lib::distributed_vector<T> dv_a(n), dv_b(n), dv_c(n);
 
   // Distribute the data
-  lib::collective::copy(root_rank, ref_adder.a, dv_a);
-  lib::collective::copy(root_rank, ref_adder.b, dv_b);
+  lib::copy(root_rank, ref_adder.a.begin(), n, dv_a.begin());
+  lib::copy(root_rank, ref_adder.b.begin(), n, dv_b.begin());
 
   // c = a + b
   lib::transform(dv_a, dv_b, dv_c.begin(), std::plus<>());
 
   // Collect the results
   std::vector<T> result(n);
-  lib::collective::copy(root_rank, dv_c, result);
+  lib::copy(root_rank, dv_c, result.begin());
 
+  dv_a.fence();
+  dv_b.fence();
   // Check
   if (is_root()) {
-    show("a: ", ref_adder.a);
-    show("b: ", ref_adder.b);
-    show("c: ", result);
+    fmt::print("a: {}\n", ref_adder.a);
+    fmt::print("b: {}\n", ref_adder.b);
+    fmt::print("c: {}\n", result);
     ref_adder.check(result);
   }
 }

@@ -15,7 +15,7 @@ add_mpi_test(stencil-1d-cpu stencil-1d-cpu 2)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-cpu-ref vector-add-cpu-ref.cpp)
-  target_link_libraries(vector-add-cpu-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX)
+  target_link_libraries(vector-add-cpu-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX fmt::fmt)
   add_mpi_test(vector-add-cpu-ref vector-add-cpu-ref 2)
 endif()
 

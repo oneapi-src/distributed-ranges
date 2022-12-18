@@ -25,12 +25,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(CMAKE_CXX_EXTENSIONS OFF)
   set(CMAKE_CXX_STANDARD 20)
 
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-    add_compile_options(-Wno-tautological-constant-compare)
-    # DPL uses deprecated API
-    add_compile_options(-Wno-deprecated-declarations)
-  endif()
-
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-fconcepts-diagnostics-depth=10)
     add_compile_options(-Wno-stringop-overflow)
@@ -123,6 +117,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   # shp has warnings, but do for everything else
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
+
+  # This must be appear after -Wall
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    add_compile_options(-Wno-tautological-constant-compare)
+    # DPL uses deprecated API
+    add_compile_options(-Wno-deprecated-declarations)
+  endif()
 
   if (ENABLE_SYCL_MPI)
     add_subdirectory(tests/sycl-mpi)

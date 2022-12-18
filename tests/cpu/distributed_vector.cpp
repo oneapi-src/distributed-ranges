@@ -58,22 +58,6 @@ TEST(CpuMpiTests, distributed_vector_index) {
   EXPECT_EQ(dv2[3], dv[3]);
 }
 
-TEST(CpuMpiTests, DistributedVectorCollectiveCopy) {
-  const std::size_t n = 10;
-  const int root = 0;
-  lib::distributed_vector<int> dv(n);
-
-  std::vector<int> src(n), dst(n);
-  std::iota(src.data(), src.data() + src.size(), 1);
-
-  lib::collective::copy(root, src, dv);
-  lib::collective::copy(root, dv, dst);
-
-  if (comm_rank == root) {
-    EXPECT_TRUE(equal(src, dst));
-  }
-}
-
 TEST(CpuMpiTests, DistributedVectorAlgorithms) {
   const std::size_t n = 10;
   const int root = 0;

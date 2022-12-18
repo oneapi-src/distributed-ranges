@@ -9,11 +9,11 @@
 Interface
 =========
 
+.. doxygenfunction:: lib::transform(DI first, DI last, mpi_distributed_contiguous_iterator auto result, auto op)
 .. doxygenfunction:: lib::transform(mpi_distributed_contiguous_range auto &&r, mpi_distributed_contiguous_iterator auto result, auto op)
-.. doxygenfunction:: lib::transform(I first, I last, mpi_distributed_contiguous_iterator auto result, auto op)
+.. doxygenfunction:: lib::transform(DI first1, DI last1, mpi_distributed_contiguous_iterator auto first2, mpi_distributed_contiguous_iterator auto result, auto op)
 .. doxygenfunction:: lib::transform(mpi_distributed_contiguous_range auto &&r1, mpi_distributed_contiguous_range auto &&r2, mpi_distributed_contiguous_iterator auto result, auto op)
-.. doxygenfunction:: lib::transform(I first1, I last1, mpi_distributed_contiguous_iterator auto first2, mpi_distributed_contiguous_iterator auto result, auto op)
-.. doxygenfunction:: lib::transform(I first, I last, sycl_mpi_distributed_contiguous_iterator auto result, auto op)
+.. doxygenfunction:: lib::transform(SDI first, SDI last, sycl_mpi_distributed_contiguous_iterator auto result, auto op)
 
 
 Description
