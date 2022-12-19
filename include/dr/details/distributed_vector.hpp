@@ -140,8 +140,6 @@ template <typename Container> struct xpointer {
   }
 
   auto local() {
-    assert(!container_->pending_rma());
-
     return container_->local().begin() +
            remote_offset(container_->comm().rank());
   }
@@ -307,7 +305,6 @@ public:
   }
 
   void put(std::size_t index, const T &val) {
-    pending_rma_ = true;
     auto [rank, offset] = rank_offset(index);
     drlog.debug("put {} ({}:{}) = {}\n", index, rank, offset, val);
     assert(index < size());
@@ -328,12 +325,7 @@ public:
   iterator end() { return iterator{this, size_}; };
   const_iterator end() const { return const_iterator{this, size_}; };
 
-  void fence() {
-    pending_rma_ = false;
-    win_.fence();
-  }
-
-  bool pending_rma() const { return pending_rma_; }
+  void fence() { win_.fence(); }
 
   void flush(int rank) { win_.flush(rank); }
 
@@ -397,7 +389,6 @@ private:
   std::vector<T, Alloc> local_;
   communicator::win win_;
   span_halo<T> halo_;
-  bool pending_rma_ = false;
 };
 
 } // namespace lib

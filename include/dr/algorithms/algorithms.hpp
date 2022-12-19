@@ -9,33 +9,12 @@ namespace lib {
 /// Collective fill on iterator/sentinel for a distributed range
 template <mpi_distributed_contiguous_iterator DI>
 void fill(DI first, DI last, auto value) {
-  std::fill(first.local(), last.local(), value);
+  rng::fill(first.local(), last.local(), value);
 }
 
 /// Collective fill on distributed range
 void fill(mpi_distributed_contiguous_range auto &&r, auto value) {
   lib::fill(r.begin(), r.end(), value);
-}
-
-//
-//
-// iota
-//
-//
-
-/// Collective iota on iterator/sentinel for a distributed range
-template <mpi_distributed_contiguous_iterator DI>
-void iota(DI first, DI last, auto value) {
-  auto &container = first.container();
-  if (container.comm().rank() == 0) {
-    std::iota(first, last, value);
-  }
-  container.fence();
-}
-
-/// Collective iota on distributed range
-void iota(mpi_distributed_contiguous_range auto &&r, auto value) {
-  lib::iota(r.begin(), r.end(), value);
 }
 
 //
@@ -85,7 +64,6 @@ void copy(DI first, DI last, mpi_distributed_contiguous_iterator auto result) {
     if (first.container().comm().rank() == 0) {
       std::copy(first, last, result);
     }
-    result.container().fence();
   }
 }
 
@@ -98,8 +76,6 @@ void copy(mpi_distributed_contiguous_range auto &&r,
 auto scatter_data(mpi_distributed_contiguous_iterator auto first,
                   std::size_t size, std::vector<int> &counts,
                   std::vector<int> &offsets) {
-  assert(size > 0);
-
   auto comm = first.container().comm();
   counts.resize(comm.size());
   offsets.resize(comm.size());
@@ -217,7 +193,6 @@ auto transform(DI first1, DI last1,
     if (input1.comm().rank() == 0) {
       std::transform(first1, last1, first2, result, op);
     }
-    result.container().fence();
   }
 
   return result + (last1 - first1);

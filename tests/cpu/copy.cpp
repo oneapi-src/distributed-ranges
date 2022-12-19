@@ -6,7 +6,7 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
 
   lib::distributed_vector<int> dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n),
       dv6(n);
-  lib::iota(dv_in, 100);
+  rng::iota(dv_in, 100);
   lib::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
   lib::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
             dv2.begin() + b);

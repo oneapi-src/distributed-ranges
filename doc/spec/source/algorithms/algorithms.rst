@@ -10,7 +10,6 @@ Algorithms on distributed ranges.
    copy
    fill
    for_each
-   iota
    reduce
    transform
    transform_reduce

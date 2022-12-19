@@ -21,12 +21,7 @@ Interface
 Description
 ===========
 
-.. seealso::
-
-   `std::ranges::copy`_
-     Standard C++ algorithm
-   `std::copy`_
-     Standard C++ algorithm
+.. seealso:: `std::ranges::copy`_
 
 Examples
 ========
