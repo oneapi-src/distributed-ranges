@@ -6,7 +6,7 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
 
   lib::distributed_vector<int> dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n),
       dv6(n);
-  rng::iota(dv_in, 100);
+  lib::iota(dv_in, 100);
   lib::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
   lib::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
             dv2.begin() + b);
@@ -21,15 +21,12 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   lib::copy(0, dv_in.begin() + b, e - b,
             comm_rank == 0 ? &*(v2.begin() + b) : nullptr);
 
-  dv1.fence();
-  dv2.fence();
-  dv3.fence();
-  dv4.fence();
-  dv5.fence();
-  dv6.fence();
   if (comm_rank == 0) {
     std::copy(dv_in.begin() + b, dv_in.begin() + e, dv3.begin() + b);
+  }
+  dv3.fence();
 
+  if (comm_rank == 0) {
     std::copy(v_in.begin() + b, v_in.begin() + e, v.begin() + b);
 
     EXPECT_TRUE(equal(dv1, v));
@@ -49,12 +46,4 @@ TEST(CpuMpiTests, CopyDistributedVector) {
 
   check_copy(n, 0, n);
   check_copy(n, n / 2 - 1, n / 2 + 1);
-
-  std::vector<int> v(n);
-  rng::iota(v, 100);
-  lib::distributed_vector<int> dv(n);
-  lib::copy(0, v, dv.begin());
-  if (comm_rank == 0) {
-    EXPECT_TRUE(equal(v, dv));
-  }
 }

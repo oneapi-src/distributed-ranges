@@ -42,7 +42,7 @@ int check(auto dv, auto n, auto steps) {
 int stencil(auto n, auto steps) {
   lib::stencil<1> s(1);
   lib::distributed_vector<int> dv_in(s, n), dv_out(s, n);
-  rng::iota(dv_in, 100);
+  lib::iota(dv_in, 100);
 
   auto *in = &dv_in;
   auto *out = &dv_out;

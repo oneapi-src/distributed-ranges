@@ -9,7 +9,10 @@ void check_fill(std::size_t n, std::size_t b, std::size_t e) {
 
   if (comm_rank == 0) {
     std::fill(dv2.begin() + b, dv2.begin() + e, val);
+  }
+  dv2.fence();
 
+  if (comm_rank == 0) {
     std::vector<int> v(n);
     std::fill(v.begin() + b, v.begin() + e, val);
 
