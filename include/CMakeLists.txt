@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 FetchContent_Declare(
   dpl
   GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git

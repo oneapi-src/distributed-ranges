@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 namespace lib {
 
 template <typename Group> class halo_impl {

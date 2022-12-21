@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "cpu-tests.hpp"
 
 void check_fill(std::size_t n, std::size_t b, std::size_t e) {

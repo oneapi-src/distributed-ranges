@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: Intel Corporation
+..
+.. SPDX-License-Identifier: BSD-3-Clause
+
 ============
 Contributing
 ============
@@ -19,6 +23,10 @@ Do pre-commit testing as part of commit::
 
 ``pre-commit`` will automatically fix most issues. Do a ``git add`` to
 add the changes and run ``pre-commit`` or ``git commit`` again.
+
+To fix a problem with a missing license do::
+
+  reuse annotate --exclude-year --license BSD-3-Clause --copyright "Intel Corporation" <filename>
 
 Editing the Spec
 ================

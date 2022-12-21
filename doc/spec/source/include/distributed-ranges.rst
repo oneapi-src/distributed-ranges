@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: Intel Corporation
+..
+.. SPDX-License-Identifier: BSD-3-Clause
+
 .. cppreference links
 
 .. _`C++ execution policies`: https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t

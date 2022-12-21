@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "sycl-mpi-tests.hpp"
 
 using halo = lib::unstructured_halo<int, lib::sycl_memory<int>>;

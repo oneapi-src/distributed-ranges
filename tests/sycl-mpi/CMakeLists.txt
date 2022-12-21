@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 add_executable(
   sycl-mpi-tests
   sycl-mpi-tests.cpp

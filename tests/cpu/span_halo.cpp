@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "cpu-tests.hpp"
 
 using halo = lib::span_halo<int>;

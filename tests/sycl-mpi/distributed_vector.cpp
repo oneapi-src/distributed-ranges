@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "sycl-mpi-tests.hpp"
 
 using DV = lib::distributed_vector<int, lib::sycl_shared_allocator<int>>;

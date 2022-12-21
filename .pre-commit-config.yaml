@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
@@ -40,6 +44,11 @@ repos:
   rev: 5.10.1
   hooks:
   - id: isort
+
+- repo: https://github.com/fsfe/reuse-tool
+  rev: v1.0.0
+  hooks:
+  - id: reuse
 
 - repo: local
   hooks:

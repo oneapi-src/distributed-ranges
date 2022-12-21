@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 add_executable(vector-add-cpu vector-add-cpu.cpp)
 target_link_libraries(vector-add-cpu DR::mpi)
 add_mpi_test(vector-add-cpu vector-add-cpu 2)

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 function(add_shp_example example_name)
   add_executable(${example_name} ${example_name}.cpp)
   target_link_libraries(${example_name} DR::shp)

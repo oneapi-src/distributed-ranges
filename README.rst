@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: Intel Corporation
+..
+.. SPDX-License-Identifier: BSD-3-Clause
+
 ====================
  Distributed Ranges
 ====================
@@ -53,7 +57,7 @@ Copy `startup.sh` from the open source binary build, or create it at
 
 Then::
 
-  source build/isntall/startup.sh
+  source build/install/startup.sh
 
 If you want to build the document or run the pre-commit checks, you
 must install some python packages. Create a python virtual environment

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "cpu-tests.hpp"
 
 const std::size_t rows = 20, cols = 10, n = rows * cols;

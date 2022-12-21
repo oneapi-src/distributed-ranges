@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 template <typename T> inline MPI_Datatype mpi_data_type() {
   assert(false);
   return MPI_CHAR;

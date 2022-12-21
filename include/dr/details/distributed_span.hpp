@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 namespace lib {
 
 template <typename T, remote_contiguous_iterator Iter = remote_pointer<T>>

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 inline size_t partition_up(size_t num, size_t multiple) {
   return (num + multiple - 1) / multiple;
 }
