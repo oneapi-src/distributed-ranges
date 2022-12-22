@@ -35,6 +35,19 @@ testing::AssertionResult unary_check(const rng::range auto &in,
   }
 }
 
+testing::AssertionResult binary_check(const rng::range auto &a,
+                                      const rng::range auto &b,
+                                      const rng::range auto &ref,
+                                      const rng::range auto &tst) {
+  if (rng::equal(ref, tst)) {
+    return testing::AssertionSuccess();
+  } else {
+    return testing::AssertionFailure() << fmt::format(
+               "\n      a: {}\n      b: {}\n    ref: {}\n    tst: {}\n  ", a, b,
+               ref, tst);
+  }
+}
+
 inline void expect_eq(const lib::mdspan_2d auto &m1,
                       const lib::mdspan_2d auto &m2, int root = comm_rank) {
   if (comm_rank == root) {

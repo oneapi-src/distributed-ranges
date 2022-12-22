@@ -6,7 +6,7 @@ namespace lib {
 
 //
 //
-// Fill
+// fill
 //
 //
 
@@ -19,6 +19,23 @@ void fill(DI first, DI last, auto value) {
 /// Collective fill on distributed range
 void fill(mpi_distributed_contiguous_range auto &&r, auto value) {
   lib::fill(r.begin(), r.end(), value);
+}
+
+//
+//
+// for_each
+//
+//
+
+/// Collective fill on iterator/sentinel for a distributed range
+template <mpi_distributed_contiguous_iterator DI>
+void for_each(DI first, DI last, auto op) {
+  std::for_each(first.local(), last.local(), op);
+}
+
+/// Collective fill on distributed range
+void for_each(mpi_distributed_contiguous_range auto &&r, auto op) {
+  lib::for_each(r.begin(), r.end(), op);
 }
 
 //

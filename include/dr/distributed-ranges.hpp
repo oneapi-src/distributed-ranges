@@ -80,5 +80,4 @@ namespace stdex = std::experimental;
 #include "details/views.hpp"
 
 #include "algorithms/algorithms.hpp"
-#include "algorithms/for_each.hpp"
 #include "algorithms/transpose.hpp"

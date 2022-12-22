@@ -13,13 +13,18 @@
 Interface
 =========
 
-.. doxygenfunction:: for_each(ExecutionPolicy &&policy, R range, UnaryFunction f)
-.. doxygenfunction:: for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn)
+.. doxygenfunction:: for_each(DI first, DI last, auto op)
+.. doxygenfunction:: for_each(mpi_distributed_contiguous_range auto &&r, auto op)
 
 Description
 ===========
 
-.. seealso:: `std::for_each`_
+.. seealso::
+
+   `std::ranges::for_each`_
+     Standard C++ algorithm
+   `std::for_each`_
+     Standard C++ algorithm
 
 Examples
 ========

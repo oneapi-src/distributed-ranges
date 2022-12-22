@@ -54,3 +54,36 @@ void check_local_span(std::size_t n) {
 }
 
 TEST(CpuMpiTests, LocalSpanView) { check_local_span(10); }
+
+struct add_2 {
+  void operator()(auto &&z) {
+    auto [a, b, c] = z;
+    c = a + b;
+  }
+};
+
+TEST(CpuMpiTests, ZipView) {
+  const int n = 10;
+  V a(n), b(n), c(n);
+  DV dv_a(n), dv_b(n), dv_c1(n), dv_c2(n);
+
+  rng::iota(a, 100);
+  rng::iota(b, 1000);
+  lib::iota(dv_a, 100);
+  lib::iota(dv_b, 1000);
+
+  auto &&z = rng::views::zip(a, b, c);
+  rng::for_each(z, add_2{});
+
+  auto &&dv_z1 = rng::views::zip(dv_a, dv_b, dv_c1);
+  rng::for_each(dv_z1, add_2{});
+  dv_c1.fence();
+  EXPECT_TRUE(binary_check(a, b, c, dv_c1));
+
+#if 0
+  auto &&dv_z2 = rng::views::zip(dv_a, dv_b, dv_c2);
+  lib::for_each(dv_z2, add_2{});
+  dv_c2.fence();
+  EXPECT_TRUE(binary_check(a, b, c, dv_c2));
+#endif
+}

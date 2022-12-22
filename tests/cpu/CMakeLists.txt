@@ -26,7 +26,7 @@ add_executable(
   cpu-tests-n
   cpu-tests.cpp
 
-  copy.cpp
+  algorithms.cpp
   fill.cpp
   reduce.cpp
   span_halo.cpp

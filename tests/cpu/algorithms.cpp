@@ -4,8 +4,11 @@
 
 #include "cpu-tests.hpp"
 
+using V = std::vector<int>;
+using DV = lib::distributed_vector<int>;
+
 void check_copy(std::size_t n, std::size_t b, std::size_t e) {
-  std::vector<int> v_in(n), v(n), v1(n), v2(n);
+  V v_in(n), v(n), v1(n), v2(n);
   rng::iota(v_in, 100);
 
   lib::distributed_vector<int> dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n),
@@ -50,4 +53,23 @@ TEST(CpuMpiTests, CopyDistributedVector) {
 
   check_copy(n, 0, n);
   check_copy(n, n / 2 - 1, n / 2 + 1);
+}
+
+struct negate {
+  void operator()(auto &v) { v = -v; }
+};
+
+TEST(CpuMpiTests, ForEach) {
+  std::size_t n = 10;
+
+  V a(n), a_in(n);
+  rng::iota(a, 100);
+  rng::iota(a_in, 100);
+  rng::for_each(a, negate{});
+  fmt::print("a: {}\n", a);
+
+  DV dv_a(n);
+  lib::iota(dv_a, 100);
+  lib::for_each(dv_a, negate{});
+  EXPECT_TRUE(unary_check(a_in, a, dv_a));
 }
