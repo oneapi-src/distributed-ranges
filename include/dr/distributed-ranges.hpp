@@ -18,6 +18,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 #ifdef DR_FORMAT

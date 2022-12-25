@@ -121,7 +121,8 @@ template <typename Container> struct xpointer {
   operator const_pointer() const { return const_pointer{container_, index_}; }
 
   Container &container() { return *container_; }
-  bool conforms(xpointer other) {
+  const Container &container() const { return *container_; }
+  bool conforms(xpointer other) const {
     return container().conforms(other.container()) && index_ == other.index_;
   }
 

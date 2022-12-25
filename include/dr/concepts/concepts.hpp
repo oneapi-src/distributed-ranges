@@ -81,4 +81,9 @@ template <typename R>
 concept mpi_distributed_contiguous_range =
     mpi_distributed_range<R> && std::ranges::random_access_range<R>;
 
+template <typename ZR>
+concept distributed_range_zip = requires(ZR &zr) {
+                                  { std::get<0>(*zr.begin()) };
+                                };
+
 } // namespace lib

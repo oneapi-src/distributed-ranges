@@ -4,6 +4,8 @@
 
 namespace lib {
 
+// Utilities for zip ranges
+
 //
 //
 // fill
@@ -27,15 +29,29 @@ void fill(mpi_distributed_contiguous_range auto &&r, auto value) {
 //
 //
 
-/// Collective fill on iterator/sentinel for a distributed range
+/// Collective for_each on iterator/sentinel for a distributed range
 template <mpi_distributed_contiguous_iterator DI>
 void for_each(DI first, DI last, auto op) {
   std::for_each(first.local(), last.local(), op);
 }
 
-/// Collective fill on distributed range
+/// Collective for_each on distributed range
 void for_each(mpi_distributed_contiguous_range auto &&r, auto op) {
   lib::for_each(r.begin(), r.end(), op);
+}
+
+/// Collective for_each on zipped distributed range
+void for_each(auto &&zr, auto op) {
+  const auto &comm = zip_range_comm(zr);
+  if (zip_range_conformant(zr)) {
+    rng::for_each(zr | lib::local_zip_span(), op);
+    comm.barrier();
+  } else {
+    if (comm.rank() == 0) {
+      rng::for_each(zr, op);
+    }
+    zip_range_fence(zr);
+  }
 }
 
 //
@@ -102,6 +118,7 @@ template <mpi_distributed_contiguous_iterator DI>
 void copy(DI first, DI last, mpi_distributed_contiguous_iterator auto result) {
   if (first.conforms(result)) {
     std::copy(first.local(), last.local(), result.local());
+    result.container().comm().barrier();
   } else {
     if (first.container().comm().rank() == 0) {
       std::copy(first, last, result);
@@ -203,6 +220,7 @@ auto transform(DI first, DI last,
   input.halo().exchange_finalize();
   if (first.conforms(result)) {
     rng::transform(first.local(), last.local(), result.local(), op);
+    input.comm().barrier();
   } else {
     if (input.comm().rank() == 0) {
       rng::transform(first, last, result, op);
@@ -234,6 +252,7 @@ auto transform(DI first1, DI last1,
   if (first1.conforms(result) && first2.conforms(result)) {
     std::transform(first1.local(), last1.local(), first2.local(),
                    result.local(), op);
+    input1.comm().barrier();
   } else {
     if (input1.comm().rank() == 0) {
       std::transform(first1, last1, first2, result, op);

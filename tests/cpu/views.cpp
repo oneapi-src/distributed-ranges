@@ -80,10 +80,7 @@ TEST(CpuMpiTests, ZipView) {
   dv_c1.fence();
   EXPECT_TRUE(binary_check(a, b, c, dv_c1));
 
-#if 0
   auto &&dv_z2 = rng::views::zip(dv_a, dv_b, dv_c2);
   lib::for_each(dv_z2, add_2{});
-  dv_c2.fence();
   EXPECT_TRUE(binary_check(a, b, c, dv_c2));
-#endif
 }

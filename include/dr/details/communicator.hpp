@@ -79,6 +79,8 @@ public:
 
   MPI_Comm mpi_comm() const { return mpi_comm_; }
 
+  void barrier() const { MPI_Barrier(mpi_comm_); }
+
   void scatter(const void *src, void *dst, int size, int root) {
     MPI_Scatter(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
   }
