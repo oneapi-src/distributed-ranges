@@ -17,7 +17,7 @@ template <typename Container> struct const_xpointer {
   using size_type = typename Container::size_type;
   using difference_type = typename Container::difference_type;
 
-  // Pointer arithmetic
+  // Comparison
   bool operator==(const const_xpointer &other) const noexcept {
     return index_ == other.index_ && container_ == other.container_;
   }
@@ -26,26 +26,54 @@ template <typename Container> struct const_xpointer {
     return index_ <=> other.index_;
   }
 
-  const_xpointer &operator++() {
-    index_++;
+  // Only these arithmetics manipulate internal state
+  auto &operator-=(difference_type n) {
+    index_ -= n;
     return *this;
   }
-  const_xpointer operator++(int);
-  const_xpointer &operator--();
-  const_xpointer operator--(int);
+  auto &operator+=(difference_type n) {
+    index_ += n;
+    return *this;
+  }
   difference_type operator-(const const_xpointer &other) const noexcept {
     assert(container_ == other.container_);
     return index_ - other.index_;
   }
 
-  const_xpointer &operator-=(difference_type n);
-  const_xpointer &operator+=(difference_type n);
-  const_xpointer operator+(difference_type n) const noexcept {
-    return const_xpointer{container_, index_ + n};
+  // prefix
+  auto &operator++() {
+    *this += 1;
+    return *this;
   }
-  const_xpointer operator-(difference_type n) const noexcept;
-  friend const_xpointer operator+(difference_type n,
-                                  const const_xpointer &other) {
+  auto &operator--() {
+    *this -= 1;
+    return *this;
+  }
+
+  // postfix
+  auto operator++(int) {
+    auto prev = *this;
+    *this += 1;
+    return prev;
+  }
+  auto operator--(int) {
+    auto prev = *this;
+    *this -= 1;
+    return prev;
+  }
+
+  auto operator+(difference_type n) const {
+    auto p = *this;
+    p += n;
+    return p;
+  }
+  auto operator-(difference_type n) const {
+    auto p = *this;
+    p -= n;
+    return p;
+  }
+
+  friend auto operator+(difference_type n, const const_xpointer &other) {
     return other + n;
   }
 
@@ -78,7 +106,7 @@ template <typename Container> struct xpointer {
   using size_type = typename Container::size_type;
   using difference_type = typename Container::difference_type;
 
-  // Pointer arithmetic
+  // Comparison
   bool operator==(const xpointer &other) const noexcept {
     return index_ == other.index_ && container_ == other.container_;
   }
@@ -86,27 +114,55 @@ template <typename Container> struct xpointer {
     assert(container_ == other.container_);
     return index_ <=> other.index_;
   }
-  xpointer &operator++() {
-    index_++;
+
+  // Only these arithmetics manipulate internal state
+  auto &operator-=(difference_type n) {
+    index_ -= n;
     return *this;
   }
-  xpointer operator++(int);
-  xpointer &operator--();
-  xpointer operator--(int);
+  auto &operator+=(difference_type n) {
+    index_ += n;
+    return *this;
+  }
   difference_type operator-(const xpointer &other) const noexcept {
     assert(container_ == other.container_);
     return index_ - other.index_;
   }
-  xpointer &operator-=(difference_type n) const noexcept;
-  xpointer &operator+=(difference_type n) const noexcept;
-  xpointer operator+(difference_type n) const noexcept {
-    return xpointer{container_, index_ + n};
+
+  // prefix
+  auto &operator++() {
+    *this += 1;
+    return *this;
   }
-  xpointer operator-(difference_type n) const noexcept {
-    return xpointer{container_, index_ - n};
+  auto &operator--() {
+    *this -= 1;
+    return *this;
   }
 
-  friend xpointer operator+(difference_type n, const xpointer &other) {
+  // postfix
+  auto operator++(int) {
+    auto prev = *this;
+    *this += 1;
+    return prev;
+  }
+  auto operator--(int) {
+    auto prev = *this;
+    *this -= 1;
+    return prev;
+  }
+
+  auto operator+(difference_type n) const {
+    auto p = *this;
+    p += n;
+    return p;
+  }
+  auto operator-(difference_type n) const {
+    auto p = *this;
+    p -= n;
+    return p;
+  }
+
+  friend auto operator+(difference_type n, const xpointer &other) {
     return other + n;
   }
 
