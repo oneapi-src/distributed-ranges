@@ -26,7 +26,7 @@
 #include <fmt/ranges.h>
 #endif
 
-#include <source_location/source_location.hpp>
+#include "vendor/source_location/source_location.hpp"
 
 // MPI should be optional
 #include "mkl.h"

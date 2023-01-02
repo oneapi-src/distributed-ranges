@@ -130,7 +130,7 @@ library, and install it into a prefix::
 Use ``-I`` with the path to dr/build/install To find the header files
 during compilation::
 
-  g++ -Ibuild/install file.cpp
+  g++ -I$PATH_TO_DR/dr_root/include file.cpp
 
 
 
