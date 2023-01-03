@@ -182,7 +182,7 @@ template <typename Container> struct xpointer {
     return container().conforms(other.container()) && index_ == other.index_;
   }
 
-  auto remote_offset(int my_rank) {
+  auto remote_offset(int my_rank) const {
     auto &local_container = container_->local();
     auto radius = container_->stencil_.radius()[0];
     auto [rank, offset] = container_->rank_offset(index_);
@@ -407,7 +407,7 @@ public:
 
   span_halo<T> &halo() { return halo_; }
 
-  communicator &comm() { return comm_; }
+  const communicator &comm() const { return comm_; }
 
   bool conforms(const distributed_vector &other) const noexcept {
     return size_ == other.size_;
@@ -454,7 +454,7 @@ private:
   stencil_type stencil_;
   size_type size_;
   size_type slice_size_;
-  communicator comm_;
+  const communicator comm_;
   std::vector<T, Alloc> local_;
   communicator::win win_;
   span_halo<T> halo_;

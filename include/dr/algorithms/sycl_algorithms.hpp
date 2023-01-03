@@ -15,7 +15,7 @@ namespace lib {
 template <sycl_mpi_distributed_contiguous_iterator SDI, typename T>
 T reduce(int root, SDI first, SDI last, T init, auto &&binary_op) {
   auto &container = first.container();
-  auto &comm = container.comm();
+  const communicator &comm = container.comm();
 
   // Each rank reduces its local segment
   auto val = std::reduce(container.allocator().policy(), first.local(),

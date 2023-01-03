@@ -89,7 +89,7 @@ T reduce(int root, DI first, DI last, T init, auto &&binary_op) {
 
   // Gather segment values on root and reduce for final value
   std::vector<T> vals;
-  auto &comm = first.container().comm();
+  const communicator &comm = first.container().comm();
   comm.gather(val, vals, root);
   if (comm.rank() == root) {
     auto gval = std::reduce(vals.begin(), vals.end(), init, binary_op);
@@ -133,49 +133,68 @@ void copy(mpi_distributed_contiguous_range auto &&r,
   lib::copy(r.begin(), r.end(), result);
 }
 
+namespace {
+
+auto scatter_data_dst_size(mpi_distributed_contiguous_iterator auto first,
+                           std::size_t size, int rank) {
+  const auto last = first + size;
+  const std::size_t element_size = sizeof(std::iter_value_t<decltype(first)>);
+  const auto b = first.remote_offset(rank);
+  const auto e = last.remote_offset(rank);
+  return (e - b) * element_size;
+}
+
 auto scatter_data(mpi_distributed_contiguous_iterator auto first,
                   std::size_t size, std::vector<int> &counts,
                   std::vector<int> &offsets) {
   assert(size > 0);
 
-  auto comm = first.container().comm();
+  const communicator &comm = first.container().comm();
   counts.resize(comm.size());
   offsets.resize(comm.size());
 
-  auto last = first + size;
   std::size_t offset = 0;
-  std::size_t element_size = sizeof(std::iter_value_t<decltype(first)>);
   for (int rank = 0; rank < comm.size(); rank++) {
-    auto b = first.remote_offset(rank);
-    auto e = last.remote_offset(rank);
-    auto size = (e - b) * element_size;
-    counts[rank] = size;
+    const auto size_on_rank = scatter_data_dst_size(first, size, rank);
+    counts[rank] = size_on_rank;
     offsets[rank] = offset;
-    offset += size;
+    offset += size_on_rank;
   }
 
   drlog.debug("scatter data:\n  counts: {}\n  offsets: {}\n", counts, offsets);
 }
 
+} // unnamed namespace
+
 /// Collective copy from local begin/end to distributed
 template <typename I>
 void copy(int root, I first, I last,
           mpi_distributed_contiguous_iterator auto result) {
-  auto &comm = result.container().comm();
+  const communicator &comm = result.container().comm();
   std::vector<int> counts(comm.size()), offsets(comm.size());
 
   scatter_data(result, last - first, counts, offsets);
-  comm.scatterv(&*first, counts.data(), offsets.data(), &*result.local(), root);
+  comm.scatterv(&*first, counts.data(), offsets.data(), &*result.local(),
+                counts[comm.rank()], root);
 }
 
-/// Collective copy from local begin/end to distributed
-template <typename I>
-void copy(int root, I first, std::size_t size,
+/// Collective copy from local begin/end to distributed - any rank
+void copy(int root, std::contiguous_iterator auto first, std::size_t size,
           mpi_distributed_contiguous_iterator auto result) {
   lib::copy(root, first, first + size, result);
 }
 
-/// Collective copy from local range to distributed iterator
+/// Collective copy from local begin/end to distributed, which can be called on
+/// non-source rank
+void copy(int root, std::nullptr_t, std::size_t size,
+          mpi_distributed_contiguous_iterator auto result) {
+  const communicator &comm = result.container().comm();
+  assert(root != comm.rank());
+  comm.scatterv(nullptr, nullptr, nullptr, &*result.local(),
+                scatter_data_dst_size(result, size, comm.rank()), root);
+}
+
+///// Collective copy from local range to distributed iterator
 void copy(int root, rng::contiguous_range auto &&r,
           mpi_distributed_contiguous_iterator auto result) {
   lib::copy(root, r.begin(), r.end(), result);
@@ -184,7 +203,7 @@ void copy(int root, rng::contiguous_range auto &&r,
 /// Collective copy from distributed begin/end to local iterator
 template <mpi_distributed_contiguous_iterator DI>
 void copy(int root, DI first, DI last, std::contiguous_iterator auto result) {
-  auto &comm = first.container().comm();
+  const communicator &comm = first.container().comm();
   std::vector<int> counts(comm.size()), offsets(comm.size());
 
   scatter_data(first, last - first, counts, offsets);
@@ -286,7 +305,7 @@ T transform_reduce(int root, I first, I last, T init, auto reduction_op,
 
   // Gather segment values on root and reduce for final value
   std::vector<T> vals;
-  auto &comm = first.container().comm();
+  const communicator &comm = first.container().comm();
   comm.gather(val, vals, root);
   if (comm.rank() == root) {
     return std::reduce(vals.begin(), vals.end(), init, reduction_op);

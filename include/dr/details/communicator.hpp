@@ -81,52 +81,54 @@ public:
 
   void barrier() const { MPI_Barrier(mpi_comm_); }
 
-  void scatter(const void *src, void *dst, int size, int root) {
+  void scatter(const void *src, void *dst, int size, int root) const {
     MPI_Scatter(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
   }
 
   void scatterv(const void *src, int *counts, int *offsets, void *dst,
-                int root) {
-    MPI_Scatterv(src, counts, offsets, MPI_CHAR, dst, counts[rank()], MPI_CHAR,
-                 root, mpi_comm_);
+                int dst_count, int root) const {
+    assert(counts == nullptr || counts[rank()] == dst_count);
+    MPI_Scatterv(src, counts, offsets, MPI_CHAR, dst, dst_count, MPI_CHAR, root,
+                 mpi_comm_);
   }
 
-  void gather(const void *src, void *dst, int size, int root) {
+  void gather(const void *src, void *dst, int size, int root) const {
     MPI_Gather(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
   }
 
   template <typename T>
-  void gather(const T &src, std::vector<T> &dst, int root) {
+  void gather(const T &src, std::vector<T> &dst, int root) const {
     dst.resize(size());
     MPI_Gather(&src, sizeof(src), MPI_CHAR, dst.data(), sizeof(src), MPI_CHAR,
                root, mpi_comm_);
   }
 
   void gatherv(const void *src, int *counts, int *offsets, void *dst,
-               int root) {
+               int root) const {
     MPI_Gatherv(src, counts[rank()], MPI_CHAR, dst, counts, offsets, MPI_CHAR,
                 root, mpi_comm_);
   }
 
   template <typename T>
-  void isend(const T *data, int size, int source, tag t, MPI_Request *request) {
+  void isend(const T *data, int size, int source, tag t,
+             MPI_Request *request) const {
     MPI_Isend(data, size * sizeof(T), MPI_CHAR, source, int(t), mpi_comm_,
               request);
   }
 
   template <rng::contiguous_range R>
-  void isend(const R &data, int source, tag t, MPI_Request *request) {
+  void isend(const R &data, int source, tag t, MPI_Request *request) const {
     isend(data.data(), data.size(), source, int(t), request);
   }
 
   template <typename T>
-  void irecv(T *data, int size, int dest, tag t, MPI_Request *request) {
+  void irecv(T *data, int size, int dest, tag t, MPI_Request *request) const {
     MPI_Irecv(data, size * sizeof(T), MPI_CHAR, dest, int(t), mpi_comm_,
               request);
   }
 
   template <rng::contiguous_range R>
-  void irecv(R &data, int source, tag t, MPI_Request *request) {
+  void irecv(R &data, int source, tag t, MPI_Request *request) const {
     irecv(data.data(), data.size(), source, int(t), request);
   }
 

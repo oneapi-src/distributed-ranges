@@ -12,7 +12,7 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   rng::iota(v_in, 100);
 
   lib::distributed_vector<int> dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n),
-      dv6(n);
+      dv6(n), dv7(n);
   lib::iota(dv_in, 100);
   lib::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
   lib::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
@@ -21,6 +21,11 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   lib::copy(0, v_in.begin() + b, v_in.begin() + e, dv4.begin() + b);
   lib::copy(0, rng::subrange(v_in.begin() + b, v_in.begin() + e),
             dv6.begin() + b);
+  if (comm_rank == 0) {
+    lib::copy(0, &*(v_in.begin() + b), e - b, dv7.begin() + b);
+  } else {
+    lib::copy(0, nullptr, e - b, dv7.begin() + b);
+  }
   lib::copy(0, comm_rank == 0 ? &*(v_in.begin() + b) : nullptr, e - b,
             dv5.begin() + b);
 
@@ -42,6 +47,7 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
     EXPECT_TRUE(equal(dv4, v));
     EXPECT_TRUE(equal(dv5, v));
     EXPECT_TRUE(equal(dv6, v));
+    EXPECT_TRUE(equal(dv7, v));
 
     EXPECT_TRUE(equal(v1, v));
     EXPECT_TRUE(equal(v2, v));
