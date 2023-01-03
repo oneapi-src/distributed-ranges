@@ -8,6 +8,8 @@
 #include "algorithms/for_each.hpp"
 #include "algorithms/reduce.hpp"
 #include "allocators.hpp"
+#include "containers/dense_matrix.hpp"
+#include "containers/sparse_matrix.hpp"
 #include "copy.hpp"
 #include "distributed_span.hpp"
 #include "distributed_vector.hpp"

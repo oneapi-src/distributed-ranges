@@ -8,6 +8,7 @@
 #include <memory>
 #include <ranges>
 #include <span>
+#include <type_traits>
 
 #include <shp/algorithms/execution_policy.hpp>
 
@@ -37,7 +38,11 @@ inline std::size_t nprocs() { return internal::ngpus(); }
 
 inline device_policy par_unseq;
 
-template <typename R> inline void init(R &&devices) {
+template <std::ranges::range R>
+inline void init(R &&devices)
+  requires(std::is_same_v<cl::sycl::device,
+                          std::remove_cvref_t<std::ranges::range_value_t<R>>>)
+{
   internal::devices_.assign(std::ranges::begin(devices),
                             std::ranges::end(devices));
   internal::global_context_ = new sycl::context(internal::devices_);
