@@ -108,11 +108,11 @@ using distributed_vector_iterator =
 
 // TODO: support teams, distributions
 
-template <typename T, typename Alloc = shp::shared_allocator<T>>
+template <typename T, typename Allocator = shp::shared_allocator<T>>
 struct distributed_vector {
 public:
-  using segment_type = shp::device_vector<T, Alloc>;
-  using const_segment_type = std::add_const_t<shp::device_vector<T, Alloc>>;
+  using segment_type = shp::device_vector<T, Allocator>;
+  using const_segment_type = std::add_const_t<shp::device_vector<T, Allocator>>;
 
   using value_type = T;
   using size_type = std::size_t;
@@ -141,7 +141,7 @@ public:
 
     size_t rank = 0;
     for (auto &&device : shp::devices()) {
-      Alloc alloc(shp::context(), device);
+      Allocator alloc(shp::context(), device);
       segment_type segment(segment_size_, alloc, rank++);
       segments_.push_back(std::move(segment));
     }
@@ -168,17 +168,19 @@ public:
   }
 
   iterator begin() { return iterator(segments_, 0, 0, segment_size_); }
+
   const_iterator begin() const {
     return const_iterator(segments_, 0, 0, segment_size_);
+  }
+
+  iterator end() {
+    return iterator(segments_, size() / segment_size_, size() % segment_size_,
+                    segment_size_);
   }
 
   const_iterator end() const {
     return const_iterator(segments_, size() / segment_size_,
                           size() % segment_size_, segment_size_);
-  }
-  iterator end() {
-    return iterator(segments_, size() / segment_size_, size() % segment_size_,
-                    segment_size_);
   }
 
 private:
