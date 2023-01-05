@@ -22,20 +22,28 @@ public:
                 halo_groups.size());
     buffer_size_ = 0;
     std::size_t i = 0;
+    std::vector<std::size_t> buffer_index;
     for (auto &g : owned_groups_) {
-      g.buffer_index = buffer_size_;
+      buffer_index.push_back(buffer_size_);
       g.request_index = i++;
       buffer_size_ += g.buffer_size();
       map_.push_back(&g);
     }
     for (auto &g : halo_groups_) {
-      g.buffer_index = buffer_size_;
+      buffer_index.push_back(buffer_size_);
       g.request_index = i++;
       buffer_size_ += g.buffer_size();
       map_.push_back(&g);
     }
     buffer_ = memory_.allocate(buffer_size_);
     assert(buffer_ != nullptr);
+    i = 0;
+    for (auto &g : owned_groups_) {
+      g.buffer = &buffer_[buffer_index[i++]];
+    }
+    for (auto &g : halo_groups_) {
+      g.buffer = &buffer_[buffer_index[i++]];
+    }
     requests_.resize(i);
   }
 
@@ -66,8 +74,8 @@ public:
                   MPI_STATUS_IGNORE);
       drlog.debug("Completed: {}\n", completed);
       auto &g = *map_[completed];
-      if (g.receive) {
-        g.unpack(&buffer_[g.buffer_index], op);
+      if (g.receive && g.buffered) {
+        g.unpack(op);
       }
     }
   }
@@ -102,11 +110,10 @@ public:
 private:
   void send(std::vector<Group> &sends) {
     for (auto &g : sends) {
-      auto b = &buffer_[g.buffer_index];
-      g.pack(b);
+      g.pack();
       g.receive = false;
       drlog.debug("Sending: {}\n", g.request_index);
-      comm_.isend(b, g.buffer_size(), g.rank(), g.tag(),
+      comm_.isend(g.data_pointer(), g.data_size(), g.rank(), g.tag(),
                   &requests_[g.request_index]);
     }
   }
@@ -115,7 +122,7 @@ private:
     for (auto &g : receives) {
       g.receive = true;
       drlog.debug("Receiving: {}\n", g.request_index);
-      comm_.irecv(&buffer_[g.buffer_index], g.buffer_size(), g.rank(), g.tag(),
+      comm_.irecv(g.data_pointer(), g.data_size(), g.rank(), g.tag(),
                   &requests_[g.request_index]);
     }
   }
@@ -133,14 +140,19 @@ template <typename T, typename Memory = default_memory<T>> class index_group {
 public:
   using element_type = T;
   using memory_type = Memory;
-  std::size_t buffer_index;
+  T *buffer;
   std::size_t request_index;
   bool receive;
+  bool buffered;
 
   /// Constructor
   index_group(T *data, std::size_t rank,
               const std::vector<std::size_t> &indices, const Memory &memory)
       : memory_(memory), data_(data), rank_(rank) {
+    buffered = false;
+    for (std::size_t i = 0; i < indices.size() - 1; i++) {
+      buffered = buffered || (indices[i + 1] - indices[i] != 1);
+    }
     indices_size_ = indices.size();
     indices_ = memory_.template allocate<std::size_t>(indices_size_);
     assert(indices_ != nullptr);
@@ -149,37 +161,54 @@ public:
   }
 
   index_group(const index_group &o)
-      : buffer_index(o.buffer_index), request_index(o.request_index),
-        receive(o.receive), memory_(o.memory_), data_(o.data_), rank_(o.rank_),
-        indices_size_(o.indices_size_), tag_(o.tag_) {
+      : buffer(o.buffer), request_index(o.request_index), receive(o.receive),
+        buffered(o.buffered), memory_(o.memory_), data_(o.data_),
+        rank_(o.rank_), indices_size_(o.indices_size_), tag_(o.tag_) {
     indices_ = memory_.template allocate<std::size_t>(indices_size_);
     assert(indices_ != nullptr);
     memory_.memcpy(indices_, o.indices_, indices_size_ * sizeof(std::size_t));
   }
 
-  void unpack(T *buffer, const auto &op) {
+  void unpack(const auto &op) {
     T *dpt = data_;
     auto n = indices_size_;
     auto *ipt = indices_;
+    auto *b = buffer;
     memory_.offload([=]() {
       for (std::size_t i = 0; i < n; i++) {
-        dpt[ipt[i]] = op(dpt[ipt[i]], buffer[i]);
+        dpt[ipt[i]] = op(dpt[ipt[i]], b[i]);
       }
     });
   }
 
-  void pack(T *buffer) {
+  void pack() {
     T *dpt = data_;
     auto n = indices_size_;
     auto *ipt = indices_;
+    auto *b = buffer;
     memory_.offload([=]() {
       for (std::size_t i = 0; i < n; i++) {
-        buffer[i] = dpt[ipt[i]];
+        b[i] = dpt[ipt[i]];
       }
     });
   }
 
-  std::size_t buffer_size() { return indices_size_; }
+  std::size_t buffer_size() {
+    if (buffered) {
+      return indices_size_;
+    }
+    return 0;
+  }
+
+  T *data_pointer() {
+    if (buffered) {
+      return buffer;
+    } else {
+      return &data_[indices_[0]];
+    }
+  }
+
+  std::size_t data_size() { return indices_size_; }
 
   std::size_t rank() { return rank_; }
   auto tag() { return tag_; }
@@ -236,9 +265,10 @@ template <typename T, typename Memory = default_memory<T>> class span_group {
 public:
   using element_type = T;
   using memory_type = Memory;
-  std::size_t buffer_index = 0;
+  T *buffer;
   std::size_t request_index = 0;
   bool receive = false;
+  bool buffered = true;
 
   span_group(T *data, std::size_t size, std::size_t rank, communicator::tag tag,
              const Memory &memory)
@@ -247,7 +277,7 @@ public:
   span_group(std::span<T> data, std::size_t rank, communicator::tag tag)
       : data_(data), rank_(rank), tag_(tag) {}
 
-  void unpack(T *buffer, const auto &op) {
+  void unpack(const auto &op) {
     for (std::size_t i = 0; i < data_.size(); i++) {
       drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
       data_[i] = op(data_[i], *buffer++);
@@ -255,8 +285,11 @@ public:
     }
   }
 
-  void pack(T *buffer) { std::copy(data_.begin(), data_.end(), buffer); }
+  void pack() { std::copy(data_.begin(), data_.end(), buffer); }
   std::size_t buffer_size() { return data_.size(); }
+
+  std::size_t data_size() { return data_.size(); }
+  T *data_pointer() { return buffer; }
 
   std::size_t rank() { return rank_; }
 
