@@ -51,15 +51,15 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
                                device_policy>) {
     using future_t = decltype(oneapi::dpl::experimental::reduce_async(
         oneapi::dpl::execution::device_policy(policy.get_devices()[0]),
-        r.segments()[0].begin(), r.segments()[0].end(), init,
-        std::forward<BinaryOp>(binary_op)));
+        lib::ranges::segments(r)[0].begin(), lib::ranges::segments(r)[0].end(),
+        init, std::forward<BinaryOp>(binary_op)));
 
     auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
 
     std::vector<future_t> futures;
 
-    for (auto &&segment : r.segments()) {
-      auto device = devices[segment.rank()];
+    for (auto &&segment : lib::ranges::segments(r)) {
+      auto device = devices[lib::ranges::rank(segment)];
 
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);

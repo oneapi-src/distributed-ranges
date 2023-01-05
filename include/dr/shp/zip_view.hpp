@@ -8,24 +8,8 @@
 #include <ranges>
 
 #include <concepts/concepts.hpp>
+#include <details/view_detectors.hpp>
 #include <shp/iterator_adaptor.hpp>
-
-namespace {
-
-template <typename T> struct is_owning_view : std::false_type {};
-template <std::ranges::range R>
-struct is_owning_view<std::ranges::owning_view<R>> : std::true_type {};
-
-template <typename T>
-inline constexpr bool is_owning_view_v = is_owning_view<T>{};
-
-template <typename T> struct is_ref_view : std::false_type {};
-template <std::ranges::range R>
-struct is_ref_view<std::ranges::ref_view<R>> : std::true_type {};
-
-template <typename T> inline constexpr bool is_ref_view_v = is_ref_view<T>{};
-
-} // namespace
 
 namespace shp {
 
@@ -126,8 +110,8 @@ public:
   template <std::size_t I> decltype(auto) get_view() {
     auto &&view = std::get<I>(views_);
 
-    if constexpr (is_ref_view_v<std::remove_cvref_t<decltype(view)>> ||
-                  is_owning_view_v<std::remove_cvref_t<decltype(view)>>) {
+    if constexpr (lib::is_ref_view_v<std::remove_cvref_t<decltype(view)>> ||
+                  lib::is_owning_view_v<std::remove_cvref_t<decltype(view)>>) {
       return view.base();
     } else {
       return view;

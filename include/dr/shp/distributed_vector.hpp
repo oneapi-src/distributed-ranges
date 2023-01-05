@@ -9,6 +9,7 @@
 #include <shp/device_vector.hpp>
 #include <vector>
 
+#include <details/segments_tools.hpp>
 #include <shp/allocators.hpp>
 #include <shp/vector.hpp>
 
@@ -159,9 +160,11 @@ public:
 
   size_type size() const noexcept { return size_; }
 
-  std::span<segment_type> segments() { return segments_; }
+  auto segments() { return lib::internal::trim_segments(segments_, size()); }
 
-  std::span<const_segment_type> segments() const { return segments_; }
+  auto segments() const {
+    return lib::internal::trim_segments(segments_, size());
+  }
 
   iterator begin() { return iterator(segments_, 0, 0, segment_size_); }
 
