@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
               << "\n";
   }
 
-  shp::distributed_vector<int> v(100);
+  shp::distributed_vector<int, shp::device_allocator<int>> v(100);
 
   shp::for_each(shp::par_unseq, shp::enumerate(v), [](auto &&tuple) {
     auto &&[idx, value] = tuple;

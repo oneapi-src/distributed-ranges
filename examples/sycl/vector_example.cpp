@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
 
   printf("Creating NUMA devices...\n");
-  auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
+  auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
   for (auto &device : devices) {
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
               << "\n";
   }
 
-  shp::distributed_vector<int> v(100);
+  shp::distributed_vector<int, shp::device_allocator<int>> v(100);
 
   shp::for_each(shp::par_unseq, shp::enumerate(v), [](auto &&tuple) {
     auto &&[idx, value] = tuple;

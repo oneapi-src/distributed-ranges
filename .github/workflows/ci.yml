@@ -70,6 +70,19 @@ jobs:
         cmake -B build -DENABLE_SYCL_MPI=on
         make -j -C build all test
 
+  shp:
+    runs-on: dds-base
+    env:
+      CXX: clang++
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & test
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        source /opt/intel/open-source-dpcpp/20221029/startup.sh
+        cmake -B build -DENABLE_SYCL=ON
+        make -j -C build all test
+
   icpx_igpu:
     runs-on: gpu
     env:

@@ -27,7 +27,7 @@ cl::sycl::device select_device(Selector &&selector) {
   return d;
 }
 
-void list_devices() {
+inline void list_devices() {
   auto platforms = sycl::platform::get_platforms();
 
   for (auto &platform : platforms) {

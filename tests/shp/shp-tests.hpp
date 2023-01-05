@@ -4,12 +4,8 @@
 
 #include <CL/sycl.hpp>
 
-#include "mpi.h"
+#include <shp/shp.hpp>
 
-#include "dr/distributed-ranges.hpp"
+namespace rng = std::ranges;
 
 #include "common-tests.hpp"
-
-extern MPI_Comm comm;
-extern int comm_rank;
-extern int comm_size;

@@ -10,7 +10,7 @@ namespace detail {
 
 // Factor n into 2 roughly equal factors
 // n = pq, p >= q
-std::tuple<std::size_t, std::size_t> factor(size_t n) {
+inline std::tuple<std::size_t, std::size_t> factor(size_t n) {
   size_t q = std::sqrt(n);
 
   while (q > 1 && n / q != static_cast<double>(n) / q) {

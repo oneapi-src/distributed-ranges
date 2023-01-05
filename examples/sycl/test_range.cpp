@@ -50,8 +50,8 @@ std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
 int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
 
-  // Get GPU devices.
-  sycl::gpu_selector g;
+  // Get devices.
+  sycl::default_selector g;
   // auto devices = shp::get_devices(g);
   auto devices = shp::get_numa_devices(g);
 

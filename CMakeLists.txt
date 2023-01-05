@@ -115,7 +115,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(ENABLE_SYCL)
     add_subdirectory(examples/sycl)
-    add_subdirectory(tests/sycl)
+    add_subdirectory(tests/shp)
   endif()
 
   # shp has warnings, but do for everything else
