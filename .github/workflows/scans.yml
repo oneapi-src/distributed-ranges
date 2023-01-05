@@ -32,3 +32,23 @@ jobs:
         chmod 600 auth.key
         /opt/coverity/analysis/bin/cov-commit-defects --dir idir --stream "DR main" --url https://coverityent.devtools.intel.com/prod7 --auth-key-file auth.key
         rm auth.key
+
+  malware:
+    runs-on: dds-base
+    env:
+      CXX: g++-12
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & test
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j -C build/examples/cpu all test
+    - name: Scan
+      run: |
+        cd build/examples/cpu
+        uvscan --RPTOBJECTS --RECURSIVE --UNZIP --HTML=scan-report.html --LOUD --SUMMARY --ANALYZE --PANALYZE .
+    - uses: actions/upload-artifact@v3
+      with:
+        name: malware-scan
+        path: build/examples/cpu/scan-report.html
