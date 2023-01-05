@@ -20,3 +20,18 @@ TEST(ShpTests, Take) {
   auto dv_aview = dv_a | std::ranges::views::take(2);
   EXPECT_TRUE(equal(aview, dv_aview));
 }
+
+#if 0
+TEST(ShpTests, Drop) {
+  const int n = 10;
+  V a(n);
+  DV dv_a(n);
+
+  std::iota(a.begin(), a.end(), 20);
+  std::iota(dv_a.begin(), dv_a.end(), 20);
+
+  auto aview = a | std::ranges::views::drop(2);
+  auto dv_aview = dv_a | std::ranges::views::drop(2);
+  EXPECT_TRUE(equal(aview, dv_aview));
+}
+#endif
