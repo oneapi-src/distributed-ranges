@@ -16,6 +16,7 @@ namespace lib {
 template <mpi_distributed_contiguous_iterator DI>
 void fill(DI first, DI last, auto value) {
   std::fill(first.local(), last.local(), value);
+  first.container().comm().barrier();
 }
 
 /// Collective fill on distributed range
@@ -33,6 +34,7 @@ void fill(mpi_distributed_contiguous_range auto &&r, auto value) {
 template <mpi_distributed_contiguous_iterator DI>
 void for_each(DI first, DI last, auto op) {
   std::for_each(first.local(), last.local(), op);
+  first.container().comm().barrier();
 }
 
 /// Collective for_each on distributed range
