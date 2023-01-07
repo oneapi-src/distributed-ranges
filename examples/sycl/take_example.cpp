@@ -20,6 +20,8 @@ int main(int argc, char **argv) {
 
   shp::distributed_vector<int, shp::device_allocator<int>> v(100);
 
+  auto e = shp::enumerate(v);
+
   shp::for_each(shp::par_unseq, shp::enumerate(v), [](auto &&tuple) {
     auto &&[idx, value] = tuple;
     value = idx;
@@ -31,7 +33,7 @@ int main(int argc, char **argv) {
 
   // Create trimmed view.
   // `trimmed_view` is a distributed range.
-  auto trimmed_view = std::ranges::views::take(v, 53);
+  auto trimmed_view = shp::views::take(v, 53);
   shp::print_range(trimmed_view, "Trimmed View");
 
   auto sum = shp::reduce(shp::par_unseq, v, 0, std::plus{});
@@ -39,6 +41,8 @@ int main(int argc, char **argv) {
 
   auto tsum = shp::reduce(shp::par_unseq, trimmed_view, 0, std::plus{});
   std::cout << "Trimmed sum: " << tsum << std::endl;
+
+  shp::print_range(v | shp::views::take(40) | shp::views::slice({5, 10}));
 
   return 0;
 }

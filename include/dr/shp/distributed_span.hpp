@@ -6,6 +6,7 @@
 
 #include "device_span.hpp"
 #include "iterator_adaptor.hpp"
+#include <concepts/concepts.hpp>
 #include <details/ranges.hpp>
 #include <ranges>
 #include <vector>
@@ -159,6 +160,16 @@ public:
     }
   }
 
+  template <lib::distributed_contiguous_range R>
+  constexpr distributed_span(R &&r) {
+    for (auto &&segment : lib::ranges::segments(std::forward<R>(r))) {
+      std::size_t size = std::ranges::size(segment);
+      segments_.push_back(segment_type(std::ranges::begin(segment), size,
+                                       lib::ranges::rank(segment)));
+      size_ += size;
+    }
+  }
+
   constexpr size_type size() const noexcept { return size_; }
 
   constexpr size_type size_bytes() const noexcept {
@@ -198,6 +209,7 @@ public:
       new_segments.push_back(new_segment);
       Count -= local_count;
       Offset = 0;
+      segment_id++;
     }
 
     return distributed_span(new_segments);
@@ -232,5 +244,11 @@ template <std::ranges::input_range R>
 distributed_span(R &&segments) -> distributed_span<
     std::ranges::range_value_t<std::ranges::range_value_t<R>>,
     std::ranges::iterator_t<std::ranges::range_value_t<R>>>;
+
+template <lib::distributed_contiguous_range R>
+distributed_span(R &&r)
+    -> distributed_span<std::ranges::range_value_t<R>,
+                        std::ranges::iterator_t<std::ranges::range_value_t<
+                            decltype(lib::ranges::segments(r))>>>;
 
 } // namespace shp

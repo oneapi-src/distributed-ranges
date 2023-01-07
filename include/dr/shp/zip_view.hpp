@@ -268,4 +268,12 @@ private:
 
 template <typename... Rs> zip_view(Rs &&...rs) -> zip_view<Rs...>;
 
+namespace views {
+
+template <std::ranges::random_access_range... Rs> auto zip(Rs &&...rs) {
+  return shp::zip_view(std::forward<Rs>(rs)...);
+}
+
+} // namespace views
+
 } // namespace shp
