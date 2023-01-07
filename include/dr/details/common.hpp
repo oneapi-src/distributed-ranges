@@ -39,4 +39,13 @@ inline std::size_t storage_size(const auto &extents, std::size_t comm_size) {
   return size;
 }
 
+template <class F, class Tuple>
+constexpr void tuple_foreach(F &&f, Tuple &&tuple) {
+  std::apply(
+      [&]<class... Ts>(Ts &&...elements) {
+        (std::invoke(f, std::forward<Ts>(elements)), ...);
+      },
+      std::forward<Tuple>(tuple));
+}
+
 } // namespace lib

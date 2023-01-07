@@ -191,9 +191,9 @@ template <typename Container> struct xpointer {
     // beginning of my range
     if (rank < my_rank) {
       offset = radius.prev;
+    } else if (rank > my_rank) {
       // If the iterator is pointing to a later rank, point to the
       // end of my range
-    } else if (rank > my_rank) {
       offset = local_container.size() - radius.next;
     }
 

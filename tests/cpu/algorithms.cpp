@@ -72,7 +72,6 @@ TEST(CpuMpiTests, ForEach) {
   rng::iota(a, 100);
   rng::iota(a_in, 100);
   rng::for_each(a, negate{});
-  fmt::print("a: {}\n", a);
 
   DV dv_a(n);
   lib::iota(dv_a, 100);
