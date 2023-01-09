@@ -44,6 +44,33 @@ auto trim_segments(R &&segments, std::size_t n) {
   });
 }
 
+struct drop {
+  std::size_t remainder;
+  template <typename R> auto operator()(R &&s) {
+    auto v = std::ranges::views::drop(std::forward<R>(s), remainder);
+    remainder = 0;
+    return v;
+  }
+};
+
+// Drop the first n elements
+template <std::ranges::random_access_range R>
+auto drop_segments(R &&segments, std::size_t n) {
+  std::size_t n_segs_dropped = 0;
+  std::size_t remainder = n;
+
+  for (auto &&seg : segments) {
+    if (seg.size() > remainder) {
+      break;
+    }
+    remainder -= seg.size();
+    n_segs_dropped++;
+  }
+
+  return std::forward<R>(segments) | std::ranges::views::drop(n_segs_dropped) |
+         std::ranges::views::transform(drop{remainder});
+}
+
 } // namespace internal
 
 } // namespace lib
@@ -73,6 +100,14 @@ template <std::ranges::range V>
 auto segments_(V &&v) {
   return lib::internal::trim_segments(lib::ranges::segments(v.base()),
                                       v.size());
+}
+
+template <std::ranges::range V>
+  requires(lib::is_drop_view_v<std::remove_cvref_t<V>> &&
+           lib::distributed_range<decltype(std::declval<V>().base())>)
+auto segments_(V &&v) {
+  return lib::internal::drop_segments(lib::ranges::segments(v.base()),
+                                      v.base().size() - v.size());
 }
 
 } // namespace ranges
