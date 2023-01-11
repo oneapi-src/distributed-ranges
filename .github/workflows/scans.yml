@@ -8,6 +8,34 @@ on:
   - cron: '0 0 * * Sun'
 
 jobs:
+  bdba:
+    runs-on: dds-base
+    env:
+      CXX: g++-12
+      SCAN_NAME: DistributedRanges-${{ github.shaA }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & test
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j -C build/examples/cpu all test
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: python -m pip install -i https://af01p-igk.devtools.intel.com/artifactory/api/pypi/dtt-pypi-igk-local/simple bdba
+    - name: Scan
+      run: |
+        tar -cvzf bdba/dr-bdba.tgz --exclude="*.o" build/examples/cpu
+        bdba upload --scan-name ${SCAN_NAME}} --products-json-path bdba/file.json --path bdba/dr-bdba.tgz --key ${{ secrets.BDBA_KEY }}
+        bdba override --products-json-path bdba/file.json -c bdba/bdba.yaml --key ${{ secrets.BDBA_KEY }}
+        bdba pdf-report --products-json-path bdba/file.json --key ${{ secrets.BDBA_KEY }}
+    - uses: actions/upload-artifact@v3
+      with:
+        name: bdba-scan
+        path: dr-bdba.tgz.pdf
+
   coverity:
     runs-on: dds-base
     env:
