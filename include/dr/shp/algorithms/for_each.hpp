@@ -35,7 +35,8 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
       auto begin = lib::ranges::local(rng::begin(segment));
 
-      auto event = q.parallel_for(sycl::range<1>(rng::size(segment)),
+      assert(std::ranges::size(segment) > 0);
+      auto event = q.parallel_for(rng::size(segment),
                                   [=](sycl::id<1> idx) { fn(*(begin + idx)); });
       events.emplace_back(event);
       queues.emplace_back(q);

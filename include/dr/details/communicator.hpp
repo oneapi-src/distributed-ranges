@@ -136,7 +136,7 @@ public:
   }
 
 private:
-  const MPI_Comm mpi_comm_;
+  MPI_Comm mpi_comm_;
   int rank_;
   int size_;
 };

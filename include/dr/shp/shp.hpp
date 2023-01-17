@@ -7,6 +7,9 @@
 #include "range/v3/all.hpp"
 namespace rng = ranges;
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 #include "algorithms/execution_policy.hpp"
 #include "algorithms/for_each.hpp"
 #include "algorithms/reduce.hpp"

@@ -13,7 +13,7 @@
 Interface
 =========
 
-.. doxygenfunction:: for_each(DI first, DI last, auto op)
+.. doxygenfunction:: lib::for_each(DI first, DI last, auto op)
 .. doxygenfunction:: for_each(mpi_distributed_contiguous_range auto &&r, auto op)
 
 Description

@@ -137,6 +137,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_subdirectory(test/gtest/serial)
   add_subdirectory(examples/cpu)
   add_subdirectory(test/gtest/cpu)
+  add_subdirectory(test/gtest/mhp)
 
   # Requires clang, icpx/llvm nightly do not support the tools
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ENABLE_SYCL)

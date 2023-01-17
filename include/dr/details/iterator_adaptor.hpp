@@ -54,8 +54,8 @@ public:
   template <typename... Args>
     requires(
         sizeof...(Args) >= 1 &&
-        !(sizeof...(Args) == 1 &&
-              (std::is_same_v<nonconst_iterator, std::decay_t<Args>> || ...) ||
+        !((sizeof...(Args) == 1 &&
+           (std::is_same_v<nonconst_iterator, std::decay_t<Args>> || ...)) ||
           (std::is_same_v<const_iterator, std::decay_t<Args>> || ...) ||
           (std::is_same_v<nonconst_accessor_type, std::decay_t<Args>> || ...) ||
           (std::is_same_v<const_accessor_type, std::decay_t<Args>> || ...)) &&

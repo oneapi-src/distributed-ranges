@@ -25,8 +25,8 @@ testing::AssertionResult equal(rng::range auto &&r1, rng::range auto &&r2) {
   if (is_equal(r1, r2)) {
     return testing::AssertionSuccess();
   }
-  return testing::AssertionFailure()
-         << fmt::format("\n    {}\n    {}\n  ", r1, r2);
+  return testing::AssertionFailure() << fmt::format(
+             "\n    {}\n    {}\n  ", rng::views::all(r1), rng::views::all(r2));
 }
 
 testing::AssertionResult unary_check(rng::range auto &&in,

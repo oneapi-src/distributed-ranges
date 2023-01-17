@@ -34,7 +34,7 @@ add_library(DR::shp ALIAS dr_shp)
 
 target_include_directories(dr_shp INTERFACE dr)
 target_compile_definitions(dr_shp INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
-target_link_libraries(dr_shp INTERFACE oneDPL)
+target_link_libraries(dr_shp INTERFACE oneDPL fmt::fmt)
 
 target_compile_options(dr_shp INTERFACE -fsycl -Wno-deprecated-declarations)
 

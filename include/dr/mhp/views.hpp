@@ -1,0 +1,22 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+namespace mhp {
+
+// Select segments local to this rank and convert the iterators in the
+// segment to local
+auto local_segments(auto &&segments) {
+  auto is_local = [](const auto &segment) {
+    return segment.begin().local() != nullptr;
+  };
+  auto local_iter = [](auto &&segment) {
+    auto b = segment.begin().local();
+    auto size = segment.end() - segment.begin();
+    return rng::subrange(b, b + size);
+  };
+  return segments | rng::views::filter(is_local) |
+         rng::views::transform(local_iter);
+}
+
+} // namespace mhp
