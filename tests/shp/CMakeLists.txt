@@ -8,6 +8,7 @@ add_executable(
   containers.cpp
   algorithms.cpp
   views.cpp
+  copy.cpp
 )
 
 target_link_libraries(

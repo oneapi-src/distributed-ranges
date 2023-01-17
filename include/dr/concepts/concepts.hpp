@@ -34,6 +34,18 @@ concept remote_contiguous_iterator =
                                           lib::ranges::local(iter)
                                           } -> std::contiguous_iterator;
                                       };
+
+template <typename I>
+concept distributed_iterator =
+    std::forward_iterator<I> &&
+    requires(I &iter) {
+      { lib::ranges::segments(iter) } -> std::ranges::forward_range;
+      { lib::ranges::segment_index(iter) };
+      { lib::ranges::local_index(iter) };
+    } &&
+    remote_range<std::ranges::range_value_t<decltype(lib::ranges::segments(
+        std::declval<I>()))>>;
+
 template <typename R>
 concept remote_contiguous_range =
     remote_range<R> && std::ranges::random_access_range<R> &&

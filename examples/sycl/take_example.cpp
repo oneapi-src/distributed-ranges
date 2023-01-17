@@ -4,10 +4,6 @@
 
 #include <shp/shp.hpp>
 
-template <lib::distributed_range R> void distributed(R &&) {}
-
-template <lib::remote_range R> void remote(R &&) {}
-
 int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
   auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
@@ -19,8 +15,6 @@ int main(int argc, char **argv) {
   }
 
   shp::distributed_vector<int, shp::device_allocator<int>> v(100);
-
-  auto e = shp::enumerate(v);
 
   shp::for_each(shp::par_unseq, shp::enumerate(v), [](auto &&tuple) {
     auto &&[idx, value] = tuple;
@@ -42,7 +36,7 @@ int main(int argc, char **argv) {
   auto tsum = shp::reduce(shp::par_unseq, trimmed_view, 0, std::plus{});
   std::cout << "Trimmed sum: " << tsum << std::endl;
 
-  shp::print_range(v | shp::views::take(40) | shp::views::slice({5, 10}));
+  shp::print_range(v | std::views::drop(40) | shp::views::slice({5, 10}));
 
   return 0;
 }

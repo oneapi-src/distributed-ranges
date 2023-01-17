@@ -6,6 +6,29 @@
 
 namespace lib {
 
+namespace {
+
+template <typename R>
+concept has_segments_method = requires(R r) {
+                                { r.segments() };
+                              };
+
+template <typename Iter>
+concept has_segment_index_method = requires(Iter i) {
+                                     {
+                                       i.segment_index()
+                                       } -> std::weakly_incrementable;
+                                   };
+
+template <typename Iter>
+concept has_local_index_method = requires(Iter i) {
+                                   {
+                                     i.local_index()
+                                     } -> std::weakly_incrementable;
+                                 };
+
+} // namespace
+
 template <typename Accessor> class iterator_adaptor {
 public:
   using accessor_type = Accessor;
@@ -162,6 +185,24 @@ public:
     iterator other = *this;
     --(*this);
     return other;
+  }
+
+  auto segments() const noexcept
+    requires(has_segments_method<accessor_type>)
+  {
+    return accessor_.segments();
+  }
+
+  auto segment_index() const noexcept
+    requires(has_segment_index_method<accessor_type>)
+  {
+    return accessor_.segment_index();
+  }
+
+  auto local_index() const noexcept
+    requires(has_local_index_method<accessor_type>)
+  {
+    return accessor_.local_index();
   }
 
   friend iterator operator+(difference_type n, iterator iter)

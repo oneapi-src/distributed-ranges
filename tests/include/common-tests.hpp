@@ -9,11 +9,11 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-bool is_equal(const rng::range auto &r1, const rng::range auto &r2) {
+bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
   // std::ranges::views::zip handles this better, but requires range-v3
   for (std::size_t i = 0;
        r1.begin() + i != r1.end() && r2.begin() + i != r2.end(); i++) {
-    if (r1[i] != r2[i]) {
+    if (*(r1.begin() + i) != *(r2.begin() + i)) {
       return false;
     }
   }
@@ -21,8 +21,7 @@ bool is_equal(const rng::range auto &r1, const rng::range auto &r2) {
   return true;
 }
 
-testing::AssertionResult equal(const rng::range auto &r1,
-                               const rng::range auto &r2) {
+testing::AssertionResult equal(rng::range auto &&r1, rng::range auto &&r2) {
   if (is_equal(r1, r2)) {
     return testing::AssertionSuccess();
   }
@@ -30,9 +29,9 @@ testing::AssertionResult equal(const rng::range auto &r1,
          << fmt::format("\n    {}\n    {}\n  ", r1, r2);
 }
 
-testing::AssertionResult unary_check(const rng::range auto &in,
-                                     const rng::range auto &ref,
-                                     const rng::range auto &tst) {
+testing::AssertionResult unary_check(rng::range auto &&in,
+                                     rng::range auto &&ref,
+                                     rng::range auto &&tst) {
   if (is_equal(ref, tst)) {
     return testing::AssertionSuccess();
   } else {
@@ -41,10 +40,9 @@ testing::AssertionResult unary_check(const rng::range auto &in,
   }
 }
 
-testing::AssertionResult binary_check(const rng::range auto &a,
-                                      const rng::range auto &b,
-                                      const rng::range auto &ref,
-                                      const rng::range auto &tst) {
+testing::AssertionResult binary_check(rng::range auto &&a, rng::range auto &&b,
+                                      rng::range auto &&ref,
+                                      rng::range auto &&tst) {
   if (is_equal(ref, tst)) {
     return testing::AssertionSuccess();
   } else {

@@ -70,7 +70,7 @@ struct rank_fn_ {
 
 } // namespace
 
-const inline auto rank = rank_fn_{};
+inline constexpr auto rank = rank_fn_{};
 
 namespace {
 
@@ -103,11 +103,21 @@ struct segments_fn_ {
       return segments_(std::forward<R>(r));
     }
   }
+
+  template <std::forward_iterator I>
+    requires(has_segments_method<I> || has_segments_adl<I>)
+  constexpr decltype(auto) operator()(I iter) const {
+    if constexpr (has_segments_method<I>) {
+      return std::forward<I>(iter).segments();
+    } else if constexpr (has_segments_adl<I>) {
+      return segments_(std::forward<I>(iter));
+    }
+  }
 };
 
 } // namespace
 
-const inline auto segments = segments_fn_{};
+inline constexpr auto segments = segments_fn_{};
 
 namespace {
 
@@ -144,7 +154,51 @@ struct local_fn_ {
 
 } // namespace
 
-const inline auto local = local_fn_{};
+inline constexpr auto local = local_fn_{};
+
+namespace {
+
+template <typename Iter>
+concept has_segment_index_method = requires(Iter i) {
+                                     {
+                                       i.segment_index()
+                                       } -> std::weakly_incrementable;
+                                   };
+
+struct segment_index_ {
+
+  template <std::forward_iterator Iter>
+    requires(has_segment_index_method<Iter>)
+  auto operator()(Iter iter) const {
+    return iter.segment_index();
+  }
+};
+
+} // namespace
+
+inline constexpr auto segment_index = segment_index_{};
+
+namespace {
+
+template <typename Iter>
+concept has_local_index_method = requires(Iter i) {
+                                   {
+                                     i.local_index()
+                                     } -> std::weakly_incrementable;
+                                 };
+
+struct local_index_ {
+
+  template <std::forward_iterator Iter>
+    requires(has_local_index_method<Iter>)
+  auto operator()(Iter iter) const {
+    return iter.local_index();
+  }
+};
+
+} // namespace
+
+inline constexpr auto local_index = local_index_{};
 
 } // namespace ranges
 

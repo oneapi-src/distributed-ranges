@@ -91,6 +91,12 @@ public:
     return segments_[segment_id_][idx_];
   }
 
+  auto segments() const noexcept { return segments_; }
+
+  auto segment_index() const noexcept { return segment_id_; }
+
+  auto local_index() const noexcept { return idx_; }
+
 private:
   size_type get_global_idx() const noexcept {
     return segment_id_ * segment_size_ + idx_;

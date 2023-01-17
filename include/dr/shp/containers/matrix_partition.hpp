@@ -32,9 +32,9 @@ public:
 
 class block_cyclic final : public matrix_partition {
 public:
-  block_cyclic()
-      : tile_shape_({shp::tile::div, shp::tile::div}),
-        grid_shape_(detail::factor(shp::nprocs())) {}
+  block_cyclic(shp::index<> tile_shape = {shp::tile::div, shp::tile::div},
+               shp::index<> grid_shape = detail::factor(shp::nprocs()))
+      : tile_shape_(tile_shape), grid_shape_(grid_shape) {}
 
   block_cyclic(const block_cyclic &) noexcept = default;
 

@@ -158,6 +158,12 @@ public:
     init_random_(density);
   }
 
+  sparse_matrix(key_type shape, double density,
+                const matrix_partition &partition)
+      : shape_(shape), partition_(partition.clone()) {
+    init_random_(density);
+  }
+
   sparse_matrix(key_type shape, const matrix_partition &partition)
       : shape_(shape), partition_(partition.clone()) {
     init_();
@@ -172,6 +178,26 @@ public:
   iterator end() {
     return iterator(segments(), grid_shape_[0] * grid_shape_[1], 0);
   }
+
+  segment_type tile(key_type tile_index) {
+    std::size_t tile_idx = tile_index[0] * grid_shape_[1] + tile_index[1];
+    auto values = values_[tile_idx].begin();
+    auto rowptr = rowptr_[tile_idx].begin();
+    auto colind = rowptr_[tile_idx].begin();
+    auto nnz = nnz_[tile_idx];
+
+    size_t tm =
+        std::min(tile_shape_[0], shape()[0] - tile_index[0] * tile_shape_[0]);
+    size_t tn =
+        std::min(tile_shape_[1], shape()[1] - tile_index[1] * tile_shape_[1]);
+
+    return segment_type(values, rowptr, colind, key_type{tm, tn}, nnz,
+                        values_[tile_idx].rank());
+  }
+
+  key_type tile_shape() const noexcept { return tile_shape_; }
+
+  key_type grid_shape() const noexcept { return grid_shape_; }
 
   std::span<segment_type> tiles() { return std::span(tiles_); }
 
@@ -194,7 +220,7 @@ private:
         auto nnz = nnz_[tile_idx];
 
         views_.emplace_back(values, rowptr, colind, key_type{tm, tn}, nnz,
-                            values_[i * grid_shape_[1] + j].rank());
+                            values_[tile_idx].rank());
       }
     }
     return views_;
