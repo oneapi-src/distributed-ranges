@@ -24,7 +24,7 @@ Environment Setup
 CPU & SYCL (MPI) requires g++ 10 or higher, mpi, and MKL. On Ubuntu
 20.04::
 
-  sudo apt install g++-10 openmpi
+  sudo apt install g++-10 libopenmpi-dev
 
 SYCL (SHP) requires g++ 12 standard library. On Ubuntu 22.04::
 
