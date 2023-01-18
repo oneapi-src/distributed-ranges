@@ -172,6 +172,9 @@ auto scatter_data(mpi_distributed_contiguous_iterator auto first,
 template <typename I>
 void copy(int root, I first, I last,
           mpi_distributed_contiguous_iterator auto result) {
+  if (last - first == 0) {
+    return;
+  }
   const communicator &comm = result.container().comm();
   std::vector<int> counts(comm.size()), offsets(comm.size());
 
@@ -205,6 +208,10 @@ void copy(int root, rng::contiguous_range auto &&r,
 /// Collective copy from distributed begin/end to local iterator
 template <mpi_distributed_contiguous_iterator DI>
 void copy(int root, DI first, DI last, std::contiguous_iterator auto result) {
+  if (last - first == 0) {
+    return;
+  }
+
   const communicator &comm = first.container().comm();
   std::vector<int> counts(comm.size()), offsets(comm.size());
 

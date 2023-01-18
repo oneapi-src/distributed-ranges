@@ -160,6 +160,25 @@ exceptions to `spelling_wordlist.txt`. Do not add variable, class,
 function, etc to the exceptions. Spellcheck ignores them if they are
 properly delimited in the source doc.
 
+Fuzz Test
+---------
+
+Build the test::
+
+  CXX=clang++ cmake -B build
+  cd build/fuzz/cpu
+  make -j
+  ./cpu-fuzz -max_len=16
+
+The command asserts when it finds an error. Otherwise it runs forever
+so kill it to stop testing. When it finds an error, it writes the
+input to a file in the current directory. To run again for just that
+input::
+
+  ./cpu-fuzz . .
+
+
+
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
 .. _`latest spec`: https://stunning-fortnight-c2e7e025.pages.github.io/spec
 .. _`latest doxygen`: https://stunning-fortnight-c2e7e025.pages.github.io/doxygen

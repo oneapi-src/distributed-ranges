@@ -80,3 +80,20 @@ jobs:
       with:
         name: malware-scan
         path: build/examples/cpu/scan-report.html
+
+  fuzzer:
+    runs-on: dds-base
+    env:
+      CXX: clang++
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & test
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j -C build/fuzz/cpu
+        build/fuzz/cpu/cpu-fuzz -max_len=16 -runs=100000000 2> fuzz.txt
+    - uses: actions/upload-artifact@v3
+      with:
+        name: fuzzer
+        path: fuzz.txt
