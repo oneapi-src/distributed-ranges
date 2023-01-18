@@ -199,6 +199,28 @@ void copy(int root, std::nullptr_t, std::size_t size,
                 scatter_data_dst_size(result, size, comm.rank()), root);
 }
 
+/// Collective copy from local begin/end to distributed, which is called on
+/// the source rank without providing the size of the source in the destination
+template <std::contiguous_iterator DI>
+void copy_anysize(int root, DI first, DI last,
+                  mpi_distributed_contiguous_iterator auto result) {
+  const communicator &comm = result.container().comm();
+  unsigned int size = last - first;
+  comm.bcast(&size, 1, root);
+  lib::copy(root, first, size, result);
+}
+
+/// Collective copy from local begin/end to distributed, which is called on
+/// the non-source rank without providing the size of the source
+void copy_anysize(int root, std::nullptr_t, std::nullptr_t,
+                  mpi_distributed_contiguous_iterator auto result) {
+  const communicator &comm = result.container().comm();
+  assert(root != comm.rank());
+  unsigned int size;
+  comm.bcast(&size, 1, root);
+  lib::copy(root, nullptr, size, result);
+}
+
 ///// Collective copy from local range to distributed iterator
 void copy(int root, rng::contiguous_range auto &&r,
           mpi_distributed_contiguous_iterator auto result) {
