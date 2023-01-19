@@ -140,7 +140,7 @@ template <typename T, typename Memory = default_memory<T>> class index_group {
 public:
   using element_type = T;
   using memory_type = Memory;
-  T *buffer;
+  T *buffer = nullptr;
   std::size_t request_index;
   bool receive;
   bool buffered;
@@ -265,7 +265,7 @@ template <typename T, typename Memory = default_memory<T>> class span_group {
 public:
   using element_type = T;
   using memory_type = Memory;
-  T *buffer;
+  T *buffer = nullptr;
   std::size_t request_index = 0;
   bool receive = false;
   bool buffered = true;
@@ -311,10 +311,11 @@ public:
   using radius_type = std::array<dimension_type, Rank>;
   /// Constructor
   stencil(std::size_t radius = 0, bool periodic = false) {
-    radius_[0].prev = radius;
-    radius_[0].next = radius;
+    for (auto &r : radius_) {
+      r.prev = radius;
+      r.next = radius;
+    }
     periodic_ = periodic;
-    assert(Rank == 1);
   }
 
   /// Returns radius of stencil
