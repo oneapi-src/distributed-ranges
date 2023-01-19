@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "cxxopts.hpp"
+
 #include "mpi.h"
 
 #include "dr/distributed-ranges.hpp"

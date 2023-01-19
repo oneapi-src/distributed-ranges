@@ -138,7 +138,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_subdirectory(examples/cpu)
   add_subdirectory(tests/cpu)
 
-  # Requires clang, bug not icpx or llvm nightly
+  # Requires clang, icpx/llvm nightly do not support the tools
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ENABLE_SYCL)
     add_subdirectory(fuzz/cpu)
   endif()

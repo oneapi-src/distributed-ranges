@@ -33,7 +33,7 @@ jobs:
         bdba pdf-report --products-json-path bdba/file.json --key ${{ secrets.BDBA_KEY }}
     - uses: actions/upload-artifact@v3
       with:
-        name: bdba-scan
+        name: bdba
         path: dr-bdba.tgz.pdf
 
   coverity:
@@ -78,7 +78,7 @@ jobs:
         uvscan --RPTOBJECTS --RECURSIVE --UNZIP --HTML=scan-report.html --LOUD --SUMMARY --ANALYZE --PANALYZE .
     - uses: actions/upload-artifact@v3
       with:
-        name: malware-scan
+        name: malware
         path: build/examples/cpu/scan-report.html
 
   fuzzer:
@@ -91,9 +91,10 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        make -j -C build/fuzz/cpu
-        build/fuzz/cpu/cpu-fuzz -max_len=16 -runs=100000000 2> fuzz.txt
+        cd build/fuzz/cpu
+        make -j all
+        ctest -C long_fuzz
     - uses: actions/upload-artifact@v3
       with:
         name: fuzzer
-        path: fuzz.txt
+        path: build/fuzz/cpu/Testing
