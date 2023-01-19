@@ -129,7 +129,7 @@ private:
 
   communicator comm_;
   std::vector<Group> halo_groups_, owned_groups_;
-  T *buffer_;
+  T *buffer_ = nullptr;
   std::size_t buffer_size_;
   std::vector<MPI_Request> requests_;
   std::vector<Group *> map_;
