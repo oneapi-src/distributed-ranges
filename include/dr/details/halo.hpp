@@ -11,6 +11,10 @@ template <typename Group> class halo_impl {
 public:
   using group_type = Group;
 
+  // Destructor frees buffer_, so cannot copy
+  halo_impl(const halo_impl &) = delete;
+  halo_impl operator=(const halo_impl &) = delete;
+
   /// halo constructor
   halo_impl(communicator comm, const std::vector<Group> &owned_groups,
             const std::vector<Group> &halo_groups,

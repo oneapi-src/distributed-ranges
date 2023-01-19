@@ -51,7 +51,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        /opt/coverity/analysis/bin/cov-build --config coverity.xml --dir idir make -C build all
+        /opt/coverity/analysis/bin/cov-build --config coverity.xml --dir idir make -j -C build all
 
     - name: Analyze and upload results
       run: |
