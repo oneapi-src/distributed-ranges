@@ -27,10 +27,10 @@ jobs:
       run: python -m pip install -i https://af01p-igk.devtools.intel.com/artifactory/api/pypi/dtt-pypi-igk-local/simple bdba
     - name: Scan
       run: |
-        tar -cvzf bdba/dr-bdba.tgz --exclude="*.o" build/examples/cpu
-        bdba upload --scan-name ${SCAN_NAME}} --products-json-path bdba/file.json --path bdba/dr-bdba.tgz --key ${{ secrets.BDBA_KEY }}
-        bdba override --products-json-path bdba/file.json -c bdba/bdba.yaml --key ${{ secrets.BDBA_KEY }}
-        bdba pdf-report --products-json-path bdba/file.json --key ${{ secrets.BDBA_KEY }}
+        tar -cvzf build/dr-bdba.tgz --exclude="*.o" build/examples/cpu
+        bdba upload --scan-name ${SCAN_NAME}} --products-json-path build/bdba.json --path build/dr-bdba.tgz --key ${{ secrets.BDBA_KEY }}
+        bdba override --products-json-path build/bdba.json -c test/bdba/bdba.yaml --key ${{ secrets.BDBA_KEY }}
+        bdba pdf-report --products-json-path build/bdba.json --key ${{ secrets.BDBA_KEY }}
     - uses: actions/upload-artifact@v3
       with:
         name: bdba
@@ -59,7 +59,13 @@ jobs:
         echo '${{ secrets.COVERITY_AUTH }}' > auth.key
         chmod 600 auth.key
         /opt/coverity/analysis/bin/cov-commit-defects --dir idir --stream "DR main" --url https://coverityent.devtools.intel.com/prod7 --auth-key-file auth.key
+        /opt/coverity/reports/bin/cov-generate-cvss-report test/coverity/covreport.yml --output dr-coverity-cvss.pdf --report --auth-key-file auth.key
+        /opt/coverity/reports/bin/cov-generate-security-report test/coverity/covreport.yml --output dr-coverity-security.pdf --auth-key-file auth.key
         rm auth.key
+    - uses: actions/upload-artifact@v3
+      with:
+        name: coverity
+        path: dr-coverity*.pdf
 
   malware:
     runs-on: dds-base
@@ -74,12 +80,11 @@ jobs:
         make -j -C build/examples/cpu all test
     - name: Scan
       run: |
-        cd build/examples/cpu
-        uvscan --RPTOBJECTS --RECURSIVE --UNZIP --HTML=scan-report.html --LOUD --SUMMARY --ANALYZE --PANALYZE .
+         uvscan --RPTOBJECTS --RECURSIVE --UNZIP --HTML=build/scan-report.html --LOUD --SUMMARY --ANALYZE --PANALYZE build/examples/cpu
     - uses: actions/upload-artifact@v3
       with:
         name: malware
-        path: build/examples/cpu/scan-report.html
+        path: build/scan-report.html
 
   fuzzer:
     runs-on: dds-base
@@ -91,10 +96,10 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        cd build/fuzz/cpu
+        cd build/test/fuzz/cpu
         make -j all
         ctest -C long_fuzz
     - uses: actions/upload-artifact@v3
       with:
         name: fuzzer
-        path: build/fuzz/cpu/Testing
+        path: build/test/fuzz/cpu/Testing

@@ -109,13 +109,13 @@ add_subdirectory(include)
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include_directories(examples/include)
-  include_directories(tests/include)
+  include_directories(test/gtest/include)
 
   include(GoogleTest)
 
   if(ENABLE_SYCL)
     add_subdirectory(examples/sycl)
-    add_subdirectory(tests/shp)
+    add_subdirectory(test/gtest/shp)
   endif()
 
   # shp has warnings, but do for everything else
@@ -130,17 +130,17 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   endif()
 
   if (ENABLE_SYCL_MPI)
-    add_subdirectory(tests/sycl-mpi)
+    add_subdirectory(test/gtest/sycl-mpi)
   endif()
 
   add_subdirectory(examples/serial)
-  add_subdirectory(tests/serial)
+  add_subdirectory(test/gtest/serial)
   add_subdirectory(examples/cpu)
-  add_subdirectory(tests/cpu)
+  add_subdirectory(test/gtest/cpu)
 
   # Requires clang, icpx/llvm nightly do not support the tools
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ENABLE_SYCL)
-    add_subdirectory(fuzz/cpu)
+    add_subdirectory(test/fuzz/cpu)
   endif()
 
 endif()
