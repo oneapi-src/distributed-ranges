@@ -4,14 +4,14 @@
 
 namespace lib {
 
-template <typename T> constexpr MPI_Datatype mpi_data_type() {
+template <typename T> inline MPI_Datatype mpi_data_type() {
   return T::this_type_is_not_supported(); // simply add support if its POD
 }
 #define TYPE_2_MPI_DATATYPE(type, mpi_datatype)                                \
-  template <> constexpr MPI_Datatype mpi_data_type<type>() {                   \
+  template <> inline MPI_Datatype mpi_data_type<type>() {                      \
     return mpi_datatype;                                                       \
   }                                                                            \
-  template <> constexpr MPI_Datatype mpi_data_type<const type>() {             \
+  template <> inline MPI_Datatype mpi_data_type<const type>() {                \
     return mpi_datatype;                                                       \
   }
 
