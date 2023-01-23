@@ -167,9 +167,13 @@ public:
 
   /// first element in layout order
   auto begin() { return dvector_.begin(); }
+  auto begin() const { return dvector_.begin(); }
+  const auto cbegin() const { return dvector_.cbegin(); }
 
   /// last element in layout order
   auto end() { return dvector_.end(); }
+  auto end() const { return dvector_.end(); }
+  const auto cend() const { return dvector_.cend(); }
 
   /// fence for updates
   void fence() { return dvector_.fence(); }

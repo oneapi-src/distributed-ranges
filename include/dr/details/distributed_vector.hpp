@@ -90,6 +90,31 @@ template <typename Container> struct const_xpointer {
     return container().conforms(other.container()) && index_ == other.index_;
   }
 
+  auto remote_offset(int my_rank) const {
+    auto &local_container = container_->local();
+    auto radius = container_->stencil_.radius()[0];
+    auto [rank, offset] = container_->rank_offset(index_);
+
+    // If the iterator is pointing to an earlier rank, point to the
+    // beginning of my range
+    if (rank < my_rank) {
+      offset = radius.prev;
+    } else if (rank > my_rank) {
+      // If the iterator is pointing to a later rank, point to the
+      // end of my range
+      offset = local_container.size() - radius.next;
+    }
+
+    return offset;
+  }
+
+  auto local() const {
+    assert(!container_->pending_rma());
+
+    return container_->local().begin() +
+           remote_offset(container_->comm().rank());
+  }
+
   const Container *container_ = nullptr;
   std::size_t index_ = 0;
 };
@@ -200,7 +225,7 @@ template <typename Container> struct xpointer {
     return offset;
   }
 
-  auto local() {
+  auto local() const {
     assert(!container_->pending_rma());
 
     return container_->local().begin() +
@@ -386,8 +411,10 @@ public:
 
   iterator begin() { return iterator{this, 0}; }
   const_iterator begin() const { return const_iterator{this, 0}; }
+  const_iterator cbegin() const { return const_iterator{this, 0}; }
   iterator end() { return iterator{this, size_}; };
   const_iterator end() const { return const_iterator{this, size_}; };
+  const_iterator cend() const { return const_iterator{this, size_}; };
 
   void fence() {
     pending_rma_ = false;
