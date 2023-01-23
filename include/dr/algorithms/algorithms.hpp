@@ -168,29 +168,23 @@ auto scatter_data(mpi_distributed_contiguous_iterator auto first,
 
 } // unnamed namespace
 
-/// Collective copy from local begin/end to distributed
-template <typename I>
-void copy(int root, I first, I last,
+/// Collective copy from local begin/end to distributed - any rank, not sending
+/// size
+void copy(int root, std::contiguous_iterator auto first, std::size_t size,
           mpi_distributed_contiguous_iterator auto result) {
-  if (last - first == 0) {
+  if (size == 0) {
     return;
   }
   const communicator &comm = result.container().comm();
   std::vector<int> counts(comm.size()), offsets(comm.size());
 
-  scatter_data(result, last - first, counts, offsets);
+  scatter_data(result, size, counts, offsets);
   comm.scatterv(&*first, counts.data(), offsets.data(), &*result.local(),
                 counts[comm.rank()], root);
 }
 
-/// Collective copy from local begin/end to distributed - any rank
-void copy(int root, std::contiguous_iterator auto first, std::size_t size,
-          mpi_distributed_contiguous_iterator auto result) {
-  lib::copy(root, first, first + size, result);
-}
-
 /// Collective copy from local begin/end to distributed, which can be called on
-/// non-source rank
+/// non-source rank, not sending size
 void copy(int root, std::nullptr_t, std::size_t size,
           mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
@@ -202,8 +196,8 @@ void copy(int root, std::nullptr_t, std::size_t size,
 /// Collective copy from local begin/end to distributed, which is called on
 /// the source rank without providing the size of the source in the destination
 template <std::contiguous_iterator DI>
-void copy_anysize(int root, DI first, DI last,
-                  mpi_distributed_contiguous_iterator auto result) {
+void copy(int root, DI first, DI last,
+          mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
   unsigned int size = last - first;
   comm.bcast(&size, 1, root);
@@ -212,8 +206,8 @@ void copy_anysize(int root, DI first, DI last,
 
 /// Collective copy from local begin/end to distributed, which is called on
 /// the non-source rank without providing the size of the source
-void copy_anysize(int root, std::nullptr_t, std::nullptr_t,
-                  mpi_distributed_contiguous_iterator auto result) {
+void copy(int root, std::nullptr_t, std::nullptr_t,
+          mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
   assert(root != comm.rank());
   unsigned int size;

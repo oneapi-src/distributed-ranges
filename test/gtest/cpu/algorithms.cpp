@@ -37,14 +37,13 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
     std::copy(dv_in.begin() + b, dv_in.begin() + e, dv3.begin() + b);
   }
   if (comm_rank == 0) {
-    lib::copy_anysize(0, v_in.begin() + b, v_in.begin() + e, dv8.begin() + b);
+    lib::copy(0, v_in.begin() + b, v_in.begin() + e, dv8.begin() + b);
   } else {
-    lib::copy_anysize(0, nullptr, nullptr, dv8.begin() + b);
+    lib::copy(0, nullptr, nullptr, dv8.begin() + b);
   }
 
-  lib::copy_anysize(0, comm_rank == 0 ? &*(v_in.begin() + b) : nullptr,
-                    comm_rank == 0 ? &*(v_in.begin() + e) : nullptr,
-                    dv9.begin() + b);
+  lib::copy(0, comm_rank == 0 ? &*(v_in.begin() + b) : nullptr,
+            comm_rank == 0 ? &*(v_in.begin() + e) : nullptr, dv9.begin() + b);
 
   dv3.fence();
 
