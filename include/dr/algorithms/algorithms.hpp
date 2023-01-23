@@ -195,8 +195,8 @@ void copy(int root, std::nullptr_t, std::size_t size,
 
 /// Collective copy from local begin/end to distributed, which is called on
 /// the source rank without providing the size of the source in the destination
-template <std::contiguous_iterator DI>
-void copy(int root, DI first, DI last,
+template <std::contiguous_iterator I>
+void copy(int root, I first, I last,
           mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
   unsigned int size = last - first;
