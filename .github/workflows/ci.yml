@@ -37,7 +37,7 @@ jobs:
       with:
         components: |
           mkl
-          mpi
+          impi
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -66,7 +66,7 @@ jobs:
       with:
         components: |
           mkl
-          mpi
+          impi
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -90,7 +90,7 @@ jobs:
         components: |
           icx
           mkl
-          mpi
+          impi
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
