@@ -4,7 +4,9 @@
 
 #include "cpu-tests.hpp"
 
-const std::size_t rows = 20, cols = 10, n = rows * cols;
+// using rows as divideable by 2,3,4... because tests below assume storage_size
+// without redundancy
+const std::size_t rows = 24, cols = 37, n = rows * cols;
 using dyn_2d = stdex::dextents<std::size_t, 2>;
 
 void check_mdspan(auto &v, auto &m) {
@@ -117,41 +119,50 @@ TEST(CpuMpiTests, distributed_mdarray_local) {
   EXPECT_EQ(dm(0, 0), 200 + 0);
 }
 
+namespace {
+template <typename T> void fill_array(T &arr, size_t rows, size_t cols) {
+  for (std::size_t i = 0; i < rows; i++) {
+    for (std::size_t j = 0; j < cols; j++) {
+      arr(i, j) = i * 100 + j;
+    }
+  }
+}
+} // namespace
+
 TEST(CpuMpiTests, distributed_mdarray_transpose) {
   using T = double;
 
-  using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
-  dmatrix dsrc(rows, cols);
-  dmatrix ddst(cols, rows);
+  auto test_distributed_mdarray_transpose = [&](std::size_t rows,
+                                                std::size_t cols) {
+    using dmatrix = lib::distributed_mdarray<T, dyn_2d>;
+    dmatrix dsrc(rows, cols);
+    dmatrix ddst(cols, rows);
 
-  if (comm_rank == 0) {
-    for (std::size_t i = 0; i < rows; i++) {
-      for (std::size_t j = 0; j < cols; j++) {
-        dsrc(i, j) = i * 100 + j;
-      }
+    if (comm_rank == 0) {
+      fill_array(dsrc, rows, cols);
     }
-  }
-  dsrc.fence();
+    dsrc.fence();
 
-  lib::collective::transpose(dsrc, ddst);
-  ddst.fence();
+    lib::collective::transpose(dsrc, ddst);
+    ddst.fence();
 
-  if (comm_rank == 0) {
-    using lmatrix = stdex::mdarray<T, dyn_2d>;
-    lmatrix lsrc(rows, cols);
-    for (std::size_t i = 0; i < rows; i++) {
-      for (std::size_t j = 0; j < cols; j++) {
-        lsrc(i, j) = i * 100 + j;
-      }
+    if (comm_rank == 0) {
+      using lmatrix = stdex::mdarray<T, dyn_2d>;
+      lmatrix lsrc(rows, cols);
+      fill_array(lsrc, rows, cols);
+
+      lmatrix ldst(cols, rows);
+      lib::collective::transpose(lsrc, ldst);
+
+      EXPECT_EQ(lsrc(1, 2), ldst(2, 1));
+      EXPECT_EQ(lsrc(1, 2), dsrc(1, 2));
+      EXPECT_EQ(ldst(1, 2), ddst(1, 2));
+      expect_eq(lsrc, dsrc);
+      expect_eq(ldst, ddst);
     }
+  };
 
-    lmatrix ldst(cols, rows);
-    lib::collective::transpose(lsrc, ldst);
-
-    EXPECT_EQ(lsrc(1, 2), ldst(2, 1));
-    EXPECT_EQ(lsrc(1, 2), dsrc(1, 2));
-    EXPECT_EQ(ldst(1, 2), ddst(1, 2));
-    expect_eq(lsrc, dsrc);
-    expect_eq(ldst, ddst);
-  }
+  for (size_t r = 3; r <= rows; r++)
+    for (size_t c = 3; c <= cols; c++)
+      test_distributed_mdarray_transpose(r, c);
 }

@@ -356,10 +356,16 @@ public:
     init();
   }
 
+  template <class IntT, size_t... Sizes>
+  distributed_vector(::std::experimental::extents<IntT, Sizes...> extents)
+      : size_(storage_size(extents, comm_.size())),
+        local_(local_storage_size()) {
+    init();
+  }
+
   /// Construct a distributed vector with `count` elements.
   distributed_vector(Alloc alloc, size_type count)
-      : allocator_(alloc), size_(count), comm_(),
-        local_(local_storage_size(), alloc) {
+      : allocator_(alloc), size_(count), local_(local_storage_size(), alloc) {
     init();
   }
 
@@ -388,14 +394,12 @@ public:
     assert(index < size());
     assert(offset < local().size());
     auto val = win_.get<T>(rank, offset);
-    drlog.debug("get {} =  {} ({}:{})\n", val, index, rank, offset);
     return val;
   }
 
   void put(std::size_t index, const T &val) {
     pending_rma_ = true;
     auto [rank, offset] = rank_offset(index);
-    drlog.debug("put {} ({}:{}) = {}\n", index, rank, offset, val);
     assert(index < size());
     assert(offset < local().size());
     win_.put(val, rank, offset);
@@ -479,9 +483,9 @@ private:
 
   Alloc allocator_;
   stencil_type stencil_;
+  const communicator comm_;
   size_type size_;
   size_type slice_size_;
-  const communicator comm_;
   std::vector<T, Alloc> local_;
   communicator::win win_;
   span_halo<T> halo_;

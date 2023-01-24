@@ -13,16 +13,10 @@ public:
 
   constexpr distributed_accessor() noexcept = default;
   constexpr reference access(data_handle_type p, size_t i) const {
-    drlog.debug(nostd::source_location::current(),
-                "distributed_accessor const reference\n");
     return p[i];
   }
 
-  reference access(data_handle_type p, size_t i) {
-    drlog.debug(nostd::source_location::current(),
-                "distributed_accessor reference\n");
-    return p[i];
-  }
+  reference access(data_handle_type p, size_t i) { return p[i]; }
 
   constexpr data_handle_type offset(data_handle_type p,
                                     size_t i) const noexcept {
@@ -156,11 +150,13 @@ public:
   /// Construct a distributed_mdarray with requested dimensions
   template <typename... Args>
   distributed_mdarray(Args... args)
-      : extents_(std::forward<Args>(args)...),
-        dvector_(storage_size(extents_, comm_.size())),
+      : extents_(std::forward<Args>(args)...), dvector_(extents_),
         dmdspan_(dvector_.begin(), extents_),
         local_mdspan_(dvector_.local().data(),
-                      local_extents(extents_, comm_.size())) {}
+                      local_extents(extents_, dvector_.comm().size())) {
+    drlog.debug("created mdarray, rows:{} cols:{}\n", extents_.extent(0),
+                extents_.extent(1));
+  }
 
   /// Returns local segment
   local_type local() const { return local_mdspan_; }
@@ -183,21 +179,20 @@ public:
 
   /// multidimensional index operator
   template <typename... Args> reference operator()(Args... args) {
-    drlog.debug(nostd::source_location::current(), "mdarray reference\n");
     return dmdspan_(std::forward<Args>(args)...);
   }
 
   /// multidimensional index operator
   template <typename... Args> reference operator()(Args... args) const {
-    drlog.debug(nostd::source_location::current(), "mdarray reference const\n");
     return dmdspan_(std::forward<Args>(args)...);
   }
 
   /// Returns extents
   auto extents() const { return dmdspan_.extents(); }
 
+  const communicator &comm() const { return dvector_.comm(); }
+
 private:
-  communicator comm_;
   Extents extents_;
   dvector dvector_;
   dmdspan dmdspan_;

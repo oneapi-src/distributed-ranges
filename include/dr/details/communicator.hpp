@@ -64,8 +64,7 @@ public:
     MPI_Win win_;
   };
 
-  communicator(MPI_Comm comm = MPI_COMM_WORLD) {
-    mpi_comm_ = comm;
+  communicator(MPI_Comm comm = MPI_COMM_WORLD) : mpi_comm_(comm) {
     MPI_Comm_rank(comm, &rank_);
     MPI_Comm_size(comm, &size_);
   }
@@ -137,7 +136,7 @@ public:
   }
 
 private:
-  MPI_Comm mpi_comm_;
+  const MPI_Comm mpi_comm_;
   int rank_;
   int size_;
 };
