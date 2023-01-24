@@ -6,8 +6,8 @@
  Distributed Ranges
 ====================
 
-.. image:: https://github.com/intel-sandbox/personal.rscohn1.distributed-ranges/actions/workflows/ci.yml/badge.svg
-   :target: https://github.com/intel-sandbox/personal.rscohn1.distributed-ranges/actions/workflows/ci.yml
+.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml/badge.svg
+   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml
 
 Proposal and reference implementation for Distributed Ranges.
 
@@ -110,7 +110,7 @@ If your project uses CMAKE, add the following to your
   include(FetchContent)
   FetchContent_Declare(
     dr
-    GIT_REPOSITORY https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges.git
+    GIT_REPOSITORY https://github.com/oneapi-src/distributed-ranges.git
     GIT_TAG main
     )
   FetchContent_MakeAvailable(dr)
@@ -122,7 +122,7 @@ The above will define targets that can be included in your project::
 If your project does not use CMAKE, then you need to download the
 library, and install it into a prefix::
 
-  git clone https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges.git dr
+  git clone https://github.com/oneapi-src/distributed-ranges.git dr
   cd dr
   cmake -B build -DCMAKE_INSTALL_PREFIX=./dr_root
   make -C build install
@@ -137,6 +137,34 @@ Developer Information
 =====================
 
 Print types at compile time: `Print Type`_
+
+Submitting a PR
+---------------
+
+Follow the standard github workflow. Fork this repo, clone your fork,
+make changes, commit to a new branch, push branch to your fork. Submit
+a PR from your fork.
+
+The CI runs some formatting checks. It is easiest to resolve errors
+with your local build before submitting the PR.
+
+Run pre-commit checks::
+
+  pre-commit run --all
+
+Do pre-commit testing as part of commit::
+
+  pre-commit install
+
+``pre-commit`` will automatically fix most issues. Do a ``git add`` to
+add the changes and run ``pre-commit`` or ``git commit`` again.
+
+To fix a problem with a missing license do::
+
+  reuse annotate --exclude-year --license BSD-3-Clause --copyright "Intel Corporation" <filename>
+
+Or copy the license from the top of a file with the same filename
+extension.
 
 Editing the Spec
 ----------------
