@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Ubuntu dependencies
+      run: |
+        sudo apt install -y doxygen
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
@@ -30,9 +33,13 @@ jobs:
       CXX: clang++
     steps:
     - uses: actions/checkout@v3
+    - uses: rscohn2/setup-oneapi@v0
+      with:
+        components: |
+          mkl
     - name: Build & test
       run: |
-        #source /opt/intel/oneapi/setvars.sh
+        source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j -C build all test
     - uses: actions/upload-artifact@v3
@@ -41,7 +48,7 @@ jobs:
         path: build/Testing
 
   gcc:
-    runs-on: ubuntuy-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -54,9 +61,13 @@ jobs:
       CXX: ${{ matrix.cxx }}
     steps:
     - uses: actions/checkout@v3
+    - uses: rscohn2/setup-oneapi@v0
+      with:
+        components: |
+          mkl
     - name: Build & test
       run: |
-        #source /opt/intel/oneapi/setvars.sh
+        source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j -C build all test
         cmake -B build-nofmt
@@ -72,9 +83,14 @@ jobs:
       CXX: icpx
     steps:
     - uses: actions/checkout@v3
+    - uses: rscohn2/setup-oneapi@v0
+      with:
+        components: |
+          mkl
+          icx
     - name: Build & test
       run: |
-        #source /opt/intel/oneapi/setvars.sh
+        source /opt/intel/oneapi/setvars.sh
         cmake -B build -DENABLE_SYCL_MPI=on
         make -j -C build all test
     - uses: actions/upload-artifact@v3
@@ -84,10 +100,13 @@ jobs:
 
   publish:
     needs: [checks, clang, gcc, icpx]
-    runs-on: dds-base
+    runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
     - uses: actions/checkout@v3
+    - name: Ubuntu dependencies
+      run: |
+        sudo apt install -y doxygen
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
