@@ -208,5 +208,5 @@ input::
 
 
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
-.. _`latest spec`: https://stunning-fortnight-c2e7e025.pages.github.io/spec
-.. _`latest doxygen`: https://stunning-fortnight-c2e7e025.pages.github.io/doxygen
+.. _`latest spec`: https://oneapi-src.github.io/distributed-ranges/spec
+.. _`latest doxygen`: https://oneapi-src.github.io/distributed-ranges/doxygen
