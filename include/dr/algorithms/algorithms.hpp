@@ -194,28 +194,28 @@ void copy(int root, std::nullptr_t, std::size_t size,
 }
 
 /// Collective copy from local begin/end to distributed, which is called on
-/// the source rank without providing the size of the source in the destination
-template <std::contiguous_iterator I>
+/// the non-source rank without providing the size of the source (if I is the
+/// same as std::nullptr_t). Collective copy from local begin/end to
+/// distributed, which is called on the source rank without providing the size
+/// of the source in the destination (if I is not the same as std::nullptr_t)
+template <typename I>
 void copy(int root, I first, I last,
           mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
-  unsigned int size = last - first;
-  comm.bcast(&size, 1, root);
-  lib::copy(root, first, size, result);
+
+  if constexpr (std::same_as<std::nullptr_t, I>) {
+    assert(root != comm.rank());
+    std::size_t size;
+    comm.bcast(&size, 1, root);
+    lib::copy(root, nullptr, size, result);
+  } else {
+    std::size_t size = std::distance(first, last);
+    comm.bcast(&size, 1, root);
+    lib::copy(root, first, size, result);
+  }
 }
 
-/// Collective copy from local begin/end to distributed, which is called on
-/// the non-source rank without providing the size of the source
-void copy(int root, std::nullptr_t, std::nullptr_t,
-          mpi_distributed_contiguous_iterator auto result) {
-  const communicator &comm = result.container().comm();
-  assert(root != comm.rank());
-  unsigned int size;
-  comm.bcast(&size, 1, root);
-  lib::copy(root, nullptr, size, result);
-}
-
-///// Collective copy from local range to distributed iterator
+/// Collective copy from local range to distributed iterator
 void copy(int root, rng::contiguous_range auto &&r,
           mpi_distributed_contiguous_iterator auto result) {
   lib::copy(root, r.begin(), r.end(), result);

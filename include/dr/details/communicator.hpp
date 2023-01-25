@@ -4,26 +4,6 @@
 
 namespace lib {
 
-template <typename T> inline MPI_Datatype mpi_data_type() {
-  return T::this_type_is_not_supported(); // simply add support if its POD
-}
-#define TYPE_2_MPI_DATATYPE(type, mpi_datatype)                                \
-  template <> inline MPI_Datatype mpi_data_type<type>() {                      \
-    return mpi_datatype;                                                       \
-  }                                                                            \
-  template <> inline MPI_Datatype mpi_data_type<const type>() {                \
-    return mpi_datatype;                                                       \
-  }
-
-TYPE_2_MPI_DATATYPE(short int, MPI_SHORT);
-TYPE_2_MPI_DATATYPE(unsigned short int, MPI_UNSIGNED_SHORT);
-TYPE_2_MPI_DATATYPE(int, MPI_INT);
-TYPE_2_MPI_DATATYPE(unsigned int, MPI_UNSIGNED);
-TYPE_2_MPI_DATATYPE(long long int, MPI_LONG_LONG);
-TYPE_2_MPI_DATATYPE(unsigned long long int, MPI_UNSIGNED_LONG_LONG);
-TYPE_2_MPI_DATATYPE(float, MPI_FLOAT);
-TYPE_2_MPI_DATATYPE(double, MPI_DOUBLE);
-
 class communicator {
 public:
   enum class tag {
@@ -101,7 +81,7 @@ public:
   void barrier() const { MPI_Barrier(mpi_comm_); }
 
   template <typename T> void bcast(T *src, size_t count, int root) const {
-    MPI_Bcast(src, count, mpi_data_type<T>(), root, mpi_comm_);
+    MPI_Bcast(src, count * sizeof(T), MPI_CHAR, root, mpi_comm_);
   }
 
   void scatter(const void *src, void *dst, int size, int root) const {
