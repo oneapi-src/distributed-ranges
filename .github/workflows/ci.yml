@@ -32,7 +32,7 @@ jobs:
       CXX: clang++
     steps:
     - uses: actions/checkout@v3
-    - uses: rscohn2/setup-oneapi@main
+    - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
           impi
@@ -63,7 +63,7 @@ jobs:
       CXX: ${{ matrix.cxx }}
     steps:
     - uses: actions/checkout@v3
-    - uses: rscohn2/setup-oneapi@main
+    - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
           impi
@@ -88,7 +88,7 @@ jobs:
       CXX: icpx
     steps:
     - uses: actions/checkout@v3
-    - uses: rscohn2/setup-oneapi@main
+    - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
           icx

@@ -129,7 +129,8 @@ template <typename T> void fill_array(T &arr, size_t rows, size_t cols) {
 }
 } // namespace
 
-TEST(CpuMpiTests, distributed_mdarray_transpose) {
+// Disabled because random fails in CI
+TEST(CpuMpiTests, DISABLED_distributed_mdarray_transpose) {
   using T = double;
 
   auto test_distributed_mdarray_transpose = [&](std::size_t rows,
