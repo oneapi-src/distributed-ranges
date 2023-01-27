@@ -219,6 +219,24 @@ void copy(int root, DI first, DI last, std::contiguous_iterator auto result) {
   comm.gatherv(&*first.local(), counts.data(), offsets.data(), &*result, root);
 }
 
+/// Collective copy from distributed begin/end to a local iterator when local is
+/// a nullptr
+template <mpi_distributed_contiguous_iterator DI>
+void copy(int root, DI first, DI last, std::nullptr_t) {
+  std::size_t size = last - first;
+  if (size == 0) {
+    return;
+  }
+
+  const communicator &comm = first.container().comm();
+  assert(root != comm.rank());
+  std::vector<int> counts(comm.size()), offsets(comm.size());
+
+  scatter_data(first, size, counts, offsets);
+  std::vector<int> result(size);
+  comm.gatherv(&*first.local(), counts.data(), offsets.data(), &result, root);
+}
+
 /// Collective copy from distributed begin/end to local iterator
 template <mpi_distributed_contiguous_iterator DI>
 void copy(int root, DI first, std::size_t size,
