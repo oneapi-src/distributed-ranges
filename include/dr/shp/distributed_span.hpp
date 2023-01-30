@@ -8,7 +8,6 @@
 #include "iterator_adaptor.hpp"
 #include <concepts/concepts.hpp>
 #include <details/ranges.hpp>
-#include <ranges>
 #include <vector>
 
 namespace shp {
@@ -20,11 +19,11 @@ public:
 
   using segment_type = L;
 
-  using size_type = std::ranges::range_size_t<segment_type>;
-  using difference_type = std::ranges::range_difference_t<segment_type>;
+  using size_type = rng::range_size_t<segment_type>;
+  using difference_type = rng::range_difference_t<segment_type>;
 
   // using pointer = typename segment_type::pointer;
-  using reference = std::ranges::range_reference_t<segment_type>;
+  using reference = rng::range_reference_t<segment_type>;
 
   using iterator_category = std::random_access_iterator_tag;
 
@@ -119,19 +118,18 @@ using distributed_span_iterator =
     lib::iterator_adaptor<distributed_span_accessor<T, L>>;
 
 template <typename T, typename L>
-class distributed_span
-    : public std::ranges::view_interface<distributed_span<T, L>> {
+class distributed_span : public rng::view_interface<distributed_span<T, L>> {
 public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
 
   using segment_type = shp::device_span<T, L>;
 
-  using size_type = std::ranges::range_size_t<segment_type>;
-  using difference_type = std::ranges::range_difference_t<segment_type>;
+  using size_type = rng::range_size_t<segment_type>;
+  using difference_type = rng::range_difference_t<segment_type>;
 
   // using pointer = typename segment_type::pointer;
-  using reference = std::ranges::range_reference_t<segment_type>;
+  using reference = rng::range_reference_t<segment_type>;
 
   // Note: creating the "global view" will be trivial once #44178 is resolved.
   // (https://github.com/llvm/llvm-project/issues/44178)
@@ -139,8 +137,8 @@ public:
   // However, this code does not currently compile due to a bug in Clang,
   // so I am currently implementing my own global iterator manually.
   // using joined_view_type =
-  // std::ranges::join_view<std::ranges::ref_view<std::vector<segment_type>>>;
-  // using iterator = std::ranges::iterator_t<joined_view_type>;
+  // rng::join_view<rng::ref_view<std::vector<segment_type>>>;
+  // using iterator = rng::iterator_t<joined_view_type>;
 
   using iterator = distributed_span_iterator<T, segment_type>;
 
@@ -149,13 +147,13 @@ public:
   constexpr distributed_span &
   operator=(const distributed_span &) noexcept = default;
 
-  template <std::ranges::input_range R>
-    requires(lib::remote_contiguous_range<std::ranges::range_reference_t<R>>)
+  template <rng::input_range R>
+    requires(lib::remote_contiguous_range<rng::range_reference_t<R>>)
   constexpr distributed_span(R &&segments) {
     for (auto &&segment : segments) {
-      std::size_t size = std::ranges::size(segment);
-      segments_.push_back(segment_type(std::ranges::begin(segment), size,
-                                       lib::ranges::rank(segment)));
+      std::size_t size = rng::size(segment);
+      segments_.push_back(
+          segment_type(rng::begin(segment), size, lib::ranges::rank(segment)));
       size_ += size;
     }
   }
@@ -163,9 +161,9 @@ public:
   template <lib::distributed_contiguous_range R>
   constexpr distributed_span(R &&r) {
     for (auto &&segment : lib::ranges::segments(std::forward<R>(r))) {
-      std::size_t size = std::ranges::size(segment);
-      segments_.push_back(segment_type(std::ranges::begin(segment), size,
-                                       lib::ranges::rank(segment)));
+      std::size_t size = rng::size(segment);
+      segments_.push_back(
+          segment_type(rng::begin(segment), size, lib::ranges::rank(segment)));
       size_ += size;
     }
   }
@@ -240,15 +238,14 @@ private:
   std::vector<segment_type> segments_;
 };
 
-template <std::ranges::input_range R>
-distributed_span(R &&segments) -> distributed_span<
-    std::ranges::range_value_t<std::ranges::range_value_t<R>>,
-    std::ranges::iterator_t<std::ranges::range_value_t<R>>>;
+template <rng::input_range R>
+distributed_span(R &&segments)
+    -> distributed_span<rng::range_value_t<rng::range_value_t<R>>,
+                        rng::iterator_t<rng::range_value_t<R>>>;
 
 template <lib::distributed_contiguous_range R>
-distributed_span(R &&r)
-    -> distributed_span<std::ranges::range_value_t<R>,
-                        std::ranges::iterator_t<std::ranges::range_value_t<
-                            decltype(lib::ranges::segments(r))>>>;
+distributed_span(R &&r) -> distributed_span<
+    rng::range_value_t<R>,
+    rng::iterator_t<rng::range_value_t<decltype(lib::ranges::segments(r))>>>;
 
 } // namespace shp

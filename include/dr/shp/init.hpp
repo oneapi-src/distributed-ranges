@@ -6,7 +6,6 @@
 
 #include <CL/sycl.hpp>
 #include <memory>
-#include <ranges>
 #include <span>
 #include <type_traits>
 
@@ -38,15 +37,14 @@ inline std::size_t nprocs() { return internal::ngpus(); }
 
 inline device_policy par_unseq;
 
-template <std::ranges::range R>
+template <rng::range R>
 inline void init(R &&devices)
   requires(std::is_same_v<cl::sycl::device,
-                          std::remove_cvref_t<std::ranges::range_value_t<R>>>)
+                          std::remove_cvref_t<rng::range_value_t<R>>>)
 {
-  internal::devices_.assign(std::ranges::begin(devices),
-                            std::ranges::end(devices));
+  internal::devices_.assign(rng::begin(devices), rng::end(devices));
   internal::global_context_ = new sycl::context(internal::devices_);
-  internal::ngpus_ = std::ranges::size(internal::devices_);
+  internal::ngpus_ = rng::size(internal::devices_);
 
   par_unseq = device_policy(internal::devices_);
 }

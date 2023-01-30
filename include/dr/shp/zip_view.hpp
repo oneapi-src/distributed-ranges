@@ -5,7 +5,6 @@
 #pragma once
 
 #include <oneapi/dpl/iterator>
-#include <ranges>
 
 #include <concepts/concepts.hpp>
 #include <details/view_detectors.hpp>
@@ -76,16 +75,15 @@ private:
 template <std::random_access_iterator... Iters>
 using zip_iterator = lib::iterator_adaptor<zip_accessor<Iters...>>;
 
-template <std::ranges::random_access_range... Rs>
-class zip_view : public std::ranges::view_interface<zip_view<Rs...>> {
+template <rng::random_access_range... Rs>
+class zip_view : public rng::view_interface<zip_view<Rs...>> {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  zip_view(Rs... rs)
-      : views_(std::ranges::views::all(std::forward<Rs>(rs))...) {
+  zip_view(Rs... rs) : views_(rng::views::all(std::forward<Rs>(rs))...) {
     std::array<std::size_t, sizeof...(Rs)> sizes = {
-        std::size_t(std::ranges::size(rs))...};
+        std::size_t(rng::size(rs))...};
 
     // TODO: support zipped views with some ranges shorter than others
     size_ = sizes[0];
@@ -210,7 +208,7 @@ private:
     local_idx[I] += size;
 
     if (local_idx[I] >=
-        std::ranges::size(segment_or_orig_(get_view<I>(), segment_ids[I]))) {
+        rng::size(segment_or_orig_(get_view<I>(), segment_ids[I]))) {
       local_idx[I] = 0;
       segment_ids[I]++;
     }
@@ -221,8 +219,8 @@ private:
   }
 
   template <std::size_t... Is> auto begin_impl_(std::index_sequence<Is...>) {
-    return zip_iterator<std::ranges::iterator_t<Rs>...>(
-        std::ranges::begin(std::get<Is>(views_))...);
+    return zip_iterator<rng::iterator_t<Rs>...>(
+        rng::begin(std::get<Is>(views_))...);
   }
 
   template <typename T, typename U> T min_many_impl_(T t, U u) {
@@ -253,7 +251,7 @@ private:
   std::size_t get_next_segment_size_impl_(auto &&segment_ids, auto &&local_idx,
                                           std::index_sequence<Is...>) {
     return min_many_impl_(
-        std::ranges::size(segment_or_orig_(get_view<Is>(), segment_ids[Is])) -
+        rng::size(segment_or_orig_(get_view<Is>(), segment_ids[Is])) -
         local_idx[Is]...);
   }
 
@@ -262,7 +260,7 @@ private:
         segment_ids, local_idx, std::make_index_sequence<sizeof...(Rs)>{});
   }
 
-  std::tuple<std::ranges::views::all_t<Rs>...> views_;
+  std::tuple<rng::views::all_t<Rs>...> views_;
   std::size_t size_;
 };
 
@@ -270,7 +268,7 @@ template <typename... Rs> zip_view(Rs &&...rs) -> zip_view<Rs...>;
 
 namespace views {
 
-template <std::ranges::random_access_range... Rs> auto zip(Rs &&...rs) {
+template <rng::random_access_range... Rs> auto zip(Rs &&...rs) {
   return shp::zip_view(std::forward<Rs>(rs)...);
 }
 
