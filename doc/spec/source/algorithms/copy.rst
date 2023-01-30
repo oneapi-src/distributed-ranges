@@ -21,6 +21,7 @@ Interface
 .. doxygenfunction:: lib::copy(int root, DI first, DI last, std::contiguous_iterator auto result)
 .. doxygenfunction:: lib::copy(int root, DI first, std::size_t size, std::contiguous_iterator auto result)
 .. doxygenfunction:: lib::copy(int root, mpi_distributed_contiguous_range auto &&r, auto result)
+.. doxygenfunction:: lib::copy(int root, I first, I last, mpi_distributed_contiguous_iterator auto result)
 
 Description
 ===========

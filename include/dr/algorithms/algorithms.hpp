@@ -202,17 +202,12 @@ template <typename I>
 void copy(int root, I first, I last,
           mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
-
-  if constexpr (std::same_as<std::nullptr_t, I>) {
-    assert(root != comm.rank());
-    std::size_t size;
-    comm.bcast(&size, 1, root);
-    lib::copy(root, nullptr, size, result);
-  } else {
-    std::size_t size = std::distance(first, last);
-    comm.bcast(&size, 1, root);
-    lib::copy(root, first, size, result);
+  std::size_t size = 0;
+  if constexpr (!std::same_as<std::nullptr_t, I>) {
+    size = std::distance(first, last);
   }
+  comm.bcast(&size, 1, root);
+  lib::copy(root, first, size, result);
 }
 
 /// Collective copy from local range to distributed iterator
