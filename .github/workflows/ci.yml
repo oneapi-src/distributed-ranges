@@ -74,8 +74,6 @@ jobs:
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j -C build all test
-        cmake -B build-nofmt
-        make -j -C build-nofmt/examples/cpu all test
     - uses: actions/upload-artifact@v3
       if: always()
       with:
