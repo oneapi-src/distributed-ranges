@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../details/ranges.hpp"
-#include <ranges>
 
 namespace lib {
 
@@ -15,16 +14,16 @@ concept remote_iterator =
 
 template <typename R>
 concept remote_range =
-    std::ranges::forward_range<R> && requires(R &r) { lib::ranges::rank(r); };
+    rng::forward_range<R> && requires(R &r) { lib::ranges::rank(r); };
 
 template <typename R>
 concept distributed_range =
-    std::ranges::forward_range<R> &&
+    rng::forward_range<R> &&
     requires(R &r) {
-      { lib::ranges::segments(r) } -> std::ranges::forward_range;
+      { lib::ranges::segments(r) } -> rng::forward_range;
     } &&
-    remote_range<std::ranges::range_value_t<decltype(lib::ranges::segments(
-        std::declval<R>()))>>;
+    remote_range<
+        rng::range_value_t<decltype(lib::ranges::segments(std::declval<R>()))>>;
 
 template <typename I>
 concept remote_contiguous_iterator =
@@ -39,29 +38,29 @@ template <typename I>
 concept distributed_iterator =
     std::forward_iterator<I> &&
     requires(I &iter) {
-      { lib::ranges::segments(iter) } -> std::ranges::forward_range;
+      { lib::ranges::segments(iter) } -> rng::forward_range;
       { lib::ranges::segment_index(iter) };
       { lib::ranges::local_index(iter) };
     } &&
-    remote_range<std::ranges::range_value_t<decltype(lib::ranges::segments(
-        std::declval<I>()))>>;
+    remote_range<
+        rng::range_value_t<decltype(lib::ranges::segments(std::declval<I>()))>>;
 
 template <typename R>
 concept remote_contiguous_range =
-    remote_range<R> && std::ranges::random_access_range<R> &&
+    remote_range<R> && rng::random_access_range<R> &&
     requires(R &r) {
       lib::ranges::rank(r);
-      { lib::ranges::local(r) } -> std::ranges::contiguous_range;
+      { lib::ranges::local(r) } -> rng::contiguous_range;
     };
 
 template <typename R>
 concept distributed_contiguous_range =
-    distributed_range<R> && std::ranges::random_access_range<R> &&
+    distributed_range<R> && rng::random_access_range<R> &&
     requires(R &r) {
-      { lib::ranges::segments(r) } -> std::ranges::random_access_range;
+      { lib::ranges::segments(r) } -> rng::random_access_range;
     } &&
-    remote_contiguous_range<std::ranges::range_value_t<
-        decltype(lib::ranges::segments(std::declval<R>()))>>;
+    remote_contiguous_range<
+        rng::range_value_t<decltype(lib::ranges::segments(std::declval<R>()))>>;
 
 template <typename I>
 concept mpi_distributed_iterator =
@@ -75,12 +74,10 @@ concept mpi_distributed_contiguous_iterator =
 
 template <typename R>
 concept mpi_distributed_range =
-    std::ranges::forward_range<R> && requires(R &r) {
-                                       {
-                                         r.begin()
-                                         } -> mpi_distributed_iterator;
-                                       { r.end() } -> mpi_distributed_iterator;
-                                     };
+    rng::forward_range<R> && requires(R &r) {
+                               { r.begin() } -> mpi_distributed_iterator;
+                               { r.end() } -> mpi_distributed_iterator;
+                             };
 
 template <typename I>
 concept sycl_mpi_distributed_contiguous_iterator =
@@ -91,7 +88,7 @@ concept sycl_mpi_distributed_contiguous_iterator =
 
 template <typename R>
 concept mpi_distributed_contiguous_range =
-    mpi_distributed_range<R> && std::ranges::random_access_range<R>;
+    mpi_distributed_range<R> && rng::random_access_range<R>;
 
 template <typename ZR>
 concept distributed_range_zip = requires(ZR &zr) {

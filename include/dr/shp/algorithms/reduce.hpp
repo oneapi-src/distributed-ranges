@@ -64,19 +64,17 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
 
-      auto dist =
-          std::distance(std::ranges::begin(segment), std::ranges::end(segment));
+      auto dist = std::distance(rng::begin(segment), rng::end(segment));
       if (dist <= 0) {
         continue;
       } else if (dist == 1) {
-        init = std::forward<BinaryOp>(binary_op)(init,
-                                                 *std::ranges::begin(segment));
+        init = std::forward<BinaryOp>(binary_op)(init, *rng::begin(segment));
         continue;
       }
 
-      auto future = reduce_no_init_async<T>(
-          local_policy, std::ranges::begin(segment), std::ranges::end(segment),
-          std::forward<BinaryOp>(binary_op));
+      auto future = reduce_no_init_async<T>(local_policy, rng::begin(segment),
+                                            rng::end(segment),
+                                            std::forward<BinaryOp>(binary_op));
 
       futures.push_back(std::move(future));
     }

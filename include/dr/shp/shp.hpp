@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "range/v3/all.hpp"
+namespace rng = ranges;
+
 #include "algorithms/execution_policy.hpp"
 #include "algorithms/for_each.hpp"
 #include "algorithms/reduce.hpp"

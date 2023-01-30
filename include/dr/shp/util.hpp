@@ -6,7 +6,6 @@
 
 #include <CL/sycl.hpp>
 #include <iostream>
-#include <ranges>
 
 namespace shp {
 
@@ -150,7 +149,7 @@ template <typename Range> void print_range(Range &&r, std::string label = "") {
   size_t columns = 10;
   size_t count = 1;
   for (auto iter = r.begin(); iter != r.end(); ++iter) {
-    std::cout << static_cast<std::ranges::range_value_t<Range>>(*iter);
+    std::cout << static_cast<rng::range_value_t<Range>>(*iter);
 
     auto next = iter;
     ++next;

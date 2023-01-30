@@ -5,7 +5,6 @@
 #pragma once
 
 #include <iterator>
-#include <ranges>
 #include <type_traits>
 
 namespace lib {
@@ -42,16 +41,16 @@ struct rank_fn_ {
   // 1) r.rank(), if the remote range has a `rank()` method
   // OR, if not available,
   // 2) r.begin().rank(), if iterator is `remote_iterator`
-  template <std::ranges::forward_range R>
+  template <rng::forward_range R>
     requires((has_rank_method<R> && !disable_rank<std::remove_cv_t<R>>) ||
              (has_rank_adl<R> && !disable_rank<std::remove_cv_t<R>>) ||
-             is_remote_iterator_shadow_impl_<std::ranges::iterator_t<R>>)
+             is_remote_iterator_shadow_impl_<rng::iterator_t<R>>)
   constexpr auto operator()(R &&r) const {
     if constexpr (has_rank_method<R> && !disable_rank<std::remove_cv_t<R>>) {
       return std::forward<R>(r).rank();
     } else if constexpr (is_remote_iterator_shadow_impl_<
-                             std::ranges::range_value_t<R>>) {
-      return operator()(std::ranges::begin(std::forward<R>(r)));
+                             rng::range_value_t<R>>) {
+      return operator()(rng::begin(std::forward<R>(r)));
     } else if constexpr (has_rank_adl<R> &&
                          !disable_rank<std::remove_cv_t<R>>) {
       return rank_(std::forward<R>(r));
@@ -76,12 +75,11 @@ namespace {
 
 template <typename R>
 concept remote_range_shadow_impl_ =
-    std::ranges::forward_range<R> && requires(R &r) { lib::ranges::rank(r); };
+    rng::forward_range<R> && requires(R &r) { lib::ranges::rank(r); };
 
 template <typename R>
 concept segments_range =
-    std::ranges::forward_range<R> &&
-    remote_range_shadow_impl_<std::ranges::range_value_t<R>>;
+    rng::forward_range<R> && remote_range_shadow_impl_<rng::range_value_t<R>>;
 
 template <typename R>
 concept has_segments_method = requires(R r) {
@@ -94,7 +92,7 @@ concept has_segments_adl = requires(R &r) {
                            };
 
 struct segments_fn_ {
-  template <std::ranges::forward_range R>
+  template <rng::forward_range R>
     requires(has_segments_method<R> || has_segments_adl<R>)
   constexpr decltype(auto) operator()(R &&r) const {
     if constexpr (has_segments_method<R>) {
@@ -139,15 +137,15 @@ struct local_fn_ {
     }
   }
 
-  template <std::ranges::forward_range R>
-    requires(has_local_method<std::ranges::iterator_t<R>> ||
-             std::contiguous_iterator<std::ranges::iterator_t<R>> ||
-             std::ranges::contiguous_range<R>)
+  template <rng::forward_range R>
+    requires(has_local_method<rng::iterator_t<R>> ||
+             std::contiguous_iterator<rng::iterator_t<R>> ||
+             rng::contiguous_range<R>)
   auto operator()(R &&r) const {
-    if constexpr (has_local_method<std::ranges::iterator_t<R>>) {
-      return std::span(std::ranges::begin(r).local(), std::ranges::size(r));
-    } else if constexpr (std::contiguous_iterator<std::ranges::iterator_t<R>>) {
-      return std::span(std::ranges::begin(r), std::ranges::size(r));
+    if constexpr (has_local_method<rng::iterator_t<R>>) {
+      return std::span(rng::begin(r).local(), rng::size(r));
+    } else if constexpr (std::contiguous_iterator<rng::iterator_t<R>>) {
+      return std::span(rng::begin(r), rng::size(r));
     }
   }
 };

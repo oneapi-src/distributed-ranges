@@ -5,7 +5,6 @@
 #pragma once
 
 #include <details/segments_tools.hpp>
-#include <ranges>
 #include <shp/distributed_span.hpp>
 #include <shp/zip_view.hpp>
 
@@ -25,11 +24,11 @@ class slice_adaptor_closure {
 public:
   slice_adaptor_closure(shp::index<> slice_indices) : idx_(slice_indices) {}
 
-  template <std::ranges::random_access_range R> auto operator()(R &&r) const {
+  template <rng::random_access_range R> auto operator()(R &&r) const {
     return slice(std::forward<R>(r), idx_);
   }
 
-  template <std::ranges::random_access_range R>
+  template <rng::random_access_range R>
   friend auto operator|(R &&r, const slice_adaptor_closure &closure) {
     return closure(std::forward<R>(r));
   }

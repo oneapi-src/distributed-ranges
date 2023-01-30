@@ -5,7 +5,6 @@
 #pragma once
 
 #include <iterator>
-#include <ranges>
 #include <shp/containers/index.hpp>
 #include <shp/containers/matrix_entry.hpp>
 #include <shp/copy.hpp>
@@ -15,18 +14,18 @@
 
 namespace shp {
 
-template <std::ranges::random_access_range Segments>
-  requires(std::ranges::viewable_range<Segments>)
+template <rng::random_access_range Segments>
+  requires(rng::viewable_range<Segments>)
 class distributed_range_accessor {
 public:
-  using segment_type = std::ranges::range_value_t<Segments>;
+  using segment_type = rng::range_value_t<Segments>;
 
-  using value_type = std::ranges::range_value_t<segment_type>;
+  using value_type = rng::range_value_t<segment_type>;
 
-  using size_type = std::ranges::range_size_t<segment_type>;
-  using difference_type = std::ranges::range_difference_t<segment_type>;
+  using size_type = rng::range_size_t<segment_type>;
+  using difference_type = rng::range_difference_t<segment_type>;
 
-  using reference = std::ranges::range_reference_t<segment_type>;
+  using reference = rng::range_reference_t<segment_type>;
 
   using iterator_category = std::random_access_iterator_tag;
 
@@ -43,21 +42,21 @@ public:
 
   constexpr distributed_range_accessor(Segments segments, size_type segment_id,
                                        size_type idx) noexcept
-      : segments_(std::ranges::views::all(std::forward<Segments>(segments))),
+      : segments_(rng::views::all(std::forward<Segments>(segments))),
         segment_id_(segment_id), idx_(idx) {}
 
   constexpr distributed_range_accessor &
   operator+=(difference_type offset) noexcept {
 
     while (offset > 0) {
-      difference_type current_offset =
-          std::min(offset, difference_type(std::ranges::size(
-                               *(segments_.begin() + segment_id_))) -
-                               difference_type(idx_));
+      difference_type current_offset = std::min(
+          offset,
+          difference_type(rng::size(*(segments_.begin() + segment_id_))) -
+              difference_type(idx_));
       idx_ += current_offset;
       offset -= current_offset;
 
-      if (idx_ >= std::ranges::size((*(segments_.begin() + segment_id_)))) {
+      if (idx_ >= rng::size((*(segments_.begin() + segment_id_)))) {
         segment_id_++;
         idx_ = 0;
       }
@@ -71,7 +70,7 @@ public:
 
       if (new_idx < 0) {
         segment_id_--;
-        new_idx = std::ranges::size(*(segments_.begin() + segment_id_)) - 1;
+        new_idx = rng::size(*(segments_.begin() + segment_id_)) - 1;
       }
 
       idx_ = new_idx;
@@ -112,7 +111,7 @@ private:
     return cumulative_size + idx_;
   }
 
-  std::ranges::views::all_t<Segments> segments_;
+  rng::views::all_t<Segments> segments_;
   size_type segment_id_ = 0;
   size_type idx_ = 0;
 };
@@ -128,9 +127,9 @@ public:
 
   using value_type = shp::matrix_entry<T>;
 
-  using scalar_reference = std::ranges::range_reference_t<
-      shp::device_vector<T, shp::device_allocator<T>>>;
-  using const_scalar_reference = std::ranges::range_reference_t<
+  using scalar_reference =
+      rng::range_reference_t<shp::device_vector<T, shp::device_allocator<T>>>;
+  using const_scalar_reference = rng::range_reference_t<
       const shp::device_vector<T, shp::device_allocator<T>>>;
 
   using reference = shp::matrix_ref<T, scalar_reference>;
@@ -139,9 +138,8 @@ public:
   using key_type = shp::index<>;
 
   using segment_type = shp::csr_matrix_view<
-      T, I,
-      std::ranges::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>,
-      std::ranges::iterator_t<shp::device_vector<I, shp::device_allocator<I>>>>;
+      T, I, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>,
+      rng::iterator_t<shp::device_vector<I, shp::device_allocator<I>>>>;
 
   // using iterator = sparse_matrix_iterator<T, shp::device_vector<T,
   // shp::device_allocator<T>>>;

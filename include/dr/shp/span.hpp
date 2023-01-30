@@ -18,8 +18,8 @@ public:
   using reference = std::iter_reference_t<Iter>;
   using iterator = Iter;
 
-  template <std::ranges::random_access_range R>
-  span(R &&r) : begin_(std::ranges::begin(r)), end_(std::ranges::end(r)) {}
+  template <rng::random_access_range R>
+  span(R &&r) : begin_(rng::begin(r)), end_(rng::end(r)) {}
   span(Iter first, Iter last) : begin_(first), end_(last) {}
   span(Iter first, std::size_t count) : begin_(first), end_(first + count) {}
 
@@ -49,7 +49,7 @@ private:
   Iter begin_, end_;
 };
 
-template <std::ranges::random_access_range R>
-span(R &&) -> span<std::ranges::range_value_t<R>, std::ranges::iterator_t<R>>;
+template <rng::random_access_range R>
+span(R &&) -> span<rng::range_value_t<R>, rng::iterator_t<R>>;
 
 } // namespace shp

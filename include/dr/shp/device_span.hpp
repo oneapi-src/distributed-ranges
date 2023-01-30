@@ -50,11 +50,11 @@ public:
   using difference_type = std::size_t;
   using reference = std::iter_reference_t<Iter>;
 
-  template <std::ranges::random_access_range R>
+  template <rng::random_access_range R>
     requires(lib::remote_range<R>)
   device_span(R &&r)
-      : rank_(lib::ranges::rank(r)), shp::span<T, Iter>(std::ranges::begin(r),
-                                                        std::ranges::size(r)) {}
+      : rank_(lib::ranges::rank(r)), shp::span<T, Iter>(rng::begin(r),
+                                                        rng::size(r)) {}
 
   template <class It>
   constexpr device_span(It first, std::size_t count, std::size_t rank)
@@ -83,8 +83,7 @@ private:
   std::size_t rank_;
 };
 
-template <std::ranges::random_access_range R>
-device_span(R &&)
-    -> device_span<std::ranges::range_value_t<R>, std::ranges::iterator_t<R>>;
+template <rng::random_access_range R>
+device_span(R &&) -> device_span<rng::range_value_t<R>, rng::iterator_t<R>>;
 
 } // namespace shp

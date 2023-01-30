@@ -18,8 +18,8 @@ public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  using scalar_value_type = std::ranges::range_value_t<L>;
-  using scalar_reference = std::ranges::range_reference_t<L>;
+  using scalar_value_type = rng::range_value_t<L>;
+  using scalar_reference = rng::range_reference_t<L>;
 
   using value_type = shp::matrix_entry<scalar_value_type, std::size_t>;
 
@@ -137,9 +137,9 @@ public:
 
   using value_type = shp::matrix_entry<T>;
 
-  using scalar_reference = std::ranges::range_reference_t<
-      shp::device_vector<T, shp::device_allocator<T>>>;
-  using const_scalar_reference = std::ranges::range_reference_t<
+  using scalar_reference =
+      rng::range_reference_t<shp::device_vector<T, shp::device_allocator<T>>>;
+  using const_scalar_reference = rng::range_reference_t<
       const shp::device_vector<T, shp::device_allocator<T>>>;
 
   using reference = shp::matrix_ref<T, scalar_reference>;
@@ -195,11 +195,11 @@ public:
 
   iterator end() { return begin() + shape()[0] * shape()[1]; }
 
-  std::vector<dense_matrix_view<T, std::ranges::iterator_t<shp::device_vector<
-                                       T, shp::device_allocator<T>>>>>
+  std::vector<dense_matrix_view<
+      T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>>
   tiles() {
-    std::vector<dense_matrix_view<T, std::ranges::iterator_t<shp::device_vector<
-                                         T, shp::device_allocator<T>>>>>
+    std::vector<dense_matrix_view<
+        T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>>
         views_;
 
     for (size_t i = 0; i < grid_shape_[0]; i++) {
@@ -216,11 +216,11 @@ public:
     return views_;
   }
 
-  std::vector<dense_matrix_view<T, std::ranges::iterator_t<shp::device_vector<
-                                       T, shp::device_allocator<T>>>>>
+  std::vector<dense_matrix_view<
+      T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>>
   segments() {
-    std::vector<dense_matrix_view<T, std::ranges::iterator_t<shp::device_vector<
-                                         T, shp::device_allocator<T>>>>>
+    std::vector<dense_matrix_view<
+        T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>>
         views_;
 
     for (size_t i = 0; i < grid_shape_[0]; i++) {
