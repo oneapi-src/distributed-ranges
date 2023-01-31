@@ -73,6 +73,10 @@ template <typename I>
 concept mpi_distributed_contiguous_iterator =
     std::random_access_iterator<I> && mpi_distributed_iterator<I>;
 
+template <typename I>
+concept contiguous_iterator_or_nullptr =
+    std::contiguous_iterator<I> || std::same_as<I, std::nullptr_t>;
+
 template <typename R>
 concept mpi_distributed_range =
     std::ranges::forward_range<R> && requires(R &r) {
