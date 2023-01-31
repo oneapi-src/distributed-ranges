@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <optional>
+
 namespace lib {
 
 template <typename T>
@@ -295,6 +297,54 @@ inline void transpose(const distributed_mdarray<T, Extents> &src,
     t.compute_for_me();
     t.send_receive_wait(t.num_proc - 1);
     t.dst_write(t.num_proc - 1);
+  }
+}
+
+template <typename T, typename SExtents,
+          typename DExtents> // layout_right only arrays
+inline void
+transpose(int root, const distributed_mdarray<T, SExtents> &src,
+          std::optional<std::experimental::mdspan<T, DExtents>> dst) {
+  assert(dst.has_value() || root != src.comm().rank());
+  std::vector<T> local_vec;
+
+  if (src.comm().rank() == root) {
+    assert(src.extents().extent(0) == dst.value().extent(1));
+    assert(src.extents().extent(1) == dst.value().extent(0));
+
+    size_t n = src.extents().extent(0) * src.extents().extent(1);
+    local_vec.resize(n);
+  }
+
+  lib::copy(root, src.begin(), src.end(), local_vec.begin());
+
+  if (src.comm().rank() == root) {
+    transpose_local(src.extents().extent(0), src.extents().extent(1),
+                    local_vec.data(), src.extents().extent(1),
+                    dst.value().data_handle(), dst.value().extent(1));
+  }
+}
+
+template <typename T, typename SExtents,
+          typename DExtents> // layout_right only arrays
+inline void transpose(int root,
+                      std::optional<std::experimental::mdspan<T, SExtents>> src,
+                      distributed_mdarray<T, DExtents> &dst) {
+  assert(src.has_value() || root != dst.comm().rank());
+
+  if (dst.comm().rank() == root) {
+    assert(dst.extents().extent(0) == src.value().extent(1));
+    assert(dst.extents().extent(1) == src.value().extent(0));
+
+    std::vector<T> local_vec;
+    size_t n = dst.extents().extent(0) * dst.extents().extent(1);
+    local_vec.resize(n);
+    transpose_local(src.value().extent(0), src.value().extent(1),
+                    src.value().data_handle(), src.value().extent(1),
+                    local_vec.data(), dst.extents().extent(1));
+    lib::copy(root, local_vec.begin(), local_vec.end(), dst.begin());
+  } else {
+    lib::copy(root, nullptr, nullptr, dst.begin());
   }
 }
 
