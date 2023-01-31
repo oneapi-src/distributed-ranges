@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CXX: clang++
+      CTEST_OUTPUT_ON_FAILURE: 1
     steps:
     - uses: actions/checkout@v3
     - uses: rscohn2/setup-oneapi@v0
@@ -61,6 +62,7 @@ jobs:
     name: ${{ matrix.cxx }}
     env:
       CXX: ${{ matrix.cxx }}
+      CTEST_OUTPUT_ON_FAILURE: 1
     steps:
     - uses: actions/checkout@v3
     - uses: rscohn2/setup-oneapi@v0
@@ -84,6 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CXX: icpx
+      CTEST_OUTPUT_ON_FAILURE: 1
     steps:
     - uses: actions/checkout@v3
     - uses: rscohn2/setup-oneapi@v0
