@@ -38,7 +38,7 @@ public:
 
     void get(void *dst, int size, int rank, int disp) const {
       MPI_Request request;
-      MPI_Rget(dst, size, MPI_CHAR, rank, disp, size, MPI_CHAR, win_, &request);
+      MPI_Rget(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
       MPI_Wait(&request, MPI_STATUS_IGNORE);
     }
 
@@ -47,7 +47,7 @@ public:
     }
 
     void put(const void *src, int size, int rank, int disp) const {
-      MPI_Put(src, size, MPI_CHAR, rank, disp, size, MPI_CHAR, win_);
+      MPI_Put(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_);
     }
 
     void fence() const {
@@ -81,41 +81,41 @@ public:
   void barrier() const { MPI_Barrier(mpi_comm_); }
 
   template <typename T> void bcast(T *src, size_t count, int root) const {
-    MPI_Bcast(src, count * sizeof(T), MPI_CHAR, root, mpi_comm_);
+    MPI_Bcast(src, count * sizeof(T), MPI_BYTE, root, mpi_comm_);
   }
 
   void scatter(const void *src, void *dst, int size, int root) const {
-    MPI_Scatter(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
+    MPI_Scatter(src, size, MPI_BYTE, dst, size, MPI_BYTE, root, mpi_comm_);
   }
 
   void scatterv(const void *src, int *counts, int *offsets, void *dst,
                 int dst_count, int root) const {
     assert(counts == nullptr || counts[rank()] == dst_count);
-    MPI_Scatterv(src, counts, offsets, MPI_CHAR, dst, dst_count, MPI_CHAR, root,
+    MPI_Scatterv(src, counts, offsets, MPI_BYTE, dst, dst_count, MPI_BYTE, root,
                  mpi_comm_);
   }
 
   void gather(const void *src, void *dst, int size, int root) const {
-    MPI_Gather(src, size, MPI_CHAR, dst, size, MPI_CHAR, root, mpi_comm_);
+    MPI_Gather(src, size, MPI_BYTE, dst, size, MPI_BYTE, root, mpi_comm_);
   }
 
   template <typename T>
   void gather(const T &src, std::vector<T> &dst, int root) const {
     dst.resize(size());
-    MPI_Gather(&src, sizeof(src), MPI_CHAR, dst.data(), sizeof(src), MPI_CHAR,
+    MPI_Gather(&src, sizeof(src), MPI_BYTE, dst.data(), sizeof(src), MPI_BYTE,
                root, mpi_comm_);
   }
 
   void gatherv(const void *src, int *counts, int *offsets, void *dst,
                int root) const {
-    MPI_Gatherv(src, counts[rank()], MPI_CHAR, dst, counts, offsets, MPI_CHAR,
+    MPI_Gatherv(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
                 root, mpi_comm_);
   }
 
   template <typename T>
   void isend(const T *data, int size, int source, tag t,
              MPI_Request *request) const {
-    MPI_Isend(data, size * sizeof(T), MPI_CHAR, source, int(t), mpi_comm_,
+    MPI_Isend(data, size * sizeof(T), MPI_BYTE, source, int(t), mpi_comm_,
               request);
   }
 
@@ -126,7 +126,7 @@ public:
 
   template <typename T>
   void irecv(T *data, int size, int dest, tag t, MPI_Request *request) const {
-    MPI_Irecv(data, size * sizeof(T), MPI_CHAR, dest, int(t), mpi_comm_,
+    MPI_Irecv(data, size * sizeof(T), MPI_BYTE, dest, int(t), mpi_comm_,
               request);
   }
 
