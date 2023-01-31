@@ -80,8 +80,8 @@ public:
 
   void barrier() const { MPI_Barrier(mpi_comm_); }
 
-  template <typename T> void bcast(T *src, size_t count, int root) const {
-    MPI_Bcast(src, count * sizeof(T), MPI_BYTE, root, mpi_comm_);
+  void bcast(void *src, size_t count, int root) const {
+    MPI_Bcast(src, count, MPI_BYTE, root, mpi_comm_);
   }
 
   void scatter(const void *src, void *dst, int size, int root) const {
