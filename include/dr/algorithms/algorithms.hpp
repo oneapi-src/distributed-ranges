@@ -197,7 +197,7 @@ void copy(int root, std::nullptr_t, std::size_t size,
 /// the non-source rank without providing the size of the source (if I is the
 /// same as `std::nullptr_t`). Collective copy from local begin/end to
 /// distributed, which is called on the source rank without providing the size
-/// of the source in the destination (if I is not the same as std::nullptr_t)
+/// of the source in the destination (if `I` is not the same as `std::nullptr_t`)
 template <typename I>
 void copy(int root, I first, I last,
           mpi_distributed_contiguous_iterator auto result) {
