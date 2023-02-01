@@ -172,8 +172,8 @@ template <class It> inline void *it2raw(It it) { return &*it; }
 } // unnamed namespace
 
 /// Collective copy from local begin/end to distributed iterator.
-/// On the non-root rank the `first` param is ignored and may be a `nullptr`.
-/// Size of the source needs to be provided on all ranks.
+/// On the non-root rank the `first` parameter is ignored and may be a
+/// `nullptr`. Size of the source needs to be provided on all ranks.
 void copy(int root, contiguous_iterator_or_nullptr auto first, std::size_t size,
           mpi_distributed_contiguous_iterator auto result) {
   if (size == 0)
