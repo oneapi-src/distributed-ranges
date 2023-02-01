@@ -15,13 +15,12 @@ Interface
 
 .. doxygenfunction:: lib::copy(DI first, DI last, mpi_distributed_contiguous_iterator auto result)
 .. doxygenfunction:: lib::copy(mpi_distributed_contiguous_range auto &&r, mpi_distributed_contiguous_iterator auto result)
-.. doxygenfunction:: lib::copy(int root, I first, I last, mpi_distributed_contiguous_iterator auto result)
-.. doxygenfunction:: lib::copy(int root, std::contiguous_iterator auto first, std::size_t size, mpi_distributed_contiguous_iterator auto result)
-.. doxygenfunction:: lib::copy(int root, std::nullptr_t, std::size_t size, mpi_distributed_contiguous_iterator auto result)
+.. doxygenfunction:: lib::copy(int root, contiguous_iterator_or_nullptr auto first, std::size_t size, mpi_distributed_contiguous_iterator auto result)
+.. doxygenfunction:: lib::copy(int root, IN first, IN last, mpi_distributed_contiguous_iterator auto result)
 .. doxygenfunction:: lib::copy(int root, rng::contiguous_range auto &&r, mpi_distributed_contiguous_iterator auto result)
-.. doxygenfunction:: lib::copy(int root, DI first, DI last, IN result)
-.. doxygenfunction:: lib::copy(int root, DI first, std::size_t size, std::contiguous_iterator auto result)
-.. doxygenfunction:: lib::copy(int root, mpi_distributed_contiguous_range auto &&r, auto result)
+.. doxygenfunction:: lib::copy(int root, DI first, DI last, contiguous_iterator_or_nullptr auto result)
+.. doxygenfunction:: lib::copy(int root, mpi_distributed_contiguous_iterator auto first, std::size_t size, contiguous_iterator_or_nullptr auto result)
+.. doxygenfunction:: lib::copy(int root, mpi_distributed_contiguous_range auto &&r, contiguous_iterator_or_nullptr auto result)
 
 Description
 ===========

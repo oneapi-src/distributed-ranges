@@ -171,45 +171,40 @@ template <class It> inline void *it2raw(It it) { return &*it; }
 
 } // unnamed namespace
 
-/// Collective copy from local begin/end to distributed - any rank, not sending
-/// size
-void copy(int root, std::contiguous_iterator auto first, std::size_t size,
+/// Collective copy from local begin/end to distributed iterator.
+/// On the non-root rank the `first` param is ignored and may be a `nullptr`.
+/// Size of the source needs to be provided on all ranks.
+void copy(int root, contiguous_iterator_or_nullptr auto first, std::size_t size,
           mpi_distributed_contiguous_iterator auto result) {
-  if (size == 0) {
+  if (size == 0)
     return;
+
+  const communicator &comm = result.container().comm();
+  if (root != comm.rank()) {
+    comm.scatterv(nullptr, nullptr, nullptr, &*result.local(),
+                  scatter_data_dst_size(result, size, comm.rank()), root);
+  } else if constexpr (!std::is_same_v<decltype(first), std::nullptr_t>) {
+    std::vector<int> counts(comm.size()), offsets(comm.size());
+    scatter_data(result, size, counts, offsets);
+    comm.scatterv(&*first, counts.data(), offsets.data(), &*result.local(),
+                  counts[comm.rank()], root);
+  } else {
+    assert(false); // nullptr can not be used on root rank
   }
-  const communicator &comm = result.container().comm();
-  std::vector<int> counts(comm.size()), offsets(comm.size());
-
-  scatter_data(result, size, counts, offsets);
-  comm.scatterv(&*first, counts.data(), offsets.data(), &*result.local(),
-                counts[comm.rank()], root);
 }
 
-/// Collective copy from local begin/end to distributed, which can be called on
-/// non-source rank, not sending size
-void copy(int root, std::nullptr_t, std::size_t size,
-          mpi_distributed_contiguous_iterator auto result) {
-  const communicator &comm = result.container().comm();
-  assert(root != comm.rank());
-  comm.scatterv(nullptr, nullptr, nullptr, &*result.local(),
-                scatter_data_dst_size(result, size, comm.rank()), root);
-}
-
-/// Collective copy from local begin/end to distributed, which is called on
-/// the non-source rank without providing the size of the source (if I is the
-/// same as `std::nullptr_t`). Collective copy from local begin/end to
-/// distributed, which is called on the source rank without providing the size
-/// of the source in the destination (if `I` is not the same as
-/// `std::nullptr_t`)
-template <typename I>
-void copy(int root, I first, I last,
+/// Collective copy from local begin/end to distributed iterator.
+/// On the non-root rank the 'first' and 'last' parameters are ignored and may
+/// be a 'nullptr'.
+template <contiguous_iterator_or_nullptr IN>
+void copy(int root, IN first, IN last,
           mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
   std::size_t size;
-  if constexpr (!std::is_same_v<I, std::nullptr_t>)
+  if constexpr (!std::is_same_v<IN, std::nullptr_t>)
     if (root == comm.rank())
       size = std::distance(first, last);
+
   comm.bcast(&size, sizeof(size), root);
   lib::copy(root, first, size, result);
 }
@@ -220,29 +215,36 @@ void copy(int root, rng::contiguous_range auto &&r,
   lib::copy(root, r.begin(), r.end(), result);
 }
 
-/// Collective copy from distributed begin/end to local iterator
-template <mpi_distributed_contiguous_iterator DI,
-          contiguous_iterator_or_nullptr IN>
-void copy(int root, DI first, DI last, IN result) {
+/// Collective copy from distributed begin/end to local iterator.
+/// On the non-root rank the 'result' parameter is ignored and may be a
+/// 'nullptr'.
+template <mpi_distributed_contiguous_iterator DI>
+void copy(int root, DI first, DI last,
+          contiguous_iterator_or_nullptr auto result) {
   if (last - first == 0)
     return;
   const communicator &comm = first.container().comm();
   std::vector<int> counts(comm.size()), offsets(comm.size());
-  assert((not std::is_same_v<IN, std::nullptr_t> || root != comm.rank()));
+  assert((not std::is_same_v<decltype(result), std::nullptr_t> ||
+          root != comm.rank()));
   scatter_data(first, last - first, counts, offsets);
   comm.gatherv(&*first.local(), counts.data(), offsets.data(), it2raw(result),
                root);
 }
 
-/// Collective copy from distributed begin/end to local iterator
-template <mpi_distributed_contiguous_iterator DI>
-void copy(int root, DI first, std::size_t size,
-          std::contiguous_iterator auto result) {
+/// Collective copy from distributed begin/end to local iterator.
+/// On the non-root rank the 'result' parameter is ignored and may be a
+/// 'nullptr'.
+void copy(int root, mpi_distributed_contiguous_iterator auto first,
+          std::size_t size, contiguous_iterator_or_nullptr auto result) {
   lib::copy(root, first, first + size, result);
 }
 
-/// Collective copy from distributed range to local iterator
-void copy(int root, mpi_distributed_contiguous_range auto &&r, auto result) {
+/// Collective copy from distributed range to local iterator.
+/// On the non-root rank the 'result' parameter is ignored and may be a
+/// 'nullptr'.
+void copy(int root, mpi_distributed_contiguous_range auto &&r,
+          contiguous_iterator_or_nullptr auto result) {
   lib::copy(root, r.begin(), r.end(), result);
 }
 
