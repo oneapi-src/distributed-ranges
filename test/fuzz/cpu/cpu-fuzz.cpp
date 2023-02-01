@@ -55,12 +55,12 @@ struct fuzz_spec {
 
 extern "C" int LLVMFuzzerTestOneInput(const fuzz_spec *my_spec, size_t size) {
   // Controller broadcasts its fuzz spec
-  MPI_Bcast(&size, sizeof(size), MPI_CHAR, controller_rank, comm);
+  MPI_Bcast(&size, sizeof(size), MPI_BYTE, controller_rank, comm);
   if (sizeof(fuzz_spec) < size)
     return 0;
 
   auto spec = *my_spec;
-  MPI_Bcast(&spec, sizeof(spec), MPI_CHAR, controller_rank, comm);
+  MPI_Bcast(&spec, sizeof(spec), MPI_BYTE, controller_rank, comm);
 
   auto n = spec.n;
   auto b = spec.b;
