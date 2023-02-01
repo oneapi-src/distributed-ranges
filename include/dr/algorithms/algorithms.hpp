@@ -204,7 +204,7 @@ void copy(int root, I first, I last,
           mpi_distributed_contiguous_iterator auto result) {
   const communicator &comm = result.container().comm();
   std::size_t size;
-  if constexpr (!std::same_as<I, nullptr_t>)
+  if constexpr (!std::is_same_v<I, std::nullptr_t>)
     if (root == comm.rank())
       size = std::distance(first, last);
   comm.bcast(&size, sizeof(size), root);
