@@ -8,7 +8,7 @@ using V = std::vector<int>;
 using DV = lib::distributed_vector<int>;
 
 void check_copy(std::size_t n, std::size_t b, std::size_t e) {
-  V v_in(n), v(n), v1(n), v2(n);
+  V v_in(n), v(n), v1(n), v2(n), v3(n);
   rng::iota(v_in, 100);
 
   lib::distributed_vector<int> dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n),
@@ -36,6 +36,16 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   if (comm_rank == 0) {
     std::copy(dv_in.begin() + b, dv_in.begin() + e, dv3.begin() + b);
   }
+
+  if (comm_rank == 0) {
+    lib::copy(0, dv_in.begin() + b, dv_in.begin() + e, v3.begin() + b);
+  } else {
+    lib::copy(0, dv_in.begin() + b, dv_in.begin() + e, nullptr);
+  }
+
+  lib::copy(0, dv_in.begin() + b, dv_in.begin() + e,
+            comm_rank == 0 ? &*(v3.begin() + b) : nullptr);
+
   dv3.fence();
 
   if (comm_rank == 0) {
