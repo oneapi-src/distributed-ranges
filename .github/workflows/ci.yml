@@ -43,7 +43,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        make -j -C build all test
+        make -j 2 -C build all test
     - uses: actions/upload-artifact@v3
       if: always()
       with:
@@ -75,7 +75,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        make -j -C build all test
+        make -j 2 -C build all test
     - uses: actions/upload-artifact@v3
       if: always()
       with:
@@ -99,7 +99,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build -DENABLE_SYCL_MPI=on
-        make -j -C build all test
+        make -j 2 -C build all test
     - uses: actions/upload-artifact@v3
       if: always()
       with:

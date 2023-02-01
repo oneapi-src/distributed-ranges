@@ -4,77 +4,61 @@
 
 #pragma once
 
-#include <concepts/concepts.hpp>
-#include <shp/zip_view.hpp>
-
 namespace lib {
 
 namespace internal {
 
-// Trim the total number of elements included in all the
-// ranges in `segments` to `n`.
-template <rng::random_access_range R>
-auto trim_segments(R &&segments, std::size_t n) {
-  std::size_t n_segs = 0;
-  std::size_t count = 0;
-
-  std::size_t last_segment_size;
-
-  for (auto &&seg : segments) {
-    n_segs++;
-    count += seg.size();
-    if (count >= n) {
-      last_segment_size = seg.size() - (count - n);
-      break;
-    }
-  }
-
-  auto new_segments =
-      shp::zip_view(rng::views::iota(int(0), int(n_segs)),
-                    rng::views::take(std::forward<R>(segments), n_segs));
-
-  return rng::views::transform(new_segments, [=](auto &&s) {
-    auto &&[i, v] = s;
-    if (i == n_segs - 1) {
-      return rng::views::take(v, last_segment_size);
-    } else {
-      return rng::views::take(v, v.size());
-    }
-  });
-}
-
-struct drop {
-  std::size_t remainder;
-  template <typename R> auto operator()(R &&s) {
-    auto v = rng::views::drop(std::forward<R>(s), remainder);
-    remainder = 0;
-    return v;
-  }
-};
-
-// Drop the first n elements
-template <rng::random_access_range R>
-auto drop_segments(R &&segments, std::size_t n) {
-  std::size_t n_segs_dropped = 0;
-  std::size_t remainder = n;
+// return number of full segments and remainder to cover n elements
+template <typename R>
+void n_segs_remainder(R &&segments, std::size_t n, auto &n_segs,
+                      auto &remainder) {
+  n_segs = 0;
+  remainder = n;
 
   for (auto &&seg : segments) {
     if (seg.size() > remainder) {
       break;
     }
     remainder -= seg.size();
-    n_segs_dropped++;
+    n_segs++;
   }
+}
 
-  return std::forward<R>(segments) | rng::views::drop(n_segs_dropped) |
-         rng::views::transform(drop{remainder});
+template <typename R> auto enumerate(R &&segments) {
+  return rng::views::zip(rng::views::iota(0u), segments);
+}
+
+// Take the first n elements
+template <typename R> auto take_segments(R &&segments, std::size_t n) {
+  std::size_t n_segs, remainder;
+  n_segs_remainder(segments, n, n_segs, remainder);
+
+  auto take_partial = [=](auto &&v) {
+    auto &&[i, segment] = v;
+    return rng::views::take(segment, i == n_segs ? remainder : segment.size());
+  };
+
+  return enumerate(segments) | rng::views::take(n_segs + 1) |
+         rng::views::transform(take_partial);
+}
+
+// Drop the first n elements
+template <typename R> auto drop_segments(R &&segments, std::size_t n) {
+  std::size_t n_segs, remainder;
+  n_segs_remainder(segments, n, n_segs, remainder);
+
+  auto drop_partial = [=](auto &&v) {
+    auto &&[i, segment] = v;
+    return rng::views::drop(segment, i == n_segs ? remainder : 0);
+  };
+
+  return enumerate(segments) | rng::views::drop(n_segs) |
+         rng::views::transform(drop_partial);
 }
 
 } // namespace internal
 
 } // namespace lib
-
-namespace std {
 
 namespace ranges {
 
@@ -97,18 +81,22 @@ template <rng::range V>
   requires(lib::is_take_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return lib::internal::trim_segments(lib::ranges::segments(v.base()),
-                                      v.size());
+  return take_segments(lib::ranges::segments(v.base()), v.size());
 }
 
 template <rng::range V>
   requires(lib::is_drop_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return lib::internal::drop_segments(lib::ranges::segments(v.base()),
-                                      v.base().size() - v.size());
+  return drop_segments(lib::ranges::segments(v.base()),
+                       v.base().size() - v.size());
+}
+
+template <rng::range V>
+  requires(lib::is_subrange_view_v<std::remove_cvref_t<V>> &&
+           lib::distributed_iterator<decltype(std::declval<V>().begin())>)
+auto segments_(V &&v) {
+  return take_segments(lib::ranges::segments(v.begin()), v.end() - v.begin());
 }
 
 } // namespace ranges
-
-} // namespace std

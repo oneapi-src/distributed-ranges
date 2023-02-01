@@ -167,10 +167,10 @@ public:
 
   size_type size() const noexcept { return size_; }
 
-  auto segments() { return lib::internal::trim_segments(segments_, size()); }
+  auto segments() { return lib::internal::take_segments(segments_, size()); }
 
   auto segments() const {
-    return lib::internal::trim_segments(segments_, size());
+    return lib::internal::take_segments(segments_, size());
   }
 
   iterator begin() { return iterator(segments_, 0, 0, segment_size_); }

@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "details/iterator_adaptor.hpp"
 #include "device_span.hpp"
-#include "iterator_adaptor.hpp"
 #include <concepts/concepts.hpp>
 #include <details/ranges.hpp>
 #include <vector>
