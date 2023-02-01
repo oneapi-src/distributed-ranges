@@ -194,8 +194,8 @@ void copy(int root, contiguous_iterator_or_nullptr auto first, std::size_t size,
 }
 
 /// Collective copy from local begin/end to distributed iterator.
-/// On the non-root rank the 'first' and 'last' parameters are ignored and may
-/// be a 'nullptr'.
+/// On the non-root rank the `first` and `last` parameters are ignored and may
+/// be a `nullptr`.
 template <contiguous_iterator_or_nullptr IN>
 void copy(int root, IN first, IN last,
           mpi_distributed_contiguous_iterator auto result) {
@@ -216,8 +216,8 @@ void copy(int root, rng::contiguous_range auto &&r,
 }
 
 /// Collective copy from distributed begin/end to local iterator.
-/// On the non-root rank the 'result' parameter is ignored and may be a
-/// 'nullptr'.
+/// On the non-root rank the `result` parameter is ignored and may be a
+/// `nullptr`.
 template <mpi_distributed_contiguous_iterator DI>
 void copy(int root, DI first, DI last,
           contiguous_iterator_or_nullptr auto result) {
@@ -233,16 +233,16 @@ void copy(int root, DI first, DI last,
 }
 
 /// Collective copy from distributed begin/end to local iterator.
-/// On the non-root rank the 'result' parameter is ignored and may be a
-/// 'nullptr'.
+/// On the non-root rank the `result` parameter is ignored and may be a
+/// `nullptr`.
 void copy(int root, mpi_distributed_contiguous_iterator auto first,
           std::size_t size, contiguous_iterator_or_nullptr auto result) {
   lib::copy(root, first, first + size, result);
 }
 
 /// Collective copy from distributed range to local iterator.
-/// On the non-root rank the 'result' parameter is ignored and may be a
-/// 'nullptr'.
+/// On the non-root rank the `result` parameter is ignored and may be a
+/// `nullptr`.
 void copy(int root, mpi_distributed_contiguous_range auto &&r,
           contiguous_iterator_or_nullptr auto result) {
   lib::copy(root, r.begin(), r.end(), result);
