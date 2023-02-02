@@ -192,9 +192,7 @@ TEST(CpuMpiTests, distribute_to_local_transpose) {
   }
 
   if (comm_rank == 0) {
-    EXPECT_EQ(dsrc(0, 0), ldst(0, 0));
-    EXPECT_EQ(dsrc(1, 0), ldst(0, 1));
-    EXPECT_EQ(dsrc(rows - 1, cols - 2), ldst(cols - 2, rows - 1));
+    expect_eq(dsrc, ldst, true);
   }
 }
 
@@ -219,8 +217,6 @@ TEST(CpuMpiTests, local_to_distribute_transpose) {
   }
 
   if (comm_rank == 0) {
-    EXPECT_EQ(lsrc(0, 0), ddst(0, 0));
-    EXPECT_EQ(lsrc(1, 0), ddst(0, 1));
-    EXPECT_EQ(lsrc(rows - 1, cols - 2), ddst(cols - 2, rows - 1));
+    expect_eq(lsrc, ddst, true);
   }
 }
