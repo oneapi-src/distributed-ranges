@@ -338,8 +338,8 @@ public:
 
   /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(stencil_type s, Alloc alloc, size_type count)
-      : allocator_(alloc), stencil_(s), size_(count),
-        local_(local_storage_size(), alloc), halo_(comm_, local_, stencil_) {
+      : stencil_(s), size_(count), local_(local_storage_size(), alloc),
+        halo_(comm_, local_, stencil_) {
     init();
   }
 
@@ -365,7 +365,7 @@ public:
 
   /// Construct a distributed vector with `count` elements.
   distributed_vector(Alloc alloc, size_type count)
-      : allocator_(alloc), size_(count), local_(local_storage_size(), alloc) {
+      : size_(count), local_(local_storage_size(), alloc) {
     init();
   }
 
@@ -444,7 +444,9 @@ public:
     return size_ == other.size_;
   }
 
-  const Alloc &allocator() const { return allocator_; }
+  constexpr allocator_type get_allocator() const noexcept {
+    return local_.get_allocator();
+  }
 
 private:
   auto rank_offset(std::size_t index) const {
@@ -481,7 +483,6 @@ private:
            radius.prev + radius.next;
   }
 
-  Alloc allocator_;
   stencil_type stencil_;
   const communicator comm_;
   size_type size_;
