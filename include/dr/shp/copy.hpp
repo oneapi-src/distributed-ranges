@@ -6,7 +6,7 @@
 
 #include "device_ptr.hpp"
 #include <CL/sycl.hpp>
-#include <concepts/concepts.hpp>
+#include <dr/concepts/concepts.hpp>
 #include <memory>
 #include <type_traits>
 

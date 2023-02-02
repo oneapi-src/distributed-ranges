@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <concepts/concepts.hpp>
-#include <shp/span.hpp>
+#include <dr/concepts/concepts.hpp>
+#include <dr/shp/span.hpp>
 #include <span>
 
 namespace shp {

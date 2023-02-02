@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include "range/v3/all.hpp"
-namespace rng = ranges;
+#include <dr/details/ranges_shim.hpp>
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>

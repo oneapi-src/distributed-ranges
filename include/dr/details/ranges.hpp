@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ranges_shim.hpp"
 #include <iterator>
 #include <type_traits>
 

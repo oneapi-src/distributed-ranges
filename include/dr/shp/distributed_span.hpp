@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "details/iterator_adaptor.hpp"
+#include "../details/iterator_adaptor.hpp"
 #include "device_span.hpp"
-#include <concepts/concepts.hpp>
-#include <details/ranges.hpp>
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/ranges.hpp>
 #include <vector>
 
 namespace shp {

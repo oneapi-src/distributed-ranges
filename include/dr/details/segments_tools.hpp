@@ -81,22 +81,24 @@ template <rng::range V>
   requires(lib::is_take_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return take_segments(lib::ranges::segments(v.base()), v.size());
+  return lib::internal::take_segments(lib::ranges::segments(v.base()),
+                                      v.size());
 }
 
 template <rng::range V>
   requires(lib::is_drop_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return drop_segments(lib::ranges::segments(v.base()),
-                       v.base().size() - v.size());
+  return lib::internal::drop_segments(lib::ranges::segments(v.base()),
+                                      v.base().size() - v.size());
 }
 
 template <rng::range V>
   requires(lib::is_subrange_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_iterator<decltype(std::declval<V>().begin())>)
 auto segments_(V &&v) {
-  return take_segments(lib::ranges::segments(v.begin()), v.end() - v.begin());
+  return lib::internal::take_segments(lib::ranges::segments(v.begin()),
+                                      v.end() - v.begin());
 }
 
 } // namespace ranges

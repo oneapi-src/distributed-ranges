@@ -8,13 +8,13 @@
 
 #include <oneapi/dpl/execution>
 
+#include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/distributed_span.hpp>
+#include <dr/shp/init.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
-#include <shp/algorithms/execution_policy.hpp>
-#include <shp/distributed_span.hpp>
-#include <shp/init.hpp>
 
-#include <concepts/concepts.hpp>
+#include <dr/concepts/concepts.hpp>
 
 namespace {
 

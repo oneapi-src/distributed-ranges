@@ -9,7 +9,7 @@
 #include <span>
 #include <type_traits>
 
-#include <shp/algorithms/execution_policy.hpp>
+#include <dr/shp/algorithms/execution_policy.hpp>
 
 namespace shp {
 

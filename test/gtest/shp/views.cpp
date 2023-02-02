@@ -20,8 +20,8 @@ TEST(ShpTests, Take) {
   std::iota(a.begin(), a.end(), 20);
   std::iota(dv_a.begin(), dv_a.end(), 20);
 
-  auto aview = a | std::ranges::views::take(2);
-  auto dv_aview = dv_a | std::ranges::views::take(2);
+  auto aview = a | rng::views::take(2);
+  auto dv_aview = dv_a | rng::views::take(2);
   EXPECT_TRUE(equal(aview, dv_aview));
 
   std::ranges::for_each(aview, increment{});
@@ -39,8 +39,8 @@ TEST(ShpTests, Drop) {
   std::iota(a.begin(), a.end(), 20);
   std::iota(dv_a.begin(), dv_a.end(), 20);
 
-  auto aview = a | std::ranges::views::drop(2);
-  auto dv_aview = dv_a | std::ranges::views::drop(2);
+  auto aview = a | rng::views::drop(2);
+  auto dv_aview = dv_a | rng::views::drop(2);
   EXPECT_TRUE(equal(aview, dv_aview));
 
   std::ranges::for_each(aview, incr);

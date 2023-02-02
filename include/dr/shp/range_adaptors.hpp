@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <shp/views/standard_views.hpp>
-#include <shp/zip_view.hpp>
+#include <dr/shp/views/standard_views.hpp>
+#include <dr/shp/zip_view.hpp>
 
 namespace shp {
 

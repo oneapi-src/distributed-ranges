@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include <shp/vector.hpp>
+#include <dr/shp/allocators.hpp>
+#include <dr/shp/vector.hpp>
 
 namespace shp {
 
