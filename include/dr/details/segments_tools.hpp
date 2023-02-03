@@ -39,8 +39,10 @@ public:
 };
 
 template <rng::viewable_range R> auto enumerate(R &&r) {
-  using W = rng::range_size_t<R>;
-  return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
+  // Do we need to handle ranges that don't have size()?
+  // Get the type from passed argument
+  // using W = rng::range_size_t<R>;
+  return rng::views::zip(rng::views::iota(0u), std::forward<R>(r));
 }
 
 inline auto enumerate() { return enumerate_adapter_closure(); }
@@ -69,8 +71,13 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
     return rng::views::drop(segment, i == n_segs ? remainder : 0);
   };
 
-  return enumerate(segments) | rng::views::drop(n_segs) |
-         rng::views::transform(drop_partial);
+  auto x = enumerate(segments) | rng::views::drop(n_segs) |
+           rng::views::transform(drop_partial);
+  fmt::print("drop_segments:\n"
+             "  n: {} incoming: {}\n"
+             "  outgoing: {}\n",
+             n, segments, x);
+  return x;
 }
 
 } // namespace internal
@@ -105,7 +112,7 @@ auto segments_(V &&v) {
 template <rng::range V>
   requires(lib::is_drop_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
-auto segments_(V &&v) {
+auto xsegments_(V &&v) {
   return lib::internal::drop_segments(lib::ranges::segments(v.base()),
                                       v.base().size() - v.size());
 }
@@ -114,40 +121,12 @@ template <rng::range V>
   requires(lib::is_subrange_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_iterator<decltype(std::declval<V>().begin())>)
 auto segments_(V &&v) {
-  auto begin = rng::begin(v);
-  auto end = rng::begin(v);
-
-  auto seg_begin = lib::ranges::segment_index(begin);
-  auto local_begin = lib::ranges::local_index(begin);
-
-  auto seg_end = lib::ranges::segment_index(end);
-  auto local_end = lib::ranges::local_index(end);
-
-  auto n_segs = seg_end - seg_begin;
-
-  return lib::ranges::segments(begin) | lib::internal::enumerate() |
-         rng::views::drop(seg_begin) | rng::views::transform([=](auto &&e) {
-           auto &&[i, seg] = e;
-           if (i == seg_begin) {
-             return seg | rng::views::drop(local_begin);
-           } else {
-             return seg | rng::views::drop(0);
-           }
-         }) |
-         rng::views::take(n_segs) | lib::internal::enumerate() |
-         rng::views::transform([=](auto &&e) {
-           auto &&[i, seg] = e;
-           if (i == n_segs - 1) {
-             return seg | rng::views::take(local_end);
-           } else {
-             return seg | rng::views::take(0);
-           }
-         });
-
-  /*
-    return lib::internal::take_segments(lib::ranges::segments(v.begin()),
-                                        v.end() - v.begin());
-                                        */
+  fmt::print("subrange segments:\n"
+             "  v: {}\n"
+             "  segments(v.begin()): {}\n",
+             v, lib::ranges::segments(v.begin()));
+  return lib::internal::take_segments(lib::ranges::segments(v.begin()),
+                                      v.end() - v.begin());
 }
 
 } // namespace ranges
