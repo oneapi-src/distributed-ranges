@@ -29,6 +29,10 @@ TEST(ShpTests, Take) {
   EXPECT_TRUE(equal(aview, dv_aview));
 }
 
+template <lib::distributed_range R> void dr(R &&) {}
+
+template <lib::remote_range R> void rr(R &&) {}
+
 TEST(ShpTests, Drop) {
   const int n = 10;
   V a(n);
