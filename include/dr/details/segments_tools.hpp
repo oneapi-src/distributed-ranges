@@ -39,7 +39,7 @@ public:
 };
 
 template <rng::viewable_range R> auto enumerate(R &&r) {
-  using W = rng::range_size_t<R>;
+  using W = std::conditional_t<rng::sized_range<R>, rng::range_size_t<R>, std::size_t>;
   return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
 }
 
