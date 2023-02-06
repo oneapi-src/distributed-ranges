@@ -22,7 +22,7 @@ template <rng::sized_range R> struct range_size<R> {
   using type = rng::range_size_t<R>;
 };
 
-template <rng::range R> struct range_size_t = typename range_size<R>::type;
+template <rng::range R> using range_size_t = typename range_size<R>::type;
 
 } // namespace
 
