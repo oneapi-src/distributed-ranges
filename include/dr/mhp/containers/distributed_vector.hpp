@@ -4,6 +4,29 @@
 
 namespace mhp {
 
+// Base case. Anything conforms with itself.
+// template <lib::distributed_iterator It> auto conformant(It &&iter) {
+template <typename It> auto conformant(It &&iter) {
+  return std::pair(true, iter);
+}
+
+// Recursive case. This iterator conforms with the rest.
+template <lib::distributed_iterator It, typename... Its>
+auto conformant(It &&iter, Its &&...iters) {
+  auto &&[rest_conforms, constraining_iter] =
+      conformant(std::forward<Its>(iters)...);
+  return std::pair(rest_conforms && iter.conforms(constraining_iter), iter);
+}
+
+#if 0
+Need to restrict this to iota iterator
+// Recursive case. This iterator is non-constraining
+template <typename It, typename... Its>
+auto conformant(It &&iter, Its &&...iters) {
+  return conformant(std::forward<Its>(iters)...);
+}
+#endif
+
 // 1D, homogeneous, distributed storage
 template <typename T> struct storage {
 public:
