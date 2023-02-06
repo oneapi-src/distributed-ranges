@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/ranges_shim.hpp>
+#include <dr/details/device_subrange.hpp>
+
 namespace lib {
 
 namespace internal {
@@ -69,13 +73,8 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
     return rng::views::drop(segment, i == n_segs ? remainder : 0);
   };
 
-  auto x = enumerate(segments) | rng::views::drop(n_segs) |
+  return enumerate(segments) | rng::views::drop(n_segs) |
            rng::views::transform(drop_partial);
-  fmt::print("drop_segments:\n"
-             "  n: {} incoming: {}\n"
-             "  outgoing: {}\n",
-             n, segments, x);
-  return x;
 }
 
 } // namespace internal
@@ -110,7 +109,7 @@ auto segments_(V &&v) {
 template <rng::range V>
   requires(lib::is_drop_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
-auto xsegments_(V &&v) {
+auto segments_(V &&v) {
   return lib::internal::drop_segments(lib::ranges::segments(v.base()),
                                       v.base().size() - v.size());
 }
@@ -119,12 +118,46 @@ template <rng::range V>
   requires(lib::is_subrange_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_iterator<decltype(std::declval<V>().begin())>)
 auto segments_(V &&v) {
-  fmt::print("subrange segments:\n"
-             "  v: {}\n"
-             "  segments(v.begin()): {}\n",
-             v, lib::ranges::segments(v.begin()));
+  auto begin = rng::begin(v);
+  auto end = rng::end(v);
+
+  auto seg_begin = lib::ranges::segment_index(begin);
+  auto local_begin = lib::ranges::local_index(begin);
+
+  auto seg_end = lib::ranges::segment_index(end);
+  auto local_end = lib::ranges::local_index(end);
+
+  auto n_segs = seg_end - seg_begin + 1;
+
+  return lib::ranges::segments(begin) | lib::internal::enumerate() |
+         rng::views::drop(seg_begin) | rng::views::transform([=](auto &&e) {
+           auto &&[i, seg] = e;
+           if (i == 0) {
+             auto subseg = lib::device_subrange(seg);
+             subseg.advance(local_begin);
+             return subseg;
+           } else {
+             return lib::device_subrange(seg);
+           }
+         }) |
+         rng::views::take(n_segs) | lib::internal::enumerate() |
+         rng::views::transform([=](auto &&e) {
+           auto &&[i, seg] = e;
+           if (i == n_segs - 1) {
+             auto rank = lib::ranges::rank(seg);
+             auto first = rng::begin(seg);
+             auto last = first;
+             std::advance(last, local_end);
+             return lib::device_subrange(first, last, rank);
+           } else {
+             return lib::device_subrange(seg);
+           }
+         });
+
+/*
   return lib::internal::take_segments(lib::ranges::segments(v.begin()),
                                       v.end() - v.begin());
+                                      */
 }
 
 } // namespace ranges
