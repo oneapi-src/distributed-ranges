@@ -5,8 +5,8 @@
 #pragma once
 
 #include <dr/concepts/concepts.hpp>
-#include <dr/details/ranges_shim.hpp>
 #include <dr/details/device_subrange.hpp>
+#include <dr/details/ranges_shim.hpp>
 
 namespace lib {
 
@@ -43,7 +43,8 @@ public:
 };
 
 template <rng::viewable_range R> auto enumerate(R &&r) {
-  using W = std::conditional_t<rng::sized_range<R>, rng::range_size_t<R>, std::size_t>;
+  using W = std::conditional_t<rng::sized_range<R>, rng::range_size_t<R>,
+                               std::size_t>;
   return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
 }
 
@@ -74,7 +75,7 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
   };
 
   return enumerate(segments) | rng::views::drop(n_segs) |
-           rng::views::transform(drop_partial);
+         rng::views::transform(drop_partial);
 }
 
 } // namespace internal
@@ -154,10 +155,10 @@ auto segments_(V &&v) {
            }
          });
 
-/*
-  return lib::internal::take_segments(lib::ranges::segments(v.begin()),
-                                      v.end() - v.begin());
-                                      */
+  /*
+    return lib::internal::take_segments(lib::ranges::segments(v.begin()),
+                                        v.end() - v.begin());
+                                        */
 }
 
 } // namespace ranges
