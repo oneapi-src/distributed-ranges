@@ -12,6 +12,20 @@ namespace lib {
 
 namespace internal {
 
+namespace {
+
+template <rng::range R> struct range_size {
+  using type = std::size_t;
+};
+
+template <rng::sized_range R> struct range_size<R> {
+  using type = rng::range_size_t<R>;
+};
+
+template <rng::range R> struct range_size_t = typename range_size<R>::type;
+
+} // namespace
+
 // return number of full segments and remainder to cover n elements
 template <typename R>
 void n_segs_remainder(R &&segments, std::size_t n, auto &n_segs,
@@ -43,8 +57,7 @@ public:
 };
 
 template <rng::viewable_range R> auto enumerate(R &&r) {
-  using W = std::conditional_t<rng::sized_range<R>, rng::range_size_t<R>,
-                               std::size_t>;
+  using W = range_size_t<R>;
   return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
 }
 
