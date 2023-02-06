@@ -156,6 +156,12 @@ public:
   T get() const { return storage_->get(index_); }
   void put(const T &value) const { storage_->put(index_, value); }
 
+  auto conforms(auto &&other) const {
+    return (storage_->comm_ == other.storage_->comm_) &&
+           (index_ == other.index_) &&
+           (storage_->segment_size_ == other.storage_->segment_size_);
+  }
+
   auto rank() const { return storage_->rank(index_); }
   auto local() const { return storage_->local(index_); }
 

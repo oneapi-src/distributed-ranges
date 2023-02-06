@@ -45,6 +45,10 @@ template <typename... Ss> auto zip_segments(Ss &&...iters) {
 // Given an iter for a zip, return the segmentation
 //
 auto zip_iter_segments(auto zip_iter) {
+  // Dereferencing a zip iterator returns a tuple of references, we
+  // take the address of the references to iterators, and then get the
+  // segments from the iterators.
+
   // Given the list of refs as arguments, convert to list of iters
   auto zip = [](auto &&...refs) { return zip_segments(&refs...); };
 
@@ -54,6 +58,8 @@ auto zip_iter_segments(auto zip_iter) {
 }
 
 TEST(MhpTests, Zip) {
+  // auto x = rng::views::iota(1);
+  // static_assert(lib::distributed_contiguous_range<decltype(x)>);
   DV dv1(10), dv2(10);
   mhp::iota(dv1, 10);
   mhp::iota(dv2, 20);
