@@ -63,7 +63,7 @@ TEST(MhpTests, Zip) {
   DV dv1(10), dv2(10);
   mhp::iota(dv1, 10);
   mhp::iota(dv2, 20);
-  auto dzv = rng::view::zip(dv1, dv2);
+  auto dzv = rng::views::zip(dv1, dv2);
   fmt::print("dzv: {}\n"
              "  dv1: {}\n"
              "  dv2: {}\n"

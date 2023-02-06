@@ -99,12 +99,4 @@ auto segments_(V &&v) {
   return take_segments(lib::ranges::segments(v.begin()), v.end() - v.begin());
 }
 
-#if 0
-template <typename Iter>
-auto xsegments_(Iter &&iter) {
-  //return lib::ranges::segments(&std::get<0>(*iter));
-  return 0;
-}
-#endif
-
 } // namespace ranges

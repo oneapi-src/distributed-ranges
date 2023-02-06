@@ -14,7 +14,6 @@ add_executable(
   views.cpp
 )
 
-
 target_link_libraries(
   mhp-tests-n
   GTest::gtest_main

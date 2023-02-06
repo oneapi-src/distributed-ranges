@@ -35,7 +35,7 @@ void copy(DR_IN &&in, DI_OUT &&out) {
   auto &&[conforms, constraint] = conformant(in.begin(), out);
   if (conforms) {
     for (const auto &&[in_seg, out_seg] :
-         rng::view::zip(local_segments(in), local_segments(out))) {
+         rng::views::zip(local_segments(in), local_segments(out))) {
       rng::copy(in_seg, out_seg.begin());
     }
     out.barrier();
