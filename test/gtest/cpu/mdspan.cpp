@@ -187,8 +187,7 @@ TEST(CpuMpiTests, distribute_to_local_transpose) {
   if (comm_rank == 0) {
     lib::collective::transpose(0, dsrc, std::make_optional(ldst));
   } else {
-    lib::collective::transpose(
-        0, dsrc, std::optional<std::experimental::mdspan<T, dyn_2d>>());
+    lib::collective::transpose(0, dsrc, std::nullopt);
   }
 
   if (comm_rank == 0) {
@@ -212,8 +211,7 @@ TEST(CpuMpiTests, local_to_distribute_transpose) {
   if (comm_rank == 0) {
     lib::collective::transpose(0, std::make_optional(lsrc), ddst);
   } else {
-    lib::collective::transpose(
-        0, std::optional<std::experimental::mdspan<T, dyn_2d>>(), ddst);
+    lib::collective::transpose(0, std::nullopt, ddst);
   }
 
   if (comm_rank == 0) {

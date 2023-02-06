@@ -348,6 +348,19 @@ inline void transpose(int root,
   }
 }
 
+template <typename T, typename T2 = std::nullopt_t,
+          typename DExtents> // layout_right only arrays
+inline void transpose(int root, T2 src, distributed_mdarray<T, DExtents> &dst) {
+  transpose(root, std::optional<std::experimental::mdspan<T, DExtents>>(), dst);
+}
+
+template <typename T, typename T2 = std::nullopt_t,
+          typename SExtents> // layout_right only arrays
+inline void transpose(int root, const distributed_mdarray<T, SExtents> &src,
+                      T2 dst) {
+  transpose(root, src, std::optional<std::experimental::mdspan<T, SExtents>>());
+}
+
 template <mdspan_2d src_type, mdspan_2d dst_type>
 inline void transpose(const src_type &src, dst_type &dst) {
   if constexpr (mdspan_regular<src_type> && mdspan_regular<dst_type> &&
