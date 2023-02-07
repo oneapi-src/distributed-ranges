@@ -160,7 +160,7 @@ public:
   auto local() const { return storage_->local(index_); }
 
   auto segments() const {
-    return make_range();
+    return rng::views::chunk(make_range(), storage_->segment_size_);
     /*
     return lib::internal::drop_segments(
         rng::views::chunk(make_range(), storage_->segment_size_), index_);
