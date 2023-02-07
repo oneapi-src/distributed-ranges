@@ -42,6 +42,11 @@ void n_segs_remainder(R &&segments, std::size_t n, auto &n_segs,
   }
 }
 
+template <rng::viewable_range R> auto enumerate(R &&r) {
+  using W = range_size_t<R>;
+  return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
+}
+
 class enumerate_adapter_closure {
 public:
   enumerate_adapter_closure() {}
@@ -55,11 +60,6 @@ public:
     return enumerate(std::forward<R>(r));
   }
 };
-
-template <rng::viewable_range R> auto enumerate(R &&r) {
-  using W = range_size_t<R>;
-  return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
-}
 
 inline auto enumerate() { return enumerate_adapter_closure(); }
 
