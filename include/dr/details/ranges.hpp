@@ -50,7 +50,7 @@ struct rank_fn_ {
     if constexpr (has_rank_method<R> && !disable_rank<std::remove_cv_t<R>>) {
       return std::forward<R>(r).rank();
     } else if constexpr (is_remote_iterator_shadow_impl_<
-                             rng::range_value_t<R>>) {
+                             rng::iterator_t<R>>) {
       return operator()(rng::begin(std::forward<R>(r)));
     } else if constexpr (has_rank_adl<R> &&
                          !disable_rank<std::remove_cv_t<R>>) {
