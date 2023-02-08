@@ -146,7 +146,6 @@ cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   return root_event;
 }
 
-
 // Copy from distributed range to local range
 template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
