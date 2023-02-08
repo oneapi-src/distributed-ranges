@@ -38,4 +38,12 @@ struct is_subrange_view<rng::subrange<T>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_subrange_view_v = is_subrange_view<T>::value;
 
+template <typename... Views> struct is_zip_view : std::false_type {};
+
+template <typename... Views>
+struct is_zip_view<rng::zip_view<Views...>> : std::true_type {};
+
+template <typename... Views>
+inline constexpr bool is_zip_view_v = is_zip_view<Views...>::value;
+
 } // namespace lib
