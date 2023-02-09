@@ -15,9 +15,12 @@ TEST(MhpTests, IteratorConformance) {
 
   // 2 distributed vectors
   EXPECT_TRUE(conformant(dv1.begin(), dv2.begin()));
+  EXPECT_TRUE(conformant(dv1.begin(), dv2.begin(), dv1.begin()));
   ;
   // misaligned distributed vector
   EXPECT_FALSE(conformant(dv1.begin() + 1, dv2.begin()));
+  EXPECT_FALSE(conformant(dv1.begin() + 1, dv2.begin(), dv2.begin()));
+  EXPECT_FALSE(conformant(dv2.begin(), dv1.begin() + 1, dv2.begin()));
 
   // iota conformant with anything
   // EXPECT_TRUE(conformant(dv1.begin(), rng::views::iota(1)).first);
