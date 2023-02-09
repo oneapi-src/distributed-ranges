@@ -100,7 +100,6 @@ auto zip_iter_rank(auto zip_iter) {
 
 namespace ranges {
 
-#if 1
 // A standard library range adaptor does not change the rank of a
 // remote range, so we can simply return the rank of the base view.
 template <rng::range V>
@@ -145,7 +144,6 @@ template <rng::range V>
 auto segments_(V &&v) {
   return take_segments(lib::ranges::segments(v.begin()), v.end() - v.begin());
 }
-#endif
 
 template <rng::range V>
   requires(lib::is_zip_view_v<std::remove_cvref_t<V>>)
