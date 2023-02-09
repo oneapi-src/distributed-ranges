@@ -77,9 +77,6 @@ template <typename... Ss> auto zip_segments(Ss &&...iters) {
          rng::views::transform(zip_segment);
 }
 
-//
-// Given an iter for a zip, return the segmentation
-//
 auto zip_iter_segments(auto zip_iter) {
   // Dereferencing a zip iterator returns a tuple of references, we
   // take the address of the references to iterators, and then get the
@@ -91,6 +88,10 @@ auto zip_iter_segments(auto zip_iter) {
   // Convert the zip iterator to a tuple of references, and pass the
   // references as a list of arguments
   return std::apply(zip, *zip_iter);
+}
+
+auto zip_iter_rank(auto zip_iter) {
+  return lib::ranges::rank(std::get<0>(*zip_iter));
 }
 
 } // namespace internal
@@ -107,6 +108,22 @@ template <rng::range V>
 auto rank_(V &&v) {
   return lib::ranges::rank(std::forward<V>(v).base());
 }
+
+template <typename R>
+concept zip_segment =
+    requires(R &segment) { lib::ranges::rank(&(std::get<0>(segment[0]))); };
+
+template <zip_segment Segment> auto rank_(Segment &&segment) {
+  return lib::ranges::rank(&(std::get<0>(segment[0])));
+}
+
+#if 0
+// Did not use this
+template <lib::is_zip_iterator It>
+auto rank_(It &&it) {
+  return lib::ranges::rank(std::get<0>(*it));
+}
+#endif
 
 template <rng::range V>
   requires(lib::is_ref_view_v<std::remove_cvref_t<V>> &&
@@ -138,13 +155,12 @@ auto segments_(V &&v) {
 }
 #endif
 
-template <rng::range... Views>
-  requires(
-      lib::is_zip_view_v<std::remove_cvref_t<Views>...> &&
-      (lib::distributed_iterator<decltype(std::declval<Views>().begin())> &&
-       ...))
-auto segments_(rng::zip_view<Views...> &&zip) {
-  //  return zip_iter_segments(zip.begin());
+template <rng::range V>
+  requires(lib::is_zip_view_v<std::remove_cvref_t<V>>
+           //&& (lib::distributed_iterator<decltype(std::declval<V>().begin())>)
+           )
+auto segments_(V &&zip) {
+  return lib::internal::zip_iter_segments(zip.begin());
 }
 
 } // namespace ranges

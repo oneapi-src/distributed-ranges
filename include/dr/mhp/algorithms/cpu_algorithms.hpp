@@ -62,7 +62,7 @@ void for_each(DI first, DI last, auto op) {
 }
 
 /// Collective for_each on distributed range
-void for_each(lib::distributed_contiguous_range auto &&dr, auto op) {
+void for_each(lib::distributed_range auto &&dr, auto op) {
   for (const auto &s : local_segments(dr)) {
     rng::for_each(s, op);
   }

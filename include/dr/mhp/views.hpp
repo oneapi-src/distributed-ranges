@@ -9,7 +9,7 @@ namespace mhp {
 auto local_segments(auto &&x) {
   const auto &segments = lib::ranges::segments(x);
   auto is_local = [](const auto &segment) {
-    return segment.begin().local() != nullptr;
+    return lib::ranges::local(segment.begin()) != nullptr;
   };
   auto local_iter = [](auto &&segment) {
     auto b = segment.begin().local();

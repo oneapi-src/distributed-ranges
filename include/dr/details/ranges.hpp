@@ -71,7 +71,7 @@ struct rank_fn_ {
 
 inline constexpr auto rank = rank_fn_{};
 
-namespace {
+namespace internal {
 
 template <typename R>
 concept remote_range_shadow_impl_ =
@@ -93,7 +93,7 @@ concept has_segments_adl = requires(R &r) {
 
 struct segments_fn_ {
   template <rng::forward_range R>
-    requires(has_segments_method<R> || has_segments_adl<R>)
+    requires(internal::has_segments_method<R> || internal::has_segments_adl<R>)
   constexpr decltype(auto) operator()(R &&r) const {
     if constexpr (has_segments_method<R>) {
       return std::forward<R>(r).segments();
@@ -113,9 +113,9 @@ struct segments_fn_ {
   }
 };
 
-} // namespace
+} // namespace internal
 
-inline constexpr auto segments = segments_fn_{};
+inline constexpr auto segments = internal::segments_fn_{};
 
 namespace {
 
