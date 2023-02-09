@@ -31,9 +31,8 @@ void fill(DI first, DI last, auto value) {
 //
 
 template <lib::distributed_contiguous_range DR_IN, typename DI_OUT>
-void copy(DR_IN &&in, DI_OUT &&out) {
-  auto &&[conforms, constraint] = conformant(in.begin(), out);
-  if (conforms) {
+void copy(DR_IN &&in, DI_OUT out) {
+  if (conformant(in.begin(), out)) {
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
       rng::copy(in_seg, out_seg.begin());
