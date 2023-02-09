@@ -6,16 +6,19 @@ namespace mhp {
 
 // Base case. Anything conforms with itself.
 // template <lib::distributed_iterator It> auto conformant(It &&iter) {
-template <typename It> auto conformant(It &&iter) {
+auto conformant_impl(lib::distributed_iterator auto iter) {
   return std::pair(true, iter);
 }
 
 // Recursive case. This iterator conforms with the rest.
-template <lib::distributed_iterator It, typename... Its>
-auto conformant(It &&iter, Its &&...iters) {
-  auto &&[rest_conforms, constraining_iter] =
-      conformant(std::forward<Its>(iters)...);
+auto conformant_impl(lib::distributed_iterator auto iter,
+                     lib::distributed_iterator auto... iters) {
+  auto &&[rest_conforms, constraining_iter] = conformant_impl(iters...);
   return std::pair(rest_conforms && iter.conforms(constraining_iter), iter);
+}
+
+bool conformant(lib::distributed_iterator auto... iters) {
+  return conformant_impl(iters...).first;
 }
 
 #if 0
