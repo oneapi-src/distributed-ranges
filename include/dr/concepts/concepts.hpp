@@ -99,8 +99,4 @@ concept distributed_range_zip = requires(ZR &zr) {
                                   { std::get<0>(*zr.begin()) };
                                 };
 
-template <typename I>
-concept is_zip_iterator =
-    std::forward_iterator<I> && requires(I &iter) { std::get<0>(*iter); };
-
 } // namespace lib
