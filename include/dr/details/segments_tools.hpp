@@ -117,14 +117,6 @@ template <zip_segment Segment> auto rank_(Segment &&segment) {
   return lib::ranges::rank(&(std::get<0>(segment[0])));
 }
 
-#if 0
-// Did not use this
-template <lib::is_zip_iterator It>
-auto rank_(It &&it) {
-  return lib::ranges::rank(std::get<0>(*it));
-}
-#endif
-
 template <rng::range V>
   requires(lib::is_ref_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
@@ -156,9 +148,7 @@ auto segments_(V &&v) {
 #endif
 
 template <rng::range V>
-  requires(lib::is_zip_view_v<std::remove_cvref_t<V>>
-           //&& (lib::distributed_iterator<decltype(std::declval<V>().begin())>)
-           )
+  requires(lib::is_zip_view_v<std::remove_cvref_t<V>>)
 auto segments_(V &&zip) {
   return lib::internal::zip_iter_segments(zip.begin());
 }

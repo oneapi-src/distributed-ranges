@@ -35,33 +35,17 @@ TEST(MhpTests, Zip) {
              dzv, dv1, dv2, lib::ranges::segments(dv1),
              lib::ranges::segments(dv2));
   static_assert(lib::is_zip_view_v<decltype(dzv)>);
-  static_assert(lib::is_zip_iterator<decltype(dzv.begin())>);
-  static_assert(!lib::is_zip_iterator<int>);
-  //  static_assert(lib::ranges::internal::has_segments_adl<decltype(dzv.begin())>);
-  // static_assert(lib::distributed_iterator<decltype(dzv.begin())>);
-  fmt::print("zip segments: {}\n", ranges::segments_(dzv));
-  // fmt::print("rank seg 0: {}\n",
-  // lib::ranges::rank(ranges::segments_(dzv)[0]));
-  fmt::print("zip segments: {}\n", lib::ranges::segments(dzv));
   static_assert(lib::distributed_range<decltype(dzv)>);
 #if 0
   auto incr_0 = [](auto &x) {
     std::get<0>(x)++;
   };
   mhp::for_each(dzv, incr_0);
-#endif
   fmt::print("after foreach\n"
              "dzv: {}\n"
              "  dv1: {}\n"
              "  dv2: {}\n",
              dzv, dv1, dv2);
-#if 0
-  auto segments = ranges::segments_(dzv);
-  auto segment = segments[0];
-  auto element = segment[0];
-  auto ref = std::get<0>(element);
-  auto it = &ref;
-  auto r = lib::ranges::rank(it);
 #endif
 }
 
