@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <optional>
-
 #include "cpu-tests.hpp"
 
 // using rows as divideable by 2,3,4... because tests below assume storage_size
@@ -185,10 +183,9 @@ TEST(CpuMpiTests, distribute_to_local_transpose) {
   dsrc.fence();
 
   if (comm_rank == 0) {
-    lib::collective::transpose(0, dsrc, std::make_optional(ldst));
+    lib::collective::transpose(0, dsrc, ldst);
   } else {
-    lib::collective::transpose(
-        0, dsrc, std::optional<std::experimental::mdspan<T, dyn_2d>>());
+    lib::collective::transpose(0, dsrc, std::experimental::mdspan<T, dyn_2d>());
   }
 
   if (comm_rank == 0) {
@@ -210,10 +207,9 @@ TEST(CpuMpiTests, local_to_distribute_transpose) {
     fill_array(lsrc, rows, cols);
 
   if (comm_rank == 0) {
-    lib::collective::transpose(0, std::make_optional(lsrc), ddst);
+    lib::collective::transpose(0, lsrc, ddst);
   } else {
-    lib::collective::transpose(
-        0, std::optional<std::experimental::mdspan<T, dyn_2d>>(), ddst);
+    lib::collective::transpose(0, std::experimental::mdspan<T, dyn_2d>(), ddst);
   }
 
   if (comm_rank == 0) {

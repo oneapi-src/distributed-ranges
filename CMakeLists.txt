@@ -93,7 +93,7 @@ FetchContent_MakeAvailable(cpp-format)
 FetchContent_Declare(
   mdspan
   GIT_REPOSITORY https://github.com/kokkos/mdspan.git
-  GIT_TAG a18c489
+  GIT_TAG mdspan-0.5.0
 )
 FetchContent_MakeAvailable(mdspan)
 
