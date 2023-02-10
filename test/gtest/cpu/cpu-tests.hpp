@@ -13,12 +13,23 @@ extern int comm_rank;
 extern int comm_size;
 
 inline void expect_eq(const lib::mdspan_2d auto &m1,
-                      const lib::mdspan_2d auto &m2, int root = comm_rank) {
+                      const lib::mdspan_2d auto &m2,
+                      bool second_as_transposed = false, int root = comm_rank) {
   if (comm_rank == root) {
-    EXPECT_TRUE(m1.extents() == m2.extents());
+    if (second_as_transposed) {
+      EXPECT_TRUE(m1.extents().extent(0) == m2.extents().extent(1));
+      EXPECT_TRUE(m1.extents().extent(1) == m2.extents().extent(0));
+    } else {
+      EXPECT_TRUE(m1.extents() == m2.extents());
+    }
+
     for (std::size_t i = 0; i < m1.extents().extent(0); i++) {
       for (std::size_t j = 0; j < m1.extents().extent(1); j++) {
-        EXPECT_EQ(m1(i, j), m2(i, j));
+        if (second_as_transposed) {
+          EXPECT_EQ(m1(i, j), m2(j, i));
+        } else {
+          EXPECT_EQ(m1(i, j), m2(i, j));
+        }
       }
     }
   }
