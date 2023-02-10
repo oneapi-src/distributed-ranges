@@ -30,6 +30,7 @@ TEST(MhpTests, Zip) {
   EXPECT_TRUE(check_segments(dzv));
   EXPECT_TRUE(check_segments(dzv.begin()));
 
+  dv1.barrier();
   auto incr_first = [](auto x) { x.first++; };
   mhp::for_each(dzv, incr_first);
 
