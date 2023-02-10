@@ -151,4 +151,12 @@ auto segments_(V &&zip) {
   return lib::internal::zip_iter_segments(zip.begin());
 }
 
+template <typename I>
+concept is_zip_iterator =
+    std::forward_iterator<I> && requires(I &iter) { std::get<0>(*iter); };
+
+template <is_zip_iterator ZI> auto segments_(ZI zi) {
+  return lib::internal::zip_iter_segments(zi);
+}
+
 } // namespace ranges

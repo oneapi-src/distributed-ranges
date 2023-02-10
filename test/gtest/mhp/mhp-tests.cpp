@@ -10,14 +10,6 @@ int comm_size;
 
 cxxopts::ParseResult options;
 
-// Demonstrate some basic assertions.
-TEST(MhpMpiTests, BasicAssertions) {
-  // Expect two strings not to be equal.
-  EXPECT_STRNE("hello", "world");
-  // Expect equality.
-  EXPECT_EQ(7 * 6, 42);
-}
-
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   comm = MPI_COMM_WORLD;
