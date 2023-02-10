@@ -9,10 +9,11 @@ namespace mhp {
 auto local_segments(auto &&x) {
   const auto &segments = lib::ranges::segments(x);
   auto is_local = [](const auto &segment) {
-    return lib::ranges::local(segment.begin()) != nullptr;
+    auto local = lib::ranges::local(segment.begin());
+    return local != decltype(local)();
   };
   auto local_iter = [](auto &&segment) {
-    auto b = segment.begin().local();
+    auto b = lib::ranges::local(segment.begin());
     auto size = segment.end() - segment.begin();
     return rng::subrange(b, b + size);
   };

@@ -20,48 +20,28 @@ TEST(MhpTests, Subrange) {
   static_assert(lib::distributed_range<decltype(r)>);
 }
 
-auto local_zip_iter(auto remote_iter) {
-  // auto segments = lib::ranges::segments(remote_iter);
-  // auto remote = segments[0];
-  return remote_iter;
-}
-
 TEST(MhpTests, Zip) {
-  // auto x = rng::views::iota(1);
-  // static_assert(lib::distributed_contiguous_range<decltype(x)>);
   DV dv1(10), dv2(10);
   mhp::iota(dv1, 10);
   mhp::iota(dv2, 20);
   auto dzv = rng::views::zip(dv1, dv2);
+  static_assert(lib::is_zip_view_v<decltype(dzv)>);
+  static_assert(lib::distributed_range<decltype(dzv)>);
   EXPECT_TRUE(check_segments(dzv));
   EXPECT_TRUE(check_segments(dzv.begin()));
 
-  fmt::print("dzv: {}\n"
-             "  dv1: {}\n"
-             "  dv2: {}\n"
-             "  segments(dv1): {}\n"
-             "  segments(dv2): {}\n"
-             "  segments(dzv.begin()): {}\n"
-             "  segments(dzv): {}\n",
-             dzv, dv1, dv2, lib::ranges::segments(dv1),
-             lib::ranges::segments(dv2), lib::ranges::segments(dzv.begin()),
-             lib::ranges::segments(dzv));
-  static_assert(lib::is_zip_view_v<decltype(dzv)>);
-  static_assert(lib::distributed_range<decltype(dzv)>);
-  fmt::print("flat: {}\n", rng::join_view(lib::ranges::segments(dzv)));
-  auto local_iter = local_zip_iter(dzv.begin());
-  fmt::print("*dzv.begin(): {}\n"
-             "*local_iter: {}\n",
-             *dzv.begin(), *local_iter);
-#if 1
-  auto incr_0 = [](auto &x) { std::get<0>(x)++; };
-  mhp::for_each(dzv, incr_0);
-  fmt::print("after foreach\n"
-             "dzv: {}\n"
-             "  dv1: {}\n"
-             "  dv2: {}\n",
-             dzv, dv1, dv2);
-#endif
+  auto incr_first = [](auto x) { x.first++; };
+  mhp::for_each(dzv, incr_first);
+
+  if (comm_rank == 0) {
+    V v1(10), v2(10);
+    rng::iota(v1, 10);
+    rng::iota(v2, 20);
+    auto zv = rng::views::zip(v1, v2);
+    rng::for_each(zv, incr_first);
+
+    EXPECT_TRUE(equal(zv, dzv));
+  }
 }
 
 TEST(MhpTests, Take) {

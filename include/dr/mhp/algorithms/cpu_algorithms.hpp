@@ -66,7 +66,7 @@ void for_each(lib::distributed_range auto &&dr, auto op) {
   for (const auto &s : local_segments(dr)) {
     rng::for_each(s, op);
   }
-  dr.begin().barrier();
+  // dr.begin().barrier();
 }
 
 //

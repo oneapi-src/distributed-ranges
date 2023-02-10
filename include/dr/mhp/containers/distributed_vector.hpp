@@ -68,11 +68,14 @@ public:
   auto local_index(std::size_t index) const { return index % segment_size_; }
 
   T *local(std::size_t index) const {
-    // drlog.debug("index: {} rank(index) {}\n", index, rank(index));
-    if (rank(index) != std::size_t(comm_.rank())) {
-      return nullptr;
+    if (rank(index) == std::size_t(comm_.rank())) {
+      return data_.get() + local_index(index);
+    } else {
+      // If data is not local, return an iterator that cannot be used
+      // to reference data. Caller may check for equality with default
+      // constructor to know if data is local.
+      return T();
     }
-    return data_.get() + local_index(index);
   }
 
   auto rank(std::size_t index) const {

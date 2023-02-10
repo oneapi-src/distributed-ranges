@@ -159,4 +159,15 @@ template <is_zip_iterator ZI> auto segments_(ZI zi) {
   return lib::internal::zip_iter_segments(zi);
 }
 
+template <is_zip_iterator ZI> auto local_(ZI zi) {
+  auto refs_to_local_zip_iterator = [](auto &&...refs) {
+    // Convert the first segment of each component to local and then
+    // zip them together, returning the begin() of the zip view
+    return rng::zip_view(
+               (lib::ranges::local(lib::ranges::segments(&refs)[0]))...)
+        .begin();
+  };
+  return std::apply(refs_to_local_zip_iterator, *zi);
+}
+
 } // namespace ranges
