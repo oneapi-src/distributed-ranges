@@ -71,10 +71,7 @@ public:
     if (rank(index) == std::size_t(comm_.rank())) {
       return data_.get() + local_index(index);
     } else {
-      // If data is not local, return an iterator that cannot be used
-      // to reference data. Caller may check for equality with default
-      // constructor to know if data is local.
-      return T();
+      return nullptr;
     }
   }
 
@@ -259,6 +256,7 @@ public:
   iterator begin() const { return iterator(&storage_, 0); }
   iterator end() const { return iterator(&storage_, storage_.container_size_); }
 
+  void barrier() { storage_.barrier(); }
   void fence() { storage_.fence(); }
 
 private:

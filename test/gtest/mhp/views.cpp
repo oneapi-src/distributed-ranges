@@ -46,21 +46,26 @@ TEST(MhpTests, Zip) {
 
 TEST(MhpTests, Take) {
   const int n = 10;
-  V a(n);
   DV dv_a(n);
+  mhp::iota(dv_a, 20);
 
-  auto aview = rng::views::take(a, 2);
   auto dv_aview = rng::views::take(dv_a, 2);
   EXPECT_TRUE(check_segments(dv_aview));
 
-  mhp::iota(dv_a, 20);
   if (comm == 0) {
+    V a(n);
+    auto aview = rng::views::take(a, 2);
     rng::iota(a, 20);
     EXPECT_TRUE(equal(aview, dv_aview));
   }
 
+  dv_a.barrier();
   mhp::for_each(dv_aview, increment{});
+
   if (comm == 0) {
+    V a(n);
+    auto aview = rng::views::take(a, 2);
+    rng::iota(a, 20);
     rng::for_each(aview, increment{});
     EXPECT_TRUE(equal(aview, dv_aview));
   }
@@ -68,21 +73,26 @@ TEST(MhpTests, Take) {
 
 TEST(MhpTests, Drop) {
   const int n = 10;
-  V a(n);
+
   DV dv_a(n);
-
-  auto aview = rng::views::drop(a, 2);
-  auto dv_aview = rng::views::drop(dv_a, 2);
-  EXPECT_TRUE(check_segments(dv_aview));
-
   mhp::iota(dv_a, 20);
+  auto dv_aview = rng::views::drop(dv_a, 2);
+
+  EXPECT_TRUE(check_segments(dv_aview));
   if (comm == 0) {
+    V a(n);
     rng::iota(a, 20);
+    auto aview = rng::views::drop(a, 2);
     EXPECT_TRUE(equal(aview, dv_aview));
   }
 
+  dv_a.barrier();
   mhp::for_each(dv_aview, increment{});
+
   if (comm == 0) {
+    V a(n);
+    rng::iota(a, 20);
+    auto aview = rng::views::drop(a, 2);
     rng::for_each(aview, increment{});
     EXPECT_TRUE(equal(aview, dv_aview));
   }
