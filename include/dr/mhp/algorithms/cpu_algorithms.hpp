@@ -15,7 +15,7 @@ void fill(lib::distributed_contiguous_range auto &&dr, auto value) {
   for (const auto &s : local_segments(dr)) {
     rng::fill(s, value);
   }
-  dr.begin().barrier();
+  mhp::barrier(dr.begin());
 }
 
 /// Collective fill on iterator/sentinel for a distributed range
@@ -37,10 +37,10 @@ void copy(DR_IN &&in, DI_OUT out) {
          rng::views::zip(local_segments(in), local_segments(out))) {
       rng::copy(in_seg, out_seg.begin());
     }
-    out.barrier();
+    mhp::barrier(out);
   } else {
     rng::copy(in, out);
-    out.fence();
+    mhp::fence(out);
   }
 }
 
@@ -66,7 +66,7 @@ void for_each(lib::distributed_range auto &&dr, auto op) {
   for (const auto &s : local_segments(dr)) {
     rng::for_each(s, op);
   }
-  // dr.begin().barrier();
+  mhp::barrier(dr.begin());
 }
 
 //
@@ -81,7 +81,7 @@ void iota(DI first, DI last, auto value) {
   if (first.my_rank() == 0) {
     std::iota(first, last, value);
   }
-  first.fence();
+  mhp::fence(first);
 }
 
 /// Collective iota on distributed range

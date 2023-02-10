@@ -77,7 +77,11 @@ template <typename... Ss> auto zip_segments(Ss &&...iters) {
          rng::views::transform(zip_segment);
 }
 
-auto zip_iter_segments(auto zip_iter) {
+template <typename I>
+concept is_zip_iterator =
+    std::forward_iterator<I> && requires(I &iter) { std::get<0>(*iter); };
+
+auto zip_iter_segments(is_zip_iterator auto zip_iter) {
   // Dereferencing a zip iterator returns a tuple of references, we
   // take the address of the references to iterators, and then get the
   // segments from the iterators.
@@ -90,7 +94,7 @@ auto zip_iter_segments(auto zip_iter) {
   return std::apply(zip, *zip_iter);
 }
 
-auto zip_iter_rank(auto zip_iter) {
+auto zip_iter_rank(is_zip_iterator auto zip_iter) {
   return lib::ranges::rank(std::get<0>(*zip_iter));
 }
 
@@ -151,15 +155,11 @@ auto segments_(V &&zip) {
   return lib::internal::zip_iter_segments(zip.begin());
 }
 
-template <typename I>
-concept is_zip_iterator =
-    std::forward_iterator<I> && requires(I &iter) { std::get<0>(*iter); };
-
-template <is_zip_iterator ZI> auto segments_(ZI zi) {
+template <lib::internal::is_zip_iterator ZI> auto segments_(ZI zi) {
   return lib::internal::zip_iter_segments(zi);
 }
 
-template <is_zip_iterator ZI> auto local_(ZI zi) {
+template <lib::internal::is_zip_iterator ZI> auto local_(ZI zi) {
   auto refs_to_local_zip_iterator = [](auto &&...refs) {
     // Convert the first segment of each component to local and then
     // zip them together, returning the begin() of the zip view
