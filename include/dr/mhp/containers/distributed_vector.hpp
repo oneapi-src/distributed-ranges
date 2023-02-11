@@ -32,14 +32,26 @@ public:
   storage(const storage &) = delete;
   storage &operator=(const storage &) = delete;
 
-  storage(std::size_t size, lib::communicator comm = lib::communicator{})
-      : segment_size_((size + comm.size() - 1) / comm.size()),
-        data_(new T[segment_size_]) {
+  storage(std::size_t size, stencil::bounds b = stencil::bounds(),
+          lib::communicator comm = lib::communicator{})
+      : segment_size_((size + comm.size() - 1 - b.prev() - b.next()) /
+                      comm.size()),
+        data_size_(segment_size_ + b.prev() + b.next()),
+        data_(new T[data_size_]) {
     comm_ = comm;
+    bounds_ = b;
     container_size_ = size;
+    num_segments_ =
+        (container_size_ - bounds_.prev() - bounds_.next()) / segment_size_;
     container_capacity_ = comm.size() * segment_size_;
-    win_.create(comm, data_.get(), segment_size_ * sizeof(T));
+    win_.create(comm, data_.get(), data_size_ * sizeof(T));
     fence();
+    lib::drlog.debug("Storage allocated\n"
+                     "  size: {}\n"
+                     "  comm size: {}\n"
+                     "  segment size: {}\n"
+                     "  data size: {}\n",
+                     size, comm.size(), segment_size_, data_size_);
   }
 
   ~storage() {
@@ -49,7 +61,7 @@ public:
 
   T get(std::size_t index) const {
     auto segment = segment_index(index);
-    auto local = local_index(index);
+    auto local = local_index(index + bounds_.prev());
     auto val = win_.get<T>(segment, local);
     lib::drlog.debug("get {} =  {} ({}:{})\n", val, index, segment, local);
     return val;
@@ -57,19 +69,31 @@ public:
 
   void put(std::size_t index, const T &val) const {
     auto segment = segment_index(index);
-    auto local = local_index(index);
+    auto local = local_index(index) + bounds_.prev();
     lib::drlog.debug("put {} ({}:{}) = {}\n", index, segment, local, val);
     win_.put(val, segment, local);
   }
 
   // Undefined if you are iterating over a segment because the end of
   // segment points to the beginning of the next segment
-  auto segment_index(std::size_t index) const { return index / segment_size_; }
-  auto local_index(std::size_t index) const { return index % segment_size_; }
+  std::size_t segment_index(std::size_t index) const {
+    if (index < bounds_.prev()) {
+      return 0;
+    } else if (index >= container_size_ - bounds_.next()) {
+      return num_segments_ - 1;
+    } else {
+      return (index - bounds_.prev()) / segment_size_;
+    }
+  }
+
+  auto local_index(std::size_t index) const {
+    auto si = segment_index(index);
+    return index - (si * segment_size_ + bounds_.prev());
+  }
 
   T *local(std::size_t index) const {
     if (rank(index) == std::size_t(comm_.rank())) {
-      return data_.get() + local_index(index);
+      return data_.get() + local_index(index) + bounds_.prev();
     } else {
       return nullptr;
     }
@@ -90,7 +114,10 @@ public:
   lib::communicator::win win_;
 
   // member initializer list requires this order
+  stencil::bounds bounds_;
   std::size_t segment_size_ = 0;
+  std::size_t data_size_ = 0;
+  std::size_t num_segments_ = 0;
   std::unique_ptr<T[]> data_;
 };
 
@@ -242,7 +269,8 @@ public:
 
   distributed_vector() {}
 
-  distributed_vector(std::size_t count) : storage_(count) {}
+  distributed_vector(std::size_t count, stencil s = stencil())
+      : storage_(count, s.bnds()), stencil_(s) {}
 
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
@@ -261,6 +289,7 @@ public:
 
 private:
   storage<T> storage_;
+  stencil stencil_;
 };
 
 } // namespace mhp

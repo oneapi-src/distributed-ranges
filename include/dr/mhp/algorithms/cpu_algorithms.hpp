@@ -55,18 +55,18 @@ void copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out) {
 //
 //
 
-/// Collective for_each on iterator/sentinel for a distributed range
-template <lib::distributed_iterator DI>
-void for_each(DI first, DI last, auto op) {
-  mhp::for_each(rng::subrange(first, last), op);
-}
-
 /// Collective for_each on distributed range
 void for_each(lib::distributed_range auto &&dr, auto op) {
   for (const auto &s : local_segments(dr)) {
     rng::for_each(s, op);
   }
   mhp::barrier(dr.begin());
+}
+
+/// Collective for_each on iterator/sentinel for a distributed range
+template <lib::distributed_iterator DI>
+void for_each(DI first, DI last, auto op) {
+  mhp::for_each(rng::subrange(first, last), op);
 }
 
 //
