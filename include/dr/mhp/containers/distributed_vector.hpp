@@ -68,11 +68,11 @@ public:
   auto local_index(std::size_t index) const { return index % segment_size_; }
 
   T *local(std::size_t index) const {
-    // drlog.debug("index: {} rank(index) {}\n", index, rank(index));
-    if (rank(index) != std::size_t(comm_.rank())) {
+    if (rank(index) == std::size_t(comm_.rank())) {
+      return data_.get() + local_index(index);
+    } else {
       return nullptr;
     }
-    return data_.get() + local_index(index);
   }
 
   auto rank(std::size_t index) const {
@@ -256,6 +256,7 @@ public:
   iterator begin() const { return iterator(&storage_, 0); }
   iterator end() const { return iterator(&storage_, storage_.container_size_); }
 
+  void barrier() { storage_.barrier(); }
   void fence() { storage_.fence(); }
 
 private:

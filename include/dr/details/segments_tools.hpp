@@ -56,6 +56,48 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
          rng::views::transform(drop_partial);
 }
 
+//
+// Zip the segments for 1 or more distributed ranges. e.g.:
+//
+//   segments(dv1): [[10, 11, 12, 13, 14], [15, 16, 17, 18, 19]]
+//   segments(dv2): [[20, 21, 22, 23, 24], [25, 26, 27, 28, 29]]
+//
+//   drop the first 4 elements and zip the segments for the rest
+//
+//    zip segments: [[(14, 24)], [(15, 25), (16, 26), (17, 27), (18, 28), (19,
+//    29)]]
+//
+template <typename... Ss> auto zip_segments(Ss &&...iters) {
+  auto zip_segment = [](auto &&v) {
+    auto zip = [](auto &&...refs) { return rng::views::zip(refs...); };
+    return std::apply(zip, v);
+  };
+
+  return rng::views::zip(lib::ranges::segments(iters)...) |
+         rng::views::transform(zip_segment);
+}
+
+template <typename I>
+concept is_zip_iterator =
+    std::forward_iterator<I> && requires(I &iter) { std::get<0>(*iter); };
+
+auto zip_iter_segments(is_zip_iterator auto zip_iter) {
+  // Dereferencing a zip iterator returns a tuple of references, we
+  // take the address of the references to iterators, and then get the
+  // segments from the iterators.
+
+  // Given the list of refs as arguments, convert to list of iters
+  auto zip = [](auto &&...refs) { return zip_segments(&refs...); };
+
+  // Convert the zip iterator to a tuple of references, and pass the
+  // references as a list of arguments
+  return std::apply(zip, *zip_iter);
+}
+
+auto zip_iter_rank(is_zip_iterator auto zip_iter) {
+  return lib::ranges::rank(std::get<0>(*zip_iter));
+}
+
 } // namespace internal
 
 } // namespace lib
@@ -68,6 +110,14 @@ template <rng::range V>
   requires(lib::remote_range<decltype(std::declval<V>().base())>)
 auto rank_(V &&v) {
   return lib::ranges::rank(std::forward<V>(v).base());
+}
+
+template <typename R>
+concept zip_segment =
+    requires(R &segment) { lib::ranges::rank(&(std::get<0>(segment[0]))); };
+
+template <zip_segment Segment> auto rank_(Segment &&segment) {
+  return lib::ranges::rank(&(std::get<0>(segment[0])));
 }
 
 template <rng::range V>
@@ -97,6 +147,27 @@ template <rng::range V>
            lib::distributed_iterator<decltype(std::declval<V>().begin())>)
 auto segments_(V &&v) {
   return take_segments(lib::ranges::segments(v.begin()), v.end() - v.begin());
+}
+
+template <rng::range V>
+  requires(lib::is_zip_view_v<std::remove_cvref_t<V>>)
+auto segments_(V &&zip) {
+  return lib::internal::zip_iter_segments(zip.begin());
+}
+
+template <lib::internal::is_zip_iterator ZI> auto segments_(ZI zi) {
+  return lib::internal::zip_iter_segments(zi);
+}
+
+template <lib::internal::is_zip_iterator ZI> auto local_(ZI zi) {
+  auto refs_to_local_zip_iterator = [](auto &&...refs) {
+    // Convert the first segment of each component to local and then
+    // zip them together, returning the begin() of the zip view
+    return rng::zip_view(
+               (lib::ranges::local(lib::ranges::segments(&refs)[0]))...)
+        .begin();
+  };
+  return std::apply(refs_to_local_zip_iterator, *zi);
 }
 
 } // namespace ranges
