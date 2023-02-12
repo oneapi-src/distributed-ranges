@@ -30,8 +30,8 @@ void fill(DI first, DI last, auto value) {
 //
 //
 
-template <lib::distributed_contiguous_range DR_IN, typename DI_OUT>
-void copy(DR_IN &&in, DI_OUT out) {
+void copy(lib::distributed_contiguous_range auto &&in,
+          lib::distributed_iterator auto out) {
   if (conformant(in.begin(), out)) {
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
@@ -44,8 +44,8 @@ void copy(DR_IN &&in, DI_OUT out) {
   }
 }
 
-template <lib::distributed_iterator DI_IN, lib::distributed_iterator DI_OUT>
-void copy(DI_IN &&first, DI_IN &&last, DI_OUT &&out) {
+template <lib::distributed_iterator DI_IN>
+void copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out) {
   mhp::copy(rng::subrange(first, last), out);
 }
 
@@ -87,6 +87,32 @@ void iota(DI first, DI last, auto value) {
 /// Collective iota on distributed range
 void iota(lib::distributed_contiguous_range auto &&r, auto value) {
   mhp::iota(r.begin(), r.end(), value);
+}
+
+//
+//
+// transform
+//
+//
+
+void transform(lib::distributed_contiguous_range auto &&in,
+               lib::distributed_iterator auto out, auto op) {
+  if (conformant(in.begin(), out)) {
+    for (const auto &&[in_seg, out_seg] :
+         rng::views::zip(local_segments(in), local_segments(out))) {
+      rng::transform(in_seg, out_seg.begin(), op);
+    }
+    mhp::barrier(out);
+  } else {
+    rng::transform(in, out, op);
+    mhp::fence(out);
+  }
+}
+
+template <lib::distributed_iterator DI_IN>
+void transform(DI_IN &&first, DI_IN &&last,
+               lib::distributed_iterator auto &&out, auto op) {
+  mhp::transform(rng::subrange(first, last), out, op);
 }
 
 } // namespace mhp
