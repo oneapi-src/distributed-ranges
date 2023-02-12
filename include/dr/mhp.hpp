@@ -41,6 +41,7 @@ namespace rng = ranges;
 #include "concepts/concepts.hpp"
 #include "details/view_detectors.hpp"
 #include "details/segments_tools.hpp"
+#include "details/views.hpp"
 #include "mhp/cpos.hpp"
 #include "mhp/containers/stencil.hpp"
 #include "mhp/containers/distributed_vector.hpp"

@@ -10,11 +10,10 @@ using DV = mhp::distributed_vector<T>;
 using DVI = mhp::distributed_vector_iterator<T>;
 
 std::size_t radius = 4;
-std::size_t n = 10 + 2 * radius;
+std::size_t n = 10;
 
 TEST(MhpTests, Stencil) {
-  mhp::stencil stencil((mhp::stencil::bounds(radius)));
-  DV dv(n, stencil);
+  DV dv(n, mhp::stencil(radius));
   V v(n);
 
   mhp::iota(dv, 10);
@@ -30,12 +29,13 @@ TEST(MhpTests, Stencil) {
 
   auto init_win = [](auto &v) {
     auto p = &v;
-    for (std::size_t i = 0; i < radius; i++) {
+    for (std::size_t i = 0; i <= radius; i++) {
       p[-i] = 1;
       p[i] = 1;
     }
   };
 
+  lib::drlog.debug("dv element ranks: {}\n", lib::ranked_view(dv));
   mhp::for_each(dv.begin() + radius, dv.end() - radius, init_win);
 
   if (comm_rank == 0) {
