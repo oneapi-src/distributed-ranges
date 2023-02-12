@@ -89,4 +89,29 @@ void iota(lib::distributed_contiguous_range auto &&r, auto value) {
   mhp::iota(r.begin(), r.end(), value);
 }
 
+//
+//
+// transform
+//
+//
+
+template <lib::distributed_contiguous_range DR_IN, typename DI_OUT>
+void transform(DR_IN &&in, DI_OUT out, auto op) {
+  if (conformant(in.begin(), out)) {
+    for (const auto &&[in_seg, out_seg] :
+         rng::views::zip(local_segments(in), local_segments(out))) {
+      rng::transform(in_seg, out_seg.begin(), op);
+    }
+    mhp::barrier(out);
+  } else {
+    rng::transform(in, out, op);
+    mhp::fence(out);
+  }
+}
+
+template <lib::distributed_iterator DI_IN, lib::distributed_iterator DI_OUT>
+void transform(DI_IN &&first, DI_IN &&last, DI_OUT &&out, auto op) {
+  mhp::transform(rng::subrange(first, last), out, op);
+}
+
 } // namespace mhp
