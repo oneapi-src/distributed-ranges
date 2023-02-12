@@ -237,6 +237,10 @@ private:
   const iterator iterator_;
 };
 
+inline auto stencil_convert(stencil s) {
+  return lib::stencil<1>(s.bounds().prev(), s.bounds().next());
+}
+
 template <typename T> struct distributed_vector {
 public:
   using value_type = T;
@@ -250,7 +254,9 @@ public:
   distributed_vector() {}
 
   distributed_vector(std::size_t count, stencil s = stencil())
-      : storage_(count, s.bounds()), stencil_(s) {}
+      : storage_(count, s.bounds()), stencil_(s),
+        halo_(storage_.comm_, storage_.data_.get(), storage_.data_size_,
+              stencil_convert(s)) {}
 
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
@@ -264,12 +270,15 @@ public:
   iterator begin() const { return iterator(&storage_, 0); }
   iterator end() const { return iterator(&storage_, storage_.container_size_); }
 
+  auto &halo() { return halo_; }
+
   void barrier() { storage_.barrier(); }
   void fence() { storage_.fence(); }
 
 private:
   storage<T> storage_;
   stencil stencil_;
+  lib::span_halo<T> halo_;
 };
 
 } // namespace mhp

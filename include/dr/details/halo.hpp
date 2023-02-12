@@ -320,6 +320,13 @@ struct halo_bounds {
     next = nxt;
     periodic = per;
   }
+  stencil(std::size_t prev, std::size_t next, bool periodic = false) {
+    for (auto &r : radius_) {
+      r.prev = prev;
+      r.next = next;
+    }
+    periodic_ = periodic;
+  }
 
   std::size_t prev, next;
   bool periodic;
