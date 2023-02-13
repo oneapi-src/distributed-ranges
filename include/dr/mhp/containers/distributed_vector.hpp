@@ -34,7 +34,7 @@ public:
 
   storage(std::size_t size, halo_bounds hb = halo_bounds(),
           lib::communicator comm = lib::communicator{})
-      : segment_size_((size + comm.size() - 1) / comm.size()),
+      : segment_size_(segment_size(hb, size, comm)),
         data_size_(segment_size_ + hb.prev() + hb.next()),
         data_(new T[data_size_]) {
     comm_ = comm;
@@ -49,6 +49,13 @@ public:
   ~storage() {
     fence();
     win_.free();
+  }
+
+  static auto segment_size(auto hb, auto size, auto comm) {
+    // make segment as least as big as halo to ensure halo only comes nearest
+    // neighbor.
+    return std::max(
+        {(size + comm.size() - 1) / comm.size(), hb.prev(), hb.next()});
   }
 
   T get(std::size_t index) const {

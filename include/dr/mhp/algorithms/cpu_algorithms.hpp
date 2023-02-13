@@ -39,6 +39,7 @@ void copy(lib::distributed_contiguous_range auto &&in,
     }
     mhp::barrier(out);
   } else {
+    lib::drlog.debug("copy: serial execution\n");
     rng::copy(in, out);
     mhp::fence(out);
   }
@@ -57,14 +58,7 @@ void copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out) {
 
 /// Collective for_each on distributed range
 void for_each(lib::distributed_range auto &&dr, auto op) {
-  lib::drlog.debug("for_each:\n");
-  // lib::drlog.debug("  rank: {}\n",
-  // lib::ranges::rank(lib::ranges::segments(dr)[0]));
-  for (const auto &s : lib::ranges::segments(dr)) {
-    lib::drlog.debug("  segment: {}\n", s);
-  }
   for (const auto &s : local_segments(dr)) {
-    lib::drlog.debug("  local segment: {}\n", s);
     rng::for_each(s, op);
   }
   mhp::barrier(dr.begin());
@@ -111,6 +105,7 @@ void transform(lib::distributed_contiguous_range auto &&in,
     }
     mhp::barrier(out);
   } else {
+    lib::drlog.debug("transform: serial execution\n");
     rng::transform(in, out, op);
     mhp::fence(out);
   }

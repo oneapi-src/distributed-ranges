@@ -13,30 +13,29 @@ std::size_t radius = 4;
 std::size_t n = 10;
 
 TEST(MhpTests, Stencil) {
-  DV dv_a(n, mhp::stencil(radius));
-  DV dv_b(n, mhp::stencil(radius));
-  V v(n);
+  DV dv_in(n, mhp::stencil(radius));
+  DV dv_out(n, mhp::stencil(radius));
+  V v_in(n);
 
-  mhp::iota(dv_a, 10);
-  dv_a.halo().exchange_begin();
-  dv_a.halo().exchange_finalize();
+  mhp::iota(dv_in, 10);
+  dv_in.halo().exchange_begin();
+  dv_in.halo().exchange_finalize();
 
-  mhp::fill(dv_b, 100);
-  dv_b.halo().exchange_begin();
-  dv_b.halo().exchange_finalize();
+  mhp::fill(dv_out, 100);
+  dv_out.halo().exchange_begin();
+  dv_out.halo().exchange_finalize();
 
   if (comm_rank == 0) {
-    fmt::print("segments(dv): {}\n", lib::ranges::segments(dv_a));
-    rng::iota(v, 10);
-    EXPECT_TRUE(check_segments(dv_a));
-    EXPECT_TRUE(equal(v, dv_a));
+    rng::iota(v_in, 10);
+    EXPECT_TRUE(check_segments(dv_in));
+    EXPECT_TRUE(equal(v_in, dv_in));
   }
 
   MPI_Barrier(comm);
 
-#if 0
-  auto sum = [](auto &v) {
+  auto sum = [](auto &&v) {
     T s = v;
+    auto p = &v;
     for (std::size_t i = 0; i <= radius; i++) {
       s += p[-i];
       s += p[i];
@@ -45,13 +44,14 @@ TEST(MhpTests, Stencil) {
     return s;
   };
 
-  auto inner = rng::subrange(dv.begin() + radius, dv.end() - radius);
-  mhp::transform(inner
-  mhp::transform(dv.begin() + radius, dv.end() - radius, init_win);
+  mhp::transform(dv_in.begin() + radius, dv_in.end() - radius,
+                 dv_out.begin() + radius, sum);
 
   if (comm_rank == 0) {
-    std::for_each(v.begin() + radius, v.end() - radius, init_win);
-    EXPECT_TRUE(equal(v, dv));
+    V v_out(n);
+    rng::fill(v_out, 100);
+    std::transform(v_in.begin() + radius, v_in.end() - radius,
+                   v_out.begin() + radius, sum);
+    EXPECT_TRUE(unary_check(v_in, v_out, dv_out));
   }
-#endif
 }
