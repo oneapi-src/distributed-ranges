@@ -24,10 +24,6 @@ void n_segs_remainder(R &&segments, std::size_t n, auto &n_segs,
   }
 }
 
-template <typename R> auto enumerate(R &&segments) {
-  return rng::views::zip(rng::views::iota(0u), segments);
-}
-
 // Take the first n elements
 template <typename R> auto take_segments(R &&segments, std::size_t n) {
   std::size_t n_segs, remainder;
@@ -38,7 +34,7 @@ template <typename R> auto take_segments(R &&segments, std::size_t n) {
     return rng::views::take(segment, i == n_segs ? remainder : segment.size());
   };
 
-  return enumerate(segments) | rng::views::take(n_segs + 1) |
+  return rng::views::enumerate(segments) | rng::views::take(n_segs + 1) |
          rng::views::transform(take_partial);
 }
 
@@ -52,7 +48,7 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
     return rng::views::drop(segment, i == n_segs ? remainder : 0);
   };
 
-  return enumerate(segments) | rng::views::drop(n_segs) |
+  return rng::views::enumerate(segments) | rng::views::drop(n_segs) |
          rng::views::transform(drop_partial);
 }
 
