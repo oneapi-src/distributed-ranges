@@ -146,7 +146,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   add_subdirectory(examples/serial)
   add_subdirectory(test/gtest/serial)
-  add_subdirectory(examples/cpu)
+  add_subdirectory(examples/mhp)
   add_subdirectory(test/gtest/cpu)
   add_subdirectory(test/gtest/mhp)
 
