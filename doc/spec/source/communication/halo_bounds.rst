@@ -2,22 +2,22 @@
 ..
 .. SPDX-License-Identifier: BSD-3-Clause
 
-.. _stencil:
+.. _halo_bounds:
 
-===========
-``stencil``
-===========
+===============
+``halo_bounds``
+===============
 
 Interface
 =========
 
-.. doxygenclass:: lib::stencil
+.. doxygenstruct:: lib::halo_bounds
    :members:
 
 Description
 ===========
 
-A ``stencil`` specifies the set of points that may be accessed in a
+A ``halo_bounds`` specifies the set of points that may be accessed in a
 stencil computation.
 
 .. seealso::

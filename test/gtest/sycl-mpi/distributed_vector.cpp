@@ -24,16 +24,16 @@ TEST(CpuMpiTests, DistributedVectorStencil) {
   DV::allocator_type alloc;
 
   std::size_t radius = 2;
-  DV::stencil_type s(radius);
+  lib::halo_bounds hb(radius);
 
   std::size_t slice = 4;
   std::size_t n = comm_size * slice + 2 * radius;
-  DV dv(s, alloc, n);
+  DV dv(hb, alloc, n);
   dv.fence();
 
   EXPECT_EQ(dv.local().size(), slice + 2 * radius);
-  EXPECT_EQ(s.radius()[0].next, radius);
-  EXPECT_EQ(s.radius()[0].prev, radius);
+  EXPECT_EQ(hb.next, radius);
+  EXPECT_EQ(hb.prev, radius);
 
   if (comm_rank == 0) {
     std::iota(dv.begin(), dv.end(), 1);
