@@ -32,10 +32,10 @@ public:
   storage(const storage &) = delete;
   storage &operator=(const storage &) = delete;
 
-  storage(std::size_t size, halo_bounds hb = halo_bounds(),
+  storage(std::size_t size, lib::halo_bounds hb = lib::halo_bounds(),
           lib::communicator comm = lib::communicator{})
       : segment_size_(segment_size(hb, size, comm)),
-        data_size_(segment_size_ + hb.prev() + hb.next()),
+        data_size_(segment_size_ + hb.prev + hb.next),
         data_(new T[data_size_]) {
     comm_ = comm;
     halo_bounds_ = hb;
@@ -54,13 +54,12 @@ public:
   static auto segment_size(auto hb, auto size, auto comm) {
     // make segment as least as big as halo to ensure halo only comes nearest
     // neighbor.
-    return std::max(
-        {(size + comm.size() - 1) / comm.size(), hb.prev(), hb.next()});
+    return std::max({(size + comm.size() - 1) / comm.size(), hb.prev, hb.next});
   }
 
   T get(std::size_t index) const {
     auto segment = segment_index(index);
-    auto local = local_index(index) + halo_bounds_.prev();
+    auto local = local_index(index) + halo_bounds_.prev;
     auto val = win_.get<T>(segment, local);
     lib::drlog.debug("get {} =  {} ({}:{})\n", val, index, segment, local);
     return val;
@@ -68,7 +67,7 @@ public:
 
   void put(std::size_t index, const T &val) const {
     auto segment = segment_index(index);
-    auto local = local_index(index) + halo_bounds_.prev();
+    auto local = local_index(index) + halo_bounds_.prev;
     lib::drlog.debug("put {} ({}:{}) = {}\n", index, segment, local, val);
     win_.put(val, segment, local);
   }
@@ -81,7 +80,7 @@ public:
   T *local(std::size_t index) const {
     lib::drlog.debug("local: index: {} rank: {}\n", index, rank(index));
     if (rank(index) == std::size_t(comm_.rank())) {
-      return data_.get() + local_index(index) + halo_bounds_.prev();
+      return data_.get() + local_index(index) + halo_bounds_.prev;
     } else {
       return nullptr;
     }
@@ -102,7 +101,7 @@ public:
   lib::communicator::win win_;
 
   // member initializer list requires this order
-  halo_bounds halo_bounds_;
+  lib::halo_bounds halo_bounds_;
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
   std::unique_ptr<T[]> data_;
@@ -244,10 +243,6 @@ private:
   const iterator iterator_;
 };
 
-inline auto stencil_convert(stencil s) {
-  return lib::stencil<1>(s.bounds().prev(), s.bounds().next());
-}
-
 template <typename T> struct distributed_vector {
 public:
   using value_type = T;
@@ -260,10 +255,10 @@ public:
 
   distributed_vector() {}
 
-  distributed_vector(std::size_t count, stencil s = stencil())
-      : storage_(count, s.bounds()), stencil_(s),
-        halo_(storage_.comm_, storage_.data_.get(), storage_.data_size_,
-              stencil_convert(s)) {}
+  distributed_vector(std::size_t count,
+                     lib::halo_bounds hb = lib::halo_bounds())
+      : storage_(count, hb),
+        halo_(storage_.comm_, storage_.data_.get(), storage_.data_size_, hb) {}
 
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
@@ -284,7 +279,6 @@ public:
 
 private:
   storage<T> storage_;
-  stencil stencil_;
   lib::span_halo<T> halo_;
 };
 

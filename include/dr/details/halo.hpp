@@ -320,13 +320,6 @@ struct halo_bounds {
     next = nxt;
     periodic = per;
   }
-  stencil(std::size_t prev, std::size_t next, bool periodic = false) {
-    for (auto &r : radius_) {
-      r.prev = prev;
-      r.next = next;
-    }
-    periodic_ = periodic;
-  }
 
   std::size_t prev, next;
   bool periodic;
@@ -354,8 +347,7 @@ public:
 
 private:
   void check(auto size, auto hb) {
-    assert(size >=
-           hb.prev + hb.next + std::max(hb.prev, hb.next));
+    assert(size >= hb.prev + hb.next + std::max(hb.prev, hb.next));
   }
 
   static std::vector<group_type>
@@ -390,3 +382,10 @@ private:
 };
 
 } // namespace lib
+
+template <> struct fmt::formatter<lib::halo_bounds> : formatter<string_view> {
+  template <typename FmtContext>
+  auto format(lib::halo_bounds hb, FmtContext &ctx) {
+    return format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
+  }
+};
