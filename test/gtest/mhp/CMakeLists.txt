@@ -11,6 +11,7 @@ add_executable(
   algorithms.cpp
   conformance.cpp
   distributed_vector.cpp
+  stencil.cpp
   views.cpp
 )
 

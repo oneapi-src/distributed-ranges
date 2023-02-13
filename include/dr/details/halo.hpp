@@ -337,13 +337,19 @@ public:
 
   span_halo(communicator comm, T *data, std::size_t size, halo_bounds hb)
       : span_halo_impl<T, Memory>(comm, owned_groups(comm, {data, size}, hb),
-                                  halo_groups(comm, {data, size}, hb)) {}
+                                  halo_groups(comm, {data, size}, hb)) {
+    check(size, hb);
+  }
 
   span_halo(communicator comm, std::span<T> span, halo_bounds hb)
       : span_halo_impl<T, Memory>(comm, owned_groups(comm, span, hb),
                                   halo_groups(comm, span, hb)) {}
 
 private:
+  void check(auto size, auto hb) {
+    assert(size >= hb.prev + hb.next + std::max(hb.prev, hb.next));
+  }
+
   static std::vector<group_type>
   owned_groups(communicator comm, std::span<T> span, halo_bounds hb) {
     std::vector<group_type> owned;
@@ -376,3 +382,10 @@ private:
 };
 
 } // namespace lib
+
+template <> struct fmt::formatter<lib::halo_bounds> : formatter<string_view> {
+  template <typename FmtContext>
+  auto format(lib::halo_bounds hb, FmtContext &ctx) {
+    return format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
+  }
+};
