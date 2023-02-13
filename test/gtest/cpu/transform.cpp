@@ -91,8 +91,8 @@ TEST(CpuMpiTests, Stencil) {
   };
 
   std::vector<int> v_in(n), v_out(n);
-  lib::stencil<1> s(1);
-  lib::distributed_vector<int> dv_in(s, n), dv_out1(s, n), dv_out2(s, n);
+  lib::halo_bounds hb(1);
+  lib::distributed_vector<int> dv_in(hb, n), dv_out1(hb, n), dv_out2(hb, n);
 
   if (comm_rank == 0) {
     rng::iota(v_in, 100);

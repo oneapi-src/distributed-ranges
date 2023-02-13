@@ -27,7 +27,7 @@ across multiple processes.
 
    `std::vector`_
 
-   :ref:`stencil`
+   :ref:`halo_bounds`
 
 
 Usage

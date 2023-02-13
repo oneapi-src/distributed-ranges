@@ -9,6 +9,6 @@
 .. toctree::
    :maxdepth: 1
 
-   stencil
+   halo_bounds
    unstructured_halo
    index_group
