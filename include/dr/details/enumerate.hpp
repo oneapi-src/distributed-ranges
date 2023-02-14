@@ -24,15 +24,15 @@ template <rng::range R> using range_size_t = typename range_size<R>::type;
 
 } // namespace
 
-template <rng::viewable_range R> auto enumerate(R &&r)
-{
+template <rng::viewable_range R> auto enumerate(R &&r) {
   using S = range_size_t<R>;
   // NOTE: This line only necessary due to bug in range-v3 where views
   //       have non-weakly-incrementable size types. (Standard mandates
   //       size type must be weakly incrementable.)
   using W = std::conditional_t<std::weakly_incrementable<S>, S, std::size_t>;
-  if constexpr(rng::sized_range<R>) {
-    return rng::views::zip(rng::views::iota(W{0}, W{rng::size(r)}), std::forward<R>(r));
+  if constexpr (rng::sized_range<R>) {
+    return rng::views::zip(rng::views::iota(W{0}, W{rng::size(r)}),
+                           std::forward<R>(r));
   } else {
     return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
   }
@@ -54,6 +54,6 @@ public:
 
 inline auto enumerate() { return enumerate_adapter_closure(); }
 
-} // end internal
+} // namespace internal
 
-} // end lib
+} // namespace lib

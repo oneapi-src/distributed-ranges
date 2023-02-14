@@ -55,7 +55,6 @@ auto take_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
          rng::views::transform(std::move(take_partial));
 }
 
-
 // Take the first n elements
 template <typename R> auto take_segments(R &&segments, std::size_t n) {
   std::size_t last_seg, remainder;
