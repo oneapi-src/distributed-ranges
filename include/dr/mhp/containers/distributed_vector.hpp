@@ -4,26 +4,28 @@
 
 namespace mhp {
 
-// Base case. Anything conforms with itself.
-// template <lib::distributed_iterator It> auto conformant(It &&iter) {
-
-bool conformant(lib::distributed_iterator auto) { return true; }
-
-// Recursive case. This iterator conforms with the rest.
-bool conformant(lib::distributed_iterator auto iter,
-                lib::distributed_iterator auto iter2,
-                lib::distributed_iterator auto... iters) {
-  return iter.conforms(iter2) && conformant(iter2, iters...);
+// It won't have segments if it is a zip of non-aligned data
+bool aligned(lib::distributed_iterator auto iter) {
+  return !lib::ranges::segments(iter).empty();
 }
 
-#if 0
-Need to restrict this to iota iterator
-// Recursive case. This iterator is non-constraining
-template <typename It, typename... Its>
-auto conformant(It &&iter, Its &&...iters) {
-  return conformant(std::forward<Its>(iters)...);
+// iter1 is aligned with iter2, and iter2 is aligned with the rest
+bool aligned(lib::distributed_iterator auto iter1,
+             lib::distributed_iterator auto iter2,
+             lib::distributed_iterator auto... iters) {
+  auto combined = rng::views::zip(lib::ranges::segments(iter1),
+                                  lib::ranges::segments(iter2));
+  if (combined.empty())
+    return false;
+  for (auto seg : combined) {
+    if (lib::ranges::rank(seg.first) != lib::ranges::rank(seg.second) ||
+        seg.first.size() != seg.second.size()) {
+      return false;
+    }
+  }
+
+  return aligned(iter2, iters...);
 }
-#endif
 
 // 1D, homogeneous, distributed storage
 template <typename T> struct storage {
@@ -189,12 +191,6 @@ public:
 
   T get() const { return storage_->get(index_); }
   void put(const T &value) const { storage_->put(index_, value); }
-
-  auto conforms(auto &&other) const {
-    return (storage_->comm_ == other.storage_->comm_) &&
-           (index_ == other.index_) &&
-           (storage_->segment_size_ == other.storage_->segment_size_);
-  }
 
   auto rank() const { return storage_->rank(index_); }
   auto local() const { return storage_->local(index_); }

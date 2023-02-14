@@ -99,7 +99,8 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
 //   segments(dv1): [[10, 11, 12, 13, 14], [15, 16, 17, 18, 19]]
 //   segments(dv2): [[20, 21, 22, 23, 24], [25, 26, 27, 28, 29]]
 //
-//   drop the first 4 elements and zip the segments for the rest
+//   Assume we have dropped the first 4 elements of dv1 & dv2. Then we
+//   zip them together and ask for the segments.
 //
 //    zip segments: [[(14, 24)], [(15, 25), (16, 26), (17, 27), (18, 28), (19,
 //    29)]]
@@ -110,8 +111,14 @@ template <typename... Ss> auto zip_segments(Ss &&...iters) {
     return std::apply(zip, v);
   };
 
-  return rng::views::zip(lib::ranges::segments(iters)...) |
-         rng::views::transform(zip_segment);
+  auto zipped = rng::views::zip(lib::ranges::segments(iters)...) |
+                rng::views::transform(zip_segment);
+
+  if (aligned(iters...)) {
+    return zipped;
+  } else {
+    return decltype(zipped)();
+  }
 }
 
 template <typename I>
