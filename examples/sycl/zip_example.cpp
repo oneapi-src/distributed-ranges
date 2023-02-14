@@ -5,8 +5,6 @@
 #include <CL/sycl.hpp>
 #include <dr/shp/shp.hpp>
 
-#include <ranges>
-
 #include <iostream>
 
 int main(int argc, char **argv) {
@@ -36,7 +34,7 @@ int main(int argc, char **argv) {
   shp::distributed_span dspan(v.segments());
   shp::print_range(dspan);
 
-  auto i = std::ranges::views::iota(int32_t(0), int32_t(std::ranges::size(v)));
+  auto i = rng::views::iota(int32_t(0), int32_t(rng::size(v)));
   shp::zip_view zip_v(i, v);
 
   auto segments = zip_v.segments();

@@ -5,8 +5,6 @@
 #include <CL/sycl.hpp>
 #include <dr/shp/shp.hpp>
 
-#include <ranges>
-
 #include <iostream>
 
 template <lib::distributed_iterator Iter> void iter(Iter) {}

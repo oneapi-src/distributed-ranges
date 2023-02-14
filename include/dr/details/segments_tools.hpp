@@ -6,96 +6,98 @@
 
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/device_subrange.hpp>
+#include <dr/details/enumerate.hpp>
 #include <dr/details/ranges_shim.hpp>
+#include <dr/details/view_detectors.hpp>
 
 namespace lib {
 
 namespace internal {
 
-namespace {
-
-template <rng::range R> struct range_size {
-  using type = std::size_t;
-};
-
-template <rng::sized_range R> struct range_size<R> {
-  using type = rng::range_size_t<R>;
-};
-
-template <rng::range R> using range_size_t = typename range_size<R>::type;
-
-} // namespace
-
-// return number of full segments and remainder to cover n elements
+// count the number of segments necessary to cover n elements,
+// returning the index of the last segment and its remainder
 template <typename R>
-void n_segs_remainder(R &&segments, std::size_t n, auto &n_segs,
+void n_segs_remainder(R &&segments, std::size_t n, auto &last_seg,
                       auto &remainder) {
-  n_segs = 0;
+  last_seg = 0;
   remainder = n;
 
   for (auto &&seg : segments) {
-    if (seg.size() > remainder) {
+    if (seg.size() >= remainder) {
       break;
     }
     remainder -= seg.size();
-    n_segs++;
+
+    last_seg++;
   }
 }
 
-template <rng::viewable_range R> auto enumerate(R &&r) {
-  using W = range_size_t<R>;
-  return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
-}
-
-class enumerate_adapter_closure {
-public:
-  enumerate_adapter_closure() {}
-
-  template <rng::viewable_range R> auto operator()(R &&r) const {
-    return enumerate(std::forward<R>(r));
-  }
-
-  template <rng::viewable_range R>
-  friend auto operator|(R &&r, const enumerate_adapter_closure &closure) {
-    return enumerate(std::forward<R>(r));
-  }
-};
-
-inline auto enumerate() { return enumerate_adapter_closure(); }
-
-// Take the first n elements
-template <typename R> auto take_segments(R &&segments, std::size_t n) {
-  std::size_t n_segs, remainder;
-  n_segs_remainder(segments, n, n_segs, remainder);
+// Take all elements up to and including segment `segment_id` at index
+// `local_id`
+template <typename R>
+auto take_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
+  auto last_seg = segment_id;
+  auto remainder = local_id;
 
   auto take_partial = [=](auto &&v) {
     auto &&[i, segment] = v;
-    return rng::views::take(segment, i == n_segs ? remainder : segment.size());
+    if (i == last_seg) {
+      auto first = rng::begin(segment);
+      auto last = rng::begin(segment);
+      std::advance(last, remainder);
+      return lib::device_subrange(first, last, lib::ranges::rank(segment));
+    } else {
+      return lib::device_subrange(segment);
+    }
   };
 
-  return enumerate(segments) | rng::views::take(n_segs + 1) |
-         rng::views::transform(take_partial);
+  return enumerate(segments) | rng::views::take(last_seg + 1) |
+         rng::views::transform(std::move(take_partial));
+}
+
+// Take the first n elements
+template <typename R> auto take_segments(R &&segments, std::size_t n) {
+  std::size_t last_seg, remainder;
+  n_segs_remainder(segments, n, last_seg, remainder);
+
+  return take_segments(std::forward<R>(segments), last_seg, remainder);
+}
+
+// Drop all elements up to segment `segment_id` and index `local_id`
+template <typename R>
+auto drop_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
+  auto last_seg = segment_id;
+  auto remainder = local_id;
+
+  auto drop_partial = [=](auto &&v) {
+    auto &&[i, segment] = v;
+    if (i == last_seg) {
+      auto first = rng::begin(segment);
+      std::advance(first, remainder);
+      auto last = rng::end(segment);
+      return lib::device_subrange(first, last, lib::ranges::rank(segment));
+    } else {
+      return lib::device_subrange(segment);
+    }
+  };
+
+  return enumerate(segments) | rng::views::drop(last_seg) |
+         rng::views::transform(std::move(drop_partial));
 }
 
 // Drop the first n elements
 template <typename R> auto drop_segments(R &&segments, std::size_t n) {
-  std::size_t n_segs, remainder;
-  n_segs_remainder(segments, n, n_segs, remainder);
+  std::size_t last_seg, remainder;
+  n_segs_remainder(segments, n, last_seg, remainder);
 
-  auto drop_partial = [=](auto &&v) {
-    auto &&[i, segment] = v;
-    return rng::views::drop(segment, i == n_segs ? remainder : 0);
-  };
-
-  return enumerate(segments) | rng::views::drop(n_segs) |
-         rng::views::transform(drop_partial);
+  return drop_segments(std::forward<R>(segments), last_seg, remainder);
 }
 
 } // namespace internal
 
 } // namespace lib
 
-namespace ranges {
+namespace DR_RANGES_NAMESPACE {
 
 // A standard library range adaptor does not change the rank of a
 // remote range, so we can simply return the rank of the base view.
@@ -132,46 +134,12 @@ template <rng::range V>
   requires(lib::is_subrange_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_iterator<decltype(std::declval<V>().begin())>)
 auto segments_(V &&v) {
-  auto begin = rng::begin(v);
-  auto end = rng::end(v);
+  auto first = rng::begin(v);
+  auto last = rng::end(v);
 
-  auto seg_begin = lib::ranges::segment_index(begin);
-  auto local_begin = lib::ranges::local_index(begin);
+  auto size = rng::distance(first, last);
 
-  auto seg_end = lib::ranges::segment_index(end);
-  auto local_end = lib::ranges::local_index(end);
-
-  auto n_segs = seg_end - seg_begin + 1;
-
-  return lib::ranges::segments(begin) | lib::internal::enumerate() |
-         rng::views::drop(seg_begin) | rng::views::transform([=](auto &&e) {
-           auto &&[i, seg] = e;
-           if (i == 0) {
-             auto subseg = lib::device_subrange(seg);
-             subseg.advance(local_begin);
-             return subseg;
-           } else {
-             return lib::device_subrange(seg);
-           }
-         }) |
-         rng::views::take(n_segs) | lib::internal::enumerate() |
-         rng::views::transform([=](auto &&e) {
-           auto &&[i, seg] = e;
-           if (i == n_segs - 1) {
-             auto rank = lib::ranges::rank(seg);
-             auto first = rng::begin(seg);
-             auto last = first;
-             std::advance(last, local_end);
-             return lib::device_subrange(first, last, rank);
-           } else {
-             return lib::device_subrange(seg);
-           }
-         });
-
-  /*
-    return lib::internal::take_segments(lib::ranges::segments(v.begin()),
-                                        v.end() - v.begin());
-                                        */
+  return lib::internal::take_segments(lib::ranges::segments(first), size);
 }
 
-} // namespace ranges
+} // namespace DR_RANGES_NAMESPACE

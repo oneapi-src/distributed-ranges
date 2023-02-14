@@ -91,7 +91,9 @@ public:
     return segments_[segment_id_][idx_];
   }
 
-  auto segments() const noexcept { return segments_; }
+  auto segments() const noexcept {
+    return lib::internal::drop_segments(segments_, segment_id_, idx_);
+  }
 
   auto segment_index() const noexcept { return segment_id_; }
 

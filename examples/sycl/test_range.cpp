@@ -4,7 +4,6 @@
 
 #include <CL/sycl.hpp>
 #include <dr/shp/shp.hpp>
-#include <ranges>
 #include <vector>
 
 std::vector<shp::device_ptr<int>> ptrs;
