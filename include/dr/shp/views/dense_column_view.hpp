@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <dr/shp/containers/index.hpp>
+#include <dr/shp/containers/matrix_entry.hpp>
 #include <iterator>
-#include <shp/containers/index.hpp>
-#include <shp/containers/matrix_entry.hpp>
 
 namespace shp {
 template <typename T, typename Iter> class dense_matrix_column_accessor {

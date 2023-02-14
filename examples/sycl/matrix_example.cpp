@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <shp/shp.hpp>
+#include <dr/shp/shp.hpp>
 
 int main(int argc, char **argv) {
   namespace sycl = cl::sycl;

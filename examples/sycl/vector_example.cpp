@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <CL/sycl.hpp>
-#include <shp/shp.hpp>
-
-#include <ranges>
+#include <dr/shp/shp.hpp>
 
 #include <iostream>
 

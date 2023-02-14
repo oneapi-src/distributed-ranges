@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ranges_shim.hpp"
 #include <iterator>
 #include <type_traits>
 
@@ -48,8 +49,7 @@ struct rank_fn_ {
   constexpr auto operator()(R &&r) const {
     if constexpr (has_rank_method<R> && !disable_rank<std::remove_cv_t<R>>) {
       return std::forward<R>(r).rank();
-    } else if constexpr (is_remote_iterator_shadow_impl_<
-                             rng::range_value_t<R>>) {
+    } else if constexpr (is_remote_iterator_shadow_impl_<rng::iterator_t<R>>) {
       return operator()(rng::begin(std::forward<R>(r)));
     } else if constexpr (has_rank_adl<R> &&
                          !disable_rank<std::remove_cv_t<R>>) {

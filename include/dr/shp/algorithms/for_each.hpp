@@ -5,10 +5,11 @@
 #pragma once
 
 #include <CL/sycl.hpp>
-#include <concepts/concepts.hpp>
-#include <shp/algorithms/execution_policy.hpp>
-#include <shp/distributed_span.hpp>
-#include <shp/zip_view.hpp>
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/ranges_shim.hpp>
+#include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/distributed_span.hpp>
+#include <dr/shp/zip_view.hpp>
 
 namespace shp {
 
@@ -35,7 +36,7 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
       auto begin = lib::ranges::local(rng::begin(segment));
 
-      assert(std::ranges::size(segment) > 0);
+      assert(rng::size(segment) > 0);
       auto event = q.parallel_for(rng::size(segment),
                                   [=](sycl::id<1> idx) { fn(*(begin + idx)); });
       events.emplace_back(event);

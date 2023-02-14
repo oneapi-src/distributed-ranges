@@ -89,8 +89,8 @@ endif()
 
 FetchContent_Declare(
   range-v3
-  GIT_REPOSITORY https://github.com/ericniebler/range-v3.git
-  GIT_TAG 0.12.0
+  GIT_REPOSITORY https://github.com/BenBrock/range-v3.git
+  GIT_TAG 5300fe3
 )
 FetchContent_MakeAvailable(range-v3)
 

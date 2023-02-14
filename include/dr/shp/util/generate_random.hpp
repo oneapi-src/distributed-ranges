@@ -5,9 +5,9 @@
 #pragma once
 
 #include <concepts>
+#include <dr/shp/views/csr_matrix_view.hpp>
 #include <map>
 #include <random>
-#include <shp/views/csr_matrix_view.hpp>
 
 namespace shp {
 
