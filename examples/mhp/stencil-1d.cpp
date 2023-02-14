@@ -22,6 +22,7 @@ int check(auto dv, auto n, auto steps) {
   // Serial stencil
   std::vector<int> a(n), b(n);
   rng::iota(a, 100);
+  rng::fill(b, 0);
 
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
@@ -47,10 +48,12 @@ int stencil(auto n, auto steps) {
   lib::halo_bounds hb(1);
   mhp::distributed_vector<int> a(n, hb), b(n, hb);
   mhp::iota(a, 100);
+  mhp::fill(b, 0);
 
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
   for (std::size_t s = 0; s < steps; s++) {
+    mhp::halo_exchange(in.begin());
     mhp::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
   }

@@ -53,7 +53,7 @@ public:
 
   /// Begin a halo exchange
   void exchange_begin() {
-    drlog.debug(nostd::source_location::current(), "Halo exchange begin\n");
+    drlog.debug("Halo exchange begin\n");
     receive(halo_groups_);
     send(owned_groups_);
   }
@@ -61,7 +61,12 @@ public:
   /// Complete a halo exchange
   void exchange_finalize() {
     reduce_finalize(second);
-    drlog.debug(nostd::source_location::current(), "Halo exchange finalize\n");
+    drlog.debug("Halo exchange finalize\n");
+  }
+
+  void exchange() {
+    exchange_begin();
+    exchange_finalize();
   }
 
   /// Begin a halo reduction
