@@ -104,10 +104,6 @@ public:
     return lib::internal::drop_segments(segments_, segment_id_, idx_);
   }
 
-  auto segment_index() const noexcept { return segment_id_; }
-
-  auto local_index() const noexcept { return idx_; }
-
 private:
   size_type get_global_idx() const noexcept {
     size_type cumulative_size = 0;

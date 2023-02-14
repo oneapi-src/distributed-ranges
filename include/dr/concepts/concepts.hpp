@@ -18,12 +18,7 @@ concept remote_range =
 
 template <typename R>
 concept distributed_range =
-    rng::forward_range<R> &&
-    requires(R &r) {
-      { lib::ranges::segments(r) } -> rng::forward_range;
-    } &&
-    remote_range<
-        rng::range_value_t<decltype(lib::ranges::segments(std::declval<R>()))>>;
+    rng::forward_range<R> && requires(R &r) { lib::ranges::segments(r); };
 
 template <typename I>
 concept remote_contiguous_iterator =
@@ -37,11 +32,7 @@ concept remote_contiguous_iterator =
 template <typename I>
 concept distributed_iterator =
     std::forward_iterator<I> &&
-    requires(I &iter) {
-      { lib::ranges::segments(iter) } -> rng::forward_range;
-    } &&
-    remote_range<
-        rng::range_value_t<decltype(lib::ranges::segments(std::declval<I>()))>>;
+    requires(I &iter) { lib::ranges::segments(iter); };
 
 template <typename R>
 concept remote_contiguous_range =
