@@ -39,8 +39,6 @@ concept distributed_iterator =
     std::forward_iterator<I> &&
     requires(I &iter) {
       { lib::ranges::segments(iter) } -> rng::forward_range;
-      { lib::ranges::segment_index(iter) };
-      { lib::ranges::local_index(iter) };
     } &&
     remote_range<
         rng::range_value_t<decltype(lib::ranges::segments(std::declval<I>()))>>;
