@@ -6,12 +6,14 @@ namespace mhp {
 
 // Select segments local to this rank and convert the iterators in the
 // segment to local
-auto local_segments(auto &&segments) {
+auto local_segments(auto &&x) {
+  const auto &segments = lib::ranges::segments(x);
   auto is_local = [](const auto &segment) {
-    return segment.begin().local() != nullptr;
+    auto local = lib::ranges::local(segment.begin());
+    return local != decltype(local)();
   };
   auto local_iter = [](auto &&segment) {
-    auto b = segment.begin().local();
+    auto b = lib::ranges::local(segment.begin());
     auto size = segment.end() - segment.begin();
     return rng::subrange(b, b + size);
   };

@@ -92,17 +92,17 @@ template <typename Container> struct const_xpointer {
 
   auto remote_offset(int my_rank) const {
     auto &local_container = container_->local();
-    auto radius = container_->stencil_.radius()[0];
+    auto hb = container_->halo_bounds_;
     auto [rank, offset] = container_->rank_offset(index_);
 
     // If the iterator is pointing to an earlier rank, point to the
     // beginning of my range
     if (rank < my_rank) {
-      offset = radius.prev;
+      offset = hb.prev;
     } else if (rank > my_rank) {
       // If the iterator is pointing to a later rank, point to the
       // end of my range
-      offset = local_container.size() - radius.next;
+      offset = local_container.size() - hb.next;
     }
 
     return offset;
@@ -209,17 +209,17 @@ template <typename Container> struct xpointer {
 
   auto remote_offset(int my_rank) const {
     auto &local_container = container_->local();
-    auto radius = container_->stencil_.radius()[0];
+    auto hb = container_->halo_bounds_;
     auto [rank, offset] = container_->rank_offset(index_);
 
     // If the iterator is pointing to an earlier rank, point to the
     // beginning of my range
     if (rank < my_rank) {
-      offset = radius.prev;
+      offset = hb.prev;
     } else if (rank > my_rank) {
       // If the iterator is pointing to a later rank, point to the
       // end of my range
-      offset = local_container.size() - radius.next;
+      offset = local_container.size() - hb.next;
     }
 
     return offset;
@@ -320,9 +320,6 @@ public:
   /// Read-only iterator
   using const_iterator = const_pointer;
 
-  /// Stencil specification
-  using stencil_type = stencil<1>;
-
   /// Allocator
   using allocator_type = Alloc;
 
@@ -330,23 +327,24 @@ public:
   distributed_vector operator=(const distributed_vector &) = delete;
 
   /// Construct a distributed vector with a halo and `count` elements.
-  distributed_vector(stencil_type s, size_type count)
-      : stencil_(s), size_(count), local_(local_storage_size()),
-        halo_(comm_, local_, stencil_) {
+  distributed_vector(halo_bounds hb, size_type count)
+      : halo_bounds_(hb), size_(count), local_(local_storage_size()),
+        halo_(comm_, local_, halo_bounds_) {
     init();
   }
 
   /// Construct a distributed vector with a halo and `count` elements.
-  distributed_vector(stencil_type s, Alloc alloc, size_type count)
-      : allocator_(alloc), stencil_(s), size_(count),
-        local_(local_storage_size(), alloc), halo_(comm_, local_, stencil_) {
+  distributed_vector(halo_bounds hb, Alloc alloc, size_type count)
+      : allocator_(alloc), halo_bounds_(hb), size_(count),
+        local_(local_storage_size(), alloc),
+        halo_(comm_, local_, halo_bounds_) {
     init();
   }
 
   /// Construct a distributed vector with a halo and `count` elements.
   distributed_vector(std::size_t radius, bool periodic, size_type count)
-      : stencil_(radius), size_(count), local_(local_storage_size()),
-        halo_(comm_, local_, stencil_) {
+      : halo_bounds_(radius), size_(count), local_(local_storage_size()),
+        halo_(comm_, local_, halo_bounds_) {
     init();
   }
 
@@ -448,14 +446,13 @@ public:
 
 private:
   auto rank_offset(std::size_t index) const {
-    auto radius = stencil_.radius()[0];
     std::size_t rank, offset;
-    if (index < radius.prev) {
+    if (index < halo_bounds_.prev) {
       rank = 0;
-    } else if (index >= size() - radius.next) {
+    } else if (index >= size() - halo_bounds_.next) {
       rank = comm_.size() - 1;
     } else {
-      rank = (index - radius.prev) / slice_size_;
+      rank = (index - halo_bounds_.prev) / slice_size_;
     }
     offset = index - rank * slice_size_;
 
@@ -463,8 +460,7 @@ private:
   }
 
   void init() {
-    auto radius = stencil_.radius()[0];
-    slice_size_ = local().size() - radius.prev - radius.next;
+    slice_size_ = local().size() - halo_bounds_.prev - halo_bounds_.next;
 
 #ifdef OMPI_MAJOR_VERSION
     // openmpi cannot create a window when the size is 1
@@ -476,13 +472,13 @@ private:
   }
 
   auto local_storage_size() const {
-    auto radius = stencil_.radius()[0];
-    return partition_up(size_ - radius.prev - radius.next, comm_.size()) +
-           radius.prev + radius.next;
+    return partition_up(size_ - halo_bounds_.prev - halo_bounds_.next,
+                        comm_.size()) +
+           halo_bounds_.prev + halo_bounds_.next;
   }
 
   Alloc allocator_;
-  stencil_type stencil_;
+  halo_bounds halo_bounds_;
   const communicator comm_;
   size_type size_;
   size_type slice_size_;

@@ -10,15 +10,43 @@
 #include <fmt/ranges.h>
 
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
-  // std::ranges::views::zip handles this better, but requires range-v3
-  for (std::size_t i = 0;
-       r1.begin() + i != r1.end() && r2.begin() + i != r2.end(); i++) {
-    if (*(r1.begin() + i) != *(r2.begin() + i)) {
+  for (auto e : rng::zip_view(r1, r2)) {
+    if (e.first != e.second) {
       return false;
     }
   }
 
   return true;
+}
+
+bool is_equal(std::forward_iterator auto it, rng::range auto &&r) {
+  for (auto e : r) {
+    if (*it++ != e) {
+      return false;
+    }
+  }
+  return true;
+}
+
+testing::AssertionResult check_segments(std::forward_iterator auto di) {
+  auto &&segments = lib::ranges::segments(di);
+  auto &&flat = rng::join_view(segments);
+  if (is_equal(di, flat)) {
+    return testing::AssertionSuccess();
+  }
+  return testing::AssertionFailure()
+         << fmt::format("\n    segments: {}\n  ", segments);
+}
+
+testing::AssertionResult check_segments(rng::range auto &&r) {
+  auto &&segments = lib::ranges::segments(r);
+  auto &&flat = rng::join_view(segments);
+  if (is_equal(r, flat)) {
+    return testing::AssertionSuccess();
+  }
+  return testing::AssertionFailure()
+         << fmt::format("\n    range: {}\n    segments: {}\n  ",
+                        rng::views::all(r), rng::views::all(segments));
 }
 
 testing::AssertionResult equal(rng::range auto &&r1, rng::range auto &&r2) {

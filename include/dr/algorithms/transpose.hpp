@@ -298,6 +298,51 @@ inline void transpose(const distributed_mdarray<T, Extents> &src,
   }
 }
 
+template <typename T, typename SExtents,
+          typename DExtents> // layout_right only arrays
+inline void transpose(int root, const distributed_mdarray<T, SExtents> &src,
+                      std::experimental::mdspan<T, DExtents> dst) {
+  assert(!dst.empty() || root != src.comm().rank());
+  std::vector<T> local_vec;
+
+  if (src.comm().rank() == root) {
+    assert(src.extents().extent(0) == dst.extent(1));
+    assert(src.extents().extent(1) == dst.extent(0));
+
+    size_t n = src.extents().extent(0) * src.extents().extent(1);
+    local_vec.resize(n);
+  }
+
+  lib::copy(root, src.begin(), src.end(), local_vec.begin());
+
+  if (src.comm().rank() == root) {
+    transpose_local(src.extents().extent(0), src.extents().extent(1),
+                    local_vec.data(), src.extents().extent(1),
+                    dst.data_handle(), dst.extent(1));
+  }
+}
+
+template <typename T, typename SExtents,
+          typename DExtents> // layout_right only arrays
+inline void transpose(int root, std::experimental::mdspan<T, SExtents> src,
+                      distributed_mdarray<T, DExtents> &dst) {
+  assert(!src.empty() || root != dst.comm().rank());
+
+  if (dst.comm().rank() == root) {
+    assert(dst.extents().extent(0) == src.extent(1));
+    assert(dst.extents().extent(1) == src.extent(0));
+
+    std::vector<T> local_vec;
+    size_t n = dst.extents().extent(0) * dst.extents().extent(1);
+    local_vec.resize(n);
+    transpose_local(src.extent(0), src.extent(1), src.data_handle(),
+                    src.extent(1), local_vec.data(), dst.extents().extent(1));
+    lib::copy(root, local_vec.begin(), local_vec.end(), dst.begin());
+  } else {
+    lib::copy(root, nullptr, nullptr, dst.begin());
+  }
+}
+
 template <mdspan_2d src_type, mdspan_2d dst_type>
 inline void transpose(const src_type &src, dst_type &dst) {
   if constexpr (mdspan_regular<src_type> && mdspan_regular<dst_type> &&

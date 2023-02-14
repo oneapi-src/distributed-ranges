@@ -9,7 +9,9 @@ add_executable(
   mhp-tests.cpp
 
   algorithms.cpp
+  conformance.cpp
   distributed_vector.cpp
+  stencil.cpp
   views.cpp
 )
 

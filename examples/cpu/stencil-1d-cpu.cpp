@@ -44,8 +44,8 @@ int check(auto dv, auto n, auto steps) {
 }
 
 int stencil(auto n, auto steps) {
-  lib::stencil<1> s(1);
-  lib::distributed_vector<int> dv_in(s, n), dv_out(s, n);
+  lib::halo_bounds hb(1);
+  lib::distributed_vector<int> dv_in(hb, n), dv_out(hb, n);
   lib::iota(dv_in, 100);
 
   auto *in = &dv_in;

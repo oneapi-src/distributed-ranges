@@ -39,12 +39,23 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_link_options(--gcc-toolchain=${GCC_TOOLCHAIN})
   endif()
 
-  # Debugging support
-  #set(CMAKE_BUILD_TYPE "Debug")
-  set(CMAKE_BUILD_TYPE "Release")
+  set(buildTypes Release Debug)
 
-  set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
-  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+  if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release")
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build, options are: Release Debug ..." FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${buildTypes})
+  else()
+    message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+    if(NOT CMAKE_BUILD_TYPE IN_LIST buildTypes)
+      message(WARNING "Unusual build type was set, please make sure it's a proper one. "
+        "Only following are supported by default: ${buildTypes}.")
+    endif()
+  endif()
+
+  set(CMAKE_C_FLAGS_DEBUG "-O0 -g -ggdb")
+  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb")
   set(CMAKE_C_FLAGS_RELEASE "-O3 -g")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g")
 
@@ -93,7 +104,7 @@ FetchContent_MakeAvailable(cpp-format)
 FetchContent_Declare(
   mdspan
   GIT_REPOSITORY https://github.com/kokkos/mdspan.git
-  GIT_TAG a18c489
+  GIT_TAG mdspan-0.5.0
 )
 FetchContent_MakeAvailable(mdspan)
 
