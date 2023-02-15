@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <shp/shp.hpp>
+#include <dr/shp/shp.hpp>
 
 int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
   auto tsum = shp::reduce(shp::par_unseq, trimmed_view, 0, std::plus{});
   std::cout << "Trimmed sum: " << tsum << std::endl;
 
-  shp::print_range(v | std::views::drop(40) | shp::views::slice({5, 10}));
+  shp::print_range(v | rng::views::drop(40) | shp::views::slice({5, 10}));
 
   return 0;
 }

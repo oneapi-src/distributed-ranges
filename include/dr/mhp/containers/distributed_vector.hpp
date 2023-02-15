@@ -4,28 +4,28 @@
 
 namespace mhp {
 
-// Base case. Anything conforms with itself.
-// template <lib::distributed_iterator It> auto conformant(It &&iter) {
-template <typename It> auto conformant(It &&iter) {
-  return std::pair(true, iter);
+// It won't have segments if it is a zip of non-aligned data
+bool aligned(lib::distributed_iterator auto iter) {
+  return !lib::ranges::segments(iter).empty();
 }
 
-// Recursive case. This iterator conforms with the rest.
-template <lib::distributed_iterator It, typename... Its>
-auto conformant(It &&iter, Its &&...iters) {
-  auto &&[rest_conforms, constraining_iter] =
-      conformant(std::forward<Its>(iters)...);
-  return std::pair(rest_conforms && iter.conforms(constraining_iter), iter);
-}
+// iter1 is aligned with iter2, and iter2 is aligned with the rest
+bool aligned(lib::distributed_iterator auto iter1,
+             lib::distributed_iterator auto iter2,
+             lib::distributed_iterator auto... iters) {
+  auto combined = rng::views::zip(lib::ranges::segments(iter1),
+                                  lib::ranges::segments(iter2));
+  if (combined.empty())
+    return false;
+  for (auto seg : combined) {
+    if (lib::ranges::rank(seg.first) != lib::ranges::rank(seg.second) ||
+        seg.first.size() != seg.second.size()) {
+      return false;
+    }
+  }
 
-#if 0
-Need to restrict this to iota iterator
-// Recursive case. This iterator is non-constraining
-template <typename It, typename... Its>
-auto conformant(It &&iter, Its &&...iters) {
-  return conformant(std::forward<Its>(iters)...);
+  return aligned(iter2, iters...);
 }
-#endif
 
 // 1D, homogeneous, distributed storage
 template <typename T> struct storage {
@@ -34,14 +34,18 @@ public:
   storage(const storage &) = delete;
   storage &operator=(const storage &) = delete;
 
-  storage(std::size_t size, lib::communicator comm = lib::communicator{})
-      : segment_size_((size + comm.size() - 1) / comm.size()),
-        data_(new T[segment_size_]) {
+  storage(std::size_t size, lib::halo_bounds hb = lib::halo_bounds(),
+          lib::communicator comm = lib::communicator{})
+      : segment_size_(segment_size(hb, size, comm)),
+        data_size_(segment_size_ + hb.prev + hb.next),
+        data_(new T[data_size_]) {
     comm_ = comm;
+    halo_bounds_ = hb;
     container_size_ = size;
     container_capacity_ = comm.size() * segment_size_;
-    win_.create(comm, data_.get(), segment_size_ * sizeof(T));
+    win_.create(comm, data_.get(), data_size_ * sizeof(T));
     fence();
+    lib::drlog.debug("Storage allocated\n  {}\n", *this);
   }
 
   ~storage() {
@@ -49,9 +53,15 @@ public:
     win_.free();
   }
 
+  static auto segment_size(auto hb, auto size, auto comm) {
+    // make segment as least as big as halo to ensure halo only comes nearest
+    // neighbor.
+    return std::max({(size + comm.size() - 1) / comm.size(), hb.prev, hb.next});
+  }
+
   T get(std::size_t index) const {
     auto segment = segment_index(index);
-    auto local = local_index(index);
+    auto local = local_index(index) + halo_bounds_.prev;
     auto val = win_.get<T>(segment, local);
     lib::drlog.debug("get {} =  {} ({}:{})\n", val, index, segment, local);
     return val;
@@ -59,7 +69,7 @@ public:
 
   void put(std::size_t index, const T &val) const {
     auto segment = segment_index(index);
-    auto local = local_index(index);
+    auto local = local_index(index) + halo_bounds_.prev;
     lib::drlog.debug("put {} ({}:{}) = {}\n", index, segment, local, val);
     win_.put(val, segment, local);
   }
@@ -70,11 +80,12 @@ public:
   auto local_index(std::size_t index) const { return index % segment_size_; }
 
   T *local(std::size_t index) const {
-    // drlog.debug("index: {} rank(index) {}\n", index, rank(index));
-    if (rank(index) != std::size_t(comm_.rank())) {
+    lib::drlog.debug("local: index: {} rank: {}\n", index, rank(index));
+    if (rank(index) == std::size_t(comm_.rank())) {
+      return data_.get() + local_index(index) + halo_bounds_.prev;
+    } else {
       return nullptr;
     }
-    return data_.get() + local_index(index);
   }
 
   auto rank(std::size_t index) const {
@@ -92,7 +103,9 @@ public:
   lib::communicator::win win_;
 
   // member initializer list requires this order
+  lib::halo_bounds halo_bounds_;
   std::size_t segment_size_ = 0;
+  std::size_t data_size_ = 0;
   std::unique_ptr<T[]> data_;
 };
 
@@ -179,12 +192,6 @@ public:
   T get() const { return storage_->get(index_); }
   void put(const T &value) const { storage_->put(index_, value); }
 
-  auto conforms(auto &&other) const {
-    return (storage_->comm_ == other.storage_->comm_) &&
-           (index_ == other.index_) &&
-           (storage_->segment_size_ == other.storage_->segment_size_);
-  }
-
   auto rank() const { return storage_->rank(index_); }
   auto local() const { return storage_->local(index_); }
 
@@ -244,7 +251,10 @@ public:
 
   distributed_vector() {}
 
-  distributed_vector(std::size_t count) : storage_(count) {}
+  distributed_vector(std::size_t count,
+                     lib::halo_bounds hb = lib::halo_bounds())
+      : storage_(count, hb),
+        halo_(storage_.comm_, storage_.data_.get(), storage_.data_size_, hb) {}
 
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
@@ -258,10 +268,26 @@ public:
   iterator begin() const { return iterator(&storage_, 0); }
   iterator end() const { return iterator(&storage_, storage_.container_size_); }
 
+  auto &halo() { return halo_; }
+
+  void barrier() { storage_.barrier(); }
   void fence() { storage_.fence(); }
 
 private:
   storage<T> storage_;
+  lib::span_halo<T> halo_;
 };
 
 } // namespace mhp
+
+template <typename T>
+struct fmt::formatter<mhp::storage<T>> : formatter<string_view> {
+  template <typename FmtContext>
+  auto format(const mhp::storage<T> &dv, FmtContext &ctx) {
+    return format_to(ctx.out(),
+                     "size: {}, comm size: {}, segment size: {}, halo bounds: "
+                     "({}), data size: {}",
+                     dv.container_size_, dv.comm_.size(), dv.segment_size_,
+                     dv.halo_bounds_, dv.data_size_);
+  }
+};

@@ -6,7 +6,8 @@
 
 #include "device_ptr.hpp"
 #include <CL/sycl.hpp>
-#include <concepts/concepts.hpp>
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/segments_tools.hpp>
 #include <memory>
 #include <type_traits>
 
@@ -70,8 +71,8 @@ template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   auto segments = lib::ranges::segments(d_first);
 
-  std::size_t segment_id = lib::ranges::segment_index(d_first);
-  std::size_t local_id = lib::ranges::local_index(d_first);
+  std::size_t segment_id = 0;
+  std::size_t local_id = 0;
 
   std::vector<cl::sycl::event> events;
 
@@ -153,42 +154,19 @@ cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 // Copy from distributed range to local range
 template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
-  auto segments = lib::ranges::segments(first);
-
-  std::size_t segment_id = lib::ranges::segment_index(first);
-  std::size_t local_id = lib::ranges::local_index(first);
-
-  std::size_t last_segment_id = lib::ranges::segment_index(last);
-  std::size_t last_local_id = lib::ranges::local_index(last);
+  auto size = std::distance(first, last);
+  auto segments =
+      lib::internal::take_segments(lib::ranges::segments(first), size);
 
   std::vector<cl::sycl::event> events;
 
-  std::size_t total_copied = 0;
-
-  while (segment_id <= last_segment_id) {
-
-    auto &&segment = segments[segment_id];
-    std::size_t n_in_segment = segment.size() - local_id;
-
-    std::size_t n_to_copy = n_in_segment;
-
-    if (segment_id == last_segment_id) {
-      n_to_copy = last_local_id - local_id;
-    }
-
-    auto remote_first = segments[segment_id].begin();
-    std::advance(remote_first, local_id);
-    auto remote_last = remote_first;
-    std::advance(remote_last, n_to_copy);
-
-    auto event = shp::copy_async(remote_first, remote_last, d_first);
+  for (auto &&segment : segments) {
+    auto event =
+        shp::copy_async(rng::begin(segment), rng::end(segment), d_first);
 
     events.push_back(event);
 
-    segment_id++;
-    local_id = 0;
-    std::advance(d_first, n_to_copy);
-    total_copied += n_to_copy;
+    std::advance(d_first, rng::size(segment));
   }
 
   sycl::queue q;

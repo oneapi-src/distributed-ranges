@@ -8,7 +8,8 @@
 
 namespace shp {
 
-template <typename T, std::random_access_iterator Iter = T *> class span {
+template <typename T, std::random_access_iterator Iter = T *>
+class span : public rng::view_interface<shp::span<T, Iter>> {
 public:
   static_assert(std::is_same_v<std::iter_value_t<Iter>, T>);
 

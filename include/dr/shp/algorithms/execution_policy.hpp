@@ -5,6 +5,7 @@
 #pragma once
 
 #include <CL/sycl.hpp>
+#include <dr/details/ranges_shim.hpp>
 #include <span>
 #include <vector>
 

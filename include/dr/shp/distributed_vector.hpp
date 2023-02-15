@@ -5,13 +5,13 @@
 #pragma once
 
 #include <CL/sycl.hpp>
-#include <shp/device_ptr.hpp>
-#include <shp/device_vector.hpp>
+#include <dr/shp/device_ptr.hpp>
+#include <dr/shp/device_vector.hpp>
 #include <vector>
 
-#include <details/segments_tools.hpp>
-#include <shp/allocators.hpp>
-#include <shp/vector.hpp>
+#include <dr/details/segments_tools.hpp>
+#include <dr/shp/allocators.hpp>
+#include <dr/shp/vector.hpp>
 
 namespace shp {
 
@@ -28,7 +28,7 @@ public:
   using difference_type = std::ptrdiff_t;
 
   // using pointer = typename segment_type::pointer;
-  using reference = std::ranges::range_reference_t<segment_type>;
+  using reference = rng::range_reference_t<segment_type>;
 
   using iterator_category = std::random_access_iterator_tag;
 
@@ -91,11 +91,9 @@ public:
     return segments_[segment_id_][idx_];
   }
 
-  auto segments() const noexcept { return segments_; }
-
-  auto segment_index() const noexcept { return segment_id_; }
-
-  auto local_index() const noexcept { return idx_; }
+  auto segments() const noexcept {
+    return lib::internal::drop_segments(segments_, segment_id_, idx_);
+  }
 
 private:
   size_type get_global_idx() const noexcept {

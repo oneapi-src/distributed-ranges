@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ranges_shim.hpp"
 #include <iterator>
 #include <type_traits>
 
@@ -48,8 +49,7 @@ struct rank_fn_ {
   constexpr auto operator()(R &&r) const {
     if constexpr (has_rank_method<R> && !disable_rank<std::remove_cv_t<R>>) {
       return std::forward<R>(r).rank();
-    } else if constexpr (is_remote_iterator_shadow_impl_<
-                             rng::range_value_t<R>>) {
+    } else if constexpr (is_remote_iterator_shadow_impl_<rng::iterator_t<R>>) {
       return operator()(rng::begin(std::forward<R>(r)));
     } else if constexpr (has_rank_adl<R> &&
                          !disable_rank<std::remove_cv_t<R>>) {
@@ -120,6 +120,11 @@ inline constexpr auto segments = segments_fn_{};
 namespace {
 
 template <typename Iter>
+concept has_local_adl = requires(Iter &iter) {
+                          { local_(iter) } -> std::forward_iterator;
+                        };
+
+template <typename Iter>
 concept has_local_method =
     std::forward_iterator<Iter> && requires(Iter i) {
                                      { i.local() } -> std::forward_iterator;
@@ -128,22 +133,27 @@ concept has_local_method =
 struct local_fn_ {
 
   template <std::forward_iterator Iter>
-    requires(has_local_method<Iter> || std::contiguous_iterator<Iter>)
+    requires(has_local_adl<Iter> || has_local_method<Iter> ||
+             std::contiguous_iterator<Iter>)
   auto operator()(Iter iter) const {
     if constexpr (has_local_method<Iter>) {
       return iter.local();
+    } else if constexpr (has_local_adl<Iter>) {
+      return local_(iter);
     } else if constexpr (std::contiguous_iterator<Iter>) {
       return iter;
     }
   }
 
   template <rng::forward_range R>
-    requires(has_local_method<rng::iterator_t<R>> ||
+    requires(has_local_adl<R> || has_local_method<rng::iterator_t<R>> ||
              std::contiguous_iterator<rng::iterator_t<R>> ||
              rng::contiguous_range<R>)
   auto operator()(R &&r) const {
     if constexpr (has_local_method<rng::iterator_t<R>>) {
       return std::span(rng::begin(r).local(), rng::size(r));
+    } else if constexpr (has_local_adl<R>) {
+      return local_(std::forward<R>(r));
     } else if constexpr (std::contiguous_iterator<rng::iterator_t<R>>) {
       return std::span(rng::begin(r), rng::size(r));
     }
@@ -153,50 +163,6 @@ struct local_fn_ {
 } // namespace
 
 inline constexpr auto local = local_fn_{};
-
-namespace {
-
-template <typename Iter>
-concept has_segment_index_method = requires(Iter i) {
-                                     {
-                                       i.segment_index()
-                                       } -> std::weakly_incrementable;
-                                   };
-
-struct segment_index_ {
-
-  template <std::forward_iterator Iter>
-    requires(has_segment_index_method<Iter>)
-  auto operator()(Iter iter) const {
-    return iter.segment_index();
-  }
-};
-
-} // namespace
-
-inline constexpr auto segment_index = segment_index_{};
-
-namespace {
-
-template <typename Iter>
-concept has_local_index_method = requires(Iter i) {
-                                   {
-                                     i.local_index()
-                                     } -> std::weakly_incrementable;
-                                 };
-
-struct local_index_ {
-
-  template <std::forward_iterator Iter>
-    requires(has_local_index_method<Iter>)
-  auto operator()(Iter iter) const {
-    return iter.local_index();
-  }
-};
-
-} // namespace
-
-inline constexpr auto local_index = local_index_{};
 
 } // namespace ranges
 

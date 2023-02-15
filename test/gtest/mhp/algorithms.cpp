@@ -89,3 +89,33 @@ TEST(MhpTests, Copy) {
     EXPECT_TRUE(equal(dv_dst3, v_dst3));
   }
 }
+
+TEST(MhpTests, transform) {
+  std::size_t n = 10;
+
+  auto copy = [](auto x) { return x; };
+
+  DV dv_src(n), dv_dst1(n), dv_dst2(n), dv_dst3(n);
+  mhp::iota(dv_src, 100);
+  mhp::iota(dv_dst1, 200);
+  mhp::iota(dv_dst2, 200);
+  mhp::iota(dv_dst3, 200);
+  mhp::transform(dv_src, dv_dst1.begin(), copy);
+  mhp::transform(dv_src.begin(), dv_src.end(), dv_dst2.begin(), copy);
+  mhp::transform(dv_src.begin() + 1, dv_src.end() - 1, dv_dst3.begin() + 2,
+                 copy);
+
+  if (comm_rank == 0) {
+    V v_src(n), v_dst(n), v_dst3(n);
+    rng::iota(v_src, 100);
+    rng::iota(v_dst, 200);
+    rng::iota(v_dst3, 200);
+    rng::transform(v_src, v_dst.begin(), copy);
+    EXPECT_TRUE(equal(dv_dst1, v_dst));
+    EXPECT_TRUE(equal(dv_dst2, v_dst));
+
+    std::transform(v_src.begin() + 1, v_src.end() - 1, v_dst3.begin() + 2,
+                   copy);
+    EXPECT_TRUE(equal(dv_dst3, v_dst3));
+  }
+}

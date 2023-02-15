@@ -7,9 +7,9 @@
 #include "index.hpp"
 #include "matrix_entry.hpp"
 #include "matrix_partition.hpp"
+#include <dr/shp/device_vector.hpp>
+#include <dr/shp/views/dense_matrix_view.hpp>
 #include <memory>
-#include <shp/device_vector.hpp>
-#include <shp/views/dense_matrix_view.hpp>
 
 namespace shp {
 

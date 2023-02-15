@@ -6,7 +6,7 @@
 
 // using rows as divideable by 2,3,4... because tests below assume storage_size
 // without redundancy
-const std::size_t rows = 24, cols = 37, n = rows * cols;
+const std::size_t rows = 24, cols = 38, n = rows * cols;
 using dyn_2d = stdex::dextents<std::size_t, 2>;
 
 void check_mdspan(auto &v, auto &m) {
@@ -166,4 +166,53 @@ TEST(CpuMpiTests, DISABLED_distributed_mdarray_transpose) {
   for (size_t r = 3; r <= rows; r++)
     for (size_t c = 3; c <= cols; c++)
       test_distributed_mdarray_transpose(r, c);
+}
+
+TEST(CpuMpiTests, distribute_to_local_transpose) {
+  using T = double;
+  std::vector<T> v;
+  if (comm_rank == 0) {
+    v.resize(n);
+  }
+
+  lib::distributed_mdarray<T, dyn_2d> dsrc(rows, cols);
+  std::experimental::mdspan<T, dyn_2d> ldst(v.data(), cols, rows);
+
+  if (comm_rank == 0)
+    fill_array(dsrc, rows, cols);
+  dsrc.fence();
+
+  if (comm_rank == 0) {
+    lib::collective::transpose(0, dsrc, ldst);
+  } else {
+    lib::collective::transpose(0, dsrc, std::experimental::mdspan<T, dyn_2d>());
+  }
+
+  if (comm_rank == 0) {
+    expect_eq(dsrc, ldst, true);
+  }
+}
+
+TEST(CpuMpiTests, local_to_distribute_transpose) {
+  using T = double;
+  std::vector<T> v;
+  if (comm_rank == 0) {
+    v.resize(n);
+  }
+
+  std::experimental::mdspan<T, dyn_2d> lsrc(v.data(), rows, cols);
+  lib::distributed_mdarray<T, dyn_2d> ddst(cols, rows);
+
+  if (comm_rank == 0)
+    fill_array(lsrc, rows, cols);
+
+  if (comm_rank == 0) {
+    lib::collective::transpose(0, lsrc, ddst);
+  } else {
+    lib::collective::transpose(0, std::experimental::mdspan<T, dyn_2d>(), ddst);
+  }
+
+  if (comm_rank == 0) {
+    expect_eq(lsrc, ddst, true);
+  }
 }

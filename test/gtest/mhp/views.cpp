@@ -20,76 +20,53 @@ TEST(MhpTests, Subrange) {
   static_assert(lib::distributed_range<decltype(r)>);
 }
 
-//
-// Zip the segments for 1 or more distributed ranges. e.g.:
-//
-//   segments(dv1): [[10, 11, 12, 13, 14], [15, 16, 17, 18, 19]]
-//   segments(dv2): [[20, 21, 22, 23, 24], [25, 26, 27, 28, 29]]
-//
-//   drop the first 4 elements and zip the segments for the rest
-//
-//    zip segments: [[(14, 24)], [(15, 25), (16, 26), (17, 27), (18, 28), (19,
-//    29)]]
-//
-template <typename... Ss> auto zip_segments(Ss &&...iters) {
-  auto zip_segment = [](auto &&v) {
-    auto zip = [](auto &&...refs) { return rng::views::zip(refs...); };
-    return std::apply(zip, v);
-  };
-
-  return rng::views::zip(lib::ranges::segments(iters)...) |
-         rng::views::transform(zip_segment);
-}
-
-//
-// Given an iter for a zip, return the segmentation
-//
-auto zip_iter_segments(auto zip_iter) {
-  // Dereferencing a zip iterator returns a tuple of references, we
-  // take the address of the references to iterators, and then get the
-  // segments from the iterators.
-
-  // Given the list of refs as arguments, convert to list of iters
-  auto zip = [](auto &&...refs) { return zip_segments(&refs...); };
-
-  // Convert the zip iterator to a tuple of references, and pass the
-  // references as a list of arguments
-  return std::apply(zip, *zip_iter);
-}
-
 TEST(MhpTests, Zip) {
-  // auto x = rng::views::iota(1);
-  // static_assert(lib::distributed_contiguous_range<decltype(x)>);
   DV dv1(10), dv2(10);
   mhp::iota(dv1, 10);
   mhp::iota(dv2, 20);
   auto dzv = rng::views::zip(dv1, dv2);
-  fmt::print("dzv: {}\n"
-             "  dv1: {}\n"
-             "  dv2: {}\n"
-             "  segments(dv1): {}\n"
-             "  segments(dv2): {}\n",
-             dzv, dv1, dv2, lib::ranges::segments(dv1),
-             lib::ranges::segments(dv2));
-  fmt::print("zip segments: {}\n", zip_iter_segments(dzv.begin() + 4));
+  static_assert(lib::is_zip_view_v<decltype(dzv)>);
+  static_assert(lib::distributed_range<decltype(dzv)>);
+  EXPECT_TRUE(check_segments(dzv));
+  EXPECT_TRUE(check_segments(dzv.begin()));
+
+  dv1.barrier();
+  auto incr_first = [](auto x) { x.first++; };
+  mhp::for_each(dzv, incr_first);
+
+  if (comm_rank == 0) {
+    V v1(10), v2(10);
+    rng::iota(v1, 10);
+    rng::iota(v2, 20);
+    auto zv = rng::views::zip(v1, v2);
+    rng::for_each(zv, incr_first);
+
+    EXPECT_TRUE(equal(zv, dzv));
+  }
 }
 
 TEST(MhpTests, Take) {
   const int n = 10;
-  V a(n);
   DV dv_a(n);
-
-  auto aview = rng::views::take(a, 2);
-  auto dv_aview = rng::views::take(dv_a, 2);
-
   mhp::iota(dv_a, 20);
+
+  auto dv_aview = rng::views::take(dv_a, 2);
+  EXPECT_TRUE(check_segments(dv_aview));
+
   if (comm == 0) {
+    V a(n);
+    auto aview = rng::views::take(a, 2);
     rng::iota(a, 20);
     EXPECT_TRUE(equal(aview, dv_aview));
   }
 
+  dv_a.barrier();
   mhp::for_each(dv_aview, increment{});
+
   if (comm == 0) {
+    V a(n);
+    auto aview = rng::views::take(a, 2);
+    rng::iota(a, 20);
     rng::for_each(aview, increment{});
     EXPECT_TRUE(equal(aview, dv_aview));
   }
@@ -97,20 +74,26 @@ TEST(MhpTests, Take) {
 
 TEST(MhpTests, Drop) {
   const int n = 10;
-  V a(n);
-  DV dv_a(n);
 
-  auto aview = rng::views::drop(a, 2);
+  DV dv_a(n);
+  mhp::iota(dv_a, 20);
   auto dv_aview = rng::views::drop(dv_a, 2);
 
-  mhp::iota(dv_a, 20);
+  EXPECT_TRUE(check_segments(dv_aview));
   if (comm == 0) {
+    V a(n);
     rng::iota(a, 20);
+    auto aview = rng::views::drop(a, 2);
     EXPECT_TRUE(equal(aview, dv_aview));
   }
 
+  dv_a.barrier();
   mhp::for_each(dv_aview, increment{});
+
   if (comm == 0) {
+    V a(n);
+    rng::iota(a, 20);
+    auto aview = rng::views::drop(a, 2);
     rng::for_each(aview, increment{});
     EXPECT_TRUE(equal(aview, dv_aview));
   }

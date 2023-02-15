@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include "details/iterator_adaptor.hpp"
+#include "../details/iterator_adaptor.hpp"
 #include "device_span.hpp"
-#include <concepts/concepts.hpp>
-#include <details/ranges.hpp>
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/ranges.hpp>
+#include <dr/details/segments_tools.hpp>
 #include <vector>
 
 namespace shp {
@@ -97,6 +98,10 @@ public:
 
   constexpr reference operator*() const noexcept {
     return segments_[segment_id_][idx_];
+  }
+
+  auto segments() const noexcept {
+    return lib::internal::drop_segments(segments_, segment_id_, idx_);
   }
 
 private:

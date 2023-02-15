@@ -12,13 +12,12 @@ private:
 
 public:
   sycl_shared_allocator(sycl::queue q = sycl::queue())
-      : sycl_allocator_type(q), q_(q), policy_(q) {}
+      : sycl_allocator_type(q), policy_(q) {}
 
   const auto &policy() const { return policy_; }
 
 private:
-  sycl::queue q_;
-  decltype(oneapi::dpl::execution::make_device_policy(sycl::queue{})) policy_;
+  oneapi::dpl::execution::device_policy<> policy_;
 };
 
 } // namespace lib

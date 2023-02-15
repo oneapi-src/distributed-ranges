@@ -54,8 +54,8 @@ TEST(SyclMpiTests, Stencil) {
 
   std::vector<int> v_in(n), v_out(n);
   Alloc alloc;
-  lib::stencil<1> s(1);
-  DV dv_in(s, alloc, n), dv_out1(s, alloc, n), dv_out2(s, alloc, n);
+  lib::halo_bounds hb(1);
+  DV dv_in(hb, alloc, n), dv_out1(hb, alloc, n), dv_out2(hb, alloc, n);
 
   if (comm_rank == 0) {
     rng::iota(v_in, 100);

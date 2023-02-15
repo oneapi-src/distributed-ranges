@@ -186,7 +186,7 @@ template <typename R> void print_range_details(R &&r, std::string label = "") {
     std::cout << "\"" << label << "\" ";
   }
 
-  std::cout << "distributed range with " << lib::ranges::segments(r).size()
+  std::cout << "distributed range with " << rng::size(lib::ranges::segments(r))
             << " segments." << std::endl;
 
   std::size_t idx = 0;

@@ -307,30 +307,22 @@ private:
   ;
 };
 
-template <int Rank> class stencil {
-public:
-  struct dimension_type {
-    std::size_t prev, next;
-  };
-  using radius_type = std::array<dimension_type, Rank>;
+struct halo_bounds {
   /// Constructor
-  stencil(std::size_t radius = 0, bool periodic = false) {
-    for (auto &r : radius_) {
-      r.prev = radius;
-      r.next = radius;
-    }
-    periodic_ = periodic;
+  halo_bounds(std::size_t radius = 0, bool per = false) {
+    prev = radius;
+    next = radius;
+    periodic = per;
+  }
+  /// Constructor
+  halo_bounds(std::size_t prv, std::size_t nxt, bool per = false) {
+    prev = prv;
+    next = nxt;
+    periodic = per;
   }
 
-  /// Returns radius of stencil
-  const radius_type &radius() const { return radius_; }
-
-  /// Returns True if boundary is periodic (wraps around)
-  bool periodic() const { return periodic_; }
-
-private:
-  radius_type radius_;
-  bool periodic_;
+  std::size_t prev, next;
+  bool periodic;
 };
 
 template <typename T, typename Memory>
@@ -343,44 +335,46 @@ public:
 
   span_halo() : span_halo_impl<T, Memory>(communicator(), {}, {}) {}
 
-  span_halo(communicator comm, T *data, std::size_t size, stencil<1> stencl)
-      : span_halo_impl<T, Memory>(comm,
-                                  owned_groups(comm, {data, size}, stencl),
-                                  halo_groups(comm, {data, size}, stencl)) {}
+  span_halo(communicator comm, T *data, std::size_t size, halo_bounds hb)
+      : span_halo_impl<T, Memory>(comm, owned_groups(comm, {data, size}, hb),
+                                  halo_groups(comm, {data, size}, hb)) {
+    check(size, hb);
+  }
 
-  span_halo(communicator comm, std::span<T> span, stencil<1> stencl)
-      : span_halo_impl<T, Memory>(comm, owned_groups(comm, span, stencl),
-                                  halo_groups(comm, span, stencl)) {}
+  span_halo(communicator comm, std::span<T> span, halo_bounds hb)
+      : span_halo_impl<T, Memory>(comm, owned_groups(comm, span, hb),
+                                  halo_groups(comm, span, hb)) {}
 
 private:
+  void check(auto size, auto hb) {
+    assert(size >= hb.prev + hb.next + std::max(hb.prev, hb.next));
+  }
+
   static std::vector<group_type>
-  owned_groups(communicator comm, std::span<T> span, stencil<1> stencl) {
-    const auto &radius = stencl.radius()[0];
+  owned_groups(communicator comm, std::span<T> span, halo_bounds hb) {
     std::vector<group_type> owned;
     drlog.debug(nostd::source_location::current(),
                 "owned groups {}/{} first/last\n", comm.first(), comm.last());
-    if (stencl.periodic() || !comm.first()) {
-      owned.emplace_back(span.subspan(radius.prev, radius.prev), comm.prev(),
+    if (hb.periodic || !comm.first()) {
+      owned.emplace_back(span.subspan(hb.prev, hb.prev), comm.prev(),
                          communicator::tag::halo_reverse);
     }
-    if (stencl.periodic() || !comm.last()) {
-      owned.emplace_back(
-          span.subspan(span.size() - 2 * radius.next, radius.next), comm.next(),
-          communicator::tag::halo_forward);
+    if (hb.periodic || !comm.last()) {
+      owned.emplace_back(span.subspan(span.size() - 2 * hb.next, hb.next),
+                         comm.next(), communicator::tag::halo_forward);
     }
     return owned;
   }
 
   static std::vector<group_type>
-  halo_groups(communicator comm, std::span<T> span, stencil<1> stencl) {
-    const auto &radius = stencl.radius()[0];
+  halo_groups(communicator comm, std::span<T> span, halo_bounds hb) {
     std::vector<group_type> halo;
-    if (stencl.periodic() || !comm.first()) {
-      halo.emplace_back(span.first(radius.prev), comm.prev(),
+    if (hb.periodic || !comm.first()) {
+      halo.emplace_back(span.first(hb.prev), comm.prev(),
                         communicator::tag::halo_forward);
     }
-    if (stencl.periodic() || !comm.last()) {
-      halo.emplace_back(span.last(radius.next), comm.next(),
+    if (hb.periodic || !comm.last()) {
+      halo.emplace_back(span.last(hb.next), comm.next(),
                         communicator::tag::halo_reverse);
     }
     return halo;
@@ -388,3 +382,10 @@ private:
 };
 
 } // namespace lib
+
+template <> struct fmt::formatter<lib::halo_bounds> : formatter<string_view> {
+  template <typename FmtContext>
+  auto format(lib::halo_bounds hb, FmtContext &ctx) {
+    return format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
+  }
+};

@@ -12,7 +12,7 @@ const std::size_t n = 10;
 int value(int rank, int index) { return (rank + 1) * 100 + index; }
 
 struct stencil_data {
-  stencil_data(std::size_t size, lib::stencil<1> s) {
+  stencil_data(std::size_t size, lib::halo_bounds hb) {
     initial.resize(n);
     for (std::size_t i = 0; i < n; i++) {
       initial[i] = value(comm_rank, i);
@@ -21,14 +21,13 @@ struct stencil_data {
 
     auto prev = (comm_rank - 1 + comm_size) % comm_size;
     auto next = (comm_rank + 1) % comm_size;
-    const auto &radius = s.radius()[0];
 
-    if (s.periodic() || comm_rank != 0) {
-      std::iota(ref.begin(), ref.begin() + radius.prev,
-                value(prev, n - 2 * radius.next));
+    if (hb.periodic || comm_rank != 0) {
+      std::iota(ref.begin(), ref.begin() + hb.prev,
+                value(prev, n - 2 * hb.next));
     }
-    if (s.periodic() || comm_rank != comm_size - 1) {
-      std::iota(ref.end() - radius.next, ref.end(), value(next, radius.prev));
+    if (hb.periodic || comm_rank != comm_size - 1) {
+      std::iota(ref.end() - hb.next, ref.end(), value(next, hb.prev));
     }
   }
 
@@ -40,10 +39,10 @@ struct stencil_data {
 TEST(CpuMpiTests, SpanHaloPeriodic) {
   int radius = 2;
   bool periodic = true;
-  lib::stencil<1> s(radius, periodic);
-  stencil_data sd(n, s);
+  lib::halo_bounds hb(radius, periodic);
+  stencil_data sd(n, hb);
 
-  halo h(comm, sd.test, s);
+  halo h(comm, sd.test, hb);
 
   h.exchange_begin();
   h.exchange_finalize();
@@ -54,10 +53,10 @@ TEST(CpuMpiTests, SpanHaloPeriodic) {
 TEST(CpuMpiTests, SpanHaloPeriodicRadius1) {
   int radius = 1;
   bool periodic = true;
-  lib::stencil<1> s(radius, periodic);
-  stencil_data sd(n, s);
+  lib::halo_bounds hb(radius, periodic);
+  stencil_data sd(n, hb);
 
-  halo h(comm, sd.test, s);
+  halo h(comm, sd.test, hb);
 
   h.exchange_begin();
   h.exchange_finalize();
@@ -68,10 +67,10 @@ TEST(CpuMpiTests, SpanHaloPeriodicRadius1) {
 TEST(CpuMpiTests, SpanHaloNonPeriodic) {
   int radius = 2;
   bool periodic = false;
-  lib::stencil<1> s(radius, periodic);
-  stencil_data sd(n, s);
+  lib::halo_bounds hb(radius, periodic);
+  stencil_data sd(n, hb);
 
-  halo h(comm, sd.test, s);
+  halo h(comm, sd.test, hb);
 
   h.exchange_begin();
   h.exchange_finalize();
@@ -82,10 +81,10 @@ TEST(CpuMpiTests, SpanHaloNonPeriodic) {
 TEST(CpuMpiTests, SpanHaloPointer) {
   int radius = 2;
   bool periodic = false;
-  lib::stencil<1> s(radius, periodic);
-  stencil_data sd(n, s);
+  lib::halo_bounds hb(radius, periodic);
+  stencil_data sd(n, hb);
 
-  halo h(comm, sd.test.data(), sd.test.size(), s);
+  halo h(comm, sd.test.data(), sd.test.size(), hb);
 
   h.exchange_begin();
   h.exchange_finalize();
@@ -97,12 +96,12 @@ TEST(CpuMpiTests, SpanHaloDistributedVector) {
   std::size_t radius = 2;
   std::size_t slice = 4;
   std::size_t n = comm_size * slice + 2 * radius;
-  lib::stencil<1> s(radius);
-  lib::distributed_vector<int> dv(s, n);
+  lib::halo_bounds hb(radius);
+  lib::distributed_vector<int> dv(hb, n);
 
   EXPECT_EQ(dv.local().size(), slice + 2 * radius);
-  EXPECT_EQ(s.radius()[0].next, radius);
-  EXPECT_EQ(s.radius()[0].prev, radius);
+  EXPECT_EQ(hb.next, radius);
+  EXPECT_EQ(hb.prev, radius);
 
   if (comm_rank == 0) {
     std::iota(dv.begin(), dv.end(), 1);

@@ -4,15 +4,15 @@
 
 #pragma once
 
-#include <details/segments_tools.hpp>
-#include <shp/distributed_span.hpp>
-#include <shp/zip_view.hpp>
+#include <dr/details/segments_tools.hpp>
+#include <dr/shp/distributed_span.hpp>
+#include <dr/shp/zip_view.hpp>
 
 namespace shp {
 
 namespace views {
 
-inline constexpr auto take = std::views::take;
+inline constexpr auto take = rng::views::take;
 
 template <lib::distributed_range R>
 auto slice(R &&r, shp::index<> slice_indices) {

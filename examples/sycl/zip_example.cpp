@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <CL/sycl.hpp>
-#include <shp/shp.hpp>
-
-#include <ranges>
+#include <dr/shp/shp.hpp>
 
 #include <iostream>
 
@@ -36,7 +34,7 @@ int main(int argc, char **argv) {
   shp::distributed_span dspan(v.segments());
   shp::print_range(dspan);
 
-  auto i = std::ranges::views::iota(int32_t(0), int32_t(std::ranges::size(v)));
+  auto i = rng::views::iota(int32_t(0), int32_t(rng::size(v)));
   shp::zip_view zip_v(i, v);
 
   auto segments = zip_v.segments();

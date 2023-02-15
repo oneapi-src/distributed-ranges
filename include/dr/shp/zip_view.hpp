@@ -6,15 +6,15 @@
 
 #include <oneapi/dpl/iterator>
 
-#include <concepts/concepts.hpp>
-#include <details/iterator_adaptor.hpp>
-#include <details/view_detectors.hpp>
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/iterator_adaptor.hpp>
+#include <dr/details/view_detectors.hpp>
 
 namespace lib {
 
 template <typename T> struct is_owning_view : std::false_type {};
-template <std::ranges::range R>
-struct is_owning_view<std::ranges::owning_view<R>> : std::true_type {};
+// template <rng::range R>
+// struct is_owning_view<rng::owning_view<R>> : std::true_type {};
 
 template <typename T>
 inline constexpr bool is_owning_view_v = is_owning_view<T>{};

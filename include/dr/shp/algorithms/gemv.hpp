@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include <shp/containers/sparse_matrix.hpp>
-#include <shp/distributed_span.hpp>
+#include <dr/shp/containers/sparse_matrix.hpp>
+#include <dr/shp/device_vector.hpp>
+#include <dr/shp/distributed_span.hpp>
 
 namespace shp {
 
