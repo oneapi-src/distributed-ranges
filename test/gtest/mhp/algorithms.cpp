@@ -7,7 +7,7 @@
 using T = int;
 using V = std::vector<T>;
 using DV = mhp::distributed_vector<T>;
-using DVI = mhp::distributed_vector_iterator<T>;
+using DVI = typename DV::iterator;
 
 void check_fill(std::size_t n, std::size_t b, std::size_t size) {
   auto e = b + size;
