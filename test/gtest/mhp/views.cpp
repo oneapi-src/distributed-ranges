@@ -7,7 +7,7 @@
 using T = int;
 using V = std::vector<T>;
 using DV = mhp::distributed_vector<T>;
-using DVI = mhp::distributed_vector_iterator<T>;
+using DVI = typename DV::iterator;
 
 struct increment {
   auto operator()(auto &&v) const { v++; }

@@ -7,7 +7,7 @@
 using T = int;
 using V = std::vector<T>;
 using DV = mhp::distributed_vector<T>;
-using DVI = mhp::distributed_vector_iterator<T>;
+using DVI = typename DV::iterator;
 
 TEST(MhpTests, IteratorConformance) {
   DV dv1(10), dv2(10);
