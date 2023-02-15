@@ -114,8 +114,8 @@ template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   auto segments = lib::ranges::segments(d_first);
 
-  std::size_t segment_id = lib::ranges::segment_index(d_first);
-  std::size_t local_id = lib::ranges::local_index(d_first);
+  std::size_t segment_id = 0;
+  std::size_t local_id = 0;
 
   std::vector<cl::sycl::event> events;
 
