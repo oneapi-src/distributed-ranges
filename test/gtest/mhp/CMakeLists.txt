@@ -26,8 +26,8 @@ cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if (NOT MPI_IMPL STREQUAL "openmpi")
   # MPI_Win_create fails for communicator with size 1
-  add_mpi_test(mhp-mpi-1 mhp-tests-n 1)
+  add_mpi_test(mhp-tests-1 mhp-tests-n 1)
 endif()
-add_mpi_test(mhp-mpi-2 mhp-tests-n 2)
-add_mpi_test(mhp-mpi-3 mhp-tests-n 3)
-add_mpi_test(mhp-mpi-4 mhp-tests-n 4)
+add_mpi_test(mhp-tests-2 mhp-tests-n 2)
+add_mpi_test(mhp-tests-3 mhp-tests-n 3)
+add_mpi_test(mhp-tests-4 mhp-tests-n 4)

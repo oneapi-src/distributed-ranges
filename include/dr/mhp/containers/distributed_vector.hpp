@@ -51,9 +51,11 @@ public:
   }
 
   ~storage() {
-    allocator_.deallocate(data_, data_size_);
+    lib::drlog.debug("Deleting data_\n");
     fence();
     win_.free();
+    allocator_.deallocate(data_, data_size_);
+    data_ = nullptr;
   }
 
   static auto segment_size(auto hb, auto size, auto comm) {
@@ -115,12 +117,13 @@ public:
   Allocator allocator_;
 };
 
-template <typename T> class distributed_vector_reference;
+template <typename T, typename Allocator> class distributed_vector_reference;
 
-template <typename T> class distributed_vector_iterator {
+template <typename T, typename Allocator> class distributed_vector_iterator {
 private:
-  using reference = distributed_vector_reference<T>;
+  using reference = distributed_vector_reference<T, Allocator>;
   using iterator = distributed_vector_iterator;
+  using storage_type = storage<T, Allocator>;
 
 public:
   // Required for random access iterator
@@ -129,7 +132,7 @@ public:
   using difference_type = std::ptrdiff_t;
 
   distributed_vector_iterator() = default;
-  distributed_vector_iterator(const storage<T> *storage, std::size_t index)
+  distributed_vector_iterator(const storage_type *storage, std::size_t index)
       : storage_(storage), index_(index) {}
 
   // Comparison
@@ -220,13 +223,13 @@ public:
         distributed_vector_iterator(storage_, storage_->container_size_));
   }
 
-  const storage<T> *storage_ = nullptr;
+  const storage_type *storage_ = nullptr;
   std::size_t index_ = 0;
 };
 
-template <typename T> class distributed_vector_reference {
+template <typename T, typename Allocator> class distributed_vector_reference {
   using reference = distributed_vector_reference;
-  using iterator = distributed_vector_iterator<T>;
+  using iterator = distributed_vector_iterator<T, Allocator>;
 
 public:
   distributed_vector_reference(const iterator it) : iterator_(it) {}
@@ -246,14 +249,14 @@ private:
   const iterator iterator_;
 };
 
-template <typename T, typename Allocator = std::allocator>
+template <typename T, typename Allocator = std::allocator<T>>
 struct distributed_vector {
 public:
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  using iterator = distributed_vector_iterator<T>;
+  using iterator = distributed_vector_iterator<T, Allocator>;
   using pointer = iterator;
   using reference = std::iter_reference_t<iterator>;
 
@@ -263,7 +266,7 @@ public:
                      lib::halo_bounds hb = lib::halo_bounds(),
                      Allocator allocator = Allocator())
       : storage_(count, &halo_, hb, lib::communicator(), allocator),
-        halo_(storage_.comm_, storage_.data_.get(), storage_.data_size_, hb) {}
+        halo_(storage_.comm_, storage_.data_, storage_.data_size_, hb) {}
 
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
@@ -287,16 +290,16 @@ public:
   void fence() const { storage_.fence(); }
 
 private:
-  storage<T> storage_;
+  storage<T, Allocator> storage_;
   lib::span_halo<T> halo_;
 };
 
 } // namespace mhp
 
-template <typename T>
-struct fmt::formatter<mhp::storage<T>> : formatter<string_view> {
+template <typename T, typename Allocator>
+struct fmt::formatter<mhp::storage<T, Allocator>> : formatter<string_view> {
   template <typename FmtContext>
-  auto format(const mhp::storage<T> &dv, FmtContext &ctx) {
+  auto format(const mhp::storage<T, Allocator> &dv, FmtContext &ctx) {
     return format_to(ctx.out(),
                      "size: {}, comm size: {}, segment size: {}, halo bounds: "
                      "({}), data size: {}",
