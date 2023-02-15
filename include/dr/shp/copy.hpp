@@ -13,9 +13,30 @@
 
 namespace shp {
 
+template <std::contiguous_iterator InputIt,
+          std::contiguous_iterator OutputIt>
+requires(std::is_same_v<std::remove_const_t<std::iter_value_t<InputIt>>, std::iter_value_t<OutputIt>> &&
+         !std::is_const_v<std::iter_value_t<OutputIt>> &&
+         std::is_trivially_copyable_v<std::iter_value_t<InputIt>>)
+cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
+  cl::sycl::queue q;
+  return q.memcpy(std::to_address(d_first), std::to_address(first),
+                  sizeof(std::iter_value_t<InputIt>) * (last - first));
+}
+
+template <std::contiguous_iterator InputIt,
+          std::contiguous_iterator OutputIt>
+requires(std::is_same_v<std::remove_const_t<std::iter_value_t<InputIt>>, std::iter_value_t<OutputIt>> &&
+         !std::is_const_v<std::iter_value_t<OutputIt>>)
+void copy(InputIt first, InputIt last, OutputIt d_first) {
+  copy_async(first, last, d_first).wait();
+  return d_first + (last - first);
+}
+
 template <std::contiguous_iterator Iter, typename T>
   requires(std::is_same_v<std::remove_const_t<std::iter_value_t<Iter>>, T> &&
-           !std::is_const_v<T>)
+           !std::is_const_v<T> &&
+           std::is_trivially_copyable_v<T>)
 cl::sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
   cl::sycl::queue q;
   return q.memcpy(d_first.get_raw_pointer(), std::to_address(first),
@@ -31,7 +52,8 @@ device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
 }
 
 template <typename T, std::contiguous_iterator Iter>
-  requires(std::is_same_v<std::iter_value_t<Iter>, std::remove_const_t<T>>)
+  requires(std::is_same_v<std::iter_value_t<Iter>, std::remove_const_t<T>> &&
+           std::is_trivially_copyable_v<T>)
 cl::sycl::event
     copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
   cl::sycl::queue q;
