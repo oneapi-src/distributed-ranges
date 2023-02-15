@@ -125,7 +125,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(GoogleTest)
 
   if(ENABLE_SYCL)
-    add_subdirectory(examples/sycl)
+    add_subdirectory(examples/shp)
     add_subdirectory(test/gtest/shp)
   endif()
 
