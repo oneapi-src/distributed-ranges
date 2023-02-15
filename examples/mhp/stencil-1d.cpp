@@ -5,7 +5,7 @@
 #include "cxxopts.hpp"
 #include "mpi.h"
 
-#include "dr/distributed-ranges.hpp"
+#include "dr/mhp.hpp"
 
 MPI_Comm comm;
 int comm_rank;
@@ -20,23 +20,24 @@ auto stencil_op = [](auto &&v) {
 
 int check(auto dv, auto n, auto steps) {
   // Serial stencil
-  std::vector<int> v_in(n), v_out(n);
-  rng::iota(v_in, 100);
+  std::vector<int> a(n), b(n);
+  rng::iota(a, 100);
+  rng::fill(b, 0);
 
-  auto *in = &v_in;
-  auto *out = &v_out;
+  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
+  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
   for (std::size_t s = 0; s < steps; s++) {
-    std::transform(in->begin() + 1, in->end() - 1, out->begin() + 1,
-                   stencil_op);
+    rng::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
   }
 
   // Check the result
-  if (!rng::equal(*dv, *in)) {
+  if (!rng::equal(dv, in)) {
     fmt::print("Mismatch\n");
     if (n < 100) {
-      fmt::print("  v: {}\n", *in);
-      fmt::print(" dv: {}\n", *dv);
+      fmt::print(" local: {}\n"
+                 " dist:: {}\n",
+                 in, dv);
     }
     return 1;
   }
@@ -45,14 +46,15 @@ int check(auto dv, auto n, auto steps) {
 
 int stencil(auto n, auto steps) {
   lib::halo_bounds hb(1);
-  lib::distributed_vector<int> dv_in(hb, n), dv_out(hb, n);
-  lib::iota(dv_in, 100);
+  mhp::distributed_vector<int> a(n, hb), b(n, hb);
+  mhp::iota(a, 100);
+  mhp::fill(b, 0);
 
-  auto *in = &dv_in;
-  auto *out = &dv_out;
+  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
+  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
   for (std::size_t s = 0; s < steps; s++) {
-    lib::transform(in->begin() + 1, in->end() - 1, out->begin() + 1,
-                   stencil_op);
+    mhp::halo_exchange(in.begin());
+    mhp::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
   }
 

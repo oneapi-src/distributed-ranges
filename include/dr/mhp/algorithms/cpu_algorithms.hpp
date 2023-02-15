@@ -96,7 +96,7 @@ void iota(lib::distributed_contiguous_range auto &&r, auto value) {
 //
 //
 
-void transform(lib::distributed_contiguous_range auto &&in,
+void transform(lib::distributed_range auto &&in,
                lib::distributed_iterator auto out, auto op) {
   if (aligned(in.begin(), out)) {
     for (const auto &&[in_seg, out_seg] :

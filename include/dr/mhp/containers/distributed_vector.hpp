@@ -34,11 +34,13 @@ public:
   storage(const storage &) = delete;
   storage &operator=(const storage &) = delete;
 
-  storage(std::size_t size, lib::halo_bounds hb = lib::halo_bounds(),
+  storage(std::size_t size, lib::span_halo<T> *halo,
+          lib::halo_bounds hb = lib::halo_bounds(),
           lib::communicator comm = lib::communicator{})
       : segment_size_(segment_size(hb, size, comm)),
         data_size_(segment_size_ + hb.prev + hb.next),
         data_(new T[data_size_]) {
+    halo_ = halo;
     comm_ = comm;
     halo_bounds_ = hb;
     container_size_ = size;
@@ -95,6 +97,7 @@ public:
   void barrier() const { comm_.barrier(); }
   void fence() const { win_.fence(); }
   auto my_rank() const { return comm_.rank(); }
+  void halo_exchange() const { halo_->exchange(); }
 
   std::size_t container_size_ = 0;
   std::size_t container_capacity_ = 0;
@@ -107,6 +110,7 @@ public:
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
   std::unique_ptr<T[]> data_;
+  lib::span_halo<T> *halo_;
 };
 
 template <typename T> class distributed_vector_reference;
@@ -204,6 +208,7 @@ public:
 
   void barrier() const { storage_->barrier(); }
   void fence() const { storage_->fence(); }
+  void halo_exchange() const { storage_->halo_exchange(); }
   auto my_rank() const { return storage_->my_rank(); }
 
 public:
@@ -253,7 +258,7 @@ public:
 
   distributed_vector(std::size_t count,
                      lib::halo_bounds hb = lib::halo_bounds())
-      : storage_(count, hb),
+      : storage_(count, &halo_, hb),
         halo_(storage_.comm_, storage_.data_.get(), storage_.data_size_, hb) {}
 
   distributed_vector(const distributed_vector &) = delete;
@@ -269,9 +274,13 @@ public:
   iterator end() const { return iterator(&storage_, storage_.container_size_); }
 
   auto &halo() { return halo_; }
+  void halo_exchange() {
+    halo_.exchange_begin();
+    halo_.exchange_finalize();
+  }
 
-  void barrier() { storage_.barrier(); }
-  void fence() { storage_.fence(); }
+  void barrier() const { storage_.barrier(); }
+  void fence() const { storage_.fence(); }
 
 private:
   storage<T> storage_;
