@@ -95,7 +95,7 @@ jobs:
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
-        cmake -B build -DENABLE_SYCL_MPI=on -DENABLE_SYCL=on
+        cmake -B build -DENABLE_SYCL=on
         make -j 2 -C build all test
     - uses: actions/upload-artifact@v3
       if: always()

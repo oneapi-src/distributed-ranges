@@ -51,41 +51,4 @@ concept distributed_contiguous_range =
     remote_contiguous_range<
         rng::range_value_t<decltype(lib::ranges::segments(std::declval<R>()))>>;
 
-template <typename I>
-concept mpi_distributed_iterator =
-    std::forward_iterator<I> && requires(I &iter) {
-                                  { iter.container() };
-                                };
-
-template <typename I>
-concept mpi_distributed_contiguous_iterator =
-    std::random_access_iterator<I> && mpi_distributed_iterator<I>;
-
-template <typename I>
-concept contiguous_iterator_or_nullptr =
-    std::contiguous_iterator<I> || std::same_as<I, std::nullptr_t>;
-
-template <typename R>
-concept mpi_distributed_range =
-    rng::forward_range<R> && requires(R &r) {
-                               { r.begin() } -> mpi_distributed_iterator;
-                               { r.end() } -> mpi_distributed_iterator;
-                             };
-
-template <typename I>
-concept sycl_mpi_distributed_contiguous_iterator =
-    mpi_distributed_contiguous_iterator<I> &&
-    requires(I &iter) {
-      { iter.container().allocator().policy() };
-    };
-
-template <typename R>
-concept mpi_distributed_contiguous_range =
-    mpi_distributed_range<R> && rng::random_access_range<R>;
-
-template <typename ZR>
-concept distributed_range_zip = requires(ZR &zr) {
-                                  { std::get<0>(*zr.begin()) };
-                                };
-
 } // namespace lib

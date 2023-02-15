@@ -13,8 +13,6 @@
 Interface
 =========
 
-.. doxygenclass:: lib::distributed_mdspan
-   :members:
 
 Description
 ===========
