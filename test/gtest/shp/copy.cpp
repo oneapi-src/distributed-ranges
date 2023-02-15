@@ -39,13 +39,16 @@ TEST(ShpTests, Copy_async_Dist2Local) {
   std::iota(dv_a.begin(), dv_a.end(), 0);
   std::iota(dv_b.begin(), dv_b.end(), 0);
 
-  for (size_t i = 0, j = 0; i + n_to_copy <= na; i += n_to_copy, j += M * n_to_copy) {
-    auto eva = shp::copy_async(dv_a.begin() + i, dv_a.begin() + i + n_to_copy, a.begin());
+  for (size_t i = 0, j = 0; i + n_to_copy <= na;
+       i += n_to_copy, j += M * n_to_copy) {
+    auto eva = shp::copy_async(dv_a.begin() + i, dv_a.begin() + i + n_to_copy,
+                               a.begin());
     events.push_back(eva);
 
-    auto evb = shp::copy_async(dv_b.begin() + j, dv_b.begin() + j + M * n_to_copy, b.begin());
+    auto evb = shp::copy_async(dv_b.begin() + j,
+                               dv_b.begin() + j + M * n_to_copy, b.begin());
     events.push_back(evb);
-    
+
     sycl::queue q;
     auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
 
@@ -88,13 +91,14 @@ TEST(ShpTests, Copy_async_Local2Dist) {
   std::iota(a.begin(), a.end(), 0);
   std::iota(b.begin(), b.end(), 0);
 
-  for (size_t i = 0, j = 0; i + n_to_copy <= na; i += n_to_copy, j += M * n_to_copy) {
+  for (size_t i = 0, j = 0; i + n_to_copy <= na;
+       i += n_to_copy, j += M * n_to_copy) {
     auto eva = shp::copy_async(a.begin(), a.end(), dv_a.begin() + i);
     events.push_back(eva);
 
     auto evb = shp::copy_async(b.begin(), b.end(), dv_b.begin() + j);
     events.push_back(evb);
-    
+
     sycl::queue q;
     auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
 
