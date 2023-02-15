@@ -196,6 +196,31 @@ template <typename R> void print_range_details(R &&r, std::string label = "") {
   }
 }
 
+template <lib::distributed_range R>
+void range_details(R &&r, std::size_t width = 80) {
+  std::size_t size = rng::size(r);
+
+  for (auto &&[idx, segment] :
+       lib::internal::enumerate(lib::ranges::segments(r))) {
+    std::size_t local_size = rng::size(segment);
+
+    double percent = double(local_size) / size;
+
+    std::size_t num_chars = percent * width;
+    num_chars = std::max(num_chars, std::size_t(3));
+
+    std::size_t whitespace = num_chars - 3;
+
+    std::size_t initial_whitespace = whitespace / 2;
+    std::size_t after_whitespace = whitespace - initial_whitespace;
+
+    std::cout << "[" << std::string(initial_whitespace, ' ')
+              << lib::ranges::rank(segment)
+              << std::string(after_whitespace, ' ') << "]";
+  }
+  std::cout << std::endl;
+}
+
 // Allocate spans on a number of devices.
 
 template <typename T>
