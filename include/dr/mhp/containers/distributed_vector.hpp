@@ -28,29 +28,30 @@ bool aligned(lib::distributed_iterator auto iter1,
 }
 
 // 1D, homogeneous, distributed storage
-template <typename T> struct storage {
+template <typename T, typename Allocator> struct storage {
 public:
   // Cannot copy without transferring ownership of the storage
   storage(const storage &) = delete;
   storage &operator=(const storage &) = delete;
 
-  storage(std::size_t size, lib::span_halo<T> *halo,
-          lib::halo_bounds hb = lib::halo_bounds(),
-          lib::communicator comm = lib::communicator{})
+  storage(std::size_t size, lib::span_halo<T> *halo, lib::halo_bounds hb,
+          lib::communicator comm, Allocator allocator)
       : segment_size_(segment_size(hb, size, comm)),
         data_size_(segment_size_ + hb.prev + hb.next),
-        data_(new T[data_size_]) {
+        data_(allocator.allocate(data_size_)) {
+    allocator_ = allocator;
     halo_ = halo;
     comm_ = comm;
     halo_bounds_ = hb;
     container_size_ = size;
     container_capacity_ = comm.size() * segment_size_;
-    win_.create(comm, data_.get(), data_size_ * sizeof(T));
+    win_.create(comm, data_, data_size_ * sizeof(T));
     fence();
     lib::drlog.debug("Storage allocated\n  {}\n", *this);
   }
 
   ~storage() {
+    allocator_.deallocate(data_, data_size_);
     fence();
     win_.free();
   }
@@ -84,7 +85,7 @@ public:
   T *local(std::size_t index) const {
     lib::drlog.debug("local: index: {} rank: {}\n", index, rank(index));
     if (rank(index) == std::size_t(comm_.rank())) {
-      return data_.get() + local_index(index) + halo_bounds_.prev;
+      return data_ + local_index(index) + halo_bounds_.prev;
     } else {
       return nullptr;
     }
@@ -109,8 +110,9 @@ public:
   lib::halo_bounds halo_bounds_;
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
-  std::unique_ptr<T[]> data_;
+  T *data_;
   lib::span_halo<T> *halo_;
+  Allocator allocator_;
 };
 
 template <typename T> class distributed_vector_reference;
@@ -244,7 +246,8 @@ private:
   const iterator iterator_;
 };
 
-template <typename T> struct distributed_vector {
+template <typename T, typename Allocator = std::allocator>
+struct distributed_vector {
 public:
   using value_type = T;
   using size_type = std::size_t;
@@ -257,8 +260,9 @@ public:
   distributed_vector() {}
 
   distributed_vector(std::size_t count,
-                     lib::halo_bounds hb = lib::halo_bounds())
-      : storage_(count, &halo_, hb),
+                     lib::halo_bounds hb = lib::halo_bounds(),
+                     Allocator allocator = Allocator())
+      : storage_(count, &halo_, hb, lib::communicator(), allocator),
         halo_(storage_.comm_, storage_.data_.get(), storage_.data_size_, hb) {}
 
   distributed_vector(const distributed_vector &) = delete;
