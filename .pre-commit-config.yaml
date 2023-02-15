@@ -44,14 +44,6 @@ repos:
   rev: 5.12.0
   hooks:
   - id: isort
-    args: ['--order-by-type', '--length-sort', "--profile", "black", "--filter-files"]
-    name: isort (python)
-  - id: isort
-    name: isort (cython)
-    types: [cython]
-  - id: isort
-    name: isort (pyi)
-    types: [pyi]
 
 - repo: https://github.com/fsfe/reuse-tool
   rev: v1.0.0

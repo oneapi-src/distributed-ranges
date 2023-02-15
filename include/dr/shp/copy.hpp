@@ -12,6 +12,8 @@
 
 namespace shp {
 
+// TODO: in case the destination area is too small segfault may occur
+// - add some error handling
 template <std::contiguous_iterator Iter, typename T>
   requires(std::is_same_v<std::remove_const_t<std::iter_value_t<Iter>>, T> &&
            !std::is_const_v<T>)
@@ -29,6 +31,8 @@ device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
   return d_first + (last - first);
 }
 
+// TODO: in case the destination area is too small segfault may occur
+// - add some error handling
 template <typename T, std::contiguous_iterator Iter>
   requires(std::is_same_v<std::iter_value_t<Iter>, std::remove_const_t<T>>)
 cl::sycl::event
