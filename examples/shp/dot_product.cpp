@@ -1,22 +1,23 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <dr/shp/shp.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <ranges>
 
-template <lib::distributed_range X,
-          lib::distributed_range Y>
-auto dot_product(X&& x, Y&& y) {
-  auto z =   shp::views::zip(x, y)
-           | shp::views::transform(
-               [](auto&& elem) {
-                 auto&& [a, b] = elem;
-                 return a * b;
-               });
+template <lib::distributed_range X, lib::distributed_range Y>
+auto dot_product(X &&x, Y &&y) {
+  auto z = shp::views::zip(x, y) | shp::views::transform([](auto &&elem) {
+             auto &&[a, b] = elem;
+             return a * b;
+           });
 
   return shp::reduce(shp::par_unseq, z, 0, std::plus());
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
   auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
   shp::init(devices);
