@@ -13,8 +13,8 @@ template <rng::forward_range V, std::copy_constructible F>
 class transform_view : public rng::view_interface<transform_view<V, F>> {
 public:
   template <rng::viewable_range R>
-  transform_view(R &&r, F fn)
-      : base_(rng::views::all(r)), fn_(fn), global_view_(base_, fn) {}
+  transform_view(R&& r, F fn)
+    : base_(rng::views::all(r)), fn_(fn) {}
 
   auto begin() const {
     return normal_distributed_iterator<decltype(segments())>(segments(), 0, 0);
@@ -41,4 +41,43 @@ private:
 template <rng::viewable_range R, std::copy_constructible F>
 transform_view(R &&r, F fn) -> transform_view<rng::views::all_t<R>, F>;
 
-} // namespace shp
+namespace views {
+
+template <std::copy_constructible F>
+class transform_adapter_closure {
+public:
+
+  transform_adapter_closure(F fn) : fn_(fn) {}
+
+  template <rng::viewable_range R>
+  auto operator()(R &&r) const {
+    return shp::transform_view(std::forward<R>(r), fn_);
+  }
+
+  template <rng::viewable_range R>
+  friend auto operator|(R &&r, const transform_adapter_closure &closure) {
+    return closure(std::forward<R>(r));
+  }
+
+private:
+  F fn_;
+};
+
+class transform_fn_ {
+public:
+  template <rng::viewable_range R,
+            std::copy_constructible F>
+  auto operator()(R &&r, F&& f) const {
+    return transform_adapter_closure(std::forward<F>(f))(std::forward<R>(r));
+  }
+
+  template <std::copy_constructible F>
+  auto operator()(F&& fn) const {
+    return transform_adapter_closure(std::forward<F>(fn));
+  }
+};
+
+inline constexpr auto transform = transform_fn_{};
+}
+
+} // end shp
