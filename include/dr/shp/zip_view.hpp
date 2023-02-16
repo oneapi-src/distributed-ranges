@@ -9,6 +9,7 @@
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/iterator_adaptor.hpp>
 #include <dr/details/view_detectors.hpp>
+#include <dr/details/ranges_shim.hpp>
 
 namespace lib {
 

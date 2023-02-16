@@ -68,21 +68,6 @@ Iter copy(device_ptr<const T> first, device_ptr<const T> last, Iter d_first) {
   return d_first + (last - first);
 }
 
-template <typename T>
-  requires(!std::is_const_v<T>)
-cl::sycl::event
-    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  cl::sycl::queue q;
-  return q.fill(first.get_raw_pointer(), value, last - first);
-}
-
-template <typename T>
-  requires(!std::is_const_v<T>)
-void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  cl::sycl::queue q;
-  q.fill(first.get_raw_pointer(), value, last - first).wait();
-}
-
 // Copy from local range to distributed range
 template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
@@ -157,6 +142,35 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
   std::advance(d_first, last - first);
   return d_first;
+}
+
+template <std::contiguous_iterator Iter>
+  requires(!std::is_const_v<std::iter_value_t<Iter>> &&
+           std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
+cl::sycl::event
+  fill_async(Iter first, Iter last, const std::iter_value_t<Iter>& value) {
+  cl::sycl::queue q;
+  return q.fill(std::to_address(first), value, last - first);
+}
+
+template <std::contiguous_iterator Iter>
+  requires(!std::is_const_v<std::iter_value_t<Iter>>)
+void fill(Iter first, Iter last, const std::iter_value_t<Iter>& value) {
+  fill_async(first, last, value).wait();
+}
+
+template <typename T>
+  requires(!std::is_const_v<T>)
+cl::sycl::event
+    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
+  cl::sycl::queue q;
+  return q.fill(first.get_raw_pointer(), value, last - first);
+}
+
+template <typename T>
+  requires(!std::is_const_v<T>)
+void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
+  fill_async(first, last, value).wait();
 }
 
 } // namespace shp
