@@ -25,6 +25,8 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #endif
+// Workaround for doxygen warning about internal inconsistency
+namespace fmt {}
 
 #include "vendor/source_location/source_location.hpp"
 

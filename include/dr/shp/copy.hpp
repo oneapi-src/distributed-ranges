@@ -17,7 +17,7 @@ namespace shp {
 // - add some error handling
 template <std::contiguous_iterator Iter, typename T>
   requires(std::is_same_v<std::remove_const_t<std::iter_value_t<Iter>>, T> &&
-           !std::is_const_v<T>)
+           !std::is_const_v<T> && std::is_trivially_copyable_v<T>)
 cl::sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
   cl::sycl::queue q;
   return q.memcpy(d_first.get_raw_pointer(), std::to_address(first),
@@ -35,7 +35,8 @@ device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
 // TODO: in case the destination area is too small segfault may occur
 // - add some error handling
 template <typename T, std::contiguous_iterator Iter>
-  requires(std::is_same_v<std::iter_value_t<Iter>, std::remove_const_t<T>>)
+  requires(std::is_same_v<std::iter_value_t<Iter>, std::remove_const_t<T>> &&
+           std::is_trivially_copyable_v<T>)
 cl::sycl::event
     copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
   cl::sycl::queue q;
@@ -49,21 +50,6 @@ template <std::contiguous_iterator Iter, typename T>
 Iter copy(device_ptr<const T> first, device_ptr<const T> last, Iter d_first) {
   copy_async(first, last, d_first).wait();
   return d_first + (last - first);
-}
-
-template <typename T>
-  requires(!std::is_const_v<T>)
-cl::sycl::event
-    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  cl::sycl::queue q;
-  return q.fill(first.get_raw_pointer(), value, last - first);
-}
-
-template <typename T>
-  requires(!std::is_const_v<T>)
-void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  cl::sycl::queue q;
-  q.fill(first.get_raw_pointer(), value, last - first).wait();
 }
 
 // Copy from local range to distributed range
@@ -181,6 +167,35 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
   std::advance(d_first, last - first);
   return d_first;
+}
+
+template <std::contiguous_iterator Iter>
+  requires(!std::is_const_v<std::iter_value_t<Iter>> &&
+           std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
+cl::sycl::event
+    fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
+  cl::sycl::queue q;
+  return q.fill(std::to_address(first), value, last - first);
+}
+
+template <std::contiguous_iterator Iter>
+  requires(!std::is_const_v<std::iter_value_t<Iter>>)
+void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
+  fill_async(first, last, value).wait();
+}
+
+template <typename T>
+  requires(!std::is_const_v<T>)
+cl::sycl::event
+    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
+  cl::sycl::queue q;
+  return q.fill(first.get_raw_pointer(), value, last - first);
+}
+
+template <typename T>
+  requires(!std::is_const_v<T>)
+void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
+  fill_async(first, last, value).wait();
 }
 
 } // namespace shp

@@ -143,11 +143,21 @@ public:
 
     capacity_ = segment_size_ * shp::nprocs();
 
+    std::vector<cl::sycl::event> events;
+
     size_t rank = 0;
     for (auto &&device : shp::devices()) {
       Allocator alloc(shp::context(), device);
       segment_type segment(segment_size_, alloc, rank++);
+
+      auto e = shp::fill_async(segment.begin(), segment.end(), T{});
+      events.push_back(e);
+
       segments_.push_back(std::move(segment));
+    }
+
+    for (auto &&event : events) {
+      event.wait();
     }
   }
 

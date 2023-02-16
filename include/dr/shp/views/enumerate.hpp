@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <dr/details/ranges_shim.hpp>
+#include <dr/shp/zip_view.hpp>
 
-namespace lib {
+namespace shp {
 
-namespace internal {
+namespace views {
 
 namespace {
 
@@ -26,18 +26,12 @@ template <rng::range R> using range_size_t = typename range_size<R>::type;
 
 class enumerate_adapter_closure {
 public:
-  template <rng::viewable_range R> auto operator()(R &&r) const {
-    using S = range_size_t<R>;
-    // NOTE: This line only necessary due to bug in range-v3 where views
-    //       have non-weakly-incrementable size types. (Standard mandates
-    //       size type must be weakly incrementable.)
-    using W = std::conditional_t<std::weakly_incrementable<S>, S, std::size_t>;
-    if constexpr (rng::sized_range<R>) {
-      return rng::views::zip(rng::views::iota(W{0}, W{rng::size(r)}),
-                             std::forward<R>(r));
-    } else {
-      return rng::views::zip(rng::views::iota(W{0}), std::forward<R>(r));
-    }
+  template <rng::viewable_range R>
+    requires(rng::sized_range<R>)
+  auto operator()(R &&r) const {
+    using W = std::uint32_t;
+    return shp::zip_view(rng::views::iota(W(0), W(rng::size(r))),
+                         std::forward<R>(r));
   }
 
   template <rng::viewable_range R>
@@ -57,6 +51,6 @@ public:
 
 inline constexpr auto enumerate = enumerate_fn_{};
 
-} // namespace internal
+} // namespace views
 
-} // namespace lib
+} // namespace shp

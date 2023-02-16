@@ -53,7 +53,7 @@ public:
 
   /// Begin a halo exchange
   void exchange_begin() {
-    drlog.debug(nostd::source_location::current(), "Halo exchange begin\n");
+    drlog.debug("Halo exchange begin\n");
     receive(halo_groups_);
     send(owned_groups_);
   }
@@ -61,7 +61,12 @@ public:
   /// Complete a halo exchange
   void exchange_finalize() {
     reduce_finalize(second);
-    drlog.debug(nostd::source_location::current(), "Halo exchange finalize\n");
+    drlog.debug("Halo exchange finalize\n");
+  }
+
+  void exchange() {
+    exchange_begin();
+    exchange_finalize();
   }
 
   /// Begin a halo reduction
@@ -355,11 +360,11 @@ private:
     std::vector<group_type> owned;
     drlog.debug(nostd::source_location::current(),
                 "owned groups {}/{} first/last\n", comm.first(), comm.last());
-    if (hb.periodic || !comm.first()) {
+    if (hb.prev > 0 && (hb.periodic || !comm.first())) {
       owned.emplace_back(span.subspan(hb.prev, hb.prev), comm.prev(),
                          communicator::tag::halo_reverse);
     }
-    if (hb.periodic || !comm.last()) {
+    if (hb.next > 0 && (hb.periodic || !comm.last())) {
       owned.emplace_back(span.subspan(span.size() - 2 * hb.next, hb.next),
                          comm.next(), communicator::tag::halo_forward);
     }
@@ -369,11 +374,11 @@ private:
   static std::vector<group_type>
   halo_groups(communicator comm, std::span<T> span, halo_bounds hb) {
     std::vector<group_type> halo;
-    if (hb.periodic || !comm.first()) {
+    if (hb.prev > 0 && (hb.periodic || !comm.first())) {
       halo.emplace_back(span.first(hb.prev), comm.prev(),
                         communicator::tag::halo_forward);
     }
-    if (hb.periodic || !comm.last()) {
+    if (hb.next > 0 && (hb.periodic || !comm.last())) {
       halo.emplace_back(span.last(hb.next), comm.next(),
                         communicator::tag::halo_reverse);
     }
