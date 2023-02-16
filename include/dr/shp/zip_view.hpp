@@ -8,8 +8,10 @@
 
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/iterator_adaptor.hpp>
+#include <dr/details/owning_view.hpp>
 #include <dr/details/ranges_shim.hpp>
 #include <dr/details/view_detectors.hpp>
+#include <ranges>
 
 namespace lib {
 
@@ -107,17 +109,17 @@ public:
 
   std::size_t size() const noexcept { return size_; }
 
-  auto begin() {
+  auto begin() const {
     return begin_impl_(std::make_index_sequence<sizeof...(Rs)>{});
   }
 
-  auto end() { return begin() + size(); }
+  auto end() const { return begin() + size(); }
 
   auto operator[](std::size_t idx) const { return *(begin() + idx); }
 
   static constexpr bool num_views = sizeof...(Rs);
 
-  template <std::size_t I> decltype(auto) get_view() {
+  template <std::size_t I> decltype(auto) get_view() const {
     auto &&view = std::get<I>(views_);
 
     if constexpr (lib::is_ref_view_v<std::remove_cvref_t<decltype(view)>> ||
@@ -130,7 +132,7 @@ public:
 
   // If there is at least one distributed range, expose segments
   // of overlapping remote ranges.
-  auto segments()
+  auto segments() const
     requires(lib::distributed_range<Rs> || ...)
   {
     std::array<std::size_t, sizeof...(Rs)> segment_ids;
@@ -164,14 +166,14 @@ public:
       increment_local_idx(segment_ids, local_idx, size);
     }
 
-    return segment_views;
+    return lib::internal::owning_view(std::move(segment_views));
   }
 
   // If:
   //   - There is at least one remote range in the zip
   //   - There are no distributed ranges in the zip
   // Expose a rank.
-  std::size_t rank()
+  std::size_t rank() const
     requires((lib::remote_range<Rs> || ...) &&
              !(lib::distributed_range<Rs> || ...))
   {
@@ -179,14 +181,14 @@ public:
   }
 
 private:
-  template <std::size_t I, typename R> std::size_t get_rank_impl_() {
+  template <std::size_t I, typename R> std::size_t get_rank_impl_() const {
     static_assert(I < sizeof...(Rs));
     return lib::ranges::rank(get_view<I>());
   }
 
   template <std::size_t I, typename R, typename... Rs_>
     requires(sizeof...(Rs_) > 0)
-  std::size_t get_rank_impl_() {
+  std::size_t get_rank_impl_() const {
     static_assert(I < sizeof...(Rs));
     if constexpr (lib::remote_range<R>) {
       return lib::ranges::rank(get_view<I>());
@@ -195,7 +197,7 @@ private:
     }
   }
 
-  template <typename T> auto create_view_impl_(T &&t) {
+  template <typename T> auto create_view_impl_(T &&t) const {
     if constexpr (lib::remote_range<T>) {
       return shp::device_span(std::forward<T>(t));
     } else {
@@ -205,7 +207,8 @@ private:
 
   template <std::size_t... Is>
   auto get_zipped_view_impl_(auto &&segment_ids, auto &&local_idx,
-                             std::size_t size, std::index_sequence<Is...>) {
+                             std::size_t size,
+                             std::index_sequence<Is...>) const {
     return zip_view<decltype(create_view_impl_(
                                  segment_or_orig_(get_view<Is>(),
                                                   segment_ids[Is]))
@@ -216,7 +219,7 @@ private:
 
   template <std::size_t I = 0>
   void increment_local_idx(auto &&segment_ids, auto &&local_idx,
-                           std::size_t size) {
+                           std::size_t size) const {
     local_idx[I] += size;
 
     if (local_idx[I] >=
@@ -230,12 +233,13 @@ private:
     }
   }
 
-  template <std::size_t... Is> auto begin_impl_(std::index_sequence<Is...>) {
+  template <std::size_t... Is>
+  auto begin_impl_(std::index_sequence<Is...>) const {
     return zip_iterator<rng::iterator_t<Rs>...>(
         rng::begin(std::get<Is>(views_))...);
   }
 
-  template <typename T, typename U> T min_many_impl_(T t, U u) {
+  template <typename T, typename U> T min_many_impl_(T t, U u) const {
     if (u < t) {
       return u;
     } else {
@@ -244,30 +248,31 @@ private:
   }
 
   template <lib::distributed_range T>
-  decltype(auto) segment_or_orig_(T &&t, std::size_t idx) {
+  decltype(auto) segment_or_orig_(T &&t, std::size_t idx) const {
     return lib::ranges::segments(t)[idx];
   }
 
   template <typename T>
-  decltype(auto) segment_or_orig_(T &&t, std::size_t idx) {
+  decltype(auto) segment_or_orig_(T &&t, std::size_t idx) const {
     return t;
   }
 
   template <typename T, typename U, typename... Ts>
-  T min_many_impl_(T t, U u, Ts... ts) {
+  T min_many_impl_(T t, U u, Ts... ts) const {
     T local_min = min_many_impl_(t, u);
     return min_many_impl_(local_min, ts...);
   }
 
   template <std::size_t... Is>
   std::size_t get_next_segment_size_impl_(auto &&segment_ids, auto &&local_idx,
-                                          std::index_sequence<Is...>) {
+                                          std::index_sequence<Is...>) const {
     return min_many_impl_(
         rng::size(segment_or_orig_(get_view<Is>(), segment_ids[Is])) -
         local_idx[Is]...);
   }
 
-  std::size_t get_next_segment_size(auto &&segment_ids, auto &&local_idx) {
+  std::size_t get_next_segment_size(auto &&segment_ids,
+                                    auto &&local_idx) const {
     return get_next_segment_size_impl_(
         segment_ids, local_idx, std::make_index_sequence<sizeof...(Rs)>{});
   }
