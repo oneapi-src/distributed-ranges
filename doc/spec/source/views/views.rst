@@ -12,4 +12,3 @@ Views can reference collections of objects but do not own the storage.
    :maxdepth: 1
 
    distributed_mdspan
-   local_span
