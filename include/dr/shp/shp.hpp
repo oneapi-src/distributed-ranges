@@ -6,9 +6,6 @@
 
 #include <dr/details/ranges_shim.hpp>
 
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
 #include "algorithms/execution_policy.hpp"
 #include "algorithms/for_each.hpp"
 #include "algorithms/reduce.hpp"

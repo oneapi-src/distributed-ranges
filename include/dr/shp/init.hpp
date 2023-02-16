@@ -49,4 +49,6 @@ inline void init(R &&devices)
   par_unseq = device_policy(internal::devices_);
 }
 
+inline void finalize() { delete internal::global_context_; }
+
 } // namespace shp
