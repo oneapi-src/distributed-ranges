@@ -13,7 +13,6 @@
 Interface
 =========
 
-.. doxygenfunction:: lib::transform_reduce
 
 Description
 ===========

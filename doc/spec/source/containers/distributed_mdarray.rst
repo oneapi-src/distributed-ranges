@@ -13,8 +13,6 @@
 Interface
 =========
 
-.. doxygenclass:: lib::distributed_mdarray
-   :members:
 
 Description
 ===========
