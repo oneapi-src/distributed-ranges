@@ -18,7 +18,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CTest)
 
   option(ENABLE_SYCL "Build sycl shp examples" OFF)
-  option(ENABLE_SYCL_MPI "Build sycl mpi examples" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
@@ -140,14 +139,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-deprecated-declarations)
   endif()
 
-  if (ENABLE_SYCL_MPI)
-    add_subdirectory(test/gtest/sycl-mpi)
-  endif()
-
   add_subdirectory(examples/serial)
   add_subdirectory(test/gtest/serial)
   add_subdirectory(examples/mhp)
-  add_subdirectory(test/gtest/cpu)
   add_subdirectory(test/gtest/mhp)
 
   # Requires clang, icpx/llvm nightly do not support the tools

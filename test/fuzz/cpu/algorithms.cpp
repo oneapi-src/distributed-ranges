@@ -5,21 +5,18 @@
 #include "cpu-fuzz.hpp"
 
 using V = std::vector<int>;
-using DV = lib::distributed_vector<int>;
+using DV = mhp::distributed_vector<int>;
 
 void check_transform(std::size_t n, std::size_t b, std::size_t e) {
   auto op = [](auto n) { return n * n; };
   int iota_base = 100;
 
-  lib::distributed_vector<int> dvi1(n), dvr1(n);
-  rng::iota(dvi1, iota_base);
-  dvi1.fence();
-  lib::transform(dvi1.begin() + b, dvi1.begin() + e, dvr1.begin(), op);
-  dvr1.fence();
+  DV dvi1(n), dvr1(n);
+  mhp::iota(dvi1, iota_base);
+  mhp::transform(dvi1.begin() + b, dvi1.begin() + e, dvr1.begin(), op);
 
-  lib::distributed_vector<int> dvi2(n), dvr2(n);
-  rng::iota(dvi2, iota_base);
-  dvi2.fence();
+  DV dvi2(n), dvr2(n);
+  mhp::iota(dvi2, iota_base);
 
   if (comm_rank == 0) {
     std::transform(dvi2.begin() + b, dvi2.begin() + e, dvr2.begin(), op);
@@ -37,27 +34,11 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   V v_in(n), v(n), v1(n), v2(n);
   rng::iota(v_in, 100);
 
-  lib::distributed_vector<int> dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n),
-      dv6(n), dv7(n);
-  lib::iota(dv_in, 100);
-  lib::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
-  lib::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
+  DV dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n), dv6(n), dv7(n);
+  mhp::iota(dv_in, 100);
+  mhp::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
+  mhp::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
             dv2.begin() + b);
-
-  lib::copy(0, v_in.begin() + b, v_in.begin() + e, dv4.begin() + b);
-  lib::copy(0, rng::subrange(v_in.begin() + b, v_in.begin() + e),
-            dv6.begin() + b);
-  if (comm_rank == 0) {
-    lib::copy(0, &*(v_in.begin() + b), e - b, dv7.begin() + b);
-  } else {
-    lib::copy(0, nullptr, e - b, dv7.begin() + b);
-  }
-  lib::copy(0, comm_rank == 0 ? &*(v_in.begin() + b) : nullptr, e - b,
-            dv5.begin() + b);
-
-  lib::copy(0, dv_in.begin() + b, dv_in.begin() + e, v1.begin() + b);
-  lib::copy(0, dv_in.begin() + b, e - b,
-            comm_rank == 0 ? &*(v2.begin() + b) : nullptr);
 
   if (comm_rank == 0) {
     std::copy(dv_in.begin() + b, dv_in.begin() + e, dv3.begin() + b);

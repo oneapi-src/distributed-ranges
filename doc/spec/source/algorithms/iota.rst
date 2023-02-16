@@ -13,8 +13,6 @@
 Interface
 =========
 
-.. doxygenfunction:: lib::iota(DI first, DI last, auto value)
-.. doxygenfunction:: lib::iota(mpi_distributed_contiguous_range auto &&r, auto value)
 
 Description
 ===========
