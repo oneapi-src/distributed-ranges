@@ -48,15 +48,11 @@ public:
 
 class enumerate_fn_ {
 public:
-  template <rng::viewable_range R>
-  constexpr auto operator()(R &&r) const {
+  template <rng::viewable_range R> constexpr auto operator()(R &&r) const {
     return enumerate_adapter_closure{}(std::forward<R>(r));
   }
 
-  inline auto enumerate() const {
-    return enumerate_adapter_closure{};
-  }
-
+  inline auto enumerate() const { return enumerate_adapter_closure{}; }
 };
 
 inline constexpr auto enumerate = enumerate_fn_{};

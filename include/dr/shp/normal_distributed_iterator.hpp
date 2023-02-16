@@ -3,17 +3,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#include <dr/details/ranges_shim.hpp>
-#include <dr/details/iterator_adaptor.hpp>
 #include <dr/concepts/concepts.hpp>
+#include <dr/details/iterator_adaptor.hpp>
+#include <dr/details/ranges_shim.hpp>
 
 namespace shp {
 
 template <rng::viewable_range V>
-  /*
+/*
 requires(lib::remote_range<rng::range_reference_t<V>> &&
-         rng::random_access_range<rng::range_reference_t<V>>)
-         */
+       rng::random_access_range<rng::range_reference_t<V>>)
+       */
 class normal_distributed_iterator_accessor {
 public:
   using value_type = rng::range_value_t<rng::range_reference_t<V>>;
@@ -39,8 +39,8 @@ public:
   operator=(const normal_distributed_iterator_accessor &) noexcept = default;
 
   constexpr normal_distributed_iterator_accessor(V segments,
-                                        size_type segment_id,
-                                        size_type idx) noexcept
+                                                 size_type segment_id,
+                                                 size_type idx) noexcept
       : segments_(segments), segment_id_(segment_id), idx_(idx) {}
 
   constexpr normal_distributed_iterator_accessor &
@@ -121,4 +121,4 @@ template <rng::viewable_range T>
 using normal_distributed_iterator =
     lib::iterator_adaptor<normal_distributed_iterator_accessor<T>>;
 
-} // end shp
+} // namespace shp

@@ -89,8 +89,7 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
 template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename Fn>
 void for_each(ExecutionPolicy &&policy, Iter begin, Iter end, Fn &&fn) {
-  for_each(std::forward<ExecutionPolicy>(policy),
-           rng::subrange(begin, end),
+  for_each(std::forward<ExecutionPolicy>(policy), rng::subrange(begin, end),
            std::forward<Fn>(fn));
 }
 

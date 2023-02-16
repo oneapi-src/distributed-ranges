@@ -27,7 +27,7 @@ template <rng::range R> using range_size_t = typename range_size<R>::type;
 class enumerate_adapter_closure {
 public:
   template <rng::viewable_range R>
-  requires(rng::sized_range<R>)
+    requires(rng::sized_range<R>)
   auto operator()(R &&r) const {
     using W = std::uint32_t;
     return shp::zip_view(rng::views::iota(W(0), W(rng::size(r))),
@@ -42,19 +42,15 @@ public:
 
 class enumerate_fn_ {
 public:
-  template <rng::viewable_range R>
-  constexpr auto operator()(R &&r) const {
+  template <rng::viewable_range R> constexpr auto operator()(R &&r) const {
     return enumerate_adapter_closure{}(std::forward<R>(r));
   }
 
-  inline auto enumerate() const {
-    return enumerate_adapter_closure{};
-  }
-
+  inline auto enumerate() const { return enumerate_adapter_closure{}; }
 };
 
 inline constexpr auto enumerate = enumerate_fn_{};
 
-} // end views
+} // namespace views
 
-} // end shp
+} // namespace shp

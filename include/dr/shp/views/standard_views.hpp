@@ -6,8 +6,8 @@
 
 #include <dr/details/segments_tools.hpp>
 #include <dr/shp/distributed_span.hpp>
-#include <dr/shp/zip_view.hpp>
 #include <dr/shp/views/enumerate.hpp>
+#include <dr/shp/zip_view.hpp>
 
 namespace shp {
 

@@ -156,7 +156,7 @@ public:
       segments_.push_back(std::move(segment));
     }
 
-    for (auto&& event : events) {
+    for (auto &&event : events) {
       event.wait();
     }
   }

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <dr/details/iterator_adaptor.hpp>
 #include "device_span.hpp"
 #include <dr/concepts/concepts.hpp>
+#include <dr/details/iterator_adaptor.hpp>
 #include <dr/details/ranges.hpp>
 #include <dr/details/segments_tools.hpp>
 #include <vector>
@@ -163,8 +163,7 @@ public:
     }
   }
 
-  template <lib::distributed_range R>
-  constexpr distributed_span(R &&r) {
+  template <lib::distributed_range R> constexpr distributed_span(R &&r) {
     for (auto &&segment : lib::ranges::segments(std::forward<R>(r))) {
       std::size_t size = rng::size(segment);
       segments_.push_back(
