@@ -33,6 +33,41 @@ template <lib::distributed_range R> void dr(R &&) {}
 
 template <lib::remote_range R> void rr(R &&) {}
 
+TEST(ShpTests, Zip) {
+  const int n = 10;
+  DV dv_a(n), dv_b(n);
+  rng::iota(dv_a, 100);
+  rng::iota(dv_b, 200);
+  auto dz = shp::views::zip(dv_a, dv_b, dv_a);
+  auto dz2 = shp::views::zip(dv_a, dv_b);
+  auto dzi = shp::views::zip(rng::views::iota(1, 10), dv_b, dv_a);
+
+  DV v_a(n), v_b(n);
+  rng::iota(v_a, 100);
+  rng::iota(v_b, 200);
+  auto z = rng::views::zip(v_a, v_b, v_a);
+  auto z2 = rng::views::zip(v_a, v_b);
+  auto zi = rng::views::zip(rng::views::iota(1, 10), dv_b, dv_a);
+
+  EXPECT_TRUE(equal(z, dz));
+  EXPECT_TRUE(equal(zi, dzi));
+
+#if 0
+  // zip and dr zip have different value types: tuple/pair
+  EXPECT_TRUE(equal(z2, dz2));
+#endif
+
+  fmt::print("a: {}\n"
+             "b: {}\n"
+             "dz: {}\n"
+             "dzi: {}\n"
+             "segments(dz): {}\n"
+             "segments(dzi): {}\n"
+             "z: {}\n",
+             dv_a, dv_b, dz, dzi, lib::ranges::segments(dz),
+             lib::ranges::segments(dzi), z);
+}
+
 TEST(ShpTests, Drop) {
   const int n = 10;
   V a(n);
