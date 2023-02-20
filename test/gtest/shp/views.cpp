@@ -96,3 +96,17 @@ TEST(ShpTests, Drop) {
              lib::ranges::segments(dv_a), lib::ranges::segments(dv_aview));
   EXPECT_TRUE(equal(aview, dv_aview));
 }
+
+TEST(ShpTests, Transform) {
+  const int n = 10;
+
+  DV dv_a(n);
+  rng::iota(dv_a, 20);
+  auto plus1 = [](auto x) { return x + 1; };
+  auto dv_a_view = lib::views::transform(dv_a, plus1);
+
+  V v_a(n);
+  rng::iota(v_a, 20);
+  auto v_a_view = rng::views::transform(v_a, plus1);
+  EXPECT_TRUE(equal(v_a_view, dv_a_view));
+}
