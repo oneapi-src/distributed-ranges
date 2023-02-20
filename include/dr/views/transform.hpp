@@ -4,11 +4,7 @@
 
 #pragma once
 
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/ranges_shim.hpp>
-#include <dr/shp/normal_distributed_iterator.hpp>
-
-namespace shp {
+namespace lib {
 
 template <rng::forward_range V, std::copy_constructible F>
 class transform_view : public rng::view_interface<transform_view<V, F>> {
@@ -52,7 +48,7 @@ public:
   transform_adapter_closure(F fn) : fn_(fn) {}
 
   template <rng::viewable_range R> auto operator()(R &&r) const {
-    return shp::transform_view(std::forward<R>(r), fn_);
+    return lib::transform_view(std::forward<R>(r), fn_);
   }
 
   template <rng::viewable_range R>
@@ -79,4 +75,4 @@ public:
 inline constexpr auto transform = transform_fn_{};
 } // namespace views
 
-} // namespace shp
+} // namespace lib

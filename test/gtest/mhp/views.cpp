@@ -98,3 +98,21 @@ TEST(MhpTests, Drop) {
     EXPECT_TRUE(equal(aview, dv_aview));
   }
 }
+
+#if 0
+TEST(MhpTests, Transform) {
+  const int n = 10;
+
+  DV dv_a(n);
+  mhp::iota(dv_a, 20);
+  auto incr = [](auto x) { return x + 1; };
+  auto dv_a_view = lib::views::transform(dv_a, incr);
+
+  if (comm == 0) {
+    V v_a(n);
+    rng::iota(v_a, 20);
+    auto v_a_view = rng::views::transform(v_a, incr);
+    EXPECT_TRUE(equal(v_a_view, dv_a_view));
+  }
+}
+#endif

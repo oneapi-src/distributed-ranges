@@ -3,11 +3,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#include <dr/concepts/concepts.hpp>
 #include <dr/details/iterator_adaptor.hpp>
-#include <dr/details/ranges_shim.hpp>
 
-namespace shp {
+namespace lib {
 
 template <rng::viewable_range V>
 /*
@@ -121,4 +119,4 @@ template <rng::viewable_range T>
 using normal_distributed_iterator =
     lib::iterator_adaptor<normal_distributed_iterator_accessor<T>>;
 
-} // namespace shp
+} // namespace lib
