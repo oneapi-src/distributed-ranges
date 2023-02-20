@@ -26,7 +26,7 @@ public:
 
   auto segments() const {
     return lib::ranges::segments(base_) |
-           rng::views::transform([=](auto &&segment) {
+           rng::views::transform([this](auto &&segment) {
              return segment | rng::views::transform(fn_);
            });
   }
