@@ -8,7 +8,7 @@ using T = int;
 using DV = shp::distributed_vector<T, shp::device_allocator<T>>;
 using V = std::vector<T>;
 
-TEST(ShpTests, Copy_Dist2Local) {
+TEST(ShpTests, Copy_Dist2Local_sliced) {
   const int n = 100;
   std::size_t n_to_copy = 20;
 
@@ -26,7 +26,7 @@ TEST(ShpTests, Copy_Dist2Local) {
   }
 }
 
-TEST(ShpTests, Copy_async_Dist2Local) {
+TEST(ShpTests, Copy_async_Dist2Local_sliced) {
   const int M = 10;
   const int na = 100, nb = M * na;
   std::size_t n_to_copy = 20;
@@ -51,6 +51,7 @@ TEST(ShpTests, Copy_async_Dist2Local) {
 
     sycl::queue q;
     auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
+    root_event.wait();
 
     auto dv_aview = dv_a | shp::views::slice({i, i + n_to_copy});
     auto dv_bview = dv_b | shp::views::slice({j, j + M * n_to_copy});
@@ -60,7 +61,7 @@ TEST(ShpTests, Copy_async_Dist2Local) {
   }
 }
 
-TEST(ShpTests, Copy_Local2Dist) {
+TEST(ShpTests, Copy_Local2Dist_sliced) {
   const int n = 100;
   std::size_t n_to_copy = 20;
 
@@ -78,7 +79,7 @@ TEST(ShpTests, Copy_Local2Dist) {
   }
 }
 
-TEST(ShpTests, Copy_async_Local2Dist) {
+TEST(ShpTests, Copy_async_Local2Dist_sliced) {
   const int M = 10;
   const int na = 100, nb = M * na;
   std::size_t n_to_copy = 20;
@@ -101,6 +102,7 @@ TEST(ShpTests, Copy_async_Local2Dist) {
 
     sycl::queue q;
     auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
+    root_event.wait();
 
     auto dv_aview = dv_a | shp::views::slice({i, i + n_to_copy});
     auto dv_bview = dv_b | shp::views::slice({j, j + M * n_to_copy});

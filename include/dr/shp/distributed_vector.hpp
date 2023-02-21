@@ -136,12 +136,12 @@ public:
   distributed_vector() {}
 
   distributed_vector(std::size_t count) {
-    assert(shp::nprocs() > 0);
+    assert(shp::devices().size() > 0);
     size_ = count;
 
-    segment_size_ = (count + shp::nprocs() - 1) / shp::nprocs();
+    segment_size_ = (count + shp::devices().size() - 1) / shp::devices().size();
 
-    capacity_ = segment_size_ * shp::nprocs();
+    capacity_ = segment_size_ * shp::devices().size();
 
     std::vector<cl::sycl::event> events;
 
