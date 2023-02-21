@@ -14,8 +14,7 @@
 namespace shp {
 
 template <lib::distributed_contiguous_range R, typename Fn>
-void for_each(const device_policy &policy [[maybe_unused]],
-              R &&r [[maybe_unused]], Fn &&fn [[maybe_unused]]) {
+void for_each(const device_policy &policy, R &&r, Fn &&fn) {
   std::span<const cl::sycl::device> devices = policy.get_devices();
 
   std::vector<cl::sycl::queue> queues;
