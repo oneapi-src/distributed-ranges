@@ -99,7 +99,7 @@ public:
 
   void barrier() const { comm_.barrier(); }
   void fence() const { win_.fence(); }
-  auto my_rank() const { return comm_.rank(); }
+  auto comm() const { return comm_; }
   void halo_exchange() const { halo_->exchange(); }
 
   std::size_t container_size_ = 0;
@@ -213,8 +213,8 @@ public:
 
   void barrier() const { storage_->barrier(); }
   void fence() const { storage_->fence(); }
+  auto comm() const { return storage_->comm(); }
   void halo_exchange() const { storage_->halo_exchange(); }
-  auto my_rank() const { return storage_->my_rank(); }
 
 public:
   auto make_range() const {

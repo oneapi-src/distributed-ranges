@@ -12,6 +12,7 @@
 
 #include <cassert>
 #include <concepts>
+#include <execution>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -21,10 +22,8 @@
 #include <utility>
 #include <vector>
 
-#ifdef DR_FORMAT
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#endif
 // Workaround for doxygen warning about internal inconsistency
 namespace fmt {}
 

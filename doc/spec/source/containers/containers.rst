@@ -16,11 +16,3 @@ processes and can be accessed by any process in the team.
 
    distributed_mdarray
    distributed_vector
-
-The storage for a *remote container* resides in a single process and
-can be accessed by any process in the team.
-
-.. toctree::
-   :maxdepth: 1
-
-   remote_vector

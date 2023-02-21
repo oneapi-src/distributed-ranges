@@ -38,8 +38,8 @@ auto reduce_no_init_async(ExecutionPolicy &&policy, Iter begin, Iter end,
 
 namespace shp {
 
-template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          typename T, typename BinaryOp>
+template <typename ExecutionPolicy, lib::distributed_range R, typename T,
+          typename BinaryOp>
 T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
 
   namespace sycl = cl::sycl;

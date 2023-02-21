@@ -124,13 +124,14 @@ library, and install it into a prefix::
 
   git clone https://github.com/oneapi-src/distributed-ranges.git dr
   cd dr
-  cmake -B build -DCMAKE_INSTALL_PREFIX=./dr_root
+  cmake -B build -DCMAKE_INSTALL_PREFIX=<prefix>
   make -C build install
+  cmake -B build-fmt -DCMAKE_INSTALL_PREFIX=<prefix> build/_deps/cpp-format-src
+  make -C build-fmt install
 
-Use ``-I`` with the path to dr/build/install To find the header files
-during compilation::
+Use ``-I`` and ``-L`` to find headers and libs during compilation::
 
-  g++ -I$PATH_TO_DR/dr_root/include file.cpp
+  g++ -std=c=++20 -I <prefix>/include -L <prefix>/lib -L /opt/intel/oneapi/mpi/latest/lib/release -lfmt -lmpicxx -lmpi
 
 
 Developer Information

@@ -13,8 +13,6 @@
 Interface
 =========
 
-.. doxygenfunction:: lib::fill(DI first, DI last, auto value)
-.. doxygenfunction:: lib::fill(mpi_distributed_contiguous_range auto &&r, auto value)
 
 Description
 ===========

@@ -13,7 +13,8 @@ template <rng::forward_range V, std::copy_constructible F>
 class transform_view : public rng::view_interface<transform_view<V, F>> {
 public:
   template <rng::viewable_range R>
-  transform_view(R &&r, F fn) : base_(rng::views::all(r)), fn_(fn) {}
+  transform_view(R &&r, F fn)
+      : base_(rng::views::all(std::forward<R>(r))), fn_(fn) {}
 
   auto begin() const {
     return normal_distributed_iterator<decltype(segments())>(segments(), 0, 0);
@@ -33,7 +34,7 @@ public:
   }
 
 private:
-  rng::views::all_t<V> base_;
+  V base_;
   F fn_;
 };
 
