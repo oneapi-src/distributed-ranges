@@ -29,21 +29,19 @@ int main(int argc, char *argv[]) {
   }
 
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
-  auto d0 = devices[0];
-  
+
   std::cout << " *** Running shp-tests for 1 device(s) ***\n";
-  devices.push_back(d0);
   shp::init(devices);
 
   for (auto &device : devices) {
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
               << "\n";
   }
-  
+
   auto res = RUN_ALL_TESTS();
   shp::finalize();
 
-
+  auto d0 = devices[0];
   for (size_t nd = 2; nd <= 7; nd++) {
     std::cout << " *** Running shp-tests for " << nd << " device(s) ***\n";
     devices.push_back(d0);
@@ -53,7 +51,7 @@ int main(int argc, char *argv[]) {
       std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
                 << "\n";
     }
-    
+
     auto res = RUN_ALL_TESTS();
     shp::finalize();
   }
