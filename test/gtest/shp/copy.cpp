@@ -138,7 +138,7 @@ TEST(ShpTests, Copy_async_Local2Dist_sliced) {
   }
 }
 
-TEST(ShpTests4, Copy_async_Local2Dist_intersegment) {
+TEST(ShpTests, Copy_async_Local2Dist_intersegment) {
   const size_t size = 100;
   size_t nproc = shp::nprocs();
   size_t l_size = size / nproc;
@@ -166,7 +166,7 @@ TEST(ShpTests4, Copy_async_Local2Dist_intersegment) {
   }
 }
 
-TEST(ShpTests4, Copy_async_Dist2Local_intersegment) {
+TEST(ShpTests, Copy_async_Dist2Local_intersegment) {
   const size_t size = 100;
   size_t nproc = shp::nprocs();
   size_t l_size = size / nproc;
@@ -197,7 +197,7 @@ TEST(ShpTests4, Copy_async_Dist2Local_intersegment) {
   }
 }
 
-TEST(ShpTests4, Copy_async_Local2Dist_midsize) {
+TEST(ShpTests, Copy_async_Local2Dist_midsize) {
   const int size = 2000;
 
   DV dv1(size), dv2(size), dv3(size);
@@ -226,7 +226,7 @@ TEST(ShpTests4, Copy_async_Local2Dist_midsize) {
   EXPECT_TRUE(equal(a3, dv3));
 }
 
-TEST(ShpTests4, Copy_async_Dist2Local_midsize) {
+TEST(ShpTests, Copy_async_Dist2Local_midsize) {
   const int size = 2000;
 
   DV dv1(size), dv2(size), dv3(size);
@@ -234,9 +234,9 @@ TEST(ShpTests4, Copy_async_Dist2Local_midsize) {
 
   std::vector<cl::sycl::event> events;
 
-  shp::iota(dv1.begin(), dv1.end(), 1);
-  shp::iota(dv2.begin(), dv2.end(), 1);
-  shp::iota(dv3.begin(), dv3.end(), 1);
+  std::iota(dv1.begin(), dv1.end(), 1);
+  std::iota(dv2.begin(), dv2.end(), 1);
+  std::iota(dv3.begin(), dv3.end(), 1);
 
   // async operation - synchronisation only after all transfers start
   auto ev1 = shp::copy_async(dv1.begin(), dv1.end(), a1.begin());
