@@ -46,6 +46,16 @@ TEST(CpuMpiTests, ReduceBasic) {
   auto dvalue = shp::reduce(shp::par_unseq, dv, int(0), std::plus<>());
   auto value = std::reduce(dv.begin(), dv.end(), int(0), std::plus<>());
   EXPECT_EQ(dvalue, value);
+
+  // Iterator versions
+  EXPECT_EQ(dvalue, shp::reduce(shp::par_unseq, dv.begin(), dv.end(), int(0),
+                                std::plus<>()));
+  EXPECT_EQ(dvalue, shp::reduce(shp::par_unseq, dv.begin(), dv.end(), int(0)));
+  EXPECT_EQ(dvalue, shp::reduce(shp::par_unseq, dv.begin(), dv.end()));
+
+  // Simplified range versions
+  EXPECT_EQ(dvalue, shp::reduce(shp::par_unseq, dv, int(0)));
+  EXPECT_EQ(dvalue, shp::reduce(shp::par_unseq, dv));
 }
 
 #if 0
