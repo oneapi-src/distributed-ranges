@@ -13,7 +13,8 @@ int main(int argc, char *argv[]) {
 
   // clang-format off
   options_spec.add_options()
-    ("drhelp", "Print help");
+    ("drhelp", "Print help")
+    ("d, devicesCount", "number of GPUs to create", cxxopts::value<unsigned int>()->default_value("0"));
   // clang-format on
 
   try {
@@ -28,7 +29,16 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
+  const unsigned int dev_num = options["devicesCount"].as<unsigned int>();
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
+
+  if (dev_num > 0) {
+    unsigned int i = 0;
+    while (devices.size() < dev_num)
+      devices.push_back(devices[i++]);
+    devices.resize(dev_num); // if too many devices
+  }
+
   shp::init(devices);
 
   for (auto &device : devices) {
@@ -36,7 +46,6 @@ int main(int argc, char *argv[]) {
               << "\n";
   }
 
-  auto res = RUN_ALL_TESTS();
-
-  return res;
+  return RUN_ALL_TESTS();
+  ;
 }
