@@ -8,7 +8,6 @@ cxxopts::ParseResult options;
 
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
-
   cxxopts::Options options_spec(argv[0], "DR SHP tests");
 
   // clang-format off
@@ -41,11 +40,9 @@ int main(int argc, char *argv[]) {
 
   shp::init(devices);
 
-  for (auto &device : devices) {
+  for (auto &device : devices)
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
               << "\n";
-  }
 
   return RUN_ALL_TESTS();
-  ;
 }
