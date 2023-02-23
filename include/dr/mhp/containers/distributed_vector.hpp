@@ -107,18 +107,22 @@ public:
   auto operator[](difference_type n) const { return *(*this + n); }
 
   T get() const {
-    auto value = dv_->win_.template get<T>(segment_index_, index_);
-    lib::drlog.debug("get {} =  ({}:{})\n", value, segment_index_, index_);
+    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    auto value = dv_->win_.template get<T>(segment_index_, segment_offset);
+    lib::drlog.debug("get {} =  ({}:{})\n", value, segment_index_,
+                     segment_offset);
     return value;
   }
 
   void put(const T &value) const {
-    lib::drlog.debug("put ({}:{}) = {}\n", segment_index_, index_, value);
-    dv_->win_.put(value, segment_index_, index_);
+    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    lib::drlog.debug("put ({}:{}) = {}\n", segment_index_, segment_offset,
+                     value);
+    dv_->win_.put(value, segment_index_, segment_offset);
   }
 
   auto rank() const { return segment_index_; }
-  auto local() const { return dv_->data_ + index_; }
+  auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
 
 private:
   const distributed_vector<T> *dv_;
@@ -180,14 +184,19 @@ public:
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
 
-  distributed_vector(std::size_t size) : size_(size) {
-    segment_size_ = (size + default_comm().size() - 1) / default_comm().size();
+  distributed_vector(std::size_t size,
+                     lib::halo_bounds hb = lib::halo_bounds()) {
+    size_ = size;
+    segment_size_ =
+        std::max({(size + default_comm().size() - 1) / default_comm().size(),
+                  hb.prev, hb.next});
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i));
     }
-    data_size_ = segment_size_;
+    halo_bounds_ = hb;
+    data_size_ = segment_size_ + hb.prev + hb.next;
     data_ = new T[data_size_];
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
@@ -213,6 +222,7 @@ private:
   friend dv_segment_iterator<T>;
   friend dv_segments<T>;
 
+  lib::halo_bounds halo_bounds_;
   std::size_t size_;
   std::vector<dv_segment<T>> segments_;
   dv_segments<T> dv_segments_;
