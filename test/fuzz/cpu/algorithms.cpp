@@ -34,7 +34,7 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   V v_in(n), v(n), v1(n), v2(n);
   rng::iota(v_in, 100);
 
-  DV dv_in(n), dv1(n), dv2(n), dv3(n), dv4(n), dv5(n), dv6(n), dv7(n);
+  DV dv_in(n), dv1(n), dv2(n), dv3(n);
   mhp::iota(dv_in, 100);
   mhp::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
   mhp::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
@@ -50,10 +50,6 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
     assert(is_equal(dv1, v));
     assert(is_equal(dv2, v));
     assert(is_equal(dv3, v));
-    assert(is_equal(dv4, v));
-    assert(is_equal(dv5, v));
-    assert(is_equal(dv6, v));
-    assert(is_equal(dv7, v));
 
     assert(is_equal(v1, v));
     assert(is_equal(v2, v));
