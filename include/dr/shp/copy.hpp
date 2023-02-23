@@ -13,11 +13,14 @@
 
 namespace shp {
 
+template <typename Src, typename Dest>
+concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
+                             std::is_trivially_copyable_v<Dest>;
+
 // TODO: in case the destination area is too small segfault may occur
 // - add some error handling
 template <std::contiguous_iterator Iter, typename T>
-  requires(std::is_same_v<std::remove_const_t<std::iter_value_t<Iter>>, T> &&
-           !std::is_const_v<T> && std::is_trivially_copyable_v<T>)
+  requires is_syclmemcopyable<std::iter_value_t<Iter>, T>
 cl::sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
   cl::sycl::queue q;
   return q.memcpy(d_first.get_raw_pointer(), std::to_address(first),
@@ -25,8 +28,7 @@ cl::sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
 }
 
 template <std::contiguous_iterator Iter, typename T>
-  requires(std::is_same_v<std::remove_const_t<std::iter_value_t<Iter>>, T> &&
-           !std::is_const_v<T>)
+  requires is_syclmemcopyable<std::iter_value_t<Iter>, T>
 device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
   copy_async(first, last, d_first).wait();
   return d_first + (last - first);
@@ -35,31 +37,30 @@ device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
 // TODO: in case the destination area is too small segfault may occur
 // - add some error handling
 template <typename T, std::contiguous_iterator Iter>
-  requires(std::is_same_v<std::iter_value_t<Iter>, std::remove_const_t<T>> &&
-           std::is_trivially_copyable_v<T>)
-cl::sycl::event
-    copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
+  requires is_syclmemcopyable<T, std::iter_value_t<Iter>>
+cl::sycl::event copy_async(device_ptr<T> first, device_ptr<T> last,
+                           Iter d_first) {
   cl::sycl::queue q;
   return q.memcpy(std::to_address(d_first), first.get_raw_pointer(),
                   sizeof(T) * (last - first));
 }
 
-template <std::contiguous_iterator Iter, typename T>
-  requires(std::is_same_v<std::remove_const_t<std::iter_value_t<Iter>>, T> &&
-           !std::is_const_v<T>)
-Iter copy(device_ptr<const T> first, device_ptr<const T> last, Iter d_first) {
+template <typename T, std::contiguous_iterator Iter>
+  requires is_syclmemcopyable<T, std::iter_value_t<Iter>>
+Iter copy(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
   copy_async(first, last, d_first).wait();
   return d_first + (last - first);
 }
 
 // Copy from local range to distributed range
-template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
+template <std::contiguous_iterator InputIt, lib::distributed_iterator OutputIt>
+  requires is_syclmemcopyable<std::iter_value_t<InputIt>,
+                              std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   auto segments = lib::ranges::segments(d_first);
 
   std::size_t segment_id = 0;
   std::vector<cl::sycl::event> events;
-
   std::size_t total_copied = 0;
 
   while (first != last) {
@@ -93,6 +94,8 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 }
 
 template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
+  requires is_syclmemcopyable<std::iter_value_t<InputIt>,
+                              std::iter_value_t<OutputIt>>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   auto segments = lib::ranges::segments(d_first);
 
@@ -130,6 +133,8 @@ cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 
 // Copy from distributed range to local range
 template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
+  requires is_syclmemcopyable<std::iter_value_t<InputIt>,
+                              std::iter_value_t<OutputIt>>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   auto size = std::distance(first, last);
   auto segments =
@@ -139,7 +144,7 @@ cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 
   for (auto &&segment : segments) {
     auto event =
-        shp::copy_async(rng::begin(segment), rng::end(segment), d_first);
+        shp::copy_async(rng::cbegin(segment), rng::cend(segment), d_first);
 
     events.push_back(event);
 
@@ -153,6 +158,8 @@ cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 }
 
 template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
+  requires is_syclmemcopyable<std::iter_value_t<InputIt>,
+                              std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
   std::advance(d_first, last - first);
