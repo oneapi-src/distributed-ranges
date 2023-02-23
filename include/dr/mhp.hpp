@@ -45,11 +45,11 @@ namespace rng = ranges;
 #include "details/segments_tools.hpp"
 #include "details/iterator_adaptor.hpp"
 #include "details/normal_distributed_iterator.hpp"
-#include "details/views.hpp"
 #include "details/memory.hpp"
 #include "details/communicator.hpp"
 #include "details/halo.hpp"
 
+#include "views/views.hpp"
 #include "views/transform.hpp"
 
 #include "mhp/global.hpp"
