@@ -15,6 +15,8 @@
 #include <oneapi/dpl/numeric>
 
 #include <dr/concepts/concepts.hpp>
+#include <fmt/core.h>
+#include <fmt/ranges.h>
 
 namespace {
 
@@ -35,22 +37,25 @@ template <typename ExecutionPolicy, lib::distributed_range R>
 void inclusive_scan(ExecutionPolicy &&policy, R &&r) {
   namespace sycl = cl::sycl;
 
+  using T = rng::range_value_t<R>;
+
   static_assert(
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
   if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                device_policy>) {
-    /*
-    using future_t = decltype(oneapi::dpl::experimental::reduce_async(
-      oneapi::dpl::execution::device_policy(policy.get_devices()[0]),
-      lib::ranges::segments(r)[0].begin(), lib::ranges::segments(r)[0].end(),
-      lib::ranges::segments(r)[0].begin()));
-      */
 
     auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
+    auto &&segments = lib::ranges::segments(r);
 
-    // std::vector<future_t> futures;
+    std::vector<sycl::event> events;
 
+    auto root = devices[0];
+    shp::device_allocator<T> allocator(shp::context(), root);
+    shp::vector<T, shp::device_allocator<T>> partial_sums(
+        std::size_t(segments.size()), allocator);
+
+    std::size_t segment_id = 0;
     for (auto &&segment : lib::ranges::segments(r)) {
       auto device = devices[lib::ranges::rank(segment)];
 
@@ -59,47 +64,41 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r) {
 
       auto dist = std::distance(rng::begin(segment), rng::end(segment));
 
+      sycl::event event;
+
       if (dist >= 2) {
-        auto future = inclusive_scan_no_init_async(
-            local_policy, rng::begin(segment), rng::end(segment),
-            rng::begin(segment));
-
-        future.get();
-        // futures.push_back(std::move(future));
+        event = inclusive_scan_no_init_async(local_policy, rng::begin(segment),
+                                             rng::end(segment),
+                                             rng::begin(segment));
       }
+
+      auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
+      auto src_iter = rng::begin(segment);
+      std::advance(src_iter, dist - 1);
+      auto e = q.submit([&](auto &&h) {
+        h.depends_on(event);
+        h.single_task([=]() { *dst_iter = *src_iter; });
+      });
+
+      events.push_back(e);
+
+      segment_id++;
     }
 
-    auto root = devices[0];
-    auto &&segments = lib::ranges::segments(r);
-
-    using VT = rng::range_value_t<R>;
-
-    shp::device_allocator<VT> allocator(shp::context(), root);
-
-    shp::vector<VT, shp::device_allocator<VT>> partial_sums(
-        std::size_t(segments.size()), allocator);
-
-    /*
-        for (auto&& future : futures) {
-          future.get();
-        }
-        */
-
-    for (size_t i = 0; i < partial_sums.size(); i++) {
-      auto &&segment = segments[i];
-
-      auto iter = segment.end();
-      --iter;
-
-      VT v = *iter;
-
-      partial_sums[i] = v;
+    for (auto &&e : events) {
+      e.wait();
     }
+    events.clear();
 
-    for (size_t i = 1; i < partial_sums.size(); i++) {
-      rng::range_value_t<R> v = partial_sums[i - 1];
-      partial_sums[i] = v + partial_sums[i];
-    }
+    sycl::queue q(shp::context(), root);
+    oneapi::dpl::execution::device_policy local_policy(q);
+
+    auto first = lib::ranges::local(partial_sums).data();
+    auto last = first + rng::size(partial_sums);
+
+    oneapi::dpl::experimental::inclusive_scan_async(local_policy, first, last,
+                                                    first)
+        .wait();
 
     std::size_t idx = 0;
     for (auto &&segment : segments) {
@@ -116,11 +115,16 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r) {
         sum = partial_sums[idx - 1];
       }
 
-      oneapi::dpl::experimental::for_each_async(
+      sycl::event e = oneapi::dpl::experimental::for_each_async(
           local_policy, rng::begin(segment), rng::end(segment),
-          [=](auto &&x) { x += sum; })
-          .get();
+          [=](auto &&x) { x += sum; });
+
+      events.push_back(e);
       idx++;
+    }
+
+    for (auto &&e : events) {
+      e.wait();
     }
 
   } else {
