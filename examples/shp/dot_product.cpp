@@ -9,7 +9,7 @@
 
 template <lib::distributed_range X, lib::distributed_range Y>
 auto dot_product(X &&x, Y &&y) {
-  auto z = shp::views::zip(x, y) | shp::views::transform([](auto &&elem) {
+  auto z = shp::views::zip(x, y) | lib::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
@@ -19,7 +19,7 @@ auto dot_product(X &&x, Y &&y) {
 
 int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
-  auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
+  auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
   std::size_t n = 100;

@@ -16,3 +16,4 @@ endfunction()
 
 add_shp_example(vector_example)
 add_shp_example(test_range)
+add_shp_example(dot_product)
