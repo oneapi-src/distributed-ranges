@@ -15,8 +15,6 @@
 #include <oneapi/dpl/numeric>
 
 #include <dr/concepts/concepts.hpp>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
 
 namespace {
 
