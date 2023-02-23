@@ -88,4 +88,40 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
   }
 }
 
+template <typename ExecutionPolicy, lib::distributed_range R, typename T>
+T reduce(ExecutionPolicy &&policy, R &&r, T init) {
+  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<R>(r), init,
+                std::plus<>());
+}
+
+template <typename ExecutionPolicy, lib::distributed_range R>
+rng::range_value_t<R> reduce(ExecutionPolicy &&policy, R &&r) {
+  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<R>(r),
+                rng::range_value_t<R>{}, std::plus<>());
+}
+
+// Iterator versions
+
+template <typename ExecutionPolicy, lib::distributed_iterator Iter>
+std::iter_value_t<Iter> reduce(ExecutionPolicy &&policy, Iter begin, Iter end) {
+  return reduce(std::forward<ExecutionPolicy>(policy),
+                rng::subrange(begin, end), std::iter_value_t<Iter>{},
+                std::plus<>());
+}
+
+template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename T>
+T reduce(ExecutionPolicy &&policy, Iter begin, Iter end, T init) {
+  return reduce(std::forward<ExecutionPolicy>(policy),
+                rng::subrange(begin, end), init, std::plus<>());
+}
+
+template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename T,
+          typename BinaryOp>
+T reduce(ExecutionPolicy &&policy, Iter begin, Iter end, T init,
+         BinaryOp &&binary_op) {
+  return reduce(std::forward<ExecutionPolicy>(policy),
+                rng::subrange(begin, end), init,
+                std::forward<BinaryOp>(binary_op));
+}
+
 } // namespace shp

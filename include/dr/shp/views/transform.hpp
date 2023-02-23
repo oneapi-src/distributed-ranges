@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <dr/concepts/concepts.hpp>
 #include <dr/details/ranges_shim.hpp>
 #include <dr/shp/normal_distributed_iterator.hpp>
 
@@ -17,13 +18,14 @@ public:
       : base_(rng::views::all(std::forward<R>(r))), fn_(fn) {}
 
   auto begin() const {
-    return normal_distributed_iterator<decltype(segments())>(segments(), 0, 0);
+    return normal_distributed_iterator<decltype(segments())>(segments(),
+                                                             std::size_t(0), 0);
   }
 
   auto end() const {
     auto segs = segments();
     return normal_distributed_iterator<decltype(segments())>(
-        segs, size_t(segs.size()), 0);
+        std::move(segs), std::size_t(segs.size()), 0);
   }
 
   auto segments() const {
@@ -32,6 +34,8 @@ public:
              return segment | rng::views::transform(fn_);
            });
   }
+
+  V base() const { return base_; }
 
 private:
   V base_;

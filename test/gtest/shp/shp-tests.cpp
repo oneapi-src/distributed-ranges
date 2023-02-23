@@ -8,12 +8,12 @@ cxxopts::ParseResult options;
 
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
-
   cxxopts::Options options_spec(argv[0], "DR SHP tests");
 
   // clang-format off
   options_spec.add_options()
-    ("drhelp", "Print help");
+    ("drhelp", "Print help")
+    ("d, devicesCount", "number of GPUs to create", cxxopts::value<unsigned int>()->default_value("0"));
   // clang-format on
 
   try {
@@ -28,33 +28,21 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
+  const unsigned int dev_num = options["devicesCount"].as<unsigned int>();
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
 
-  std::cout << " *** Running shp-tests for 1 device(s) ***\n";
+  if (dev_num > 0) {
+    unsigned int i = 0;
+    while (devices.size() < dev_num)
+      devices.push_back(devices[i++]);
+    devices.resize(dev_num); // if too many devices
+  }
+
   shp::init(devices);
 
-  for (auto &device : devices) {
+  for (auto &device : devices)
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
               << "\n";
-  }
 
-  auto res = RUN_ALL_TESTS();
-  shp::finalize();
-
-  auto d0 = devices[0];
-  for (size_t nd = 2; nd <= 7; nd++) {
-    std::cout << " *** Running shp-tests for " << nd << " device(s) ***\n";
-    devices.push_back(d0);
-    shp::init(devices);
-
-    for (auto &device : devices) {
-      std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
-                << "\n";
-    }
-
-    auto res = RUN_ALL_TESTS();
-    shp::finalize();
-  }
-
-  return 0;
+  return RUN_ALL_TESTS();
 }

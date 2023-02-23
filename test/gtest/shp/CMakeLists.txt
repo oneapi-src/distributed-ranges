@@ -27,4 +27,6 @@ if(ENABLE_CUDA)
   target_link_options(shp-tests PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
 endif()
 
+add_shp_test(shp-3 shp-tests 3)
+
 add_test(NAME shp COMMAND ./shp-tests)
