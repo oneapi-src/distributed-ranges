@@ -169,6 +169,45 @@ public:
     return lib::internal::owning_view(std::move(segment_views));
   }
 
+  // Return a range corresponding to each segment in `segments()`,
+  // but with a tuple of the constituent ranges instead of a
+  // `zip_view` of the ranges.
+  auto zipped_segments() const
+    requires(lib::distributed_range<Rs> || ...)
+  {
+    std::array<std::size_t, sizeof...(Rs)> segment_ids;
+    std::array<std::size_t, sizeof...(Rs)> local_idx;
+    segment_ids.fill(0);
+    local_idx.fill(0);
+
+    constexpr std::size_t num_views = sizeof...(Rs);
+
+    size_t cumulative_size = 0;
+    size_t segment_id = 0;
+
+    using segment_view_type = decltype(get_zipped_segments_impl_(
+        segment_ids, local_idx, 0, std::make_index_sequence<sizeof...(Rs)>{}));
+    std::vector<segment_view_type> segment_views;
+
+    while (cumulative_size < size()) {
+      auto size = get_next_segment_size(segment_ids, local_idx);
+
+      cumulative_size += size;
+
+      // Get zipped segments with
+      // std::tuple(segments()[Is].subspan(local_idx[Is], size)...)
+      auto segment_view =
+          get_zipped_segments_impl_(segment_ids, local_idx, size,
+                                    std::make_index_sequence<sizeof...(Rs)>{});
+
+      segment_views.push_back(std::move(segment_view));
+
+      increment_local_idx(segment_ids, local_idx, size);
+    }
+
+    return lib::internal::owning_view(std::move(segment_views));
+  }
+
   // If:
   //   - There is at least one remote range in the zip
   //   - There are no distributed ranges in the zip
@@ -217,6 +256,15 @@ private:
             .subspan(local_idx[Is], size)...);
   }
 
+  template <std::size_t... Is>
+  auto get_zipped_segments_impl_(auto &&segment_ids, auto &&local_idx,
+                                 std::size_t size,
+                                 std::index_sequence<Is...>) const {
+    return std::tuple(
+        create_view_impl_(segment_or_orig_(get_view<Is>(), segment_ids[Is]))
+            .subspan(local_idx[Is], size)...);
+  }
+
   template <std::size_t I = 0>
   void increment_local_idx(auto &&segment_ids, auto &&local_idx,
                            std::size_t size) const {
@@ -247,6 +295,12 @@ private:
     }
   }
 
+  template <typename T, typename U, typename... Ts>
+  T min_many_impl_(T t, U u, Ts... ts) const {
+    T local_min = min_many_impl_(t, u);
+    return min_many_impl_(local_min, ts...);
+  }
+
   template <lib::distributed_range T>
   decltype(auto) segment_or_orig_(T &&t, std::size_t idx) const {
     return lib::ranges::segments(t)[idx];
@@ -255,12 +309,6 @@ private:
   template <typename T>
   decltype(auto) segment_or_orig_(T &&t, std::size_t idx) const {
     return t;
-  }
-
-  template <typename T, typename U, typename... Ts>
-  T min_many_impl_(T t, U u, Ts... ts) const {
-    T local_min = min_many_impl_(t, u);
-    return min_many_impl_(local_min, ts...);
   }
 
   template <std::size_t... Is>

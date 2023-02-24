@@ -58,5 +58,18 @@ int main(int argc, char **argv) {
     assert(x == y);
   }
 
+  shp::distributed_vector<int> o(v.size());
+
+  std::iota(v.begin(), v.end(), 0);
+
+  shp::inclusive_scan(shp::par_unseq, v, o);
+
+  fmt::print("o: {}\n", o);
+
+  shp::zip_view view(v, o);
+
+  fmt::print("{}\n", view.segments());
+  fmt::print("{}\n", view.zipped_segments());
+
   return 0;
 }
