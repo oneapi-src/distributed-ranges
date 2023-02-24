@@ -58,39 +58,26 @@ template <std::contiguous_iterator InputIt, lib::distributed_iterator OutputIt>
                               std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   auto segments = lib::ranges::segments(d_first);
+  auto segment = std::begin(segments);
 
-  std::size_t segment_id = 0;
   std::vector<cl::sycl::event> events;
   std::size_t total_copied = 0;
 
   while (first != last) {
-    auto &&segment = segments[segment_id];
-    std::size_t n_in_segment = segment.size();
+    const std::size_t n_to_copy =
+        std::min<size_t>((*segment).size(), std::distance(first, last));
 
-    std::size_t n_to_copy =
-        std::min<size_t>(n_in_segment, std::distance(first, last));
+    events.push_back(
+        shp::copy_async(first, first + n_to_copy, (*segment).begin()));
 
-    auto local_last = first;
-    std::advance(local_last, n_to_copy);
-
-    auto remote_iter = segment.begin();
-
-    auto event = shp::copy_async(first, local_last, remote_iter);
-
-    events.push_back(event);
-
-    segment_id++;
+    ++segment;
     std::advance(first, n_to_copy);
     total_copied += n_to_copy;
   }
 
-  sycl::queue q;
-  auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
-  root_event.wait();
+  sycl::queue().submit([=](auto &&h) { h.depends_on(events); }).wait();
 
-  auto rv = d_first;
-  std::advance(rv, total_copied);
-  return rv;
+  return d_first + total_copied;
 }
 
 template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
