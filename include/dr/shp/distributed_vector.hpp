@@ -9,7 +9,6 @@
 #include <dr/shp/device_vector.hpp>
 #include <vector>
 
-#include <dr/details/segments_tools.hpp>
 #include <dr/shp/allocators.hpp>
 #include <dr/shp/vector.hpp>
 

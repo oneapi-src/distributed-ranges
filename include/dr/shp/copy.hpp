@@ -7,7 +7,6 @@
 #include "device_ptr.hpp"
 #include <CL/sycl.hpp>
 #include <dr/concepts/concepts.hpp>
-#include <dr/details/segments_tools.hpp>
 #include <memory>
 #include <type_traits>
 

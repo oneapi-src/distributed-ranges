@@ -9,8 +9,6 @@
 #include <span>
 #include <type_traits>
 
-#include <dr/shp/algorithms/execution_policy.hpp>
-
 namespace shp {
 
 namespace internal {

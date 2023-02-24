@@ -5,8 +5,6 @@
 #pragma once
 
 #include <CL/sycl.hpp>
-#include <dr/shp/algorithms/execution_policy.hpp>
-#include <dr/shp/distributed_span.hpp>
 #include <dr/shp/zip_view.hpp>
 
 namespace shp {

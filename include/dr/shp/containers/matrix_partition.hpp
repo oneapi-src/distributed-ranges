@@ -6,7 +6,6 @@
 
 #include "detail.hpp"
 #include "index.hpp"
-#include <dr/shp/init.hpp>
 
 namespace shp {
 

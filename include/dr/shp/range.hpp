@@ -5,7 +5,6 @@
 #pragma once
 
 #include <dr/concepts/concepts.hpp>
-#include <dr/shp/distributed_span.hpp>
 
 namespace shp {
 
