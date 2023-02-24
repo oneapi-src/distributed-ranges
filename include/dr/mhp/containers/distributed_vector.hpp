@@ -45,7 +45,7 @@ public:
 
   // Comparison
   bool operator==(const dv_segment_iterator &other) const noexcept {
-    return index_ == other.index_ && dv_->win_ == other.dv_->win_;
+    return index_ == other.index_ && dv_ == other.dv_;
   }
   auto operator<=>(const dv_segment_iterator &other) const noexcept {
     return index_ <=> other.index_;
@@ -125,7 +125,7 @@ public:
   auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
 
 private:
-  const distributed_vector<T> *dv_;
+  const distributed_vector<T> *dv_ = nullptr;
   std::size_t segment_index_;
   std::size_t index_;
 }; // dv_segment_iterator
@@ -184,20 +184,19 @@ public:
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
 
-  distributed_vector(std::size_t size,
-                     lib::halo_bounds hb = lib::halo_bounds()) {
+  distributed_vector(std::size_t size, lib::halo_bounds hb = lib::halo_bounds())
+      : segment_size_(std::max(
+            {(size + default_comm().size() - 1) / default_comm().size(),
+             hb.prev, hb.next})),
+        data_size_(segment_size_ + hb.prev + hb.next), data_(new T[data_size_]),
+        halo_(default_comm(), data_, data_size_, hb) {
     size_ = size;
-    segment_size_ =
-        std::max({(size + default_comm().size() - 1) / default_comm().size(),
-                  hb.prev, hb.next});
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i));
     }
     halo_bounds_ = hb;
-    data_size_ = segment_size_ + hb.prev + hb.next;
-    data_ = new T[data_size_];
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
     dv_segments_ = dv_segments<T>(this);
@@ -217,18 +216,21 @@ public:
 
   auto size() const { return size_; }
   auto operator[](difference_type n) const { return *(begin() + n); }
+  auto &halo() { return halo_; }
 
 private:
   friend dv_segment_iterator<T>;
   friend dv_segments<T>;
 
+  std::size_t segment_size_ = 0;
+  std::size_t data_size_ = 0;
+  T *data_ = nullptr;
+  lib::span_halo<T> halo_;
+
   lib::halo_bounds halo_bounds_;
   std::size_t size_;
   std::vector<dv_segment<T>> segments_;
   dv_segments<T> dv_segments_;
-  T *data_;
-  std::size_t data_size_ = 0;
-  std::size_t segment_size_ = 0;
   lib::rma_window win_;
 };
 

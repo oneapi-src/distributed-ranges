@@ -11,7 +11,7 @@ add_executable(
   algorithms.cpp
   #alignment.cpp
   distributed_vector.cpp
-  #stencil.cpp
+  stencil.cpp
   views.cpp
 )
 
