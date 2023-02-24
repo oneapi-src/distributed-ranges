@@ -133,8 +133,8 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r) {
   }
 }
 
-template <typename ExecutionPolicy, lib::distributed_range R,
-          lib::distributed_range O>
+template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O>
 void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
   namespace sycl = cl::sycl;
 
@@ -171,22 +171,21 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
 
       sycl::event event;
 
-      if (dist >= 2) {
-        fmt::print("Running on GPU {}\n", lib::ranges::rank(in_segment));
+      if (dist > 0) {
         event = inclusive_scan_no_init_async(
             local_policy, rng::begin(in_segment), rng::end(in_segment),
-            rng::begin(out_segment));
+            rng::begin(lib::ranges::local(out_segment)));
+
+        auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
+        auto src_iter = rng::begin(lib::ranges::local(out_segment));
+        std::advance(src_iter, dist - 1);
+        auto e = q.submit([&](auto &&h) {
+          h.depends_on(event);
+          h.single_task([=]() { *dst_iter = *src_iter; });
+        });
+
+        events.push_back(e);
       }
-
-      auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
-      auto src_iter = rng::begin(out_segment);
-      std::advance(src_iter, dist - 1);
-      auto e = q.submit([&](auto &&h) {
-        h.depends_on(event);
-        h.single_task([=]() { *dst_iter = *src_iter; });
-      });
-
-      events.push_back(e);
 
       segment_id++;
     }

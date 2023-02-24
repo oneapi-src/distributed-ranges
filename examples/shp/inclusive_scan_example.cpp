@@ -58,13 +58,21 @@ int main(int argc, char **argv) {
     assert(x == y);
   }
 
-  shp::distributed_vector<int> o(v.size());
+  shp::distributed_vector<int> o(v.size() + 100);
 
   std::iota(v.begin(), v.end(), 0);
 
   shp::inclusive_scan(shp::par_unseq, v, o);
 
-  fmt::print("o: {}\n", o);
+  fmt::print("o: {}\n", rng::subrange(o.begin(), o.begin() + v.size()));
+
+  for (size_t i = 0; i < lv.size(); i++) {
+    int x = lv[i];
+    int y = o[i];
+    if (x != y) {
+      printf("(%lu) %d != %d\n", i, x, y);
+    }
+  }
 
   return 0;
 }
