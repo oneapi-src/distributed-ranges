@@ -30,7 +30,7 @@ TEST(MhpTests, Zip) {
   EXPECT_TRUE(check_segments(dzv));
   EXPECT_TRUE(check_segments(dzv.begin()));
 
-  dv1.barrier();
+  mhp::barrier();
   auto incr_first = [](auto x) { x.first++; };
   mhp::for_each(dzv, incr_first);
 
@@ -60,7 +60,7 @@ TEST(MhpTests, Take) {
     EXPECT_TRUE(equal(aview, dv_aview));
   }
 
-  dv_a.barrier();
+  mhp::barrier();
   mhp::for_each(dv_aview, increment{});
 
   if (comm == 0) {
@@ -87,7 +87,7 @@ TEST(MhpTests, Drop) {
     EXPECT_TRUE(equal(aview, dv_aview));
   }
 
-  dv_a.barrier();
+  mhp::barrier();
   mhp::for_each(dv_aview, increment{});
 
   if (comm == 0) {
@@ -99,8 +99,7 @@ TEST(MhpTests, Drop) {
   }
 }
 
-#if 0
-TEST(MhpTests, Transform) {
+TEST(MhpTests, TransformView) {
   const int n = 10;
 
   DV dv_a(n);
@@ -115,4 +114,3 @@ TEST(MhpTests, Transform) {
     EXPECT_TRUE(equal(v_a_view, dv_a_view));
   }
 }
-#endif

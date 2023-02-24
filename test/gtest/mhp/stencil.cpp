@@ -18,12 +18,10 @@ TEST(MhpTests, Stencil) {
   V v_in(n);
 
   mhp::iota(dv_in, 10);
-  dv_in.halo().exchange_begin();
-  dv_in.halo().exchange_finalize();
+  dv_in.halo().exchange();
 
   mhp::fill(dv_out, 100);
-  dv_out.halo().exchange_begin();
-  dv_out.halo().exchange_finalize();
+  dv_out.halo().exchange();
 
   if (comm_rank == 0) {
     rng::iota(v_in, 10);

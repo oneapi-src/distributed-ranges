@@ -13,68 +13,17 @@ public:
     halo_index,
   };
 
-  class win {
-  public:
-    win() { win_ = MPI_WIN_NULL; }
-
-    void create(const communicator &comm, void *data, int size) {
-      MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
-    }
-
-    void free() { MPI_Win_free(&win_); }
-
-    bool operator==(const win other) const noexcept {
-      return this->win_ == other.win_;
-    }
-
-    void set_null() { win_ = MPI_WIN_NULL; }
-    bool null() const noexcept { return win_ == MPI_WIN_NULL; }
-
-    template <typename T> T get(int rank, int disp) const {
-      T dst;
-      get(&dst, sizeof(T), rank, disp * sizeof(T));
-      return dst;
-    }
-
-    void get(void *dst, int size, int rank, int disp) const {
-      MPI_Request request;
-      MPI_Rget(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
-      MPI_Wait(&request, MPI_STATUS_IGNORE);
-    }
-
-    void put(const auto &src, int rank, int disp) const {
-      put(&src, sizeof(src), rank, disp * sizeof(src));
-    }
-
-    void put(const void *src, int size, int rank, int disp) const {
-      MPI_Put(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_);
-    }
-
-    void fence() const {
-      drlog.debug("fence\n");
-      MPI_Win_fence(0, win_);
-    }
-
-    void flush(int rank) const {
-      drlog.debug("flush:: rank: {}\n", rank);
-      MPI_Win_flush(rank, win_);
-    }
-
-  private:
-    MPI_Win win_;
-  };
-
   communicator(MPI_Comm comm = MPI_COMM_WORLD) : mpi_comm_(comm) {
     MPI_Comm_rank(comm, &rank_);
     MPI_Comm_size(comm, &size_);
   }
 
-  int size() const { return size_; }
-  int rank() const { return rank_; }
-  int prev() const { return (rank() + size() - 1) % size(); }
-  int next() const { return (rank() + 1) % size(); }
-  int first() const { return rank() == 0; }
-  int last() const { return rank() == size() - 1; }
+  auto size() const { return size_; }
+  auto rank() const { return rank_; }
+  auto prev() const { return (rank() + size() - 1) % size(); }
+  auto next() const { return (rank() + 1) % size(); }
+  auto first() const { return rank() == 0; }
+  auto last() const { return rank() == size() - 1; }
 
   MPI_Comm mpi_comm() const { return mpi_comm_; }
 
@@ -143,6 +92,60 @@ private:
   MPI_Comm mpi_comm_;
   int rank_;
   int size_;
+};
+
+class rma_window {
+public:
+  void create(communicator comm, void *data, int size) {
+    MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
+  }
+
+  void free() {
+    lib::drlog.debug("freeing {}\n", win_);
+    MPI_Win_free(&win_);
+  }
+
+  bool operator==(const rma_window other) const noexcept {
+    return this->win_ == other.win_;
+  }
+
+  void set_null() { win_ = MPI_WIN_NULL; }
+  bool null() const noexcept { return win_ == MPI_WIN_NULL; }
+
+  template <typename T> T get(int rank, int disp) const {
+    T dst;
+    get(&dst, sizeof(T), rank, disp * sizeof(T));
+    return dst;
+  }
+
+  void get(void *dst, int size, int rank, int disp) const {
+    MPI_Request request;
+    MPI_Rget(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+  }
+
+  void put(const auto &src, int rank, int disp) const {
+    put(&src, sizeof(src), rank, disp * sizeof(src));
+  }
+
+  void put(const void *src, int size, int rank, int disp) const {
+    MPI_Put(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_);
+  }
+
+  void fence() const {
+    lib::drlog.debug("fence {}\n", win_);
+    MPI_Win_fence(0, win_);
+  }
+
+  void flush(int rank) const {
+    drlog.debug("flush:: rank: {}\n", rank);
+    MPI_Win_flush(rank, win_);
+  }
+
+  auto mpi_win() { return win_; }
+
+private:
+  MPI_Win win_ = MPI_WIN_NULL;
 };
 
 } // namespace lib

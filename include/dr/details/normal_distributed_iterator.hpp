@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#include <dr/details/iterator_adaptor.hpp>
-
 namespace lib {
 
 template <rng::viewable_range V>
@@ -62,6 +60,7 @@ public:
           std::min(-offset, difference_type(idx_) + 1);
 
       difference_type new_idx = difference_type(idx_) - current_offset;
+      offset += current_offset;
 
       if (new_idx < 0) {
         segment_id_--;

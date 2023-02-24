@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
   comm = MPI_COMM_WORLD;
   MPI_Comm_rank(comm, &comm_rank);
   MPI_Comm_size(comm, &comm_size);
+  mhp::init();
 
   ::testing::InitGoogleTest(&argc, argv);
 

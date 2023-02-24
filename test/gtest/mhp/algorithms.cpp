@@ -18,13 +18,14 @@ void check_fill(std::size_t n, std::size_t b, std::size_t size) {
   mhp::iota(dv1, 10);
   mhp::iota(dv2, 10);
   mhp::iota(dv3, 10);
+
   mhp::fill(dv1.begin() + b, dv1.begin() + e, val);
   mhp::fill(rng::subrange(dv3.begin() + b, dv3.begin() + e), val);
 
   if (comm_rank == 0) {
     std::fill(dv2.begin() + b, dv2.begin() + e, val);
   }
-  dv2.fence();
+  mhp::fence();
 
   if (comm_rank == 0) {
     V v(n);
