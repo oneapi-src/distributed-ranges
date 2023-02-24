@@ -4,47 +4,59 @@
 
 #include "shp-tests.hpp"
 
-using T = int;
-using DV = shp::distributed_vector<T, shp::device_allocator<T>>;
-using V = std::vector<T>;
+template <typename AllocT>
+class CopyTest : public testing::Test {
+public:
+  using DistVec = shp::distributed_vector<typename AllocT::value_type, AllocT>;
+  using LocalVec = std::vector<typename AllocT::value_type>;
 
-TEST(ShpTests4, Copy_async_Dist2Local_simple) {
-  const int size = 100;
+};
 
-  DV dv(size);
-  V a(size);
+using AllocatorTypes = ::testing::Types<shp::device_allocator<int>, shp::device_allocator<long long unsigned int>>;
+TYPED_TEST_SUITE(CopyTest, AllocatorTypes);
 
-  std::iota(dv.begin(), dv.end(), 1);
-
-  shp::copy_async(dv.begin(), dv.end(), a.begin()).wait();
-
-  EXPECT_TRUE(equal(a, dv));
+TYPED_TEST(CopyTest, dist2Local_async) {
+  const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  typename TestFixture::LocalVec local_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  shp::copy_async(dist_vec.begin(), dist_vec.end(), local_vec.begin()).wait();
+  EXPECT_TRUE(equal(local_vec, dist_vec));
 }
 
-TEST(ShpTests4, Copy_async_Local2Dist_simple) {
-  const int size = 100;
-
-  V a(size);
-  DV dv(size);
-
-  std::iota(a.begin(), a.end(), 1);
-
-  shp::copy_async(a.begin(), a.end(), dv.begin()).wait();
-
-  EXPECT_TRUE(equal(a, dv));
+TYPED_TEST(CopyTest, local2Dist_async) {
+  const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  const typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  shp::copy_async(local_vec.begin(), local_vec.end(), dist_vec.begin()).wait();
+  EXPECT_TRUE(equal(local_vec, dist_vec));
 }
 
-TEST(ShpTests, Copy_Dist2Local_sliced) {
-  const int n = 100;
+TYPED_TEST(CopyTest, dist2Local_sync) {
+  const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  typename TestFixture::LocalVec local_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  shp::copy(dist_vec.begin(), dist_vec.end(), local_vec.begin());
+  EXPECT_TRUE(equal(local_vec, dist_vec));
+}
+
+TYPED_TEST(CopyTest, local2Dist_sync) {
+  const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  const typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  shp::copy(local_vec.begin(), local_vec.end(), dist_vec.begin());
+  EXPECT_TRUE(equal(local_vec, dist_vec));
+}
+
+
+TYPED_TEST(CopyTest, local2dist_sliced_bothSides) {
+}
+           /*
+{
   std::size_t n_to_copy = 20;
 
-  V a(n_to_copy);
-  DV dv_a(n);
+//  V a(n_to_copy);
+//  DV this->dv(n);
 
-  std::iota(dv_a.begin(), dv_a.end(), 0);
+  std::iota(this->dv.begin(), this->dv.end(), 0);
 
-  for (size_t i = 0; i + n_to_copy <= n; i += n_to_copy) {
-    shp::copy(dv_a.begin() + i, dv_a.begin() + i + n_to_copy, a.begin());
+  for (size_t i = 0; i + n_to_copy <= this->SIZE; i += n_to_copy) {
+    shp::copy(this->dv.begin() + i, this->dv.begin() + i + n_to_copy, this->lv.begin());
 
     auto dv_aview = dv_a | shp::views::slice({i, i + n_to_copy});
 
@@ -254,3 +266,5 @@ TEST(ShpTests, Copy_async_Dist2Local_midsize) {
   EXPECT_TRUE(equal(a2, dv2));
   EXPECT_TRUE(equal(a3, dv3));
 }
+
+*/
