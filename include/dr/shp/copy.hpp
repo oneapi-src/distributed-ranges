@@ -106,7 +106,7 @@ template <std::contiguous_iterator InputIt, lib::distributed_iterator OutputIt>
                               std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
-  return d_first + last - first;
+  return d_first + (last - first);
 }
 
 // Copy from distributed range to local range
@@ -137,7 +137,7 @@ template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
                               std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
-  return d_first + last - first;
+  return d_first + (last - first);
 }
 
 // fill with value
