@@ -133,32 +133,36 @@ public:
   using const_iterator =
       distributed_vector_iterator<const T, const_segment_type>;
 
-  distributed_vector() {}
 
-  distributed_vector(std::size_t count) {
+  distributed_vector(std::size_t count = 0) {
     assert(shp::devices().size() > 0);
     size_ = count;
-
     segment_size_ = (count + shp::devices().size() - 1) / shp::devices().size();
-
     capacity_ = segment_size_ * shp::devices().size();
 
-    std::vector<cl::sycl::event> events;
-
     size_t rank = 0;
-    for (auto &&device : shp::devices()) {
-      Allocator alloc(shp::context(), device);
-      segment_type segment(segment_size_, alloc, rank++);
+    for (auto &&device : shp::devices())
+      segments_.emplace_back(
+          segment_type(
+              segment_size_, Allocator(shp::context(), device), rank++));
+  }
 
-      auto e = shp::fill_async(segment.begin(), segment.end(), T{});
-      events.push_back(e);
+  distributed_vector(std::size_t count, value_type fill_value)
+      : distributed_vector(count)
+  {
+    std::vector<cl::sycl::event> events;
+    size_t rank = 0;
 
-      segments_.push_back(std::move(segment));
-    }
+    for (auto &&segment : segments_)
+      events.push_back(shp::fill_async(segment.begin(), segment.end(), fill_value));
 
-    for (auto &&event : events) {
-      event.wait();
-    }
+    sycl::queue().submit([=](auto &&h) { h.depends_on(events); }).wait();
+  }
+
+  distributed_vector(std::initializer_list<value_type> __l)
+  : distributed_vector(__l.size())
+  {
+    shp::copy(std::begin(__l), std::end(__l), this->begin());
   }
 
   reference operator[](size_type pos) {
