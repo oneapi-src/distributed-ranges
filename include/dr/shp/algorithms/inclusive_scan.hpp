@@ -134,8 +134,9 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r) {
 }
 
 template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O>
-void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
+          lib::distributed_contiguous_range O, typename BinaryOp>
+void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
+                    BinaryOp &&binary_op) {
   namespace sycl = cl::sycl;
 
   using T = rng::range_value_t<O>;
@@ -169,23 +170,21 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
 
       auto dist = std::distance(rng::begin(in_segment), rng::end(in_segment));
 
-      sycl::event event;
+      assert(dist > 0);
 
-      if (dist > 0) {
-        event = inclusive_scan_no_init_async(
-            local_policy, rng::begin(in_segment), rng::end(in_segment),
-            rng::begin(lib::ranges::local(out_segment)));
+      sycl::event event = oneapi::dpl::experimental::inclusive_scan_async(
+          local_policy, rng::begin(in_segment), rng::end(in_segment),
+          rng::begin(lib::ranges::local(out_segment)), binary_op);
 
-        auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
-        auto src_iter = rng::begin(lib::ranges::local(out_segment));
-        std::advance(src_iter, dist - 1);
-        auto e = q.submit([&](auto &&h) {
-          h.depends_on(event);
-          h.single_task([=]() { *dst_iter = *src_iter; });
-        });
+      auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
+      auto src_iter = rng::begin(lib::ranges::local(out_segment));
+      std::advance(src_iter, dist - 1);
+      auto e = q.submit([&](auto &&h) {
+        h.depends_on(event);
+        h.single_task([=]() { *dst_iter = *src_iter; });
+      });
 
-        events.push_back(e);
-      }
+      events.push_back(e);
 
       segment_id++;
     }
@@ -202,7 +201,7 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
     auto last = first + rng::size(partial_sums);
 
     oneapi::dpl::experimental::inclusive_scan_async(local_policy, first, last,
-                                                    first)
+                                                    first, binary_op)
         .wait();
 
     std::size_t idx = 0;
@@ -215,17 +214,15 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
 
       auto dist = std::distance(rng::begin(out_segment), rng::end(out_segment));
 
-      T sum = 0;
-
       if (idx > 0) {
-        sum = partial_sums[idx - 1];
+        T sum = partial_sums[idx - 1];
+
+        sycl::event e = oneapi::dpl::experimental::for_each_async(
+            local_policy, rng::begin(out_segment), rng::end(out_segment),
+            [=](auto &&x) { x = binary_op(x, sum); });
+
+        events.push_back(e);
       }
-
-      sycl::event e = oneapi::dpl::experimental::for_each_async(
-          local_policy, rng::begin(out_segment), rng::end(out_segment),
-          [=](auto &&x) { x = std::plus<>()(x, sum); });
-
-      events.push_back(e);
       idx++;
     }
 
@@ -236,6 +233,13 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
   } else {
     assert(false);
   }
+}
+
+template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O>
+void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
+  inclusive_scan(std::forward<ExecutionPolicy>(policy), std::forward<R>(r),
+                 std::forward<O>(o), std::plus<>());
 }
 
 } // namespace shp
