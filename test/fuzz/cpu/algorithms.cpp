@@ -43,7 +43,7 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   if (comm_rank == 0) {
     std::copy(dv_in.begin() + b, dv_in.begin() + e, dv3.begin() + b);
   }
-  dv3.fence();
+  mhp::fence();
 
   if (comm_rank == 0) {
     std::copy(v_in.begin() + b, v_in.begin() + e, v.begin() + b);
