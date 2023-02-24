@@ -85,37 +85,27 @@ template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
                               std::iter_value_t<OutputIt>>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   auto segments = lib::ranges::segments(d_first);
-
-  std::size_t segment_id = 0;
+  auto segment = std::begin(segments);
 
   std::vector<cl::sycl::event> events;
 
   std::size_t total_copied = 0;
 
   while (first != last) {
-    auto &&segment = segments[segment_id];
-    std::size_t n_in_segment = segment.size();
+    const std::size_t n_in_segment = (*segment).size();
 
     std::size_t n_to_copy =
         std::min<size_t>(n_in_segment, std::distance(first, last));
 
-    auto local_last = first;
-    std::advance(local_last, n_to_copy);
-
-    auto remote_iter = segment.begin();
-
-    auto event = shp::copy_async(first, local_last, remote_iter);
+    auto event = shp::copy_async(first, first + n_to_copy, (*segment).begin());
     events.push_back(event);
 
-    segment_id++;
+    ++segment;
     std::advance(first, n_to_copy);
     total_copied += n_to_copy;
   }
 
-  sycl::queue q;
-  auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
-
-  return root_event;
+  return sycl::queue().submit([=](auto &&h) { h.depends_on(events); });
 }
 
 // Copy from distributed range to local range
