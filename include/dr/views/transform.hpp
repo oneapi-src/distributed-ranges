@@ -28,7 +28,7 @@ public:
     auto fn = fn_;
     return lib::ranges::segments(base_) |
            rng::views::transform([fn](auto &&segment) {
-             return segment | rng::views::transform(fn_);
+             return segment | rng::views::transform(fn);
            });
   }
 
