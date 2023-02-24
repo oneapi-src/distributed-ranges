@@ -144,7 +144,7 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
   auto zipped_view = shp::views::zip(r, o);
-  auto zipped_segments = zipped_view.segments();
+  auto zipped_segments = zipped_view.zipped_segments();
 
   if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                device_policy>) {
@@ -159,43 +159,27 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
         std::size_t(zipped_segments.size()), allocator);
 
     std::size_t segment_id = 0;
-    std::size_t idx = 0;
-    for (auto &&segment : zipped_segments) {
-      std::size_t segment_size =
-          std::distance(rng::begin(segment), rng::end(segment));
+    for (auto &&segs : zipped_segments) {
+      auto &&[in_segment, out_segment] = segs;
 
-      auto in =
-          rng::subrange(r.begin() + idx, r.begin() + (idx + segment_size));
-      auto out =
-          rng::subrange(o.begin() + idx, o.begin() + (idx + segment_size));
-
-      auto input_segments = lib::ranges::segments(in);
-      auto output_segments = lib::ranges::segments(out);
-
-      assert(input_segments.size() == 1);
-      assert(output_segments.size() == 1);
-
-      auto &&input_view = *rng::begin(input_segments);
-      auto &&output_view = *rng::begin(output_segments);
-
-      auto device = devices[lib::ranges::rank(input_view)];
+      auto device = devices[lib::ranges::rank(in_segment)];
 
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
 
-      auto dist = segment_size;
+      auto dist = std::distance(rng::begin(in_segment), rng::end(in_segment));
 
       sycl::event event;
 
       if (dist >= 2) {
-        fmt::print("Running on GPU {}\n", lib::ranges::rank(input_view));
+        fmt::print("Running on GPU {}\n", lib::ranges::rank(in_segment));
         event = inclusive_scan_no_init_async(
-            local_policy, rng::begin(input_view), rng::end(input_view),
-            rng::begin(output_view));
+            local_policy, rng::begin(in_segment), rng::end(in_segment),
+            rng::begin(out_segment));
       }
 
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
-      auto src_iter = rng::begin(output_view);
+      auto src_iter = rng::begin(out_segment);
       std::advance(src_iter, dist - 1);
       auto e = q.submit([&](auto &&h) {
         h.depends_on(event);
@@ -205,7 +189,6 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
       events.push_back(e);
 
       segment_id++;
-      idx += segment_size;
     }
 
     for (auto &&e : events) {
@@ -223,15 +206,15 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
                                                     first)
         .wait();
 
-    idx = 0;
-    /*
-    for (auto &&segment : segments) {
-      auto device = devices[lib::ranges::rank(segment)];
+    std::size_t idx = 0;
+    for (auto &&segs : zipped_segments) {
+      auto &&[in_segment, out_segment] = segs;
+      auto device = devices[lib::ranges::rank(out_segment)];
 
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
 
-      auto dist = std::distance(rng::begin(segment), rng::end(segment));
+      auto dist = std::distance(rng::begin(out_segment), rng::end(out_segment));
 
       T sum = 0;
 
@@ -239,17 +222,9 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
         sum = partial_sums[idx - 1];
       }
 
-      using output_reference =
-    decltype(std::get<1>(std::declval<rng::range_reference_t<decltype(segment)>>()));
-
-      auto output_view =  segment
-                        | rng::views::transform([](auto&& x) -> output_reference
-    { auto&& [a, b] = x; return b;
-                                                });
-
       sycl::event e = oneapi::dpl::experimental::for_each_async(
-          local_policy, rng::begin(output_view), rng::end(output_view),
-          [=](auto &&x) { x += sum; });
+          local_policy, rng::begin(out_segment), rng::end(out_segment),
+          [=](auto &&x) { x = std::plus<>()(x, sum); });
 
       events.push_back(e);
       idx++;
@@ -258,7 +233,6 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
     for (auto &&e : events) {
       e.wait();
     }
-    */
 
   } else {
     assert(false);

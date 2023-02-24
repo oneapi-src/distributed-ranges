@@ -66,10 +66,5 @@ int main(int argc, char **argv) {
 
   fmt::print("o: {}\n", o);
 
-  shp::zip_view view(v, o);
-
-  fmt::print("{}\n", view.segments());
-  fmt::print("{}\n", view.zipped_segments());
-
   return 0;
 }
