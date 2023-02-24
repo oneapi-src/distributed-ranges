@@ -101,8 +101,7 @@ TEST(MhpTests, Drop) {
   }
 }
 
-#if 0
-TEST(MhpTests, Transform) {
+TEST(MhpTests, TransformView) {
   const int n = 10;
 
   DV dv_a(n);
@@ -117,4 +116,3 @@ TEST(MhpTests, Transform) {
     EXPECT_TRUE(equal(v_a_view, dv_a_view));
   }
 }
-#endif

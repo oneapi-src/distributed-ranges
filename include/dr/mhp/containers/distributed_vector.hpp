@@ -171,7 +171,7 @@ private:
 
 template <typename T> class distributed_vector {
 public:
-  const dv_segments<T> &segments() const { return dv_segments_; }
+  dv_segments<T> segments() const { return dv_segments_; }
 
   using value_type = T;
   using size_type = std::size_t;
@@ -233,3 +233,7 @@ private:
 };
 
 } // namespace mhp
+
+// Needed to satisfy rng::viewable_range
+template <typename T>
+inline constexpr bool rng::enable_borrowed_range<mhp::dv_segments<T>> = true;

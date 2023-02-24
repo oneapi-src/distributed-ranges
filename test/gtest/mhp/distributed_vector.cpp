@@ -12,6 +12,7 @@ using DVI = typename DV::iterator;
 TEST(MhpTests, DistributedVectorRequirements) {
   static_assert(rng::random_access_range<mhp::dv_segment<T>>);
   static_assert(rng::random_access_range<mhp::dv_segments<T>>);
+  static_assert(rng::viewable_range<mhp::dv_segments<T>>);
   static_assert(std::forward_iterator<DVI>);
   static_assert(rng::forward_range<DV>);
   static_assert(rng::random_access_range<DV>);
