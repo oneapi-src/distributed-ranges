@@ -20,7 +20,6 @@ TEST(MhpTests, Subrange) {
   static_assert(lib::distributed_range<decltype(r)>);
 }
 
-#if 0
 TEST(MhpTests, Zip) {
   DV dv1(10), dv2(10);
   mhp::iota(dv1, 10);
@@ -31,7 +30,7 @@ TEST(MhpTests, Zip) {
   EXPECT_TRUE(check_segments(dzv));
   EXPECT_TRUE(check_segments(dzv.begin()));
 
-  dv1.barrier();
+  mhp::barrier();
   auto incr_first = [](auto x) { x.first++; };
   mhp::for_each(dzv, incr_first);
 
@@ -45,7 +44,6 @@ TEST(MhpTests, Zip) {
     EXPECT_TRUE(equal(zv, dzv));
   }
 }
-#endif
 
 TEST(MhpTests, Take) {
   const int n = 10;
