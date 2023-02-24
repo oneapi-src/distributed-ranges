@@ -36,8 +36,8 @@ public:
   using difference_type = std::ptrdiff_t;
 
   dv_segment_iterator() = default;
-  dv_segment_iterator(const distributed_vector<T> *dv,
-                      std::size_t segment_index, std::size_t index) {
+  dv_segment_iterator(distributed_vector<T> *dv, std::size_t segment_index,
+                      std::size_t index) {
     dv_ = dv;
     segment_index_ = segment_index;
     index_ = index;
@@ -123,9 +123,13 @@ public:
 
   auto rank() const { return segment_index_; }
   auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
+  auto segments() const {
+    return lib::internal::drop_segments(dv_->segments(), index_);
+  }
+  auto &halo() const { return dv_->halo(); }
 
 private:
-  const distributed_vector<T> *dv_ = nullptr;
+  distributed_vector<T> *dv_ = nullptr;
   std::size_t segment_index_;
   std::size_t index_;
 }; // dv_segment_iterator
@@ -137,7 +141,7 @@ private:
 public:
   using difference_type = std::ptrdiff_t;
   dv_segment() = default;
-  dv_segment(const distributed_vector<T> *dv, std::size_t segment_index,
+  dv_segment(distributed_vector<T> *dv, std::size_t segment_index,
              std::size_t size) {
     dv_ = dv;
     segment_index_ = segment_index;
@@ -152,7 +156,7 @@ public:
   auto operator[](difference_type n) const { return *(begin() + n); }
 
 private:
-  const distributed_vector<T> *dv_;
+  distributed_vector<T> *dv_;
   std::size_t segment_index_;
   std::size_t size_;
 }; // dv_segment
@@ -233,6 +237,16 @@ private:
   dv_segments<T> dv_segments_;
   lib::rma_window win_;
 };
+
+template <typename DR>
+concept has_halo_method = lib::distributed_range<DR> &&
+                          requires(DR &&dr) {
+                            { lib::ranges::segments(dr)[0].begin().halo() };
+                          };
+
+auto &halo(has_halo_method auto &&dr) {
+  return lib::ranges::segments(dr)[0].begin().halo();
+}
 
 } // namespace mhp
 
