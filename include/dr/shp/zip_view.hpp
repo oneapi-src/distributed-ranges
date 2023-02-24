@@ -6,7 +6,6 @@
 
 #include <oneapi/dpl/iterator>
 
-#include <dr/details/iterator_adaptor.hpp>
 #include <dr/details/owning_view.hpp>
 #include <dr/details/view_detectors.hpp>
 #include <ranges>

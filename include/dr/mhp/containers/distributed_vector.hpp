@@ -180,8 +180,7 @@ public:
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using iterator = lib::normal_distributed_iterator<
-      decltype(std::declval<distributed_vector>().segments())>;
+  using iterator = lib::normal_distributed_iterator<dv_segments<T>>;
   using reference = std::iter_reference_t<iterator>;
 
   // Do not copy

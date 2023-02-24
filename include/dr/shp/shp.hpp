@@ -7,6 +7,7 @@
 // clang-format off
 #include "../details/ranges_shim.hpp"
 #include "../details/segments_tools.hpp"
+#include "../details/iterator_adaptor.hpp"
 #include "../details/normal_distributed_iterator.hpp"
 #include "../views/transform.hpp"
 #include "algorithms/execution_policy.hpp"

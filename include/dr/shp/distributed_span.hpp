@@ -6,7 +6,6 @@
 
 #include "device_span.hpp"
 #include <dr/concepts/concepts.hpp>
-#include <dr/details/iterator_adaptor.hpp>
 #include <dr/details/ranges.hpp>
 #include <dr/details/segments_tools.hpp>
 #include <vector>
