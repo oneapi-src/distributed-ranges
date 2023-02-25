@@ -40,9 +40,8 @@ public:
   explicit vector(size_type count, const Allocator &alloc = Allocator())
       : allocator_(alloc) {
     change_capacity_impl_(count);
-    T value;
     using namespace std;
-    fill(data(), data() + size(), value);
+    fill(data(), data() + size(), T{});
   }
 
   template <std::forward_iterator Iter>

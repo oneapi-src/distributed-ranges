@@ -22,7 +22,7 @@ public:
 
   constexpr device_vector(size_type count, const Allocator &alloc,
                           size_type rank)
-      : rank_(rank), base(count, alloc) {}
+      : base(count, alloc), rank_(rank) {}
 
   constexpr std::size_t rank() const noexcept { return rank_; }
 

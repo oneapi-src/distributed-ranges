@@ -137,10 +137,7 @@ public:
     segment_ids.fill(0);
     local_idx.fill(0);
 
-    constexpr std::size_t num_views = sizeof...(Rs);
-
     size_t cumulative_size = 0;
-    size_t segment_id = 0;
 
     using segment_view_type = decltype(get_zipped_view_impl_(
         segment_ids, local_idx, 0, std::make_index_sequence<sizeof...(Rs)>{}));
@@ -177,10 +174,7 @@ public:
     segment_ids.fill(0);
     local_idx.fill(0);
 
-    constexpr std::size_t num_views = sizeof...(Rs);
-
     size_t cumulative_size = 0;
-    size_t segment_id = 0;
 
     using segment_view_type = decltype(get_zipped_segments_impl_(
         segment_ids, local_idx, 0, std::make_index_sequence<sizeof...(Rs)>{}));

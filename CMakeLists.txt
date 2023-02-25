@@ -127,12 +127,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include(GoogleTest)
 
-  if(ENABLE_SYCL)
-    add_subdirectory(examples/shp)
-    add_subdirectory(test/gtest/shp)
-  endif()
-
-  # shp has warnings, but do for everything else
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
 
@@ -141,6 +135,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-tautological-constant-compare)
     # DPL uses deprecated API
     add_compile_options(-Wno-deprecated-declarations)
+  endif()
+
+  if(ENABLE_SYCL)
+    add_subdirectory(examples/shp)
+    add_subdirectory(test/gtest/shp)
   endif()
 
   add_subdirectory(examples/serial)

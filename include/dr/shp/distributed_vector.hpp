@@ -60,7 +60,6 @@ public:
     }
 
     if (offset < 0) {
-      difference_type new_idx = difference_type(idx_) + offset;
       size_type new_global_idx = get_global_idx() + offset;
       segment_id_ = new_global_idx / segment_size_;
       idx_ = new_global_idx % segment_size_;
