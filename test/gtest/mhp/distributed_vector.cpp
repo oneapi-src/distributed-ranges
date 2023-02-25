@@ -6,13 +6,14 @@
 
 using T = int;
 using DV = mhp::distributed_vector<T>;
-// using DVA = mhp::distributed_vector<T, std::allocator<T>>;
+using A = std::allocator<T>;
+using DVA = mhp::distributed_vector<T, A>;
 using DVI = typename DV::iterator;
 
 TEST(MhpTests, DistributedVectorRequirements) {
-  static_assert(rng::random_access_range<mhp::dv_segment<T>>);
-  static_assert(rng::random_access_range<mhp::dv_segments<T>>);
-  static_assert(rng::viewable_range<mhp::dv_segments<T>>);
+  static_assert(rng::random_access_range<mhp::dv_segment<DV>>);
+  static_assert(rng::random_access_range<mhp::dv_segments<DV>>);
+  static_assert(rng::viewable_range<mhp::dv_segments<DV>>);
   static_assert(std::forward_iterator<DVI>);
   static_assert(rng::forward_range<DV>);
   static_assert(rng::random_access_range<DV>);
@@ -24,6 +25,14 @@ TEST(MhpTests, DistributedVectorRequirements) {
 }
 
 TEST(MhpTests, DistributedVectorConstructors) { DV a1(10); }
+
+TEST(MhpTests, DistributedVectorAllocator) {
+  DVA a1(10);
+  mhp::iota(a1, 10);
+
+  DVA a2(10, lib::halo_bounds(), A());
+  mhp::iota(a2, 10);
+}
 
 TEST(MhpTests, DistributedVectorQuery) {
   const int n = 10;
