@@ -11,6 +11,7 @@
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/vector.hpp>
+#include <dr/shp/allocators.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
 
@@ -169,19 +170,37 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
       oneapi::dpl::execution::device_policy local_policy(q);
 
       auto dist = std::distance(rng::begin(in_segment), rng::end(in_segment));
-
       assert(dist > 0);
 
+      auto first = rng::begin(in_segment);
+      auto last = rng::end(in_segment);
+      auto d_first = rng::begin(out_segment);
+
+      // NOTE: some very odd runtime behavior is happening here.  `inclusive_scan_async`
+      //       is failing with raw pointers and *succeeding with iterators*, while
+      //       everything else (`dpl::for_each`, `single_task`, `parallel_for`)
+      //       works with raw pointers but *fails with iterators*.
+      //
+      // More investigation (and some bug reports) are likely necessary, but
+      // this works for now.
+
       sycl::event event = oneapi::dpl::experimental::inclusive_scan_async(
-          local_policy, rng::begin(in_segment), rng::end(in_segment),
-          rng::begin(lib::ranges::local(out_segment)), binary_op);
+          local_policy, first, last,
+          d_first, binary_op);
+
+      // fmt::print("segment {}, {} -> {}\n", segment_id, in_segment, out_segment);
 
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
-      auto src_iter = rng::begin(lib::ranges::local(out_segment));
+
+      auto src_iter = lib::ranges::local(out_segment).data();
       std::advance(src_iter, dist - 1);
+
       auto e = q.submit([&](auto &&h) {
         h.depends_on(event);
-        h.single_task([=]() { *dst_iter = *src_iter; });
+        h.single_task([=]() {
+           rng::range_value_t<O> value = *src_iter;
+           *dst_iter = value;
+         });
       });
 
       events.push_back(e);
@@ -198,7 +217,7 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
     oneapi::dpl::execution::device_policy local_policy(q);
 
     auto first = lib::ranges::local(partial_sums).data();
-    auto last = first + rng::size(partial_sums);
+    auto last = first + partial_sums.size();
 
     oneapi::dpl::experimental::inclusive_scan_async(local_policy, first, last,
                                                     first, binary_op)
@@ -212,13 +231,14 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
 
-      auto dist = std::distance(rng::begin(out_segment), rng::end(out_segment));
-
       if (idx > 0) {
         T sum = partial_sums[idx - 1];
 
+        auto first = rng::begin(out_segment);
+        auto last = rng::end(out_segment);
+
         sycl::event e = oneapi::dpl::experimental::for_each_async(
-            local_policy, rng::begin(out_segment), rng::end(out_segment),
+            local_policy, first, last,
             [=](auto &&x) { x = binary_op(x, sum); });
 
         events.push_back(e);

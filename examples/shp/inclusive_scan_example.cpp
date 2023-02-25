@@ -7,7 +7,6 @@
 
 #include <iostream>
 
-#include <dr/shp/algorithms/inclusive_scan.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
@@ -15,7 +14,7 @@ int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
 
   printf("Creating NUMA devices...\n");
-  auto devices = shp::get_duplicated_devices(sycl::default_selector_v, 8);
+  auto devices = shp::get_devices(sycl::gpu_selector_v);
   shp::init(devices);
 
   for (auto &device : devices) {
@@ -25,46 +24,39 @@ int main(int argc, char **argv) {
 
   shp::distributed_vector<int, shp::device_allocator<int>> v(100);
 
-  shp::for_each(shp::par_unseq, shp::enumerate(v), [](auto &&tuple) {
-    auto &&[idx, value] = tuple;
-    value = idx;
-  });
-
   std::vector<int> lv(100);
 
-  shp::copy(v.begin(), v.end(), lv.begin());
+  std::iota(lv.begin(), lv.end(), 0);
+  shp::copy(lv.begin(), lv.end(), v.begin());
 
-  fmt::print("local v: {}\n", lv);
 
-  std::iota(v.begin(), v.end(), 0);
-  fmt::print("(before) v: {}\n", v);
-
-  shp::inclusive_scan(shp::par_unseq, v);
-
-  fmt::print(" (after) v: {}\n", v);
-
-  for (auto &&seg : v.segments()) {
-    fmt::print("Rank {}: {}\n", seg.rank(), seg);
-  }
+  fmt::print(" v: {}\n", v);
+  fmt::print("lv: {}\n", lv);
 
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
+  shp::inclusive_scan(shp::par_unseq, v, v);
 
-  for (size_t i = 0; i < v.size(); i++) {
-    int x = v[i];
-    int y = lv[i];
+  fmt::print(" (after)  v: {}\n", v);
+  fmt::print(" (after) lv: {}\n", lv);
+
+  for (size_t i = 0; i < lv.size(); i++) {
+    int x = lv[i];
+    int y = v[i];
     if (x != y) {
-      printf("%d != %d\n", x, y);
+      printf("(%lu) %d != %d\n", i, x, y);
     }
-    assert(x == y);
   }
 
-  shp::distributed_vector<int> o(v.size() + 100);
+  std::iota(lv.begin(), lv.end(), 0);
+  shp::copy(lv.begin(), lv.end(), v.begin());
 
-  std::iota(v.begin(), v.end(), 0);
+  shp::distributed_vector<int, shp::device_allocator<int>> o(v.size() + 100);
 
+  std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
   shp::inclusive_scan(shp::par_unseq, v, o);
 
-  fmt::print("o: {}\n", rng::subrange(o.begin(), o.begin() + v.size()));
+  fmt::print(" (after)  v: {}\n", rng::subrange(o.begin(), o.begin() + v.size()));
+  fmt::print(" (after) lv: {}\n", lv);
 
   for (size_t i = 0; i < lv.size(); i++) {
     int x = lv[i];

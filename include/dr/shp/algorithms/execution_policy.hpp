@@ -20,8 +20,7 @@ struct device_policy {
   template <rng::range R>
     requires(std::is_same_v<rng::range_value_t<R>, cl::sycl::device>)
   device_policy(R &&devices)
-      : devices_(rng::begin(std::forward<R>(devices)),
-                 rng::end(std::forward<R>(devices))) {}
+      : devices_(rng::begin(devices), rng::end(devices)) {}
 
   std::span<cl::sycl::device> get_devices() noexcept { return devices_; }
 
