@@ -12,6 +12,7 @@
 #include "../views/transform.hpp"
 #include "algorithms/execution_policy.hpp"
 #include "algorithms/for_each.hpp"
+#include "algorithms/inclusive_scan.hpp"
 #include "algorithms/reduce.hpp"
 #include "allocators.hpp"
 #include "containers/dense_matrix.hpp"

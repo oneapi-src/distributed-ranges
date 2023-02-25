@@ -57,6 +57,7 @@ TEST(ShpTests, Zip) {
   EXPECT_TRUE(equal(z2, dz2));
 #endif
 
+  /*
   fmt::print("a: {}\n"
              "b: {}\n"
              "dz: {}\n"
@@ -66,6 +67,7 @@ TEST(ShpTests, Zip) {
              "z: {}\n",
              dv_a, dv_b, dz, dzi, lib::ranges::segments(dz),
              lib::ranges::segments(dzi), z);
+             */
 }
 
 TEST(ShpTests, Drop) {
@@ -82,18 +84,22 @@ TEST(ShpTests, Drop) {
   auto dv_aview = dv_a | rng::views::drop(2);
   EXPECT_TRUE(equal(aview, dv_aview));
 
-  fmt::print("segments(dv_a):     {}\n"
-             "segments(dv_aview): {}\n"
-             //"xsegments(dv_aview): {}\n"
-             ,
-             lib::ranges::segments(dv_a), lib::ranges::segments(dv_aview)
-             // ranges::xsegments_(dv_aview)
-  );
+  /*
+    fmt::print("segments(dv_a):     {}\n"
+               "segments(dv_aview): {}\n"
+               //"xsegments(dv_aview): {}\n"
+               ,
+               lib::ranges::segments(dv_a), lib::ranges::segments(dv_aview)
+               // ranges::xsegments_(dv_aview)
+    );
+    */
   std::ranges::for_each(aview, incr);
   shp::for_each(shp::par_unseq, dv_aview, incr);
+  /*
   fmt::print("segments(dv_a):     {}\n"
              "segments(dv_aview): {}\n",
              lib::ranges::segments(dv_a), lib::ranges::segments(dv_aview));
+             */
   EXPECT_TRUE(equal(aview, dv_aview));
 }
 
