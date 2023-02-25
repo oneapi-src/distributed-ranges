@@ -16,8 +16,6 @@
 #include <oneapi/dpl/numeric>
 
 #include <dr/concepts/concepts.hpp>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
 
 namespace shp {
 
@@ -83,9 +81,6 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
         event = oneapi::dpl::experimental::inclusive_scan_async(
             local_policy, first, last, d_first, binary_op);
       }
-
-      // fmt::print("segment {}, {} -> {}\n", segment_id, in_segment,
-      // out_segment);
 
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
 
