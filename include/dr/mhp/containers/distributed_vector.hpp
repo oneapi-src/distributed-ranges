@@ -4,142 +4,50 @@
 
 namespace mhp {
 
-// It won't have segments if it is a zip of non-aligned data
-bool aligned(lib::distributed_iterator auto iter) {
-  return !lib::ranges::segments(iter).empty();
-}
+template <typename T> class dv_segment_iterator;
 
-// iter1 is aligned with iter2, and iter2 is aligned with the rest
-bool aligned(lib::distributed_iterator auto iter1,
-             lib::distributed_iterator auto iter2,
-             lib::distributed_iterator auto... iters) {
-  auto combined = rng::views::zip(lib::ranges::segments(iter1),
-                                  lib::ranges::segments(iter2));
-  if (combined.empty())
-    return false;
-  for (auto seg : combined) {
-    if (lib::ranges::rank(seg.first) != lib::ranges::rank(seg.second) ||
-        seg.first.size() != seg.second.size()) {
-      return false;
-    }
-  }
+template <typename T> class distributed_vector;
 
-  return aligned(iter2, iters...);
-}
+template <typename T> class dv_segment_reference {
+  using iterator = dv_segment_iterator<T>;
 
-// 1D, homogeneous, distributed storage
-template <typename T, typename Allocator> struct storage {
 public:
-  // Cannot copy without transferring ownership of the storage
-  storage(const storage &) = delete;
-  storage &operator=(const storage &) = delete;
+  dv_segment_reference(const iterator it) : iterator_(it) {}
 
-  storage(std::size_t size, lib::span_halo<T> *halo, lib::halo_bounds hb,
-          lib::communicator comm, Allocator allocator)
-      : segment_size_(segment_size(hb, size, comm)),
-        data_size_(segment_size_ + hb.prev + hb.next),
-        data_(allocator.allocate(data_size_)) {
-    allocator_ = allocator;
-    halo_ = halo;
-    comm_ = comm;
-    halo_bounds_ = hb;
-    container_size_ = size;
-    container_capacity_ = comm.size() * segment_size_;
-    win_.create(comm, data_, data_size_ * sizeof(T));
-    fence();
-    lib::drlog.debug("Storage allocated\n  {}\n", *this);
+  operator T() const { return iterator_.get(); }
+  auto operator=(const T &value) const {
+    iterator_.put(value);
+    return *this;
   }
-
-  ~storage() {
-    lib::drlog.debug("Deleting data_\n");
-    fence();
-    win_.free();
-    allocator_.deallocate(data_, data_size_);
-    data_ = nullptr;
+  auto operator=(const dv_segment_reference &other) const {
+    *this = T(other);
+    return *this;
   }
+  auto operator&() const { return iterator_; }
 
-  static auto segment_size(auto hb, auto size, auto comm) {
-    // make segment as least as big as halo to ensure halo only comes nearest
-    // neighbor.
-    return std::max({(size + comm.size() - 1) / comm.size(), hb.prev, hb.next});
-  }
-
-  T get(std::size_t index) const {
-    auto segment = segment_index(index);
-    auto local = local_index(index) + halo_bounds_.prev;
-    auto val = win_.get<T>(segment, local);
-    lib::drlog.debug("get {} =  {} ({}:{})\n", val, index, segment, local);
-    return val;
-  }
-
-  void put(std::size_t index, const T &val) const {
-    auto segment = segment_index(index);
-    auto local = local_index(index) + halo_bounds_.prev;
-    lib::drlog.debug("put {} ({}:{}) = {}\n", index, segment, local, val);
-    win_.put(val, segment, local);
-  }
-
-  // Undefined if you are iterating over a segment because the end of
-  // segment points to the beginning of the next segment
-  auto segment_index(std::size_t index) const { return index / segment_size_; }
-  auto local_index(std::size_t index) const { return index % segment_size_; }
-
-  T *local(std::size_t index) const {
-    lib::drlog.debug("local: index: {} rank: {}\n", index, rank(index));
-    if (rank(index) == std::size_t(comm_.rank())) {
-      return data_ + local_index(index) + halo_bounds_.prev;
-    } else {
-      return nullptr;
-    }
-  }
-
-  auto rank(std::size_t index) const {
-    return segment_index(index) % comm_.size();
-  }
-
-  void barrier() const { comm_.barrier(); }
-  void fence() const { win_.fence(); }
-  auto comm() const { return comm_; }
-  void halo_exchange() const { halo_->exchange(); }
-
-  std::size_t container_size_ = 0;
-  std::size_t container_capacity_ = 0;
-
-  lib::communicator comm_;
-  lib::communicator::win win_;
-
-  // member initializer list requires this order
-  lib::halo_bounds halo_bounds_;
-  std::size_t segment_size_ = 0;
-  std::size_t data_size_ = 0;
-  T *data_;
-  lib::span_halo<T> *halo_;
-  Allocator allocator_;
-};
-
-template <typename T, typename Allocator> class distributed_vector_reference;
-
-template <typename T, typename Allocator> class distributed_vector_iterator {
 private:
-  using reference = distributed_vector_reference<T, Allocator>;
-  using iterator = distributed_vector_iterator;
-  using storage_type = storage<T, Allocator>;
+  const iterator iterator_;
+}; // dv_segment_reference
 
+template <typename T> class dv_segment_iterator {
 public:
-  // Required for random access iterator
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  distributed_vector_iterator() = default;
-  distributed_vector_iterator(const storage_type *storage, std::size_t index)
-      : storage_(storage), index_(index) {}
+  dv_segment_iterator() = default;
+  dv_segment_iterator(distributed_vector<T> *dv, std::size_t segment_index,
+                      std::size_t index) {
+    dv_ = dv;
+    segment_index_ = segment_index;
+    index_ = index;
+  }
 
   // Comparison
-  bool operator==(const iterator &other) const noexcept {
-    return index_ == other.index_ && storage_ == other.storage_;
+  bool operator==(const dv_segment_iterator &other) const noexcept {
+    return index_ == other.index_ && dv_ == other.dv_;
   }
-  auto operator<=>(const iterator &other) const noexcept {
+  auto operator<=>(const dv_segment_iterator &other) const noexcept {
     return index_ <=> other.index_;
   }
 
@@ -152,7 +60,7 @@ public:
     index_ += n;
     return *this;
   }
-  difference_type operator-(const iterator &other) const noexcept {
+  difference_type operator-(const dv_segment_iterator &other) const noexcept {
     return index_ - other.index_;
   }
 
@@ -190,120 +98,157 @@ public:
   }
 
   // When *this is not first in the expression
-  friend auto operator+(difference_type n, const iterator &other) {
+  friend auto operator+(difference_type n, const dv_segment_iterator &other) {
     return other + n;
   }
 
   // dereference
-  reference operator*() const { return reference{*this}; }
-  reference operator[](difference_type n) const { return reference{*this + n}; }
+  auto operator*() const { return dv_segment_reference{*this}; }
+  auto operator[](difference_type n) const { return *(*this + n); }
 
-  T get() const { return storage_->get(index_); }
-  void put(const T &value) const { storage_->put(index_, value); }
+  T get() const {
+    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    auto value = dv_->win_.template get<T>(segment_index_, segment_offset);
+    lib::drlog.debug("get {} =  ({}:{})\n", value, segment_index_,
+                     segment_offset);
+    return value;
+  }
 
-  auto rank() const { return storage_->rank(index_); }
-  auto local() const { return storage_->local(index_); }
+  void put(const T &value) const {
+    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    lib::drlog.debug("put ({}:{}) = {}\n", segment_index_, segment_offset,
+                     value);
+    dv_->win_.put(value, segment_index_, segment_offset);
+  }
 
+  auto rank() const { return segment_index_; }
+  auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
   auto segments() const {
-    return lib::internal::drop_segments(
-        rng::views::chunk(make_range(), storage_->segment_size_), index_);
+    return lib::internal::drop_segments(dv_->segments(), index_);
   }
-  auto segment_index() const { return storage_->segment_index(index_); }
-  auto local_index() const { return storage_->local_index(index_); }
-
-  void barrier() const { storage_->barrier(); }
-  void fence() const { storage_->fence(); }
-  auto comm() const { return storage_->comm(); }
-  void halo_exchange() const { storage_->halo_exchange(); }
-
-public:
-  auto make_range() const {
-    return rng::subrange(
-        distributed_vector_iterator(storage_, 0),
-        distributed_vector_iterator(storage_, storage_->container_size_));
-  }
-
-  const storage_type *storage_ = nullptr;
-  std::size_t index_ = 0;
-};
-
-template <typename T, typename Allocator> class distributed_vector_reference {
-  using reference = distributed_vector_reference;
-  using iterator = distributed_vector_iterator<T, Allocator>;
-
-public:
-  distributed_vector_reference(const iterator it) : iterator_(it) {}
-
-  operator T() const { return iterator_.get(); }
-  reference operator=(const T &value) const {
-    iterator_.put(value);
-    return *this;
-  }
-  reference operator=(const reference &other) const {
-    *this = T(other);
-    return *this;
-  }
-  iterator operator&() const { return iterator_; }
+  auto &halo() const { return dv_->halo(); }
 
 private:
-  const iterator iterator_;
-};
+  distributed_vector<T> *dv_ = nullptr;
+  std::size_t segment_index_;
+  std::size_t index_;
+}; // dv_segment_iterator
 
-template <typename T, typename Allocator = std::allocator<T>>
-struct distributed_vector {
+template <typename T> class dv_segment {
+private:
+  using iterator = dv_segment_iterator<T>;
+
 public:
+  using difference_type = std::ptrdiff_t;
+  dv_segment() = default;
+  dv_segment(distributed_vector<T> *dv, std::size_t segment_index,
+             std::size_t size) {
+    dv_ = dv;
+    segment_index_ = segment_index;
+    size_ = size;
+  }
+
+  auto size() const { return size_; }
+
+  auto begin() const { return iterator(dv_, segment_index_, 0); }
+  auto end() const { return begin() + size(); }
+
+  auto operator[](difference_type n) const { return *(begin() + n); }
+
+private:
+  distributed_vector<T> *dv_;
+  std::size_t segment_index_;
+  std::size_t size_;
+}; // dv_segment
+
+template <typename T> class dv_segments : public std::span<dv_segment<T>> {
+public:
+  dv_segments() {}
+  dv_segments(distributed_vector<T> *dv)
+      : std::span<dv_segment<T>>(dv->segments_) {
+    dv_ = dv;
+  }
+
+private:
+  const distributed_vector<T> *dv_;
+}; // dv_segments
+
+template <typename T> class distributed_vector {
+public:
+  dv_segments<T> segments() const { return dv_segments_; }
+
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-
-  using iterator = distributed_vector_iterator<T, Allocator>;
-  using pointer = iterator;
+  using iterator = lib::normal_distributed_iterator<dv_segments<T>>;
   using reference = std::iter_reference_t<iterator>;
 
-  distributed_vector() {}
-
-  distributed_vector(std::size_t count,
-                     lib::halo_bounds hb = lib::halo_bounds(),
-                     Allocator allocator = Allocator())
-      : storage_(count, &halo_, hb, lib::communicator(), allocator),
-        halo_(storage_.comm_, storage_.data_, storage_.data_size_, hb) {}
-
+  // Do not copy
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
 
-  reference operator[](size_type pos) const { return begin()[pos]; }
-
-  size_type size() const noexcept { return storage_.container_size_; }
-
-  auto segments() { return begin().segments(); }
-
-  iterator begin() const { return iterator(&storage_, 0); }
-  iterator end() const { return iterator(&storage_, storage_.container_size_); }
-
-  auto &halo() { return halo_; }
-  void halo_exchange() {
-    halo_.exchange_begin();
-    halo_.exchange_finalize();
+  distributed_vector(std::size_t size, lib::halo_bounds hb = lib::halo_bounds())
+      : segment_size_(std::max(
+            {(size + default_comm().size() - 1) / default_comm().size(),
+             hb.prev, hb.next})),
+        data_size_(segment_size_ + hb.prev + hb.next), data_(new T[data_size_]),
+        halo_(default_comm(), data_, data_size_, hb) {
+    size_ = size;
+    std::size_t segment_index = 0;
+    for (std::size_t i = 0; i < size; i += segment_size_) {
+      segments_.emplace_back(this, segment_index++,
+                             std::min(segment_size_, size - i));
+    }
+    halo_bounds_ = hb;
+    win_.create(default_comm(), data_, data_size_ * sizeof(T));
+    active_wins().insert(win_.mpi_win());
+    dv_segments_ = dv_segments<T>(this);
+    fence();
   }
 
-  void barrier() const { storage_.barrier(); }
-  void fence() const { storage_.fence(); }
+  ~distributed_vector() {
+    fence();
+    active_wins().erase(win_.mpi_win());
+    win_.free();
+    delete[] data_;
+    data_ = nullptr;
+  }
+
+  auto begin() const { return iterator(segments(), 0, 0); }
+  auto end() const { return iterator(segments(), segments().size(), 0); }
+
+  auto size() const { return size_; }
+  auto operator[](difference_type n) const { return *(begin() + n); }
+  auto &halo() { return halo_; }
 
 private:
-  storage<T, Allocator> storage_;
+  friend dv_segment_iterator<T>;
+  friend dv_segments<T>;
+
+  std::size_t segment_size_ = 0;
+  std::size_t data_size_ = 0;
+  T *data_ = nullptr;
   lib::span_halo<T> halo_;
+
+  lib::halo_bounds halo_bounds_;
+  std::size_t size_;
+  std::vector<dv_segment<T>> segments_;
+  dv_segments<T> dv_segments_;
+  lib::rma_window win_;
 };
+
+template <typename DR>
+concept has_halo_method = lib::distributed_range<DR> &&
+                          requires(DR &&dr) {
+                            { lib::ranges::segments(dr)[0].begin().halo() };
+                          };
+
+auto &halo(has_halo_method auto &&dr) {
+  return lib::ranges::segments(dr)[0].begin().halo();
+}
 
 } // namespace mhp
 
-template <typename T, typename Allocator>
-struct fmt::formatter<mhp::storage<T, Allocator>> : formatter<string_view> {
-  template <typename FmtContext>
-  auto format(const mhp::storage<T, Allocator> &dv, FmtContext &ctx) {
-    return format_to(ctx.out(),
-                     "size: {}, comm size: {}, segment size: {}, halo bounds: "
-                     "({}), data size: {}",
-                     dv.container_size_, dv.comm_.size(), dv.segment_size_,
-                     dv.halo_bounds_, dv.data_size_);
-  }
-};
+// Needed to satisfy rng::viewable_range
+template <typename T>
+inline constexpr bool rng::enable_borrowed_range<mhp::dv_segments<T>> = true;

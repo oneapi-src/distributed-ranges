@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   comm = MPI_COMM_WORLD;
   MPI_Comm_rank(comm, &comm_rank);
+  mhp::init();
 
   vector_add();
 
