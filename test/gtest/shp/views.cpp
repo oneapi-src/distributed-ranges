@@ -39,14 +39,12 @@ TEST(ShpTests, Zip) {
   rng::iota(dv_a, 100);
   rng::iota(dv_b, 200);
   auto dz = shp::views::zip(dv_a, dv_b, dv_a);
-  auto dz2 = shp::views::zip(dv_a, dv_b);
   auto dzi = shp::views::zip(rng::views::iota(1, 10), dv_b, dv_a);
 
   DV v_a(n), v_b(n);
   rng::iota(v_a, 100);
   rng::iota(v_b, 200);
   auto z = rng::views::zip(v_a, v_b, v_a);
-  auto z2 = rng::views::zip(v_a, v_b);
   auto zi = rng::views::zip(rng::views::iota(1, 10), dv_b, dv_a);
 
   EXPECT_TRUE(equal(z, dz));
@@ -54,6 +52,8 @@ TEST(ShpTests, Zip) {
 
 #if 0
   // zip and dr zip have different value types: tuple/pair
+  auto dz2 = shp::views::zip(dv_a, dv_b);
+  auto z2 = rng::views::zip(v_a, v_b);
   EXPECT_TRUE(equal(z2, dz2));
 #endif
 

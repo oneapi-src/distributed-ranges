@@ -53,16 +53,16 @@ public:
   template <rng::random_access_range R>
     requires(lib::remote_range<R>)
   device_span(R &&r)
-      : rank_(lib::ranges::rank(r)), shp::span<T, Iter>(rng::begin(r),
-                                                        rng::size(r)) {}
+      : shp::span<T, Iter>(rng::begin(r), rng::size(r)),
+        rank_(lib::ranges::rank(r)) {}
 
   template <class It>
   constexpr device_span(It first, std::size_t count, std::size_t rank)
-      : rank_(rank), shp::span<T, Iter>(first, count) {}
+      : shp::span<T, Iter>(first, count), rank_(rank) {}
 
   template <class It, class End>
   constexpr device_span(It first, End last, std::size_t rank)
-      : rank_(rank), shp::span<T, Iter>(first, last) {}
+      : shp::span<T, Iter>(first, last), rank_(rank) {}
 
   constexpr std::size_t rank() const noexcept { return rank_; }
 

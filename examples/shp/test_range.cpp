@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
   auto policy = shp::par_unseq;
 
   auto r_sub = shp::reduce(policy, subspan, 0.0f, std::plus());
+  printf("r_sub: %f\n", r_sub);
 
   shp::print_range(dspan);
 
@@ -96,6 +97,7 @@ int main(int argc, char **argv) {
   shp::print_range(dspan);
 
   auto r = shp::reduce(policy, dspan, 0.0f, std::plus());
+  printf("r: %f\n", r);
 
   return 0;
 }
