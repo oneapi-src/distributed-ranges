@@ -135,9 +135,10 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r) {
 }
 
 template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O, typename BinaryOp>
-void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
-                    BinaryOp &&binary_op) {
+          lib::distributed_contiguous_range O, typename BinaryOp,
+          typename U = rng::range_value_t<R>>
+void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
+                          BinaryOp &&binary_op, std::optional<U> init = {}) {
   namespace sycl = cl::sycl;
 
   using T = rng::range_value_t<O>;
@@ -186,8 +187,15 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
       // More investigation (and some bug reports) are likely necessary, but
       // this works for now.
 
-      sycl::event event = oneapi::dpl::experimental::inclusive_scan_async(
-          local_policy, first, last, d_first, binary_op);
+      sycl::event event;
+
+      if (segment_id == 0 && init.has_value()) {
+        event = oneapi::dpl::experimental::inclusive_scan_async(
+            local_policy, first, last, d_first, binary_op, init.value());
+      } else {
+        event = oneapi::dpl::experimental::inclusive_scan_async(
+            local_policy, first, last, d_first, binary_op);
+      }
 
       // fmt::print("segment {}, {} -> {}\n", segment_id, in_segment,
       // out_segment);
@@ -255,6 +263,24 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
   } else {
     assert(false);
   }
+}
+
+template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O, typename BinaryOp, typename T>
+void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
+                    BinaryOp &&binary_op, T init) {
+  inclusive_scan_impl_(std::forward<ExecutionPolicy>(policy),
+                       std::forward<R>(r), std::forward<O>(o),
+                       std::forward<BinaryOp>(binary_op), std::optional(init));
+}
+
+template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O, typename BinaryOp>
+void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
+                    BinaryOp &&binary_op) {
+  inclusive_scan_impl_(std::forward<ExecutionPolicy>(policy),
+                       std::forward<R>(r), std::forward<O>(o),
+                       std::forward<BinaryOp>(binary_op));
 }
 
 template <typename ExecutionPolicy, lib::distributed_contiguous_range R,

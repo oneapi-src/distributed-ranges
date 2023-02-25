@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
   namespace sycl = cl::sycl;
 
   printf("Creating NUMA devices...\n");
-  auto devices = shp::get_devices(sycl::gpu_selector_v);
+  auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
   for (auto &device : devices) {
@@ -51,8 +51,8 @@ int main(int argc, char **argv) {
 
   shp::distributed_vector<int, shp::device_allocator<int>> o(v.size() + 100);
 
-  std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
-  shp::inclusive_scan(shp::par_unseq, v, o);
+  std::inclusive_scan(lv.begin(), lv.end(), lv.begin(), std::plus<>(), 12);
+  shp::inclusive_scan(shp::par_unseq, v, o, std::plus<>(), 12);
 
   fmt::print(" (after)  v: {}\n",
              rng::subrange(o.begin(), o.begin() + v.size()));
