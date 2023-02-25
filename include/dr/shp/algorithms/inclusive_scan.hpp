@@ -9,9 +9,9 @@
 #include <oneapi/dpl/execution>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/allocators.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/vector.hpp>
-#include <dr/shp/allocators.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
 
@@ -176,19 +176,21 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
       auto last = rng::end(in_segment);
       auto d_first = rng::begin(out_segment);
 
-      // NOTE: some very odd runtime behavior is happening here.  `inclusive_scan_async`
-      //       is failing with raw pointers and *succeeding with iterators*, while
-      //       everything else (`dpl::for_each`, `single_task`, `parallel_for`)
-      //       works with raw pointers but *fails with iterators*.
+      // NOTE: some very odd runtime behavior is happening here.
+      // `inclusive_scan_async`
+      //       is failing with raw pointers and *succeeding with iterators*,
+      //       while everything else (`dpl::for_each`, `single_task`,
+      //       `parallel_for`) works with raw pointers but *fails with
+      //       iterators*.
       //
       // More investigation (and some bug reports) are likely necessary, but
       // this works for now.
 
       sycl::event event = oneapi::dpl::experimental::inclusive_scan_async(
-          local_policy, first, last,
-          d_first, binary_op);
+          local_policy, first, last, d_first, binary_op);
 
-      // fmt::print("segment {}, {} -> {}\n", segment_id, in_segment, out_segment);
+      // fmt::print("segment {}, {} -> {}\n", segment_id, in_segment,
+      // out_segment);
 
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
 
@@ -198,9 +200,9 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
       auto e = q.submit([&](auto &&h) {
         h.depends_on(event);
         h.single_task([=]() {
-           rng::range_value_t<O> value = *src_iter;
-           *dst_iter = value;
-         });
+          rng::range_value_t<O> value = *src_iter;
+          *dst_iter = value;
+        });
       });
 
       events.push_back(e);

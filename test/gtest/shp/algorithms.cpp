@@ -64,7 +64,7 @@ TEST(ShpTests, InclusiveScan) {
   shp::distributed_vector<int, shp::device_allocator<int>> v(n);
   std::vector<int> lv(n);
 
-  for (auto&& x : lv) {
+  for (auto &&x : lv) {
     x = lrand48() % 100;
   }
   shp::copy(lv.begin(), lv.end(), v.begin());
@@ -76,16 +76,16 @@ TEST(ShpTests, InclusiveScan) {
     EXPECT_EQ(lv[i], v[i]);
   }
 
-  for (auto&& x : lv) {
+  for (auto &&x : lv) {
     x = lrand48() % 100;
   }
   shp::copy(lv.begin(), lv.end(), v.begin());
 
-  shp::distributed_vector<int, shp::device_allocator<int>> o(v.size()*2);
+  shp::distributed_vector<int, shp::device_allocator<int>> o(v.size() * 2);
 
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
   shp::inclusive_scan(shp::par_unseq, v, o);
-  
+
   for (size_t i = 0; i < lv.size(); i++) {
     EXPECT_EQ(lv[i], o[i]);
   }

@@ -29,7 +29,6 @@ int main(int argc, char **argv) {
   std::iota(lv.begin(), lv.end(), 0);
   shp::copy(lv.begin(), lv.end(), v.begin());
 
-
   fmt::print(" v: {}\n", v);
   fmt::print("lv: {}\n", lv);
 
@@ -55,7 +54,8 @@ int main(int argc, char **argv) {
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
   shp::inclusive_scan(shp::par_unseq, v, o);
 
-  fmt::print(" (after)  v: {}\n", rng::subrange(o.begin(), o.begin() + v.size()));
+  fmt::print(" (after)  v: {}\n",
+             rng::subrange(o.begin(), o.begin() + v.size()));
   fmt::print(" (after) lv: {}\n", lv);
 
   for (size_t i = 0; i < lv.size(); i++) {
