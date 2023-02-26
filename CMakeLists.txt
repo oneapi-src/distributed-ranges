@@ -111,10 +111,6 @@ function(add_mpi_test test_name name processes)
   add_test(NAME ${test_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
 endfunction()
 
-function(add_shp_test test_name name devices)
-  add_test(NAME ${test_name} COMMAND ./${name} --devicesCount ${devices})
-endfunction()
-
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 add_subdirectory(include)
