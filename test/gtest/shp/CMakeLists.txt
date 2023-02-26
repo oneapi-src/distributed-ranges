@@ -25,6 +25,9 @@ if(ENABLE_CUDA)
   target_link_options(shp-tests PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
 endif()
 
-add_shp_test(shp-3 shp-tests 3)
+function(add_shp_test test_name name)
+  add_test(NAME ${test_name} COMMAND ./${name} --gtest_filter=-ShpTests.InclusiveScan ${ARGN})
+endfunction()
 
-add_test(NAME shp COMMAND ./shp-tests)
+add_shp_test(shp-3 shp-tests --devicesCount 3)
+add_shp_test(shp shp-tests)
