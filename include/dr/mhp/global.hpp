@@ -10,6 +10,9 @@ struct global_context {
   lib::communicator comm_;
   // container owns the window, we just track MPI handle
   std::set<MPI_Win> wins_;
+#ifdef SYCL_LANGUAGE_VERSION
+  sycl::queue sycl_queue_;
+#endif
 };
 
 inline global_context *global_context_ = nullptr;
@@ -45,5 +48,14 @@ inline void fence() {
     MPI_Win_fence(0, win);
   }
 }
+
+#ifdef SYCL_LANGUAGE_VERSION
+inline auto sycl_queue() { return _details::gcontext()->sycl_queue_; }
+
+inline void init(sycl::queue q) {
+  init();
+  _details::gcontext()->sycl_queue_ = q;
+}
+#endif
 
 } // namespace mhp
