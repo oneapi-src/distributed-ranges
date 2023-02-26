@@ -128,9 +128,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   # This must be appear after -Wall
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-    add_compile_options(-Wno-tautological-constant-compare)
+    add_compile_options(-Wno-error=tautological-constant-compare)
     # DPL uses deprecated API
-    add_compile_options(-Wno-deprecated-declarations)
+    add_compile_options(-Wno-error=deprecated-declarations)
+    # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel stl
+    add_compile_options(-Wno-error=pass-failed)
   endif()
 
   if(ENABLE_SYCL)
