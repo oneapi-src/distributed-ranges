@@ -102,7 +102,7 @@ jobs:
         source /opt/intel/oneapi/setvars.sh
         cmake -B build -DENABLE_SYCL=on -DDISABLED_TESTS=on
         # ignore errors
-        make -j 2 -C build all || true
+        make -j 2 -C build all test || true
     - uses: actions/upload-artifact@v3
       if: always()
       with:
