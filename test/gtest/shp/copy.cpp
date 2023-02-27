@@ -132,3 +132,23 @@ TYPED_TEST(CopyTest, local2dist_sliced_right) {
   EXPECT_TRUE(equal(
       dist_vec, typename TestFixture::LocalVec{2, 3, 4, 5, 6, 7, 8, 9, 0, 0}));
 }
+
+TYPED_TEST(CopyTest, Iota) {
+  const int n = 100;
+  typename TestFixture::LocalVec a(n);
+  typename TestFixture::DistVec dv_a(n);
+
+  std::iota(a.begin(), a.end(), 20);
+  std::iota(dv_a.begin(), dv_a.end(), 20);
+  EXPECT_TRUE(equal(a, dv_a));
+}
+
+TYPED_TEST(CopyTest, IotaShp) {
+  const int n = 100;
+  typename TestFixture::LocalVec a(n);
+  typename TestFixture::DistVec dv_a(n);
+
+  std::iota(a.begin(), a.end(), 20);
+  shp::iota(dv_a.begin(), dv_a.end(), 20);
+  EXPECT_TRUE(equal(a, dv_a));
+}
