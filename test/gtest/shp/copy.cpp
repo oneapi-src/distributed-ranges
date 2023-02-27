@@ -12,7 +12,7 @@ public:
 
 };
 
-using AllocatorTypes = ::testing::Types<shp::device_allocator<int>, shp::device_allocator<long long unsigned int>>;
+using AllocatorTypes = ::testing::Types<shp::device_allocator<int>, shp::shared_allocator<long long unsigned int>>;
 TYPED_TEST_SUITE(CopyTest, AllocatorTypes);
 
 TYPED_TEST(CopyTest, dist2Local_async) {
@@ -24,7 +24,7 @@ TYPED_TEST(CopyTest, dist2Local_async) {
 
 TYPED_TEST(CopyTest, local2Dist_async) {
   const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  const typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
   shp::copy_async(local_vec.begin(), local_vec.end(), dist_vec.begin()).wait();
   EXPECT_TRUE(equal(local_vec, dist_vec));
 }
@@ -38,7 +38,7 @@ TYPED_TEST(CopyTest, dist2Local_sync) {
 
 TYPED_TEST(CopyTest, local2Dist_sync) {
   const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  const typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
   shp::copy(local_vec.begin(), local_vec.end(), dist_vec.begin());
   EXPECT_TRUE(equal(local_vec, dist_vec));
 }
@@ -72,8 +72,6 @@ TEST(ShpTests, Copy_async_Dist2Local_sliced) {
   V a(n_to_copy), b(M * n_to_copy);
   DV dv_a(na), dv_b(nb);
 
-  std::vector<cl::sycl::event> events;
-
   std::iota(dv_a.begin(), dv_a.end(), 0);
   std::iota(dv_b.begin(), dv_b.end(), 0);
 
@@ -81,15 +79,11 @@ TEST(ShpTests, Copy_async_Dist2Local_sliced) {
        i += n_to_copy, j += M * n_to_copy) {
     auto eva = shp::copy_async(dv_a.begin() + i, dv_a.begin() + i + n_to_copy,
                                a.begin());
-    events.push_back(eva);
-
     auto evb = shp::copy_async(dv_b.begin() + j,
                                dv_b.begin() + j + M * n_to_copy, b.begin());
-    events.push_back(evb);
 
-    sycl::queue q;
-    auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
-    root_event.wait();
+    eva.wait();
+    evb.wait();
 
     auto dv_aview = dv_a | shp::views::slice({i, i + n_to_copy});
     auto dv_bview = dv_b | shp::views::slice({j, j + M * n_to_copy});
@@ -119,13 +113,11 @@ TEST(ShpTests, Copy_Local2Dist_sliced) {
 
 TEST(ShpTests, Copy_async_Local2Dist_sliced) {
   const int M = 10;
-  const int na = 100, nb = M * na;
+  const int na = 100;
   std::size_t n_to_copy = 20;
 
   V a(n_to_copy), b(M * n_to_copy);
-  DV dv_a(na), dv_b(nb);
-
-  std::vector<cl::sycl::event> events;
+  DV dv_a(na), dv_b(M * na);
 
   std::iota(a.begin(), a.end(), 0);
   std::iota(b.begin(), b.end(), 0);
@@ -133,14 +125,10 @@ TEST(ShpTests, Copy_async_Local2Dist_sliced) {
   for (size_t i = 0, j = 0; i + n_to_copy <= na;
        i += n_to_copy, j += M * n_to_copy) {
     auto eva = shp::copy_async(a.begin(), a.end(), dv_a.begin() + i);
-    events.push_back(eva);
-
     auto evb = shp::copy_async(b.begin(), b.end(), dv_b.begin() + j);
-    events.push_back(evb);
 
-    sycl::queue q;
-    auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
-    root_event.wait();
+    eva.wait();
+    evb.wait();
 
     auto dv_aview = dv_a | shp::views::slice({i, i + n_to_copy});
     auto dv_bview = dv_b | shp::views::slice({j, j + M * n_to_copy});
@@ -167,8 +155,9 @@ TEST(ShpTests, Copy_async_Local2Dist_intersegment) {
                              dv.begin() + i * l_size + l_size / 2);
     events.push_back(e);
   }
-  sycl::queue q;
-  auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
+
+  auto root_event =
+      sycl::queue().submit([=](auto &&h) { h.depends_on(events); });
   root_event.wait();
 
   for (size_t i = 0; i < nproc - 1; i++) {
@@ -223,15 +212,12 @@ TEST(ShpTests, Copy_async_Local2Dist_midsize) {
 
   // async operation - synchronisation only after all transfers start
   auto ev1 = shp::copy_async(a1.begin(), a1.end(), dv1.begin());
-  events.push_back(ev1);
   auto ev2 = shp::copy_async(a2.begin(), a2.end(), dv2.begin());
-  events.push_back(ev2);
   auto ev3 = shp::copy_async(a3.begin(), a3.end(), dv3.begin());
-  events.push_back(ev3);
 
-  sycl::queue q;
-  auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
-  root_event.wait();
+  ev1.wait();
+  ev2.wait();
+  ev3.wait();
 
   EXPECT_TRUE(equal(a1, dv1));
   EXPECT_TRUE(equal(a2, dv2));
@@ -244,23 +230,18 @@ TEST(ShpTests, Copy_async_Dist2Local_midsize) {
   DV dv1(size), dv2(size), dv3(size);
   V a1(size), a2(size), a3(size);
 
-  std::vector<cl::sycl::event> events;
-
   std::iota(dv1.begin(), dv1.end(), 1);
   std::iota(dv2.begin(), dv2.end(), 1);
   std::iota(dv3.begin(), dv3.end(), 1);
 
   // async operation - synchronisation only after all transfers start
   auto ev1 = shp::copy_async(dv1.begin(), dv1.end(), a1.begin());
-  events.push_back(ev1);
   auto ev2 = shp::copy_async(dv2.begin(), dv2.end(), a2.begin());
-  events.push_back(ev2);
   auto ev3 = shp::copy_async(dv3.begin(), dv3.end(), a3.begin());
-  events.push_back(ev3);
 
-  sycl::queue q;
-  auto root_event = q.submit([=](auto &&h) { h.depends_on(events); });
-  root_event.wait();
+  ev1.wait();
+  ev2.wait();
+  ev3.wait();
 
   EXPECT_TRUE(equal(a1, dv1));
   EXPECT_TRUE(equal(a2, dv2));
