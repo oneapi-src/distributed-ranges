@@ -148,7 +148,6 @@ public:
   distributed_vector(std::size_t count, value_type fill_value)
       : distributed_vector(count) {
     std::vector<cl::sycl::event> events;
-    size_t rank = 0;
 
     for (auto &&segment : segments_)
       events.push_back(
