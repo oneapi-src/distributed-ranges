@@ -148,8 +148,9 @@ public:
       : distributed_vector(count) {
     std::vector<cl::sycl::event> events;
 
-    for (auto &&segment : segments_)
+    for (auto &&segment : segments_) {
       events.push_back(shp::fill_async(segment.begin(), segment.end(), value));
+    }
 
     sycl::queue().submit([=](auto &&h) { h.depends_on(events); }).wait();
   }

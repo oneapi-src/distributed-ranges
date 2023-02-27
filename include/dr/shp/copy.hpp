@@ -11,9 +11,6 @@
 #include <memory>
 #include <type_traits>
 
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
 namespace shp {
 namespace __detail {
 
