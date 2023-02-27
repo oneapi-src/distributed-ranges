@@ -13,24 +13,22 @@
 
 namespace shp {
 
-template <lib::distributed_contiguous_range R, typename Fn>
-void for_each(const device_policy &policy, R &&r, Fn &&fn) {
-  std::span<const cl::sycl::device> devices = policy.get_devices();
+template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
+          typename Fn>
+void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
+  static_assert( // currently only one policy supported
+      std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
-  std::vector<cl::sycl::queue> queues;
+  auto devices = policy.get_devices();
   std::vector<cl::sycl::event> events;
 
   for (auto &&segment : lib::ranges::segments(r)) {
-
-    sycl::queue q(devices[lib::ranges::rank(segment)]);
-
-    auto begin = rng::begin(segment);
-
     assert(rng::size(segment) > 0);
-    auto event = q.parallel_for(
-        rng::size(segment), [=](cl::sycl::id<1> idx) { fn(*(begin + idx)); });
-    events.emplace_back(event);
-    queues.emplace_back(q);
+    events.emplace_back(
+        sycl::queue(devices[lib::ranges::rank(segment)])
+            .parallel_for(rng::size(segment), [=](cl::sycl::id<1> idx) {
+              fn(*(rng::begin(segment) + idx));
+            }));
   }
 
   for (auto &&event : events) {
@@ -38,9 +36,10 @@ void for_each(const device_policy &policy, R &&r, Fn &&fn) {
   }
 }
 
-template <lib::distributed_iterator Iter, typename Fn>
-void for_each(const device_policy &policy, Iter begin, Iter end, Fn &&fn) {
-  for_each(policy, rng::subrange(begin, end), std::forward<Fn>(fn));
+template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename Fn>
+void for_each(ExecutionPolicy &&policy, Iter begin, Iter end, Fn &&fn) {
+  for_each(std::forward<ExecutionPolicy>(policy), rng::subrange(begin, end),
+           std::forward<Fn>(fn));
 }
 
 } // namespace shp
