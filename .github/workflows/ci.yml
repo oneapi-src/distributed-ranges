@@ -99,6 +99,7 @@ jobs:
         make -j 2 -C build all test
     - name: Run disabled tests
       run: |
+        source /opt/intel/oneapi/setvars.sh
         cmake -B build -DENABLE_SYCL=on -DDISABLED_TESTS=on
         # ignore errors
         make -j 2 -C build all || true
