@@ -11,6 +11,9 @@
 #include <memory>
 #include <type_traits>
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 namespace shp {
 namespace __detail {
 
@@ -75,19 +78,24 @@ template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
-  auto segments = lib::ranges::segments(d_first);
-  auto segment = std::begin(segments);
+  auto &&segments = lib::ranges::segments(d_first);
+  auto segment_iter = rng::begin(segments);
 
   std::vector<cl::sycl::event> events;
 
   while (first != last) {
-    const std::size_t n_to_copy =
-        std::min<size_t>((*segment).size(), last - first);
+    auto &&segment = *segment_iter;
+    auto size = std::distance(rng::begin(segment), rng::end(segment));
 
-    events.push_back(
-        shp::copy_async(first, first + n_to_copy, (*segment).begin()));
+    std::size_t n_to_copy = std::min<size_t>(size, std::distance(first, last));
 
-    ++segment;
+    auto local_last = first;
+    std::advance(local_last, n_to_copy);
+
+    events.emplace_back(
+        shp::copy_async(first, local_last, rng::begin(segment)));
+
+    ++segment_iter;
     std::advance(first, n_to_copy);
   }
 
@@ -109,17 +117,20 @@ template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
+  auto dist = std::distance(first, last);
+
   auto segments =
-      lib::internal::take_segments(lib::ranges::segments(first), last - first);
+      lib::internal::take_segments(lib::ranges::segments(first), dist);
 
   std::vector<cl::sycl::event> events;
 
   for (auto &&segment : segments) {
-    auto event =
-        shp::copy_async(rng::cbegin(segment), rng::cend(segment), d_first);
-    events.push_back(event);
+    auto size = std::distance(rng::begin(segment), rng::end(segment));
 
-    std::advance(d_first, rng::size(segment));
+    events.emplace_back(
+        shp::copy_async(rng::begin(segment), rng::end(segment), d_first));
+
+    std::advance(d_first, size);
   }
 
   auto root_event =

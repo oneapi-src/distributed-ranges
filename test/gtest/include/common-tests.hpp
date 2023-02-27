@@ -79,3 +79,16 @@ testing::AssertionResult binary_check(rng::range auto &&a, rng::range auto &&b,
                ref, tst);
   }
 }
+
+template <typename T>
+std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
+  std::vector<T> v;
+  v.reserve(n);
+
+  for (std::size_t i = 0; i < n; i++) {
+    auto r = lrand48() % bound;
+    v.push_back(r);
+  }
+
+  return v;
+}
