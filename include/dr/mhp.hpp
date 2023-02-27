@@ -53,10 +53,8 @@ namespace rng = ranges;
 #include "views/transform.hpp"
 
 #include "mhp/global.hpp"
-#ifdef SYCL_LANGUAGE_VERSION
 #include "mhp/sycl_support.hpp"
-#endif
 #include "mhp/containers/distributed_vector.hpp"
 #include "mhp/alignment.hpp"
 #include "mhp/views.hpp"
-#include "mhp/algorithms/cpu_algorithms.hpp"
+#include "mhp/algorithms/algorithms.hpp"

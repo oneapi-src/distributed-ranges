@@ -60,17 +60,38 @@ void copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out) {
 //
 
 /// Collective for_each on distributed range
-void for_each(lib::distributed_range auto &&dr, auto op) {
-  for (const auto &s : local_segments(dr)) {
-    rng::for_each(s, op);
+template <typename ExecutionPolicy>
+void for_each(ExecutionPolicy &&policy, lib::distributed_range auto &&dr,
+              auto op) {
+  if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
+                               device_policy>) {
+    lib::drlog.debug("for_each: dpl execution\n");
+    for (const auto &s : local_segments(dr)) {
+      std::for_each(policy.dpl_policy, &*s.begin(), &*s.end(), op);
+    }
+  } else {
+    lib::drlog.debug("for_each: parallel cpu execution\n");
+    for (const auto &s : local_segments(dr)) {
+      rng::for_each(s, op);
+    }
   }
   barrier();
 }
 
+void for_each(lib::distributed_range auto &&dr, auto op) {
+  for_each(std::execution::par_unseq, dr, op);
+}
+
 /// Collective for_each on iterator/sentinel for a distributed range
+template <typename ExecutionPolicy, lib::distributed_iterator DI>
+void for_each(ExecutionPolicy &&policy, DI first, DI last, auto op) {
+  mhp::for_each(std::forward<ExecutionPolicy>(policy),
+                rng::subrange(first, last), op);
+}
+
 template <lib::distributed_iterator DI>
 void for_each(DI first, DI last, auto op) {
-  mhp::for_each(rng::subrange(first, last), op);
+  mhp::for_each(std::execution::par_unseq, rng::subrange(first, last), op);
 }
 
 //

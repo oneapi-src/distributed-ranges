@@ -135,7 +135,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # -O3 and nan checking
     add_compile_options(-Wno-error=tautological-constant-compare)
     # DPL uses deprecated API
-    add_compile_options(-Wno-error=deprecated-declarations)
+    add_compile_options(-Wno-deprecated-declarations)
     # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel stl
     add_compile_options(-Wno-error=pass-failed)
   endif()

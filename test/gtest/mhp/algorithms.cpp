@@ -54,7 +54,7 @@ TEST(MhpTests, ForEach) {
 
   DV dv_a(n);
   mhp::iota(dv_a, 100);
-  mhp::for_each(dv_a, negate{});
+  mhp::for_each(std::execution::par_unseq, dv_a, negate{});
 
   if (comm_rank == 0) {
     V a(n), a_in(n);
