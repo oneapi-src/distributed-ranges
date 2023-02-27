@@ -84,8 +84,8 @@ cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     const std::size_t n_to_copy =
         std::min<size_t>((*segment).size(), last - first);
 
-    auto event = shp::copy_async(first, first + n_to_copy, (*segment).begin());
-    events.push_back(event);
+    events.push_back(
+        shp::copy_async(first, first + n_to_copy, (*segment).begin()));
 
     ++segment;
     std::advance(first, n_to_copy);
