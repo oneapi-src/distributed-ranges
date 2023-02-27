@@ -6,6 +6,7 @@
 add_executable(
   mhp-sycl-tests-n
 
+  algorithms.cpp
   distributed_vector.cpp
   mhp-sycl-tests.cpp
 )
