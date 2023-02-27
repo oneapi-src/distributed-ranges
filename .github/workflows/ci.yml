@@ -97,9 +97,11 @@ jobs:
         source /opt/intel/oneapi/setvars.sh
         cmake -B build -DENABLE_SYCL=on
         make -j 2 -C build all test
-        # run tests, but do not fail CI
-        build/test/gtest/shp/shp-tests --gtest_filter=ShpTests.InclusiveScan || true
-        build/test/gtest/shp/shp-tests --gtest_filter=ShpTests.InclusiveScan --devicesCount 3 || true
+    - name: Run disabled tests
+      run: |
+        cmake -B build -DENABLE_SYCL=on -DDISABLED_TESTS=on
+        # ignore errors
+        make -j 2 -C build all || true
     - uses: actions/upload-artifact@v3
       if: always()
       with:

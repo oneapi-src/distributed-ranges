@@ -17,6 +17,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CheckLanguage)
   include(CTest)
 
+  option(DISABLED_TESTS "Run disabled tests" OFF)
   option(ENABLE_SYCL "Build sycl shp examples" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
@@ -30,7 +31,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-fconcepts-diagnostics-depth=10)
-    add_compile_options(-Wno-stringop-overflow)
   endif()
 
   if(GCC_TOOLCHAIN)
@@ -128,6 +128,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   # This must be appear after -Wall
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    # -O3 and nan checking
     add_compile_options(-Wno-error=tautological-constant-compare)
     # DPL uses deprecated API
     add_compile_options(-Wno-error=deprecated-declarations)
