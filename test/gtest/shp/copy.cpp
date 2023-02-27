@@ -4,49 +4,55 @@
 
 #include "shp-tests.hpp"
 
-template <typename AllocT>
-class CopyTest : public testing::Test {
+template <typename AllocT> class CopyTest : public testing::Test {
 public:
   using DistVec = shp::distributed_vector<typename AllocT::value_type, AllocT>;
   using LocalVec = std::vector<typename AllocT::value_type>;
-
 };
 
-using AllocatorTypes = ::testing::Types<shp::device_allocator<int>, shp::shared_allocator<long long unsigned int>>;
+using AllocatorTypes =
+    ::testing::Types<shp::device_allocator<int>,
+                     shp::shared_allocator<long long unsigned int>>;
 TYPED_TEST_SUITE(CopyTest, AllocatorTypes);
 
 TYPED_TEST(CopyTest, dist2Local_async) {
-  const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  typename TestFixture::LocalVec local_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5,
+                                                  6, 7, 8, 9, 10};
+  typename TestFixture::LocalVec local_vec = {101, 102, 103, 104, 104,
+                                              106, 107, 108, 109, 110};
   shp::copy_async(dist_vec.begin(), dist_vec.end(), local_vec.begin()).wait();
   EXPECT_TRUE(equal(local_vec, dist_vec));
 }
 
 TYPED_TEST(CopyTest, local2Dist_async) {
-  const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5,
+                                                    6, 7, 8, 9, 10};
+  typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104,
+                                            106, 107, 108, 109, 110};
   shp::copy_async(local_vec.begin(), local_vec.end(), dist_vec.begin()).wait();
   EXPECT_TRUE(equal(local_vec, dist_vec));
 }
 
 TYPED_TEST(CopyTest, dist2Local_sync) {
-  const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  typename TestFixture::LocalVec local_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5,
+                                                  6, 7, 8, 9, 10};
+  typename TestFixture::LocalVec local_vec = {101, 102, 103, 104, 104,
+                                              106, 107, 108, 109, 110};
   shp::copy(dist_vec.begin(), dist_vec.end(), local_vec.begin());
   EXPECT_TRUE(equal(local_vec, dist_vec));
 }
 
 TYPED_TEST(CopyTest, local2Dist_sync) {
-  const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104, 106, 107, 108, 109, 110};
+  const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5,
+                                                    6, 7, 8, 9, 10};
+  typename TestFixture::DistVec dist_vec = {101, 102, 103, 104, 104,
+                                            106, 107, 108, 109, 110};
   shp::copy(local_vec.begin(), local_vec.end(), dist_vec.begin());
   EXPECT_TRUE(equal(local_vec, dist_vec));
 }
 
-
-TYPED_TEST(CopyTest, local2dist_sliced_bothSides) {
-}
-           /*
+TYPED_TEST(CopyTest, local2dist_sliced_bothSides) {}
+/*
 {
   std::size_t n_to_copy = 20;
 

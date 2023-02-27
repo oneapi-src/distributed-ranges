@@ -133,7 +133,6 @@ public:
   using const_iterator =
       distributed_vector_iterator<const T, const_segment_type>;
 
-
   distributed_vector(std::size_t count = 0) {
     assert(shp::devices().size() > 0);
     size_ = count;
@@ -142,26 +141,24 @@ public:
 
     size_t rank = 0;
     for (auto &&device : shp::devices())
-      segments_.emplace_back(
-          segment_type(
-              segment_size_, Allocator(shp::context(), device), rank++));
+      segments_.emplace_back(segment_type(
+          segment_size_, Allocator(shp::context(), device), rank++));
   }
 
   distributed_vector(std::size_t count, value_type fill_value)
-      : distributed_vector(count)
-  {
+      : distributed_vector(count) {
     std::vector<cl::sycl::event> events;
     size_t rank = 0;
 
     for (auto &&segment : segments_)
-      events.push_back(shp::fill_async(segment.begin(), segment.end(), fill_value));
+      events.push_back(
+          shp::fill_async(segment.begin(), segment.end(), fill_value));
 
     sycl::queue().submit([=](auto &&h) { h.depends_on(events); }).wait();
   }
 
   distributed_vector(std::initializer_list<value_type> __l)
-  : distributed_vector(__l.size())
-  {
+      : distributed_vector(__l.size()) {
     shp::copy(std::begin(__l), std::end(__l), this->begin());
   }
 
