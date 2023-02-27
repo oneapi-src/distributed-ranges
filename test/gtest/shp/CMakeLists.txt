@@ -34,4 +34,4 @@ function(add_shp_test test_name name)
 endfunction()
 
 add_shp_test(shp-3 shp-tests --devicesCount 3)
-add_shp_test(shp shp-tests --gtest_also_run_disabled_tests)
+add_shp_test(shp shp-tests)

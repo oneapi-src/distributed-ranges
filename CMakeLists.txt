@@ -126,6 +126,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
 
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wno-error=stringop-overflow=)
+  endif()
+
   # This must be appear after -Wall
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     # -O3 and nan checking
