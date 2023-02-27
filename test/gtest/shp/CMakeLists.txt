@@ -18,8 +18,10 @@ target_link_libraries(
   fmt::fmt
   cxxopts
 )
+
 target_compile_options(shp-tests PRIVATE -fsycl)
 target_link_options(shp-tests PRIVATE -fsycl)
+
 if(ENABLE_CUDA)
   target_compile_options(shp-tests PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
   target_link_options(shp-tests PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
