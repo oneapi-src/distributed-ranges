@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
 #include <dr/shp/device_ptr.hpp>
 #include <dr/shp/device_vector.hpp>
+#include <sycl/sycl.hpp>
 #include <vector>
 
 #include <dr/details/segments_tools.hpp>
@@ -146,7 +146,7 @@ public:
 
   distributed_vector(std::size_t count, const T &value)
       : distributed_vector(count) {
-    std::vector<cl::sycl::event> events;
+    std::vector<sycl::event> events;
 
     for (auto &&segment : segments_) {
       events.push_back(shp::fill_async(segment.begin(), segment.end(), value));

@@ -4,19 +4,16 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/distributed_span.hpp>
 #include <dr/shp/zip_view.hpp>
+#include <sycl/sycl.hpp>
 
 namespace shp {
 
 template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
           typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
-
-  namespace sycl = cl::sycl;
-
   static_assert(
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
@@ -36,7 +33,7 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
       assert(rng::size(segment) > 0);
       auto event = q.parallel_for(rng::size(segment),
-                                  [=](sycl::id<1> idx) { fn(*(begin + idx)); });
+                                  [=](auto idx) { fn(*(begin + idx)); });
       events.emplace_back(event);
       queues.emplace_back(q);
     }
@@ -51,8 +48,6 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
 template <typename ExecutionPolicy, lib::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
-
-  namespace sycl = cl::sycl;
 
   static_assert(
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
@@ -71,8 +66,8 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
       auto begin = rng::begin(segment);
 
-      auto event = q.parallel_for(sycl::range<1>(rng::size(segment)),
-                                  [=](sycl::id<1> idx) { fn(*(begin + idx)); });
+      auto event = q.parallel_for(rng::size(segment),
+                                  [=](auto idx) { fn(*(begin + idx)); });
       events.emplace_back(event);
       queues.emplace_back(q);
     }

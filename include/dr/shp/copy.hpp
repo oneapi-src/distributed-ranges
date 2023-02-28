@@ -5,10 +5,10 @@
 #pragma once
 
 #include "device_ptr.hpp"
-#include <CL/sycl.hpp>
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/segments_tools.hpp>
 #include <memory>
+#include <sycl/sycl.hpp>
 #include <type_traits>
 
 namespace shp {
@@ -26,7 +26,7 @@ template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
-  cl::sycl::queue q;
+  sycl::queue q;
   return q.memcpy(std::to_address(d_first), std::to_address(first),
                   sizeof(std::iter_value_t<InputIt>) * (last - first));
 }
@@ -42,7 +42,7 @@ void copy(InputIt first, InputIt last, OutputIt d_first) {
 template <std::contiguous_iterator Iter, typename T>
   requires __detail::is_syclmemcopyable<std::iter_value_t<Iter>, T>
 cl::sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
-  cl::sycl::queue q;
+  sycl::queue q;
   return q.memcpy(d_first.get_raw_pointer(), std::to_address(first),
                   sizeof(T) * (last - first));
 }
@@ -56,9 +56,8 @@ device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
 
 template <typename T, std::contiguous_iterator Iter>
   requires __detail::is_syclmemcopyable<T, std::iter_value_t<Iter>>
-cl::sycl::event copy_async(device_ptr<T> first, device_ptr<T> last,
-                           Iter d_first) {
-  cl::sycl::queue q;
+sycl::event copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
+  sycl::queue q;
   return q.memcpy(std::to_address(d_first), first.get_raw_pointer(),
                   sizeof(T) * (last - first));
 }
@@ -74,11 +73,11 @@ Iter copy(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
 template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
-cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
+sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   auto &&segments = lib::ranges::segments(d_first);
   auto segment_iter = rng::begin(segments);
 
-  std::vector<cl::sycl::event> events;
+  std::vector<sycl::event> events;
 
   while (first != last) {
     auto &&segment = *segment_iter;
@@ -113,13 +112,12 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
-cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
+sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   auto dist = std::distance(first, last);
-
   auto segments =
       lib::internal::take_segments(lib::ranges::segments(first), dist);
 
-  std::vector<cl::sycl::event> events;
+  std::vector<sycl::event> events;
 
   for (auto &&segment : segments) {
     auto size = std::distance(rng::begin(segment), rng::end(segment));
@@ -148,9 +146,9 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
-cl::sycl::event
+sycl::event
     fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
-  cl::sycl::queue q;
+  sycl::queue q;
   return q.fill(std::to_address(first), value, last - first);
 }
 
@@ -162,9 +160,9 @@ void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
 
 template <typename T>
   requires(!std::is_const_v<T>)
-cl::sycl::event
+sycl::event
     fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  cl::sycl::queue q;
+  sycl::queue q;
   return q.fill(first.get_raw_pointer(), value, last - first);
 }
 

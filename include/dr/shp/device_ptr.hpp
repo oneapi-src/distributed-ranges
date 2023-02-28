@@ -5,7 +5,7 @@
 #pragma once
 
 #include "device_ref.hpp"
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <type_traits>
 
 namespace shp {
