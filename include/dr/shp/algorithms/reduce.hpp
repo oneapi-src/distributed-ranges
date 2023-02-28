@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #include <oneapi/dpl/execution>
 
@@ -40,8 +40,6 @@ namespace shp {
 template <typename ExecutionPolicy, lib::distributed_range R, typename T,
           typename BinaryOp>
 T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
-
-  namespace sycl = cl::sycl;
 
   static_assert(
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);

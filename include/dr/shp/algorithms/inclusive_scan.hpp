@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #include <oneapi/dpl/execution>
 
@@ -24,8 +24,6 @@ template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
           typename U = rng::range_value_t<R>>
 void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
                           BinaryOp &&binary_op, std::optional<U> init = {}) {
-  namespace sycl = cl::sycl;
-
   using T = rng::range_value_t<O>;
 
   static_assert(
