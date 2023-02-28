@@ -25,7 +25,7 @@ concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
 template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
-cl::sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
+sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   sycl::queue q;
   return q.memcpy(std::to_address(d_first), std::to_address(first),
                   sizeof(std::iter_value_t<InputIt>) * (last - first));
@@ -41,7 +41,7 @@ void copy(InputIt first, InputIt last, OutputIt d_first) {
 
 template <std::contiguous_iterator Iter, typename T>
   requires __detail::is_syclmemcopyable<std::iter_value_t<Iter>, T>
-cl::sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
+sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
   sycl::queue q;
   return q.memcpy(d_first.get_raw_pointer(), std::to_address(first),
                   sizeof(T) * (last - first));
