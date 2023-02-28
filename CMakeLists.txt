@@ -96,7 +96,7 @@ FetchContent_MakeAvailable(range-v3)
 FetchContent_Declare(
   cpp-format
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 9.1.0
+  GIT_TAG 0b0f7cf
 )
 FetchContent_MakeAvailable(cpp-format)
 
