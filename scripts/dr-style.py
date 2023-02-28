@@ -1,0 +1,123 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+import logging
+import re
+from argparse import ArgumentParser
+from glob import iglob
+from os.path import abspath
+from sys import exit
+
+args = None
+errors = 0
+
+logger = logging.getLogger('oneapi-style-check')
+
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+logger.propagate = False
+
+positives = [
+    (
+        r'using namespace sycl|using namespace cl::sycl',
+        'eliminate using',
+    ),
+    (
+        r'malloc_shared\(|malloc_device\(|malloc_host\(',
+        'use templated malloc',
+    ),
+    (r'#include <CL/sycl.hpp>', 'use #include <sycl/sycl.hpp>'),
+    (r'\(.*?\)malloc', 'use static_cast or new'),
+    (r'namespace sycl = ', 'do not define sycl namespace'),
+    (r'[< (]cl::sycl', 'delete cl::'),
+    (r'parallel_for<class', 'use unnamed lambda'),
+    (r']\(sycl::id<1>', 'use auto instead of id<1> for argument'),
+    (r'sycl::buffer<[a-zA-Z_]+, 1', 'buffer default dimension is 1'),
+    (r'sycl::range<1>', 'range default dimension is 1'),
+    (r'parallel_for\(sycl::range(\{|\()', 'use scalar instead of sycl::range'),
+    (
+        r'sycl::buffer.*?sycl::range(\{|\()',
+        'use scalar instead of sycl::range',
+    ),
+    (r'sycl::write_only\)', 'use sycl::write_only, sycl::no_init)'),
+    (
+        r'\.get_access<sycl::access::mode::read',
+        'use constructor instead of get_access',
+    ),
+    (
+        r'\.get_access<sycl::access::mode::write',
+        'use constructor instead of get_access',
+    ),
+    (
+        r'\.get_host_access',
+        'use constructor instead of get_host_access',
+    ),
+]
+
+compiled_positives = []
+
+
+def parse_args():
+    parser = ArgumentParser(description='Check for oneapi coding style issues')
+    parser.add_argument(
+        'directory',
+        default='.',
+        nargs='+',
+        help='root directory for recursive search',
+    )
+    parser.add_argument(
+        '--Werror', action='store_true', help='treat warnings as errors'
+    )
+    parser.add_argument(
+        '--verbose', action='store_true', help='emit informational messages'
+    )
+    return parser.parse_args()
+
+
+def warning(warning, file, line, message):
+    global errors
+    if args.Werror:
+        errors += 1
+    logger.warning('%s:%d: warning: %s: %s' % (file, line, warning, message))
+
+
+def check_file(path):
+    logging.info('Checking %s' % path)
+    lineno = 1
+    with open(path) as fin:
+        for line in fin.readlines():
+            for check in compiled_positives:
+                if check[0].search(line):
+                    warning(check[1], path, lineno, line.rstrip())
+            lineno += 1
+
+
+def check_files():
+    for dir in args.directory:
+        for file in iglob(f'{dir}/**/*.[ch]pp', recursive=True):
+            check_file(abspath(file))
+
+
+def compile_checks():
+    global compiled_positives
+    compiled_positives = [
+        (re.compile(check[0]), check[1]) for check in positives
+    ]
+
+
+def main():
+    global args
+    args = parse_args()
+    if args.verbose:
+        ch.setLevel(logging.INFO)
+    compile_checks()
+    check_files()
+    print(f'Errors: {errors}')
+    exit(errors > 0)
+
+
+if __name__ == "__main__":
+    main()

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
 #include <memory>
 #include <span>
+#include <sycl/sycl.hpp>
 #include <type_traits>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
@@ -39,8 +39,8 @@ inline device_policy par_unseq;
 
 template <rng::range R>
 inline void init(R &&devices)
-  requires(std::is_same_v<cl::sycl::device,
-                          std::remove_cvref_t<rng::range_value_t<R>>>)
+  requires(
+      std::is_same_v<sycl::device, std::remove_cvref_t<rng::range_value_t<R>>>)
 {
   internal::devices_.assign(rng::begin(devices), rng::end(devices));
   internal::global_context_ = new sycl::context(internal::devices_);

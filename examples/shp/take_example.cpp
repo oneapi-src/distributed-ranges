@@ -5,7 +5,6 @@
 #include <dr/shp/shp.hpp>
 
 int main(int argc, char **argv) {
-  namespace sycl = cl::sycl;
   auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
   shp::init(devices);
 

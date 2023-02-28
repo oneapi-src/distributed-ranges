@@ -13,8 +13,6 @@ namespace shp {
 template <lib::distributed_range C, typename T, typename I,
           lib::distributed_range B>
 void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
-  namespace sycl = cl::sycl;
-
   assert(c.size() == b.size());
   assert(a.shape()[1] == b.size());
   assert(a.grid_shape()[0] == c.segments().size());
@@ -54,7 +52,7 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
 
     auto event = q.submit([=](auto &&h) {
       h.depends_on(copy_events[i]);
-      h.parallel_for(sycl::range<1>(a_tile.size()), [=](sycl::id<1> idx) {
+      h.parallel_for(a_tile.size(), [=](auto idx) {
         auto &&[index, a_v] = *(a_iter + idx);
         auto &&[i, k] = index;
         auto &&b_v = *(b_iter + k);

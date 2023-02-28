@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <CL/sycl.hpp>
 #include <dr/shp/shp.hpp>
+#include <sycl/sycl.hpp>
 
 #include <iostream>
 
@@ -11,8 +11,6 @@
 #include <fmt/ranges.h>
 
 int main(int argc, char **argv) {
-  namespace sycl = cl::sycl;
-
   printf("Creating NUMA devices...\n");
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);

@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <CL/sycl.hpp>
 #include <dr/shp/shp.hpp>
+#include <sycl/sycl.hpp>
 #include <vector>
 
 std::vector<shp::device_ptr<int>> ptrs;
 
 template <typename T>
 auto allocate_device_span(std::size_t size, std::size_t rank,
-                          cl::sycl::context context, auto &&devices) {
+                          sycl::context context, auto &&devices) {
   auto data = shp::device_allocator<T>(context, devices[rank]).allocate(size);
   ptrs.push_back(data);
 
@@ -18,7 +18,7 @@ auto allocate_device_span(std::size_t size, std::size_t rank,
 }
 
 template <typename T>
-auto allocate_device_spans(std::size_t size, cl::sycl::context context,
+auto allocate_device_spans(std::size_t size, sycl::context context,
                            auto &&devices) {
   std::vector<shp::device_span<T, shp::device_ptr<T>>> spans;
   for (size_t rank = 0; rank < devices.size(); rank++) {
@@ -30,8 +30,8 @@ auto allocate_device_spans(std::size_t size, cl::sycl::context context,
 template <typename T>
 shp::device_span<T> allocate_shared_span(std::size_t size, std::size_t rank,
                                          auto &&devices) {
-  cl::sycl::queue q(devices[rank]);
-  T *data = cl::sycl::malloc_shared<T>(size, q);
+  sycl::queue q(devices[rank]);
+  T *data = sycl::malloc_shared<T>(size, q);
 
   return shp::device_span<T>(data, size, rank);
 }
@@ -47,8 +47,6 @@ std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
 }
 
 int main(int argc, char **argv) {
-  namespace sycl = cl::sycl;
-
   // Get devices.
   sycl::default_selector g;
   // auto devices = shp::get_devices(g);
@@ -76,9 +74,7 @@ int main(int argc, char **argv) {
     // sycl::queue q(shp::context(), devices[segment.rank()]);
     sycl::queue q(devices[0]);
     int *ptr = segment.begin().local();
-    q.parallel_for(sycl::range<1>(segment.size()), [=](auto id) {
-       ptr[id] = id;
-     }).wait();
+    q.parallel_for(segment.size(), [=](auto id) { ptr[id] = id; }).wait();
   }
 
   auto subspan = dspan.subspan(25, 70);
