@@ -4,6 +4,10 @@
 
 #include "shp-tests.hpp"
 
+using DV_Types = ::testing::Types<shp::distributed_vector<int>,
+                                  shp::distributed_vector<float>>;
+
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, CommonTests, DV_Types);
 cxxopts::ParseResult options;
 
 int main(int argc, char *argv[]) {

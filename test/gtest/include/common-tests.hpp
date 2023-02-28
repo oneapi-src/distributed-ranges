@@ -92,3 +92,11 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 
   return v;
 }
+
+template <typename T> class CommonTests : public testing::Test {
+public:
+};
+
+TYPED_TEST_SUITE_P(CommonTests);
+#include "common/dv-test.hpp"
+

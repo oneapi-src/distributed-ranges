@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mhp-sycl-tests.hpp"
+#include "mhp-tests.hpp"
 
 using T = int;
 using V = std::vector<T>;

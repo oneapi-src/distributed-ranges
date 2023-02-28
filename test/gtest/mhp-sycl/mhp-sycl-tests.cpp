@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mhp-sycl-tests.hpp"
+#include "mhp-tests.hpp"
+
+template <typename T>
+using SharedVector = mhp::distributed_vector<T, mhp::sycl_shared_allocator<T>>;
+using DV_Types = ::testing::Types<SharedVector<int>, SharedVector<float>>;
+
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP_SYCL, CommonTests, DV_Types);
 
 MPI_Comm comm;
 int comm_rank;

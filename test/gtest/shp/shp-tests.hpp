@@ -4,6 +4,8 @@
 
 #include <sycl/sycl.hpp>
 
-#include <dr/shp/shp.hpp>
+#include "dr/shp/shp.hpp"
+
+namespace xhp = shp;
 
 #include "common-tests.hpp"

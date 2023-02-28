@@ -4,6 +4,11 @@
 
 #include "mhp-tests.hpp"
 
+using DV_Types = ::testing::Types<mhp::distributed_vector<int>,
+                                  mhp::distributed_vector<float>>;
+
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, CommonTests, DV_Types);
+
 MPI_Comm comm;
 int comm_rank;
 int comm_size;
