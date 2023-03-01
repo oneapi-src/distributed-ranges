@@ -4,6 +4,9 @@
 
 #include <sycl/sycl.hpp>
 
-#include <dr/shp/shp.hpp>
+#include "dr/shp/shp.hpp"
+
+extern int comm_rank;
+extern int comm_size;
 
 #include "common-tests.hpp"

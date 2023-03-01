@@ -143,7 +143,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_subdirectory(examples/shp)
     add_subdirectory(test/gtest/shp)
-    add_subdirectory(test/gtest/mhp-sycl)
   endif()
 
   add_subdirectory(examples/serial)
