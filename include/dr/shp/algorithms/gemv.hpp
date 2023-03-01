@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <dr/details/ranges_shim.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/distributed_span.hpp>
@@ -20,7 +21,7 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
 
   auto &&devices = shp::devices();
 
-  using b_scalar_type = std::ranges::range_value_t<B>;
+  using b_scalar_type = rng::range_value_t<B>;
 
   using local_vector_type =
       shp::device_vector<b_scalar_type, shp::device_allocator<b_scalar_type>>;
@@ -48,9 +49,9 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto c_iter = lib::ranges::local(c.segments()[i].begin());
 
     auto device = devices[a_tile.rank()];
-    sycl::queue q(device);
+    sycl::queue q(shp::context(), device);
 
-    auto event = q.submit([=](auto &&h) {
+    auto event = q.submit([&](auto &&h) {
       h.depends_on(copy_events[i]);
       h.parallel_for(a_tile.size(), [=](auto idx) {
         auto &&[index, a_v] = *(a_iter + idx);
