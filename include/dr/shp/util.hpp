@@ -9,8 +9,7 @@
 
 namespace shp {
 
-template <typename Selector>
-cl::sycl::device select_device(Selector &&selector) {
+template <typename Selector> sycl::device select_device(Selector &&selector) {
   sycl::device d;
 
   try {

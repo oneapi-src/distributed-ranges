@@ -144,20 +144,20 @@ public:
           segment_size_, Allocator(shp::context(), device), rank++));
   }
 
-  distributed_vector(std::size_t count, value_type fill_value)
+  distributed_vector(std::size_t count, const T &value)
       : distributed_vector(count) {
     std::vector<sycl::event> events;
 
-    for (auto &&segment : segments_)
-      events.push_back(
-          shp::fill_async(segment.begin(), segment.end(), fill_value));
+    for (auto &&segment : segments_) {
+      events.push_back(shp::fill_async(segment.begin(), segment.end(), value));
+    }
 
     sycl::queue().submit([=](auto &&h) { h.depends_on(events); }).wait();
   }
 
-  distributed_vector(std::initializer_list<value_type> __l)
-      : distributed_vector(__l.size()) {
-    shp::copy(std::begin(__l), std::end(__l), this->begin());
+  distributed_vector(std::initializer_list<T> init)
+      : distributed_vector(init.size()) {
+    shp::copy(rng::begin(init), rng::end(init), begin());
   }
 
   reference operator[](size_type pos) {
