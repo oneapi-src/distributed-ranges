@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 TYPED_TEST_P(CommonTests, DistributedVectorRequirements) {
-  using DV = TypeParam;
+  using DV = typename TypeParam::DV;
   using DVI = typename DV::iterator;
   DV dv(10);
 
@@ -20,10 +20,11 @@ TYPED_TEST_P(CommonTests, DistributedVectorRequirements) {
 }
 
 TYPED_TEST_P(CommonTests, DistributedVectorConstructors) {
-  using DV = TypeParam;
+  using DV = typename TypeParam::DV;
+  using DVA = typename TypeParam::DVA;
 
   DV a1(10);
+  DVA a2(10);
+  TypeParam::iota(a1, 10);
+  TypeParam::iota(a2, 10);
 }
-
-REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorRequirements,
-                            DistributedVectorConstructors);

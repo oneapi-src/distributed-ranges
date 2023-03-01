@@ -10,14 +10,6 @@ using A = std::allocator<T>;
 using DVA = mhp::distributed_vector<T, A>;
 using DVI = typename DV::iterator;
 
-TEST(MhpTests, DistributedVectorAllocator) {
-  DVA a1(10);
-  mhp::iota(a1, 10);
-
-  DVA a2(10, lib::halo_bounds(), A());
-  mhp::iota(a2, 10);
-}
-
 TEST(MhpTests, DistributedVectorQuery) {
   const int n = 10;
   DV a(n);

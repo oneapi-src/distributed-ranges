@@ -4,10 +4,37 @@
 
 #include "mhp-tests.hpp"
 
-using DV_Types = ::testing::Types<mhp::distributed_vector<int>,
-                                  mhp::distributed_vector<float>>;
+// Instantiate MHP-specific configurations for common tests
+template <typename T> struct CommonTestConfigBase {
+  using DV = mhp::distributed_vector<T>;
+  using DVA = mhp::distributed_vector<T, std::allocator<T>>;
+  using V = std::vector<T>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, CommonTests, DV_Types);
+  static auto iota(auto &&r, auto val) { return mhp::iota(r, val); }
+  static auto for_each(auto &&policy, auto &&r, auto &&op) {
+    return mhp::for_each(policy, r, op);
+  }
+};
+template <typename T>
+struct CommonTestConfigCPU : public CommonTestConfigBase<T> {
+  using DV = mhp::distributed_vector<T>;
+  using DVA = mhp::distributed_vector<T, std::allocator<T>>;
+  static auto policy() { return std::execution::par_unseq; }
+};
+#ifdef SYCL_LANGUAGE_VERSION
+template <typename T>
+struct CommonTestConfigSYCL : public CommonTestConfigBase<T> {
+  using DV = mhp::distributed_vector<T, mhp::sycl_shared_allocator<T>>;
+  using DVA = DV;
+  static auto policy() { return mhp::device_policy(); }
+};
+#endif
+using Common_Types = ::testing::Types<
+#ifdef SYCL_LANGUAGE_VERSION
+    CommonTestConfigSYCL<int>, CommonTestConfigSYCL<float>,
+#endif
+    CommonTestConfigCPU<int>, CommonTestConfigCPU<float>>;
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, CommonTests, Common_Types);
 
 MPI_Comm comm;
 int comm_rank;

@@ -6,6 +6,7 @@
 
 #include "dr/shp/shp.hpp"
 
-namespace xhp = shp;
+extern int comm_rank;
+extern int comm_size;
 
 #include "common-tests.hpp"

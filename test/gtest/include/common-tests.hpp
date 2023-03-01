@@ -98,5 +98,8 @@ public:
 };
 
 TYPED_TEST_SUITE_P(CommonTests);
-#include "common/dv-test.hpp"
 
+#include "common/algorithm-tests.hpp"
+#include "common/dv-tests.hpp"
+REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorRequirements,
+                            DistributedVectorConstructors, ForEach);
