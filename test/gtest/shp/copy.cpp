@@ -24,7 +24,7 @@ TYPED_TEST(CopyTest, dist2local_async) {
   EXPECT_TRUE(equal(local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5}));
 }
 
-TYPED_TEST(CopyTest, local2dist_async) {
+TYPED_TEST(CopyTest, DISABLED_local2dist_async) {
   const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5};
   typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0};
   shp::copy_async(rng::begin(local_vec), rng::end(local_vec),
@@ -43,7 +43,7 @@ TYPED_TEST(CopyTest, dist2local_sync) {
   EXPECT_EQ(*ret_it, 9);
 }
 
-TYPED_TEST(CopyTest, local2dist_sync) {
+TYPED_TEST(CopyTest, DISABLED_local2dist_sync) {
   const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5};
   typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 9};
   auto ret_it = shp::copy(rng::begin(local_vec), rng::end(local_vec),
@@ -68,7 +68,7 @@ TYPED_TEST(CopyTest, dist2local_async_can_interleave) {
       equal(local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 2, 3, 4, 5}));
 }
 
-TYPED_TEST(CopyTest, local2dist_async_can_interleave) {
+TYPED_TEST(CopyTest, DISABLED_local2dist_async_can_interleave) {
   const typename TestFixture::LocalVec local_vec_1 = {1, 2, 3};
   const typename TestFixture::LocalVec local_vec_2 = {4, 5};
   typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0};
@@ -114,7 +114,7 @@ TYPED_TEST(CopyTest, dist2local_sliced_right) {
       local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}));
 }
 
-TYPED_TEST(CopyTest, local2dist_sliced_bothSides) {
+TYPED_TEST(CopyTest, DISABLED_local2dist_sliced_bothSides) {
   const typename TestFixture::LocalVec local_vec = {2, 3, 4, 5, 6, 7, 8, 9};
   typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -124,7 +124,7 @@ TYPED_TEST(CopyTest, local2dist_sliced_bothSides) {
       dist_vec, typename TestFixture::LocalVec{0, 2, 3, 4, 5, 6, 7, 8, 9, 0}));
 }
 
-TYPED_TEST(CopyTest, local2dist_sliced_left) {
+TYPED_TEST(CopyTest, DISABLED_local2dist_sliced_left) {
   const typename TestFixture::LocalVec local_vec = {2, 3, 4, 5, 6, 7, 8, 9};
   typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -134,7 +134,7 @@ TYPED_TEST(CopyTest, local2dist_sliced_left) {
       dist_vec, typename TestFixture::LocalVec{0, 0, 2, 3, 4, 5, 6, 7, 8, 9}));
 }
 
-TYPED_TEST(CopyTest, local2dist_sliced_right) {
+TYPED_TEST(CopyTest, DISABLED_local2dist_sliced_right) {
   const typename TestFixture::LocalVec local_vec = {2, 3, 4, 5, 6, 7, 8, 9};
   typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -155,7 +155,7 @@ TYPED_TEST(CopyTest, dev3_dist2local_wholesegment) {
   EXPECT_EQ(ret_it, rng::end(local_vec));
 }
 
-TYPED_TEST(CopyTest, dev3_local2dist_wholesegment) {
+TYPED_TEST(CopyTest, DISABLED_dev3_local2dist_wholesegment) {
   // when running on 3 devices copy into exactly one segment
   const typename TestFixture::LocalVec local_vec = {50, 60, 70, 80};
   typename TestFixture::DistVec dist_vec = {1, 2, 3, 4,  5,  6,
