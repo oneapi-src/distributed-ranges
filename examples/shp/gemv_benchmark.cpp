@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <dr/shp/algorithms/gemv.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/shp.hpp>
