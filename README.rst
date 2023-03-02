@@ -189,9 +189,10 @@ exceptions to `spelling_wordlist.txt`. Do not add variable, class,
 function, etc to the exceptions. Spellcheck ignores them if they are
 properly delimited in the source doc.
 
-.. seealso::
+See also
+--------
 
-   `Fuzz Testing`_
+* `Fuzz Testing`_
 
 .. _`Fuzz Testing`: test/fuzz/README.rst
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
