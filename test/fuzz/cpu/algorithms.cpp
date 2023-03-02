@@ -13,15 +13,17 @@ void check_transform(std::size_t n, std::size_t b, std::size_t e) {
 
   DV dvi1(n), dvr1(n);
   mhp::iota(dvi1, iota_base);
+  mhp::fill(dvr1, 0);
   mhp::transform(dvi1.begin() + b, dvi1.begin() + e, dvr1.begin(), op);
 
   DV dvi2(n), dvr2(n);
   mhp::iota(dvi2, iota_base);
+  mhp::fill(dvr2, 0);
 
   if (comm_rank == 0) {
     std::transform(dvi2.begin() + b, dvi2.begin() + e, dvr2.begin(), op);
 
-    std::vector<int> v(n), vr(n);
+    std::vector<int> v(n, 0), vr(n, 0);
     rng::iota(v, iota_base);
     std::transform(v.begin() + b, v.begin() + e, vr.begin(), op);
     assert(is_equal(vr, dvr1));
@@ -31,10 +33,15 @@ void check_transform(std::size_t n, std::size_t b, std::size_t e) {
 
 void check_copy(std::size_t n, std::size_t b, std::size_t e) {
 
-  V v_in(n), v(n), v1(n), v2(n);
+  V v_in(n, 0), v(n, 0);
   rng::iota(v_in, 100);
 
   DV dv_in(n), dv1(n), dv2(n), dv3(n);
+  // Need to implement fill constructor!
+  mhp::fill(dv_in, 0);
+  mhp::fill(dv1, 0);
+  mhp::fill(dv2, 0);
+  mhp::fill(dv3, 0);
   mhp::iota(dv_in, 100);
   mhp::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
   mhp::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
@@ -50,8 +57,5 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
     assert(is_equal(dv1, v));
     assert(is_equal(dv2, v));
     assert(is_equal(dv3, v));
-
-    assert(is_equal(v1, v));
-    assert(is_equal(v2, v));
   }
 }
