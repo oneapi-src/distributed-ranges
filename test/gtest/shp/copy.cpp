@@ -168,18 +168,13 @@ TYPED_TEST(CopyTest, dev3_local2dist_wholesegment) {
 }
 
 TYPED_TEST(CopyTest, dev3_fill) {
-  typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0};
+  typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   auto segments = dist_vec.segments();
   int value = 1;
-  // auto ret_it = shp::copy(rng::begin(local_vec), rng::end(local_vec),
-  //                         rng::begin(dist_vec) + 4);
   for (auto &&segment : segments) {
     shp::fill(segment.begin(), segment.end(), value);
   }
-
-  EXPECT_TRUE(equal(dist_vec, typename TestFixture::DistVec{
-                                  1, 1, 1, 1, 1, 1}));
-  // EXPECT_EQ(*ret_it, 9);
+  EXPECT_TRUE(equal(
+      dist_vec, typename TestFixture::DistVec{1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
+  ;
 }
-
-

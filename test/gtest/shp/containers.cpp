@@ -30,3 +30,21 @@ TEST(ShpTests, DistributedVectorSegments) {
   auto second = dv_a.begin() + 2;
   EXPECT_EQ(second[0], lib::ranges::segments(second)[0][0]);
 }
+
+TEST(ShpTests, DistributedVectorConstructorFill) {
+  const int n = 10;
+  const int value = 1;
+  DV dv_a(n, value);
+  DV dv_b = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+  EXPECT_TRUE(std::equal(dv_a.begin(), dv_a.end(), dv_b.begin()));
+}
+
+TEST(ShpTest, DistributedVectorConstructorInitializerList) {
+  const int n = 10;
+  DV dv_a = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  DV dv_b(n);
+  std::iota(dv_b.begin(), dv_b.end(), 0);
+
+  EXPECT_TRUE(std::equal(dv_a.begin(), dv_a.end(), dv_b.begin()));
+}
