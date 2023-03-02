@@ -19,7 +19,7 @@ template <typename Selector> sycl::device select_device(Selector &&selector) {
   } catch (sycl::exception const &e) {
     std::cout << "Cannot select an accelerator\n" << e.what() << "\n";
     std::cout << "Using a CPU device\n";
-    d = sycl::device(sycl::cpu_selector());
+    sycl::cpu_selector_v(d);
   }
   return d;
 }
@@ -99,10 +99,14 @@ template <typename Selector>
 std::vector<sycl::device> get_numa_devices(Selector &&selector) {
   try {
     return get_numa_devices_impl_(std::forward<Selector>(selector));
-  } catch (sycl::feature_not_supported) {
-    std::cerr << "NUMA partitioning not supported, returning root devices..."
-              << std::endl;
-    return get_devices(std::forward<Selector>(selector));
+  } catch (sycl::exception const &e) {
+    if (e.code() == sycl::errc::feature_not_supported) {
+      std::cerr << "NUMA partitioning not supported, returning root devices..."
+                << std::endl;
+      return get_devices(std::forward<Selector>(selector));
+    } else {
+      throw;
+    }
   }
 }
 
