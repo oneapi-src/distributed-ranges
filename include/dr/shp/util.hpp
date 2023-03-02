@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <dr/shp/allocators.hpp>
 #include <iostream>
 #include <sycl/sycl.hpp>
 
@@ -253,5 +254,20 @@ std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
   }
   return spans;
 }
+
+namespace __detail {
+
+inline void wait(sycl::event &event) { event.wait(); }
+
+inline void wait(sycl::event &&event) { event.wait(); }
+
+inline void wait(const std::vector<sycl::event> &events) {
+  sycl::queue q;
+  auto e = q.submit([&](auto &&h) { h.depends_on(events); });
+
+  e.wait();
+}
+
+} // namespace __detail
 
 } // namespace shp

@@ -98,9 +98,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       segment_id++;
     }
 
-    for (auto &&e : events) {
-      e.wait();
-    }
+    __detail::wait(events);
     events.clear();
 
     sycl::queue q(shp::context(), root);
@@ -136,9 +134,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       idx++;
     }
 
-    for (auto &&e : events) {
-      e.wait();
-    }
+    __detail::wait(events);
 
   } else {
     assert(false);

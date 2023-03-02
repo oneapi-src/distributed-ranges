@@ -6,6 +6,8 @@
 
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/distributed_span.hpp>
+#include <dr/shp/init.hpp>
+#include <dr/shp/util.hpp>
 #include <dr/shp/zip_view.hpp>
 #include <sycl/sycl.hpp>
 
@@ -21,26 +23,24 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
                                device_policy>) {
     auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
 
-    std::vector<sycl::queue> queues;
     std::vector<sycl::event> events;
 
     for (auto &&segment : lib::ranges::segments(r)) {
       auto device = devices[lib::ranges::rank(segment)];
 
-      sycl::queue q(device);
+      sycl::queue q(shp::context(), device);
 
-      auto begin = lib::ranges::local(rng::begin(segment));
+      auto local_segment = lib::ranges::local(segment);
+
+      auto begin = rng::begin(local_segment);
 
       assert(rng::size(segment) > 0);
       auto event = q.parallel_for(rng::size(segment),
                                   [=](auto idx) { fn(*(begin + idx)); });
       events.emplace_back(event);
-      queues.emplace_back(q);
     }
 
-    for (auto &&event : events) {
-      event.wait();
-    }
+    __detail::wait(events);
   } else {
     assert(false);
   }
@@ -56,25 +56,21 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
                                device_policy>) {
     auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
 
-    std::vector<sycl::queue> queues;
     std::vector<sycl::event> events;
 
     for (auto &&segment : lib::ranges::segments(r)) {
       auto device = devices[lib::ranges::rank(segment)];
 
-      sycl::queue q(device);
+      sycl::queue q(shp::context(), device);
 
       auto begin = rng::begin(segment);
 
       auto event = q.parallel_for(rng::size(segment),
                                   [=](auto idx) { fn(*(begin + idx)); });
       events.emplace_back(event);
-      queues.emplace_back(q);
     }
 
-    for (auto &&event : events) {
-      event.wait();
-    }
+    __detail::wait(events);
   } else {
     assert(false);
   }
