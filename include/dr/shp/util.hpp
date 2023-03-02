@@ -19,7 +19,7 @@ template <typename Selector> sycl::device select_device(Selector &&selector) {
   } catch (sycl::exception const &e) {
     std::cout << "Cannot select an accelerator\n" << e.what() << "\n";
     std::cout << "Using a CPU device\n";
-    sycl::cpu_selector_v(d);
+    d = sycl::device(sycl::cpu_selector_v);
   }
   return d;
 }
