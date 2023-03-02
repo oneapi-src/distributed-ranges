@@ -48,9 +48,7 @@ std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
 
 int main(int argc, char **argv) {
   // Get devices.
-  sycl::default_selector g;
-  // auto devices = shp::get_devices(g);
-  auto devices = shp::get_numa_devices(g);
+  auto devices = shp::get_numa_devices(sycl::default_selector_v);
 
   shp::init(devices);
 

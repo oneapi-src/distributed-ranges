@@ -132,10 +132,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   # This must be appear after -Wall
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-    # -O3 and nan checking
-    add_compile_options(-Wno-error=tautological-constant-compare)
-    # DPL uses deprecated API
-    add_compile_options(-Wno-deprecated-declarations)
+    # Most code get warnings with -ffast-math
+    add_compile_options(-Wno-tautological-constant-compare)
     # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel stl
     add_compile_options(-Wno-error=pass-failed)
   endif()
