@@ -17,6 +17,8 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv) {
   MPI_Comm_rank(comm, &comm_rank);
   MPI_Comm_size(comm, &comm_size);
 
+  mhp::init();
+
   cxxopts::Options options_spec((*argv)[0], "Fuzz CPU tests");
 
   // clang-format off
@@ -47,10 +49,14 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv) {
 }
 
 struct fuzz_spec {
-  int algorithm;
-  std::size_t n;
-  std::size_t b;
-  std::size_t e;
+  uint8_t algorithm;
+  uint8_t n, b, e;
+};
+
+enum class Algorithms {
+  Copy,
+  Transform,
+  Last,
 };
 
 extern "C" int LLVMFuzzerTestOneInput(const fuzz_spec *my_spec, size_t size) {
@@ -70,11 +76,13 @@ extern "C" int LLVMFuzzerTestOneInput(const fuzz_spec *my_spec, size_t size) {
 
   // fmt::print("n: {} b: {} e: {}\n", n, b, e);
 
-  switch (spec.algorithm) {
-  case 0:
+  // Algorithm number is 8 bits. Mod it so we don't generate many test
+  // cases that do nothing.
+  switch (Algorithms(spec.algorithm % std::size_t(Algorithms::Last))) {
+  case Algorithms::Copy:
     check_copy(n, b, e);
     break;
-  case 1:
+  case Algorithms::Transform:
     check_transform(n, b, e);
     break;
   default:
