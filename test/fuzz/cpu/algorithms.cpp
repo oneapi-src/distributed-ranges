@@ -11,14 +11,12 @@ void check_transform(std::size_t n, std::size_t b, std::size_t e) {
   auto op = [](auto n) { return n * n; };
   int iota_base = 100;
 
-  DV dvi1(n), dvr1(n);
+  DV dvi1(n), dvr1(n, 0);
   mhp::iota(dvi1, iota_base);
-  mhp::fill(dvr1, 0);
   mhp::transform(dvi1.begin() + b, dvi1.begin() + e, dvr1.begin(), op);
 
-  DV dvi2(n), dvr2(n);
+  DV dvi2(n), dvr2(n, 0);
   mhp::iota(dvi2, iota_base);
-  mhp::fill(dvr2, 0);
 
   if (comm_rank == 0) {
     std::transform(dvi2.begin() + b, dvi2.begin() + e, dvr2.begin(), op);
@@ -36,12 +34,7 @@ void check_copy(std::size_t n, std::size_t b, std::size_t e) {
   V v_in(n, 0), v(n, 0);
   rng::iota(v_in, 100);
 
-  DV dv_in(n), dv1(n), dv2(n), dv3(n);
-  // Need to implement fill constructor!
-  mhp::fill(dv_in, 0);
-  mhp::fill(dv1, 0);
-  mhp::fill(dv2, 0);
-  mhp::fill(dv3, 0);
+  DV dv_in(n, 0), dv1(n, 0), dv2(n, 0), dv3(n, 0);
   mhp::iota(dv_in, 100);
   mhp::copy(dv_in.begin() + b, dv_in.begin() + e, dv1.begin() + b);
   mhp::copy(rng::subrange(dv_in.begin() + b, dv_in.begin() + e),
