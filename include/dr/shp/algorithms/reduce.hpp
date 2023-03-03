@@ -17,7 +17,7 @@
 
 namespace {
 
-// Precondition: std::distance(begin, end) >= 2
+// Precondition: rng::distance(begin, end) >= 2
 // Postcondition: return future to [begin, end) reduced with fn
 template <typename T, typename ExecutionPolicy,
           std::bidirectional_iterator Iter, typename Fn>
@@ -61,7 +61,7 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
 
-      auto dist = std::distance(rng::begin(segment), rng::end(segment));
+      auto dist = rng::distance(segment);
       if (dist <= 0) {
         continue;
       } else if (dist == 1) {
