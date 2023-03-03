@@ -326,8 +326,6 @@ struct halo_bounds {
     periodic = per;
   }
 
-  operator std::size_t() = delete;
-
   std::size_t prev, next;
   bool periodic;
 };
