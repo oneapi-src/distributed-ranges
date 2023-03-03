@@ -24,3 +24,6 @@
 #include "range.hpp"
 #include "range_adaptors.hpp"
 #include "util.hpp"
+#include "containers/dense_matrix.hpp"
+#include "containers/sparse_matrix.hpp"
+#include "util/matrix_io.hpp"

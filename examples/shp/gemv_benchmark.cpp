@@ -104,8 +104,8 @@ int main(int argc, char **argv) {
 
   // hierarchical_test();
 
-  std::size_t m = 10000;
-  std::size_t k = 10000;
+  std::size_t m = 1000;
+  std::size_t k = 1000;
 
   shp::distributed_vector<int, shp::device_allocator<int>> b(k);
 
@@ -164,6 +164,19 @@ int main(int argc, char **argv) {
   fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
                                   return x * 1000;
                                 }));
+
+  fmt::print("Printing tile...\n");
+  auto &&tile = a.tile({0, 0});
+  auto &&submatrix = tile.submatrix({0, 100}, {0, 100});
+  // auto&& submatrix = tile;
+
+  auto size = rng::distance(submatrix);
+  fmt::print("{} nonzeros.\n", size);
+
+  fmt::print("Reading matrix...\n");
+  shp::mmread<float, std::size_t>("/nfs/site/home/bbrock/data/com-Orkut.mtx");
+
+  // fmt::print("{} nonzeros.\n", mat.size());
 
   shp::finalize();
   return 0;
