@@ -149,7 +149,6 @@ int main(int argc, char **argv) {
 
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
-    // iterate_flat(a);
     shp::gemv(c, a, b);
     auto end = std::chrono::high_resolution_clock::now();
     double duration = std::chrono::duration<double>(end - begin).count();
