@@ -195,6 +195,23 @@ public:
 
   iterator end() { return begin() + shape()[0] * shape()[1]; }
 
+  key_type tile_shape() const noexcept { return tile_shape_; }
+
+  key_type grid_shape() const noexcept { return grid_shape_; }
+
+  auto tile(key_type tile_index) {
+    auto &&[i, j] = tile_index;
+    auto iter = tiles_[i * grid_shape()[1] + j].begin();
+
+    size_t tm = std::min(tile_shape()[0], shape()[0] - i * tile_shape()[0]);
+    size_t tn = std::min(tile_shape()[1], shape()[1] - j * tile_shape()[1]);
+
+    return dense_matrix_view<
+        T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>(
+        iter, key_type{tm, tn}, tile_shape()[1],
+        tiles_[i * grid_shape()[1] + j].rank());
+  }
+
   std::vector<dense_matrix_view<
       T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>>
   tiles() {

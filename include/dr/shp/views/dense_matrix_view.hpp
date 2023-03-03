@@ -111,6 +111,7 @@ public:
   using difference_type = std::ptrdiff_t;
 
   using scalar_reference = std::iter_reference_t<Iter>;
+  using reference = shp::matrix_ref<T, std::size_t, scalar_reference>;
 
   using key_type = shp::index<>;
   using map_type = T;
@@ -142,12 +143,30 @@ public:
     return iterator(data_, key_type{shape_[0], 0}, idx_offset_, shape_, ld_);
   }
 
-  auto row(size_type idx) const {
-    return dense_matrix_row_view(data_ + idx * ld_, idx, shape()[1]);
+  auto row(size_type row_index) const {
+    // return dense_matrix_row_view(data_ + row_index * ld_, row_index,
+    // shape()[1]);
+    auto row_elements = rng::views::iota(size_type(0), size_type(shape()[1]));
+    Iter data = data_ + row_index * ld_;
+
+    return row_elements | rng::views::transform([=](auto column_index) {
+             return reference(key_type(row_index, column_index),
+                              data[column_index]);
+           });
   }
 
-  auto column(size_type idx) const {
-    return dense_matrix_column_view(data_ + idx, idx, shape()[0], ld_);
+  auto column(size_type column_index) const {
+    // return dense_matrix_column_view(data_ + column_index, column_index,
+    // shape()[0], ld_);
+    auto column_elements =
+        rng::views::iota(size_type(0), size_type(shape()[0]));
+    Iter data = data_ + column_index;
+    size_type ld = ld_;
+
+    return column_elements | rng::views::transform([=](auto row_index) {
+             return reference(key_type(row_index, column_index),
+                              data[row_index * ld]);
+           });
   }
 
   iterator data() const { return data_; }
