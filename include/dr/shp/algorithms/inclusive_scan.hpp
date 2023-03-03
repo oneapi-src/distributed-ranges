@@ -83,7 +83,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
 
       auto src_iter = lib::ranges::local(out_segment).data();
-      std::advance(src_iter, dist - 1);
+      rng::advance(src_iter, dist - 1);
 
       auto e = q.submit([&](auto &&h) {
         h.depends_on(event);
@@ -175,7 +175,7 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
 
   auto dist = rng::distance(first, last);
   auto d_last = d_first;
-  std::advance(d_last, dist);
+  rng::advance(d_last, dist);
   inclusive_scan(std::forward<ExecutionPolicy>(policy),
                  rng::subrange(first, last), rng::subrange(d_first, d_last),
                  std::forward<BinaryOp>(binary_op), init);
@@ -190,7 +190,7 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
 
   auto dist = rng::distance(first, last);
   auto d_last = d_first;
-  std::advance(d_last, dist);
+  rng::advance(d_last, dist);
   inclusive_scan(std::forward<ExecutionPolicy>(policy),
                  rng::subrange(first, last), rng::subrange(d_first, d_last),
                  std::forward<BinaryOp>(binary_op));
@@ -204,7 +204,7 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                           OutputIter d_first) {
   auto dist = rng::distance(first, last);
   auto d_last = d_first;
-  std::advance(d_last, dist);
+  rng::advance(d_last, dist);
   inclusive_scan(std::forward<ExecutionPolicy>(policy),
                  rng::subrange(first, last), rng::subrange(d_first, d_last));
 

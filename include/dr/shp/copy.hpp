@@ -86,13 +86,13 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     std::size_t n_to_copy = std::min<size_t>(size, rng::distance(first, last));
 
     auto local_last = first;
-    std::advance(local_last, n_to_copy);
+    rng::advance(local_last, n_to_copy);
 
     events.emplace_back(
         shp::copy_async(first, local_last, rng::begin(segment)));
 
     ++segment_iter;
-    std::advance(first, n_to_copy);
+    rng::advance(first, n_to_copy);
   }
 
   auto root_event =
@@ -125,7 +125,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     events.emplace_back(
         shp::copy_async(rng::begin(segment), rng::end(segment), d_first));
 
-    std::advance(d_first, size);
+    rng::advance(d_first, size);
   }
 
   auto root_event =
