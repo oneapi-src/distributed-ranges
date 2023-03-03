@@ -105,7 +105,7 @@ public:
     T operator()(T &a, T &b) const { return std::min(a, b); }
   } min;
 
-  struct multipllies_op {
+  struct multiplies_op {
     T operator()(T &a, T &b) const { return a * b; }
   } multiplies;
 
@@ -325,6 +325,8 @@ struct halo_bounds {
     next = nxt;
     periodic = per;
   }
+
+  operator std::size_t() = delete;
 
   std::size_t prev, next;
   bool periodic;
