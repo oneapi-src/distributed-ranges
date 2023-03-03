@@ -101,5 +101,7 @@ TYPED_TEST_SUITE_P(CommonTests);
 
 #include "common/algorithm-tests.hpp"
 #include "common/dv-tests.hpp"
-REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorRequirements,
-                            DistributedVectorConstructors, ForEach);
+#include "common/view-tests.hpp"
+REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorConstructors,
+                            DistributedVectorRequirements, Drop, ForEach,
+                            Subrange, DISABLED_Take);
