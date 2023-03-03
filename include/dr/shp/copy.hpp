@@ -96,7 +96,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   }
 
   auto root_event =
-      sycl::queue().submit([=](auto &&h) { h.depends_on(events); });
+      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
   return root_event;
 }
 
@@ -129,7 +129,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   }
 
   auto root_event =
-      sycl::queue().submit([=](auto &&h) { h.depends_on(events); });
+      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
   return root_event;
 }
 

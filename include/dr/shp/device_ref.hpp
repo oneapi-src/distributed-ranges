@@ -16,7 +16,6 @@ public:
   device_ref() = delete;
   ~device_ref() = default;
   device_ref(const device_ref &) = default;
-  device_ref &operator=(const device_ref &) = default;
 
   device_ref(T *pointer) : pointer_(pointer) {}
 
@@ -41,6 +40,16 @@ public:
     // sycl::queue q(shp::context(), sycl::gpu_selector());
     sycl::queue q;
     q.memcpy(pointer_, &value, sizeof(T)).wait();
+#endif
+    return *this;
+  }
+
+  device_ref &operator=(const device_ref &other) {
+#ifdef __SYCL_DEVICE_ONLY__
+    *pointer_ = *other.pointer_;
+#else
+    T value = other;
+    *this = value;
 #endif
     return *this;
   }
