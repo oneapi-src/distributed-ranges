@@ -16,9 +16,6 @@ template <typename T> struct CommonTestConfig {
   static auto iota(auto &&r, auto val) {
     return std::iota(r.begin(), r.end(), val);
   }
-  static auto for_each(auto &&policy, auto &&r, auto &&op) {
-    return shp::for_each(policy, r, op);
-  }
 };
 using Common_Types =
     ::testing::Types<CommonTestConfig<int>, CommonTestConfig<float>>;

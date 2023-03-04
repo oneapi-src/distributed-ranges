@@ -104,4 +104,4 @@ TYPED_TEST_SUITE_P(CommonTests);
 #include "common/view-tests.hpp"
 REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorConstructors,
                             DistributedVectorRequirements, Drop, ForEach,
-                            Subrange, DISABLED_Take);
+                            Subrange, DISABLED_Take, TransformView, ZipView);

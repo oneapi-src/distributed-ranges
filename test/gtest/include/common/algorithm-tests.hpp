@@ -11,7 +11,7 @@ TYPED_TEST_P(CommonTests, ForEach) {
   auto neg = [](auto &v) { v = -v; };
   DV dv_a(n);
   TypeParam::iota(dv_a, 100);
-  TypeParam::for_each(TypeParam::policy(), dv_a, neg);
+  xhp::for_each(TypeParam::policy(), dv_a, neg);
 
   if (comm_rank == 0) {
     V a(n), a_in(n);

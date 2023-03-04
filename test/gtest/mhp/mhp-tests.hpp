@@ -10,6 +10,12 @@ extern MPI_Comm comm;
 extern int comm_rank;
 extern int comm_size;
 
+namespace zhp = rng::views;
+namespace xhp = mhp;
+
+inline void barrier() { mhp::barrier(); }
+inline void fence() { mhp::fence(); }
+
 #include "common-tests.hpp"
 
 // MHP specific tests
