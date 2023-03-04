@@ -53,7 +53,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
 
-      auto dist = std::distance(rng::begin(in_segment), rng::end(in_segment));
+      auto dist = rng::distance(in_segment);
       assert(dist > 0);
 
       auto first = rng::begin(in_segment);
@@ -83,7 +83,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
 
       auto src_iter = lib::ranges::local(out_segment).data();
-      std::advance(src_iter, dist - 1);
+      rng::advance(src_iter, dist - 1);
 
       auto e = q.submit([&](auto &&h) {
         h.depends_on(event);
@@ -173,9 +173,9 @@ template <typename ExecutionPolicy, lib::distributed_iterator Iter,
 OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                           OutputIter d_first, BinaryOp &&binary_op, T init) {
 
-  auto dist = std::distance(first, last);
+  auto dist = rng::distance(first, last);
   auto d_last = d_first;
-  std::advance(d_last, dist);
+  rng::advance(d_last, dist);
   inclusive_scan(std::forward<ExecutionPolicy>(policy),
                  rng::subrange(first, last), rng::subrange(d_first, d_last),
                  std::forward<BinaryOp>(binary_op), init);
@@ -188,9 +188,9 @@ template <typename ExecutionPolicy, lib::distributed_iterator Iter,
 OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                           OutputIter d_first, BinaryOp &&binary_op) {
 
-  auto dist = std::distance(first, last);
+  auto dist = rng::distance(first, last);
   auto d_last = d_first;
-  std::advance(d_last, dist);
+  rng::advance(d_last, dist);
   inclusive_scan(std::forward<ExecutionPolicy>(policy),
                  rng::subrange(first, last), rng::subrange(d_first, d_last),
                  std::forward<BinaryOp>(binary_op));
@@ -202,9 +202,9 @@ template <typename ExecutionPolicy, lib::distributed_iterator Iter,
           lib::distributed_iterator OutputIter>
 OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                           OutputIter d_first) {
-  auto dist = std::distance(first, last);
+  auto dist = rng::distance(first, last);
   auto d_last = d_first;
-  std::advance(d_last, dist);
+  rng::advance(d_last, dist);
   inclusive_scan(std::forward<ExecutionPolicy>(policy),
                  rng::subrange(first, last), rng::subrange(d_first, d_last));
 

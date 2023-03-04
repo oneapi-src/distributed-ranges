@@ -44,7 +44,7 @@ auto take_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
     if (i == last_seg) {
       auto first = rng::begin(segment);
       auto last = rng::begin(segment);
-      std::advance(last, remainder);
+      rng::advance(last, remainder);
       return lib::remote_subrange(first, last, lib::ranges::rank(segment));
     } else {
       return lib::remote_subrange(segment);
@@ -73,7 +73,7 @@ auto drop_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
     auto &&[i, segment] = v;
     if (i == last_seg) {
       auto first = rng::begin(segment);
-      std::advance(first, remainder);
+      rng::advance(first, remainder);
       auto last = rng::end(segment);
       return lib::remote_subrange(first, last, lib::ranges::rank(segment));
     } else {
