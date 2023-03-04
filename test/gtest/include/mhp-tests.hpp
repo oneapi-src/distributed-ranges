@@ -10,6 +10,8 @@ extern MPI_Comm comm;
 extern int comm_rank;
 extern int comm_size;
 
+namespace zhp = rng::views;
+
 #include "common-tests.hpp"
 
 // MHP specific tests
