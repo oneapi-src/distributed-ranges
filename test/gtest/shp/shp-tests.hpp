@@ -12,4 +12,7 @@ extern int comm_size;
 namespace zhp = shp::views;
 namespace xhp = shp;
 
+inline void barrier() {}
+inline void fence() {}
+
 #include "common-tests.hpp"
