@@ -10,5 +10,6 @@ extern int comm_rank;
 extern int comm_size;
 
 namespace zhp = shp::views;
+namespace xhp = shp;
 
 #include "common-tests.hpp"

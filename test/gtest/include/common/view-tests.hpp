@@ -13,7 +13,7 @@ TYPED_TEST_P(CommonTests, Subrange) {
   TypeParam::iota(dv_a, 100);
   auto sr = rng::subrange(dv_a.begin() + 1, dv_a.end() - 1);
   EXPECT_TRUE(check_segments(sr));
-  TypeParam::for_each(TypeParam::policy(), sr, neg);
+  xhp::for_each(TypeParam::policy(), sr, neg);
 
   if (comm_rank == 0) {
     V a(n), a_in(n);
@@ -35,7 +35,7 @@ TYPED_TEST_P(CommonTests, Drop) {
   TypeParam::iota(dv_a, 100);
   auto d = rng::views::drop(dv_a, 2);
   EXPECT_TRUE(check_segments(d));
-  TypeParam::for_each(TypeParam::policy(), d, neg);
+  xhp::for_each(TypeParam::policy(), d, neg);
 
   if (comm_rank == 0) {
     V a(n), a_in(n);
@@ -57,7 +57,7 @@ TYPED_TEST_P(CommonTests, DISABLED_Take) {
   TypeParam::iota(dv_a, 100);
   auto t = rng::views::take(dv_a, 6);
   EXPECT_TRUE(check_segments(t));
-  TypeParam::for_each(TypeParam::policy(), t, neg);
+  xhp::for_each(TypeParam::policy(), t, neg);
 
   if (comm_rank == 0) {
     V a(n), a_in(n);

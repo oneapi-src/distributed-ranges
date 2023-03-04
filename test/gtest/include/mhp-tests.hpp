@@ -11,6 +11,7 @@ extern int comm_rank;
 extern int comm_size;
 
 namespace zhp = rng::views;
+namespace xhp = mhp;
 
 #include "common-tests.hpp"
 
