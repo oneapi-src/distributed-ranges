@@ -5,7 +5,6 @@
 #include <dr/shp/shp.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <ranges>
 
 template <lib::distributed_range X, lib::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {
