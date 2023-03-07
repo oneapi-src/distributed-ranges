@@ -55,9 +55,8 @@ public:
 
   template <typename T>
   void gather(const T &src, std::vector<T> &dst, std::size_t root) const {
-    dst.resize(size());
-    MPI_Gather(&src, sizeof(src), MPI_BYTE, dst.data(), sizeof(src), MPI_BYTE,
-               root, mpi_comm_);
+    assert(dst.size() >= size());
+    gather(&src, dst.data(), sizeof(T), root);
   }
 
   void all_gather(const void *src, void *dst, int sz) const {

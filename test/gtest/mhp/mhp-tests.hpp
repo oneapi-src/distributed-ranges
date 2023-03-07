@@ -20,6 +20,8 @@ inline void fence() { mhp::fence(); }
 
 #include "common-tests.hpp"
 
+#include "mhp/reduce.hpp"
+
 // MHP specific tests
 template <typename T> class MhpTests : public testing::Test {
 public:
