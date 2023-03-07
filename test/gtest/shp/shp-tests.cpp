@@ -30,8 +30,8 @@ INSTANTIATE_TYPED_TEST_SUITE_P(SHP, TransformView, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Zip, Common_Types);
 
 // To share tests with MHP
-int comm_rank = 0;
-int comm_size = 1;
+std::size_t comm_rank = 0;
+std::size_t comm_size = 1;
 
 cxxopts::ParseResult options;
 

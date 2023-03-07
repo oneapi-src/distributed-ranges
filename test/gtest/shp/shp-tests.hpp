@@ -9,8 +9,8 @@
 #include <fmt/ranges.h>
 #include <gtest/gtest.h>
 
-extern int comm_rank;
-extern int comm_size;
+extern std::size_t comm_rank;
+extern std::size_t comm_size;
 
 // Namespace aliases and wrapper functions to make the tests uniform
 namespace zhp = shp::views;

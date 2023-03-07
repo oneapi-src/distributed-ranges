@@ -10,10 +10,13 @@ namespace mhp {
 //
 //
 
+//
+// Ranges
+//
+
 /// Collective reduction on a distributed range
 template <typename T, lib::distributed_range DR>
-auto reduce(auto &&policy, DR &&dr, T init = typename DR::value_type{},
-            auto &&binary_op = std::plus<>(),
+auto reduce(auto &&policy, DR &&dr, T init, auto &&binary_op,
             std::optional<std::size_t> root = std::optional<std::size_t>()) {
   T result = 0;
   auto comm = default_comm();
@@ -58,13 +61,33 @@ auto reduce(auto &&policy, DR &&dr, T init = typename DR::value_type{},
 }
 
 /// Collective reduction on a distributed range
-template <typename ExecutionPolicy, lib::distributed_iterator DI>
+template <typename ExecutionPolicy, lib::distributed_range DR>
+auto reduce(ExecutionPolicy &&policy, DR &dr, auto init) {
+  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<DR>(dr),
+                init, std::plus<>{});
+}
+
+/// Collective reduction on a distributed range
+template <typename ExecutionPolicy, lib::distributed_range DR>
+auto reduce(ExecutionPolicy &&policy, DR &dr) {
+  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<DR>(dr),
+                typename DR::value_type{}, std::plus<>{});
+}
+
+//
+// Iterators
+//
+
+/// Collective reduction on a distributed range
+template <typename ExecutionPolicy, lib::distributed_iterator DI,
+          typename BinaryOp>
 auto reduce(ExecutionPolicy &&policy, DI begin, DI end,
             auto init = typename DI::value_type{},
-            auto &&binary_op = std::plus<>(),
+            BinaryOp &&binary_op = std::plus<>(),
             std::optional<std::size_t> root = std::optional<std::size_t>()) {
   return reduce(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(begin, end), init, binary_op, root);
+                rng::subrange(begin, end), init,
+                std::forward<BinaryOp>(binary_op), root);
 }
 
 /// Collective reduction on a distributed range

@@ -182,8 +182,8 @@ public:
   using reference = std::iter_reference_t<iterator>;
 
   // Do not copy
-  distributed_vector(const distributed_vector &) = delete;
-  distributed_vector &operator=(const distributed_vector &) = delete;
+  // distributed_vector(const distributed_vector &) = delete;
+  // distributed_vector &operator=(const distributed_vector &) = delete;
 
   distributed_vector(std::size_t size = 0,
                      lib::halo_bounds hb = lib::halo_bounds()) {

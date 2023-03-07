@@ -36,7 +36,7 @@ TYPED_TEST_P(Reduce, Iterators) {
   EXPECT_EQ(result, d_result);
 }
 
-TYPED_TEST_P(Reduce, DefaultOp) {
+TYPED_TEST_P(Reduce, IteratorsDefaultOp) {
   std::size_t n = 10;
 
   typename TypeParam::DV dv_a(n);
@@ -50,7 +50,7 @@ TYPED_TEST_P(Reduce, DefaultOp) {
   EXPECT_EQ(result, d_result);
 }
 
-TYPED_TEST_P(Reduce, DefaultInit) {
+TYPED_TEST_P(Reduce, IteratorsDefaultInit) {
   std::size_t n = 10;
 
   typename TypeParam::DV dv_a(n);
@@ -64,4 +64,32 @@ TYPED_TEST_P(Reduce, DefaultInit) {
   EXPECT_EQ(result, d_result);
 }
 
-REGISTER_TYPED_TEST_SUITE_P(Reduce, Range, Iterators, DefaultOp, DefaultInit);
+TYPED_TEST_P(Reduce, RangeDefaultOp) {
+  std::size_t n = 10;
+
+  typename TypeParam::DV dv_a(n);
+  TypeParam::iota(dv_a, 100);
+  auto d_result = xhp::reduce(TypeParam::policy(), dv_a, 0);
+
+  typename TypeParam::V a(n);
+  rng::iota(a, 100);
+  auto result = std::reduce(a.begin(), a.end(), 0);
+  EXPECT_EQ(result, d_result);
+}
+
+TYPED_TEST_P(Reduce, RangeDefaultInit) {
+  std::size_t n = 10;
+
+  typename TypeParam::DV dv_a(n);
+  TypeParam::iota(dv_a, 100);
+  auto d_result = xhp::reduce(TypeParam::policy(), dv_a);
+
+  typename TypeParam::V a(n);
+  rng::iota(a, 100);
+  auto result = std::reduce(a.begin(), a.end());
+  EXPECT_EQ(result, d_result);
+}
+
+REGISTER_TYPED_TEST_SUITE_P(Reduce, Range, RangeDefaultOp, RangeDefaultInit,
+                            Iterators, IteratorsDefaultOp,
+                            IteratorsDefaultInit);

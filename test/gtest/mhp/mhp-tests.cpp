@@ -38,27 +38,30 @@ using MHP_Types = ::testing::Types<
 #endif
     CommonTestConfigCPU<int>, CommonTestConfigCPU<float>>;
 
-// INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
-// INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Drop, Common_Types);
-// INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Drop, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Reduce, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ReduceMHP, MHP_Types);
-// INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, Common_Types);
-// INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Take, Common_Types);
-// INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, Common_Types);
-// INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Take, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, Common_Types);
 
 MPI_Comm comm;
-int comm_rank;
-int comm_size;
+std::size_t comm_rank;
+std::size_t comm_size;
 
 cxxopts::ParseResult options;
 
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &comm_rank);
-  MPI_Comm_size(comm, &comm_size);
+  int rank, size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+  comm_rank = rank;
+  comm_size = size;
   mhp::init();
 
   ::testing::InitGoogleTest(&argc, argv);

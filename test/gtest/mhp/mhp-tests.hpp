@@ -9,8 +9,8 @@
 #include <gtest/gtest.h>
 
 extern MPI_Comm comm;
-extern int comm_rank;
-extern int comm_size;
+extern std::size_t comm_rank;
+extern std::size_t comm_size;
 
 namespace zhp = rng::views;
 namespace xhp = mhp;
