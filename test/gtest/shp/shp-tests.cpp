@@ -19,7 +19,14 @@ template <typename T> struct CommonTestConfig {
 };
 using Common_Types =
     ::testing::Types<CommonTestConfig<int>, CommonTestConfig<float>>;
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, CommonTests, Common_Types);
+
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Drop, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, ForEach, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Subrange, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Take, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, TransformView, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Zip, Common_Types);
 
 // To share tests with MHP
 int comm_rank = 0;

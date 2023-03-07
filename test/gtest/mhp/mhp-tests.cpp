@@ -31,7 +31,14 @@ using Common_Types = ::testing::Types<
     CommonTestConfigSYCL<int>, CommonTestConfigSYCL<float>,
 #endif
     CommonTestConfigCPU<int>, CommonTestConfigCPU<float>>;
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, CommonTests, Common_Types);
+
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Drop, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Take, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, Common_Types);
 
 MPI_Comm comm;
 int comm_rank;
