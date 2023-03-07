@@ -8,7 +8,7 @@ namespace mhp {
 // segment to local
 auto local_segments(auto &&dr) {
   auto is_local = [](const auto &segment) {
-    return lib::ranges::rank(segment) == std::size_t(default_comm().rank());
+    return lib::ranges::rank(segment) == default_comm().rank();
   };
   // Convert from remote iter to local iter
   auto local_iter = [](auto &&segment) {
