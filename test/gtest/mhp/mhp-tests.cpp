@@ -35,6 +35,7 @@ using Common_Types = ::testing::Types<
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Drop, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Reduce, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Take, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, Common_Types);

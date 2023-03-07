@@ -60,6 +60,17 @@ public:
                root, mpi_comm_);
   }
 
+  void all_gather(const void *src, void *dst, int sz) const {
+    // Gather size elements from each rank
+    MPI_Allgather(src, sz, MPI_BYTE, dst, sz, MPI_BYTE, mpi_comm_);
+  }
+
+  template <typename T>
+  void all_gather(const T &src, std::vector<T> &dst) const {
+    assert(dst.size() >= size());
+    all_gather(&src, dst.data(), sizeof(T));
+  }
+
   void gatherv(const void *src, int *counts, int *offsets, void *dst,
                std::size_t root) const {
     MPI_Gatherv(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,

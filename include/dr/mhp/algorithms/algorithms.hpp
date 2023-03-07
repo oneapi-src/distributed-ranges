@@ -160,6 +160,42 @@ T reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op) {
   return result;
 }
 
+/// Collective reduction on a distributed range
+template <typename ExecutionPolicy, lib::distributed_range DR, typename T>
+T reduce(ExecutionPolicy &&policy, DR &&r, T init, auto &&binary_op) {
+  T result = 0;
+  auto comm = default_comm();
+
+  if (aligned(r.begin())) {
+    lib::drlog.debug("Parallel reduce\n");
+
+    auto reduce = [binary_op](auto &&r) {
+      return std::reduce(std::execution::par_unseq, r.begin(), r.end(), T(0),
+                         binary_op);
+    };
+    auto locals = rng::views::transform(local_segments(r), reduce);
+    auto local = std::reduce(std::execution::par_unseq, locals.begin(),
+                             locals.end(), T(0), binary_op);
+
+    // Collect rank values in a vector
+    std::vector<T> all(comm.size());
+    comm.all_gather(local, all);
+    result = std::reduce(std::execution::par_unseq, all.begin(), all.end(),
+                         init, binary_op);
+    lib::drlog.debug("  locals: {}\n"
+                     "  local: {}\n"
+                     "  all: {}\n"
+                     "  result: {}\n",
+                     locals, local, all, result);
+  } else {
+    lib::drlog.debug("Serial reduce\n");
+    result = std::reduce(std::execution::par_unseq, r.begin(), r.end(), init,
+                         binary_op);
+    barrier();
+  }
+  return result;
+}
+
 //
 //
 // transform

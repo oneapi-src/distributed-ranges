@@ -90,6 +90,7 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
 #include "common/for_each.hpp"
+#include "common/reduce.hpp"
 #include "common/subrange.hpp"
 #include "common/take.hpp"
 #include "common/transform_view.hpp"

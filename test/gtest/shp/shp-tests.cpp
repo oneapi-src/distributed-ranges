@@ -23,6 +23,7 @@ using Common_Types =
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Drop, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(SHP, ForEach, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Reduce, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Subrange, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Take, Common_Types);
 INSTANTIATE_TYPED_TEST_SUITE_P(SHP, TransformView, Common_Types);
