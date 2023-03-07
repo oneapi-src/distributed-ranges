@@ -2,7 +2,14 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-TYPED_TEST_P(CommonTests, DistributedVectorRequirements) {
+// Fixture
+template <typename T> class DistributedVector : public testing::Test {
+public:
+};
+
+TYPED_TEST_SUITE_P(DistributedVector);
+
+TYPED_TEST_P(DistributedVector, Requirements) {
   using DV = typename TypeParam::DV;
   using DVI = typename DV::iterator;
   DV dv(10);
@@ -15,11 +22,12 @@ TYPED_TEST_P(CommonTests, DistributedVectorRequirements) {
   static_assert(rng::random_access_range<DV>);
 
   static_assert(lib::distributed_iterator<decltype(dv.begin())>);
+  // Doesn't work for SHP. Is it a bug?
   // static_assert(lib::remote_iterator<decltype(dv.segments()[0].begin())>);
   static_assert(lib::distributed_contiguous_range<DV>);
 }
 
-TYPED_TEST_P(CommonTests, DistributedVectorConstructors) {
+TYPED_TEST_P(DistributedVector, Constructors) {
   using DV = typename TypeParam::DV;
   using DVA = typename TypeParam::DVA;
   using V = typename TypeParam::V;
@@ -35,3 +43,5 @@ TYPED_TEST_P(CommonTests, DistributedVectorConstructors) {
     EXPECT_TRUE(equal(a3, v3));
   }
 }
+
+REGISTER_TYPED_TEST_SUITE_P(DistributedVector, Requirements, Constructors);

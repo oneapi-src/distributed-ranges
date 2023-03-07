@@ -2,7 +2,14 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-TYPED_TEST_P(CommonTests, ZipView) {
+// Fixture
+template <typename T> class Zip : public testing::Test {
+public:
+};
+
+TYPED_TEST_SUITE_P(Zip);
+
+TYPED_TEST_P(Zip, Basic) {
   using DV = typename TypeParam::DV;
   using V = typename TypeParam::V;
 
@@ -35,3 +42,5 @@ TYPED_TEST_P(CommonTests, ZipView) {
     EXPECT_TRUE(equal(z3, d_z3));
   }
 }
+
+REGISTER_TYPED_TEST_SUITE_P(Zip, Basic);
