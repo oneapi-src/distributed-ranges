@@ -220,7 +220,7 @@ private:
       allocator_.deallocate(data_, capacity());
     }
     size_ = capacity_ = count;
-    data_ = allocator_.allocate(count);
+    data_ = size_ ? allocator_.allocate(count) : nullptr;
   }
 
   // NOTE: algorithm copied from "Bit Twiddling Hacks"
