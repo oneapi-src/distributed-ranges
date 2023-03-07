@@ -7,6 +7,7 @@
 #include <sycl/sycl.hpp>
 
 #include <oneapi/dpl/execution>
+#include <optional>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/allocators.hpp>
