@@ -4,6 +4,7 @@ TYPED_TEST_SUITE(CopyTest, AllocatorTypes);
 
 TYPED_TEST(CopyTest, tests_from_this_file_run_on_3_devices) {
   EXPECT_EQ(shp::nprocs(), 3);
+  EXPECT_EQ(rng::size(shp::devices()), 3);
 }
 
 TYPED_TEST(CopyTest, dist2local_wholesegment) {

@@ -44,5 +44,6 @@ function(add_shp_test test_name name)
   endif()
 endfunction()
 
-add_shp_test(shp-3 shp-tests-3 --devicesCount 3)
 add_shp_test(shp shp-tests)
+add_shp_test(shp-3 shp-tests --devicesCount 3)
+add_shp_test(shp-3-only shp-tests-3 --devicesCount 3)

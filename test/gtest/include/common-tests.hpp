@@ -3,13 +3,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#include <gtest/gtest.h>
-
-#include "cxxopts.hpp"
-
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
   for (auto e : rng::zip_view(r1, r2)) {
     if (e.first != e.second) {

@@ -2,38 +2,34 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "shp-tests.hpp"
+#include "containers.hpp"
 
-using V = std::vector<int>;
-using CV = const std::vector<int>;
-using CVR = const std::vector<int> &;
+TYPED_TEST_SUITE(DistributedVectorTest, AllocatorTypes);
 
-using DV = shp::distributed_vector<int>;
-using CDV = const shp::distributed_vector<int>;
-using CDVR = const shp::distributed_vector<int> &;
-
-TEST(DistributedVector, is_random_access_range) {
-  static_assert(rng::random_access_range<V>);
-  static_assert(rng::random_access_range<CV>);
-  static_assert(rng::random_access_range<CVR>);
-
-  static_assert(rng::random_access_range<DV>);
-  static_assert(rng::random_access_range<CDV>);
-  static_assert(rng::random_access_range<CDVR>);
+TYPED_TEST(DistributedVectorTest, is_random_access_range) {
+  static_assert(rng::random_access_range<typename TestFixture::LocalVec>);
+  static_assert(rng::random_access_range<const typename TestFixture::LocalVec>);
+  static_assert(
+      rng::random_access_range<const typename TestFixture::LocalVec &>);
+  static_assert(rng::random_access_range<typename TestFixture::DistVec>);
+  static_assert(rng::random_access_range<const typename TestFixture::DistVec>);
+  static_assert(
+      rng::random_access_range<const typename TestFixture::DistVec &>);
 }
 
-TEST(DistributedVector, Segments) {
-  DV dv_a(10);
-  std::iota(dv_a.begin(), dv_a.end(), 20);
+TYPED_TEST(DistributedVectorTest,
+           segments_begins_where_its_creating_iterator_points_to) {
+  typename TestFixture::DistVec dv(10);
+  std::iota(dv.begin(), dv.end(), 20);
 
-  auto second = dv_a.begin() + 2;
+  auto second = dv.begin() + 2;
   EXPECT_EQ(second[0], lib::ranges::segments(second)[0][0]);
 }
 
-TEST(DistributedVector, Iterator) {
+TYPED_TEST(DistributedVectorTest, Iterator) {
   const int n = 10;
-  DV dv_a(n);
-  V v_a(n);
+  typename TestFixture::DistVec dv_a(n);
+  typename TestFixture::LocalVec v_a(n);
 
   std::iota(dv_a.begin(), dv_a.end(), 20);
   std::iota(v_a.begin(), v_a.end(), 20);
