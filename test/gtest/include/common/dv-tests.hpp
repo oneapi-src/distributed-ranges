@@ -15,7 +15,7 @@ TYPED_TEST_P(CommonTests, DistributedVectorRequirements) {
   static_assert(rng::random_access_range<DV>);
 
   static_assert(lib::distributed_iterator<decltype(dv.begin())>);
-  // static_assert(lib::remote_iterator<decltype(dv.segments()[0].begin())>);
+  static_assert(lib::remote_iterator<decltype(dv.segments()[0].begin())>);
   static_assert(lib::distributed_contiguous_range<DV>);
 }
 
