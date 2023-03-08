@@ -14,15 +14,15 @@
 #include <tuple>
 #include <vector>
 
-#include <dr/shp/views/csr_matrix_view.hpp>
 #include <dr/shp/util/coo_matrix.hpp>
+#include <dr/shp/views/csr_matrix_view.hpp>
 
 namespace shp {
 
 namespace __detail {
 
 template <typename T, typename I>
-auto convert_to_csr(const shp::__detail::coo_matrix<T, I>& tuples) {
+auto convert_to_csr(const shp::__detail::coo_matrix<T, I> &tuples) {
   size_t nnz = tuples.size();
 
   auto shape = tuples.shape();
@@ -195,7 +195,8 @@ inline coo_matrix<T, I> mmread(std::string file_path, bool one_indexed = true) {
 
 template <typename T, typename I = std::size_t>
 auto mmread(std::string file_path, bool one_indexed = true) {
-  auto local_mat = __detail::convert_to_csr(__detail::mmread<T, I>(file_path, one_indexed));
+  auto local_mat =
+      __detail::convert_to_csr(__detail::mmread<T, I>(file_path, one_indexed));
 
   shp::sparse_matrix<T, I> a(
       local_mat.shape(),
@@ -212,7 +213,7 @@ auto mmread(std::string file_path, bool one_indexed = true) {
       auto local_submat = local_mat.submatrix(row_bounds, column_bounds);
 
       fmt::print("Tile {}, {}\n", i, j);
-      for (auto&& [index, v] : local_submat) {
+      for (auto &&[index, v] : local_submat) {
         fmt::print("({}, {}): {}\n", index[0], index[1], v);
       }
     }
