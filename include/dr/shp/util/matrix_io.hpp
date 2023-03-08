@@ -14,17 +14,61 @@
 #include <tuple>
 #include <vector>
 
+#include <dr/shp/views/csr_matrix_view.hpp>
 #include <dr/shp/util/coo_matrix.hpp>
 
 namespace shp {
 
 namespace __detail {
 
+template <typename T, typename I>
+auto convert_to_csr(const shp::__detail::coo_matrix<T, I>& tuples) {
+  size_t nnz = tuples.size();
+
+  auto shape = tuples.shape();
+
+  T *values = new T[nnz];
+  I *rowptr = new I[shape[0] + 1];
+  I *colind = new I[nnz];
+
+  rowptr[0] = 0;
+
+  std::size_t r = 0;
+  std::size_t c = 0;
+  for (auto iter = tuples.begin(); iter != tuples.end(); ++iter) {
+    auto &&[index, value] = *iter;
+    auto &&[i, j] = index;
+
+    values[c] = value;
+    colind[c] = j;
+
+    while (r < i) {
+      if (r + 1 > shape[0]) {
+        // TODO: exception?
+        // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
+      }
+      rowptr[r + 1] = c;
+      r++;
+    }
+    c++;
+
+    if (c > nnz) {
+      // TODO: exception?
+      // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
+    }
+  }
+
+  for (; r < shape[0]; r++) {
+    rowptr[r + 1] = nnz;
+  }
+
+  return csr_matrix_view(values, rowptr, colind, shape, nnz, 0);
+}
+
 /// Read in the Matrix Market file at location `file_path` and a return
 /// a coo_matrix data structure with its contents.
 template <typename T, typename I = std::size_t>
 inline coo_matrix<T, I> mmread(std::string file_path, bool one_indexed = true) {
-  using index_type = I;
   using size_type = std::size_t;
 
   std::ifstream f;
@@ -151,7 +195,7 @@ inline coo_matrix<T, I> mmread(std::string file_path, bool one_indexed = true) {
 
 template <typename T, typename I = std::size_t>
 auto mmread(std::string file_path, bool one_indexed = true) {
-  auto local_mat = __detail::mmread<T, I>(file_path, one_indexed);
+  auto local_mat = __detail::convert_to_csr(__detail::mmread<T, I>(file_path, one_indexed));
 
   shp::sparse_matrix<T, I> a(
       local_mat.shape(),
@@ -168,7 +212,9 @@ auto mmread(std::string file_path, bool one_indexed = true) {
       auto local_submat = local_mat.submatrix(row_bounds, column_bounds);
 
       fmt::print("Tile {}, {}\n", i, j);
-      shp::print_matrix(local_submat);
+      for (auto&& [index, v] : local_submat) {
+        fmt::print("({}, {}): {}\n", index[0], index[1], v);
+      }
     }
   }
 }
