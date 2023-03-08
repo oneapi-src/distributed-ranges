@@ -15,8 +15,8 @@ namespace mhp {
 //
 
 /// Collective reduction on a distributed range
-template <typename T, lib::distributed_range DR>
-auto reduce(auto &&policy, DR &&dr, T init, auto &&binary_op,
+template <typename ExecutionPolicy, typename T, lib::distributed_range DR>
+auto reduce(ExecutionPolicy &&policy, DR &&dr, T init, auto &&binary_op,
             std::optional<std::size_t> root = std::optional<std::size_t>()) {
   T result = 0;
   auto comm = default_comm();
@@ -24,9 +24,17 @@ auto reduce(auto &&policy, DR &&dr, T init, auto &&binary_op,
   if (aligned(rng::begin(dr))) {
     lib::drlog.debug("Parallel reduce\n");
 
-    auto reduce = [binary_op](auto &&r) {
-      return std::reduce(std::execution::par_unseq, r.begin(), r.end(), T(0),
-                         binary_op);
+    auto reduce = [=](auto &&r) {
+      if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
+                                   device_policy>) {
+        lib::drlog.debug("  with DPL\n");
+        return std::reduce(policy.dpl_policy, &*r.begin(), &*r.end(), T(0),
+                           binary_op);
+      } else {
+        lib::drlog.debug("  with CPU\n");
+        return std::reduce(std::execution::par_unseq, r.begin(), r.end(), T(0),
+                           binary_op);
+      }
     };
     auto locals = rng::views::transform(local_segments(dr), reduce);
     auto local = std::reduce(std::execution::par_unseq, locals.begin(),
