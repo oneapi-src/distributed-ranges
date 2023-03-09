@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
 #include "shp-tests.hpp"
 
 template <typename AllocT> class FillTest : public testing::Test {
