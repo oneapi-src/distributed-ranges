@@ -27,20 +27,20 @@ TYPED_TEST(DistributedVectorTest,
 }
 
 TYPED_TEST(DistributedVectorTest, fill_constructor) {
-  EXPECT_TRUE(equal(
-      typename TestFixture::DistVec(10, 1),
-      typename TestFixture::LocalVec(10, 1)));
+  EXPECT_TRUE(equal(typename TestFixture::DistVec(10, 1),
+                    typename TestFixture::LocalVec(10, 1)));
 }
 
 // TODO: add more tests: fill_constructor_one_item, fill_constructor_no_items
 
 TYPED_TEST(DistributedVectorTest, initializer_list) {
-  EXPECT_TRUE(equal(
-      typename TestFixture::DistVec{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-      typename TestFixture::LocalVec{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_TRUE(
+      equal(typename TestFixture::DistVec{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+            typename TestFixture::LocalVec{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
 }
 
-// TODO: add more tests: initializer_list_constructor_one_item, initializer_list_constructor_no_items
+// TODO: add more tests: initializer_list_constructor_one_item,
+// initializer_list_constructor_no_items
 
 TYPED_TEST(DistributedVectorTest, Iterator) {
   const int n = 10;
