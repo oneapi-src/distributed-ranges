@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <ranges>
 #include <vector>
 
 #include "utils.hpp"

@@ -47,7 +47,7 @@ public:
   template <std::forward_iterator Iter>
   constexpr vector(Iter first, Iter last, const Allocator &alloc = Allocator())
       : allocator_(alloc) {
-    change_capacity_impl_(std::distance(first, last));
+    change_capacity_impl_(rng::distance(first, last));
     using namespace std;
     copy(first, last, begin());
   }
@@ -102,7 +102,7 @@ public:
   }
 
   template <std::forward_iterator Iter> void assign(Iter first, Iter last) {
-    auto new_size = std::distance(first, last);
+    auto new_size = rng::distance(first, last);
     reserve(new_size);
     using namespace std;
     copy(first, last, begin());
@@ -220,7 +220,7 @@ private:
       allocator_.deallocate(data_, capacity());
     }
     size_ = capacity_ = count;
-    data_ = allocator_.allocate(count);
+    data_ = size_ ? allocator_.allocate(count) : nullptr;
   }
 
   // NOTE: algorithm copied from "Bit Twiddling Hacks"

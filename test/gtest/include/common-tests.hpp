@@ -1,13 +1,7 @@
 // SPDX-FileCopyrightText: Intel Corporation
 //
 // SPDX-License-Identifier: BSD-3-Clause
-
-#include <gtest/gtest.h>
-
-#include "cxxopts.hpp"
-
-#include <fmt/core.h>
-#include <fmt/ranges.h>
+#pragma once
 
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
   for (auto e : rng::zip_view(r1, r2)) {
@@ -93,15 +87,14 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
   return v;
 }
 
-template <typename T> class CommonTests : public testing::Test {
-public:
-};
+template <lib::distributed_range DR>
+using LocalVec = std::vector<typename DR::value_type>;
 
-TYPED_TEST_SUITE_P(CommonTests);
-
-#include "common/algorithm-tests.hpp"
-#include "common/dv-tests.hpp"
-#include "common/view-tests.hpp"
-REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorConstructors,
-                            DistributedVectorRequirements, Drop, ForEach,
-                            Subrange, DISABLED_Take);
+#include "common/distributed_vector.hpp"
+#include "common/drop.hpp"
+#include "common/for_each.hpp"
+#include "common/reduce.hpp"
+#include "common/subrange.hpp"
+#include "common/take.hpp"
+#include "common/transform_view.hpp"
+#include "common/zip.hpp"
