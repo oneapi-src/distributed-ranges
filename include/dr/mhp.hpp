@@ -17,6 +17,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <set>
 #include <span>
 #include <string>
@@ -57,4 +58,5 @@ namespace rng = ranges;
 #include "mhp/alignment.hpp"
 #include "mhp/views.hpp"
 #include "mhp/algorithms/algorithms.hpp"
+#include "mhp/algorithms/reduce.hpp"
 #include "mhp/containers/distributed_vector.hpp"

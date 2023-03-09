@@ -4,26 +4,21 @@
 
 #include "shp-tests.hpp"
 
-// Instantiate SHP-specific configurations for common tests
-template <typename T> struct CommonTestConfig {
-  using DV = shp::distributed_vector<T>;
-  using DVA = shp::distributed_vector<T, shp::device_allocator<int>>;
-  using V = std::vector<T>;
-  static auto policy() { return shp::par_unseq; }
+using Types = ::testing::Types<shp::distributed_vector<int>,
+                               shp::distributed_vector<float>>;
 
-  // Need shp::iota
-  // Why doesn't rng::iota work?
-  static auto iota(auto &&r, auto val) {
-    return std::iota(r.begin(), r.end(), val);
-  }
-};
-using Common_Types =
-    ::testing::Types<CommonTestConfig<int>, CommonTestConfig<float>>;
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, CommonTests, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Drop, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, ForEach, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Reduce, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Subrange, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Take, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, TransformView, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Zip, Types);
 
 // To share tests with MHP
-int comm_rank = 0;
-int comm_size = 1;
+std::size_t comm_rank = 0;
+std::size_t comm_size = 1;
 
 cxxopts::ParseResult options;
 
