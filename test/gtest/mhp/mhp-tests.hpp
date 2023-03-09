@@ -18,12 +18,22 @@ namespace xhp = mhp;
 inline void barrier() { mhp::barrier(); }
 inline void fence() { mhp::fence(); }
 
+template <typename Alloc> inline auto default_policy(Alloc alloc) {
+  return std::execution::par_unseq;
+}
+
+template <typename T>
+inline auto default_policy(
+    const mhp::distributed_vector<T, mhp::sycl_shared_allocator<T>> &dv) {
+  return mhp::device_policy();
+}
+
+template <typename T>
+inline auto
+default_policy(const mhp::distributed_vector<T, std::allocator<T>> &dv) {
+  return std::execution::par_unseq;
+}
+
 #include "common-tests.hpp"
 
 #include "mhp/reduce.hpp"
-
-// MHP specific tests
-template <typename T> class MhpTests : public testing::Test {
-public:
-};
-TYPED_TEST_SUITE_P(MhpTests);

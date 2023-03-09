@@ -180,10 +180,13 @@ public:
   using iterator =
       lib::normal_distributed_iterator<dv_segments<distributed_vector>>;
   using reference = std::iter_reference_t<iterator>;
+  using allocator_type = Allocator;
 
   // Do not copy
-  // distributed_vector(const distributed_vector &) = delete;
-  // distributed_vector &operator=(const distributed_vector &) = delete;
+  // We need a move constructor for the implementation of reduce algorithm
+  distributed_vector(const distributed_vector &) = delete;
+  distributed_vector &operator=(const distributed_vector &) = delete;
+  distributed_vector(distributed_vector &&) { assert(false); }
 
   distributed_vector(std::size_t size = 0,
                      lib::halo_bounds hb = lib::halo_bounds()) {

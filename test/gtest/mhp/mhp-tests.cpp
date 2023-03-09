@@ -4,49 +4,22 @@
 
 #include "mhp-tests.hpp"
 
-// Instantiate MHP-specific configurations for common tests
-template <typename T> struct CommonTestConfigBase {
-  using V = std::vector<T>;
-
-  static auto iota(auto &&r, auto val) { return mhp::iota(r, val); }
-};
-template <typename T>
-struct CommonTestConfigCPU : public CommonTestConfigBase<T> {
-  using DV = mhp::distributed_vector<T>;
-  using DVA = mhp::distributed_vector<T, std::allocator<T>>;
-  static auto policy() { return std::execution::par_unseq; }
-};
-
+using Types = ::testing::Types<
 #ifdef SYCL_LANGUAGE_VERSION
-template <typename T>
-struct CommonTestConfigSYCL : public CommonTestConfigBase<T> {
-  using DV = mhp::distributed_vector<T, mhp::sycl_shared_allocator<T>>;
-  using DVA = DV;
-  static auto policy() { return mhp::device_policy(); }
-};
+    mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>,
+    mhp::distributed_vector<float, mhp::sycl_shared_allocator<float>>,
 #endif
+    mhp::distributed_vector<int>, mhp::distributed_vector<float>>;
 
-using Common_Types = ::testing::Types<
-#ifdef SYCL_LANGUAGE_VERSION
-    CommonTestConfigSYCL<int>, CommonTestConfigSYCL<float>,
-#endif
-    CommonTestConfigCPU<int>, CommonTestConfigCPU<float>>;
-
-using MHP_Types = ::testing::Types<
-#ifdef SYCL_LANGUAGE_VERSION
-    CommonTestConfigSYCL<int>, CommonTestConfigSYCL<float>,
-#endif
-    CommonTestConfigCPU<int>, CommonTestConfigCPU<float>>;
-
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Drop, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Reduce, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ReduceMHP, MHP_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Take, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Drop, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Reduce, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ReduceMHP, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Take, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, Types);
 
 MPI_Comm comm;
 std::size_t comm_rank;

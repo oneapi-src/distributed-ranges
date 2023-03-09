@@ -131,6 +131,7 @@ public:
   using iterator = distributed_vector_iterator<T, segment_type>;
   using const_iterator =
       distributed_vector_iterator<const T, const_segment_type>;
+  using allocator_type = Allocator;
 
   distributed_vector(std::size_t count = 0) {
     assert(shp::devices().size() > 0);

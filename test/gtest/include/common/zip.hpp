@@ -10,15 +10,12 @@ public:
 TYPED_TEST_SUITE_P(Zip);
 
 TYPED_TEST_P(Zip, Basic) {
-  using DV = typename TypeParam::DV;
-  using V = typename TypeParam::V;
-
   std::size_t n = 10;
 
-  DV dv_a(n), dv_b(n), dv_c(n);
-  TypeParam::iota(dv_a, 100);
-  TypeParam::iota(dv_b, 200);
-  TypeParam::iota(dv_c, 300);
+  TypeParam dv_a(n), dv_b(n), dv_c(n);
+  iota(dv_a, 100);
+  iota(dv_b, 200);
+  iota(dv_c, 300);
 
   // DISABLE 2 zip
   // auto d_z2 = zhp::zip(dv_a, dv_b);
@@ -29,7 +26,7 @@ TYPED_TEST_P(Zip, Basic) {
   barrier();
 
   if (comm_rank == 0) {
-    V a(n), b(n), c(n);
+    LocalVec<TypeParam> a(n), b(n), c(n);
     rng::iota(a, 100);
     rng::iota(b, 200);
     rng::iota(c, 300);

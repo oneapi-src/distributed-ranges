@@ -10,21 +10,18 @@ public:
 TYPED_TEST_SUITE_P(Take);
 
 TYPED_TEST_P(Take, DISABLED_Basic) {
-  using DV = typename TypeParam::DV;
-  using V = typename TypeParam::V;
-
   std::size_t n = 10;
 
   auto neg = [](auto &v) { v = -v; };
-  DV dv_a(n);
-  TypeParam::iota(dv_a, 100);
+  TypeParam dv_a(n);
+  iota(dv_a, 100);
   auto t = rng::views::take(dv_a, 6);
   EXPECT_TRUE(check_segments(t));
   barrier();
-  xhp::for_each(TypeParam::policy(), t, neg);
+  xhp::for_each(default_policy(dv_a), t, neg);
 
   if (comm_rank == 0) {
-    V a(n), a_in(n);
+    LocalVec<TypeParam> a(n), a_in(n);
     rng::iota(a, 100);
     rng::iota(a_in, 100);
     rng::for_each(rng::views::take(a, 6), neg);
