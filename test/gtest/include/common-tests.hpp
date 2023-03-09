@@ -90,10 +90,6 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 template <lib::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
-template <lib::distributed_range DR> inline auto default_policy(const DR &dr) {
-  return default_policy(typename DR::allocator_type());
-};
-
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
 #include "common/for_each.hpp"
