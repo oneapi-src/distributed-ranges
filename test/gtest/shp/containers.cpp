@@ -2,49 +2,49 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "shp-tests.hpp"
+#include "containers.hpp"
 
-using V = std::vector<int>;
-using CV = const std::vector<int>;
-using CVR = const std::vector<int> &;
+TYPED_TEST_SUITE(DistributedVectorTest, AllocatorTypes);
 
-using DV = shp::distributed_vector<int>;
-using CDV = const shp::distributed_vector<int>;
-using CDVR = const shp::distributed_vector<int> &;
-
-TEST(ShpTests, DistributedVector) {
-  static_assert(rng::random_access_range<V>);
-  static_assert(rng::random_access_range<CV>);
-  static_assert(rng::random_access_range<CVR>);
-
-  static_assert(rng::random_access_range<DV>);
-  static_assert(rng::random_access_range<CDV>);
-  static_assert(rng::random_access_range<CDVR>);
+TYPED_TEST(DistributedVectorTest, is_random_access_range) {
+  static_assert(rng::random_access_range<typename TestFixture::LocalVec>);
+  static_assert(rng::random_access_range<const typename TestFixture::LocalVec>);
+  static_assert(
+      rng::random_access_range<const typename TestFixture::LocalVec &>);
+  static_assert(rng::random_access_range<typename TestFixture::DistVec>);
+  static_assert(rng::random_access_range<const typename TestFixture::DistVec>);
+  static_assert(
+      rng::random_access_range<const typename TestFixture::DistVec &>);
 }
 
-TEST(ShpTests, DistributedVectorSegments) {
-  const int n = 10;
-  DV dv_a(n);
-  std::iota(dv_a.begin(), dv_a.end(), 20);
+TYPED_TEST(DistributedVectorTest,
+           segments_begins_where_its_creating_iterator_points_to) {
+  typename TestFixture::DistVec dv(10);
+  std::iota(dv.begin(), dv.end(), 20);
 
-  auto second = dv_a.begin() + 2;
+  auto second = dv.begin() + 2;
   EXPECT_EQ(second[0], lib::ranges::segments(second)[0][0]);
 }
 
-TEST(ShpTests, DistributedVectorConstructorFill) {
-  const int n = 10;
-  const int value = 1;
-  DV dv_a(n, value);
-  DV dv_b = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-  EXPECT_TRUE(std::equal(dv_a.begin(), dv_a.end(), dv_b.begin()));
+TYPED_TEST(DistributedVectorTest, fill_constructor) {
+  typename TestFixture::DistVec dv(10, 1);
+  typename TestFixture::LocalVec lv(10, 1);
+  EXPECT_TRUE(equal(dv, lv));
 }
 
-TEST(ShpTest, DistributedVectorConstructorInitializerList) {
-  const int n = 10;
-  DV dv_a = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  DV dv_b(n);
-  std::iota(dv_b.begin(), dv_b.end(), 0);
+TYPED_TEST(DistributedVectorTest, DistributedVectorConstructorInitializerList) {
+  typename TestFixture::DistVec dv{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  typename TestFixture::LocalVec lv{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  EXPECT_TRUE(equal(dv, lv));
+}
 
-  EXPECT_TRUE(std::equal(dv_a.begin(), dv_a.end(), dv_b.begin()));
+TYPED_TEST(DistributedVectorTest, Iterator) {
+  const int n = 10;
+  typename TestFixture::DistVec dv_a(n);
+  typename TestFixture::LocalVec v_a(n);
+
+  std::iota(dv_a.begin(), dv_a.end(), 20);
+  std::iota(v_a.begin(), v_a.end(), 20);
+
+  EXPECT_TRUE(std::equal(v_a.begin(), v_a.end(), dv_a.begin()));
 }

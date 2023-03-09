@@ -185,16 +185,43 @@ public:
   distributed_vector(const distributed_vector &) = delete;
   distributed_vector &operator=(const distributed_vector &) = delete;
 
-  distributed_vector(std::size_t size, lib::halo_bounds hb = lib::halo_bounds(),
-                     Allocator allocator = Allocator())
-      : segment_size_(std::max(
-            {(size + default_comm().size() - 1) / default_comm().size(),
-             hb.prev, hb.next})),
-        data_size_(segment_size_ + hb.prev + hb.next),
-        data_(allocator.allocate(data_size_)),
-        halo_(default_comm(), data_, data_size_, hb) {
+  distributed_vector(std::size_t size = 0,
+                     lib::halo_bounds hb = lib::halo_bounds()) {
+    init(size, hb, Allocator());
+  }
+
+  distributed_vector(std::size_t size, value_type fill_value,
+                     lib::halo_bounds hb = lib::halo_bounds()) {
+    init(size, hb, Allocator());
+    mhp::fill(*this, fill_value);
+  }
+
+  ~distributed_vector() {
+    fence();
+    active_wins().erase(win_.mpi_win());
+    win_.free();
+    allocator_.deallocate(data_, data_size_);
+    data_ = nullptr;
+    delete halo_;
+  }
+
+  auto begin() const { return iterator(segments(), 0, 0); }
+  auto end() const { return iterator(segments(), segments().size(), 0); }
+
+  auto size() const { return size_; }
+  auto operator[](difference_type n) const { return *(begin() + n); }
+  auto &halo() { return *halo_; }
+
+private:
+  void init(auto size, auto hb, auto allocator) {
     allocator_ = allocator;
     size_ = size;
+    segment_size_ =
+        std::max({(size + default_comm().size() - 1) / default_comm().size(),
+                  hb.prev, hb.next});
+    data_size_ = segment_size_ + hb.prev + hb.next;
+    data_ = allocator.allocate(data_size_);
+    halo_ = new lib::span_halo<T>(default_comm(), data_, data_size_, hb);
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
@@ -207,29 +234,13 @@ public:
     fence();
   }
 
-  ~distributed_vector() {
-    fence();
-    active_wins().erase(win_.mpi_win());
-    win_.free();
-    allocator_.deallocate(data_, data_size_);
-    data_ = nullptr;
-  }
-
-  auto begin() const { return iterator(segments(), 0, 0); }
-  auto end() const { return iterator(segments(), segments().size(), 0); }
-
-  auto size() const { return size_; }
-  auto operator[](difference_type n) const { return *(begin() + n); }
-  auto &halo() { return halo_; }
-
-private:
   friend dv_segment_iterator<distributed_vector>;
   friend dv_segments<distributed_vector>;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
   T *data_ = nullptr;
-  lib::span_halo<T> halo_;
+  lib::span_halo<T> *halo_;
 
   lib::halo_bounds halo_bounds_;
   std::size_t size_;

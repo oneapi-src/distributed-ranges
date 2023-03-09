@@ -4,8 +4,8 @@
 
 FetchContent_Declare(
   dpl
-  GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
-  GIT_TAG oneDPL-2022.0.0-release
+  GIT_REPOSITORY https://github.com/rscohn2/oneDPL.git
+  GIT_TAG patch-1
   )
 FetchContent_MakeAvailable(dpl)
 
@@ -41,7 +41,7 @@ target_include_directories(dr_shp INTERFACE . vendor)
 target_compile_definitions(dr_shp INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
 target_link_libraries(dr_shp INTERFACE range-v3 oneDPL fmt::fmt)
 
-target_compile_options(dr_shp INTERFACE -fsycl -Wno-deprecated-declarations)
+target_compile_options(dr_shp INTERFACE -fsycl)
 
 # For use, see: https://github.com/illuhad/hipSYCL/blob/develop/doc/using-hipsycl.md#using-the-cmake-integration
 # example: cmake .. -DhipSYCL_DIR=</hipsycl/install/lib/cmake/hipSYCL> -DHIPSYCL_TARGETS="<targets>"

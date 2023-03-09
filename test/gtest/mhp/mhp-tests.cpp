@@ -11,9 +11,6 @@ template <typename T> struct CommonTestConfigBase {
   using V = std::vector<T>;
 
   static auto iota(auto &&r, auto val) { return mhp::iota(r, val); }
-  static auto for_each(auto &&policy, auto &&r, auto &&op) {
-    return mhp::for_each(policy, r, op);
-  }
 };
 template <typename T>
 struct CommonTestConfigCPU : public CommonTestConfigBase<T> {

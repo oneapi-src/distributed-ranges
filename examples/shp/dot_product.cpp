@@ -5,16 +5,25 @@
 #include <dr/shp/shp.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <ranges>
 
 template <lib::distributed_range X, lib::distributed_range Y>
-auto dot_product(X &&x, Y &&y) {
+auto dot_product_distributed(X &&x, Y &&y) {
   auto z = shp::views::zip(x, y) | lib::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
 
   return shp::reduce(shp::par_unseq, z, 0, std::plus());
+}
+
+template <rng::forward_range X, rng::forward_range Y>
+auto dot_product_sequential(X &&x, Y &&y) {
+  auto z = rng::views::zip(x, y) | rng::views::transform([](auto &&elem) {
+             auto &&[a, b] = elem;
+             return a * b;
+           });
+
+  return std::reduce(z.begin(), z.end(), 0, std::plus());
 }
 
 int main(int argc, char **argv) {
@@ -29,9 +38,18 @@ int main(int argc, char **argv) {
   std::iota(x.begin(), x.end(), 0);
   std::iota(y.begin(), y.end(), 0);
 
-  auto v = dot_product(x, y);
+  auto v = dot_product_distributed(x, y);
 
   fmt::print("{}\n", v);
+
+  std::vector<int> x_local(n);
+  std::vector<int> y_local(n);
+  std::iota(x_local.begin(), x_local.end(), 0);
+  std::iota(y_local.begin(), y_local.end(), 0);
+
+  auto v_serial = dot_product_sequential(x_local, y_local);
+
+  assert(v == v_serial);
 
   return 0;
 }

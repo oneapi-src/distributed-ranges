@@ -122,7 +122,7 @@ void iota(lib::distributed_contiguous_range auto &&r, auto value) {
 
 /// Collective reduction on a distributed range
 template <lib::distributed_iterator DI, typename T>
-T reduce(int root, DI first, DI last, T init, auto &&binary_op) {
+T reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op) {
   T result = 0;
   auto comm = default_comm();
 

@@ -22,9 +22,16 @@ TYPED_TEST_P(CommonTests, DistributedVectorRequirements) {
 TYPED_TEST_P(CommonTests, DistributedVectorConstructors) {
   using DV = typename TypeParam::DV;
   using DVA = typename TypeParam::DVA;
+  using V = typename TypeParam::V;
 
   DV a1(10);
   DVA a2(10);
   TypeParam::iota(a1, 10);
   TypeParam::iota(a2, 10);
+
+  DV a3(10, 2);
+  if (comm_rank == 0) {
+    V v3(10, 2);
+    EXPECT_TRUE(equal(a3, v3));
+  }
 }

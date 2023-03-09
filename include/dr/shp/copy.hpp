@@ -19,6 +19,7 @@ concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
                              std::is_trivially_copyable_v<Dest>;
 } // namespace __detail
 
+// TODO: move copy file into algorithms directory
 // TODO: (general for copy functions) in case the destination area is too small
 // segfault may occur - add some error handling
 
@@ -81,22 +82,22 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 
   while (first != last) {
     auto &&segment = *segment_iter;
-    auto size = std::distance(rng::begin(segment), rng::end(segment));
+    auto size = rng::distance(segment);
 
-    std::size_t n_to_copy = std::min<size_t>(size, std::distance(first, last));
+    std::size_t n_to_copy = std::min<size_t>(size, rng::distance(first, last));
 
     auto local_last = first;
-    std::advance(local_last, n_to_copy);
+    rng::advance(local_last, n_to_copy);
 
     events.emplace_back(
         shp::copy_async(first, local_last, rng::begin(segment)));
 
     ++segment_iter;
-    std::advance(first, n_to_copy);
+    rng::advance(first, n_to_copy);
   }
 
   auto root_event =
-      sycl::queue().submit([=](auto &&h) { h.depends_on(events); });
+      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
   return root_event;
 }
 
@@ -113,23 +114,23 @@ template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
-  auto dist = std::distance(first, last);
+  auto dist = rng::distance(first, last);
   auto segments =
       lib::internal::take_segments(lib::ranges::segments(first), dist);
 
   std::vector<sycl::event> events;
 
   for (auto &&segment : segments) {
-    auto size = std::distance(rng::begin(segment), rng::end(segment));
+    auto size = rng::distance(segment);
 
     events.emplace_back(
         shp::copy_async(rng::begin(segment), rng::end(segment), d_first));
 
-    std::advance(d_first, size);
+    rng::advance(d_first, size);
   }
 
   auto root_event =
-      sycl::queue().submit([=](auto &&h) { h.depends_on(events); });
+      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
   return root_event;
 }
 
@@ -142,7 +143,7 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 }
 
 // fill with value
-
+// TODO: move fill code to seperate file
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)

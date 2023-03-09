@@ -1,13 +1,7 @@
 // SPDX-FileCopyrightText: Intel Corporation
 //
 // SPDX-License-Identifier: BSD-3-Clause
-
-#include <gtest/gtest.h>
-
-#include "cxxopts.hpp"
-
-#include <fmt/core.h>
-#include <fmt/ranges.h>
+#pragma once
 
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
   for (auto e : rng::zip_view(r1, r2)) {
@@ -101,5 +95,7 @@ TYPED_TEST_SUITE_P(CommonTests);
 
 #include "common/algorithm-tests.hpp"
 #include "common/dv-tests.hpp"
-REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorRequirements,
-                            DistributedVectorConstructors, ForEach);
+#include "common/view-tests.hpp"
+REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorConstructors,
+                            DistributedVectorRequirements, Drop, ForEach,
+                            Subrange, DISABLED_Take, TransformView, ZipView);

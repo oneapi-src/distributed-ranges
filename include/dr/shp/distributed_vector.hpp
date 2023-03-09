@@ -187,13 +187,15 @@ public:
   }
 
   iterator end() {
-    return iterator(segments_, size() / segment_size_, size() % segment_size_,
-                    segment_size_);
+    return size_ ? iterator(segments_, size() / segment_size_,
+                            size() % segment_size_, segment_size_)
+                 : begin();
   }
 
   const_iterator end() const {
-    return const_iterator(segments_, size() / segment_size_,
-                          size() % segment_size_, segment_size_);
+    return size_ ? const_iterator(segments_, size() / segment_size_,
+                                  size() % segment_size_, segment_size_)
+                 : begin();
   }
 
 private:

@@ -54,7 +54,7 @@ namespace rng = ranges;
 
 #include "mhp/global.hpp"
 #include "mhp/sycl_support.hpp"
-#include "mhp/containers/distributed_vector.hpp"
 #include "mhp/alignment.hpp"
 #include "mhp/views.hpp"
 #include "mhp/algorithms/algorithms.hpp"
+#include "mhp/containers/distributed_vector.hpp"

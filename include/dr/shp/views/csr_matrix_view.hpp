@@ -128,11 +128,12 @@ public:
   using difference_type = std::ptrdiff_t;
 
   using scalar_reference = std::iter_reference_t<TIter>;
+  using reference = shp::matrix_ref<T, I, scalar_reference>;
 
   using scalar_type = T;
   using index_type = I;
 
-  using key_type = shp::index<>;
+  using key_type = shp::index<I>;
   using map_type = T;
 
   using iterator = csr_matrix_view_iterator<T, I, TIter, IIter>;
@@ -160,6 +161,20 @@ public:
   iterator end() const {
     return iterator(values_, rowptr_, colind_, nnz_, shape()[1], shape()[1],
                     idx_offset_);
+  }
+
+  auto row(I row_index) const {
+    I first = rowptr_[row_index];
+    I last = rowptr_[row_index + 1];
+
+    TIter values = values_;
+    IIter colind = colind_;
+
+    auto row_elements = rng::views::iota(first, last);
+
+    return row_elements | rng::views::transform([=](auto idx) {
+             return reference(key_type(row_index, colind[idx]), values[idx]);
+           });
   }
 
   auto values_data() const { return values_; }
