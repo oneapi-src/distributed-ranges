@@ -4,24 +4,23 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
+#include <dr/shp/allocators.hpp>
 #include <iostream>
+#include <sycl/sycl.hpp>
 
 namespace shp {
 
-template <typename Selector>
-cl::sycl::device select_device(Selector &&selector) {
-  cl::sycl::device d;
+template <typename Selector> sycl::device select_device(Selector &&selector) {
+  sycl::device d;
 
   try {
-    d = cl::sycl::device(std::forward<Selector>(selector));
+    d = sycl::device(std::forward<Selector>(selector));
     std::cout << "Running on device \""
-              << d.get_info<cl::sycl::info::device::name>() << "\""
-              << std::endl;
-  } catch (cl::sycl::exception const &e) {
+              << d.get_info<sycl::info::device::name>() << "\"" << std::endl;
+  } catch (sycl::exception const &e) {
     std::cout << "Cannot select an accelerator\n" << e.what() << "\n";
     std::cout << "Using a CPU device\n";
-    d = cl::sycl::device(cl::sycl::cpu_selector());
+    d = sycl::device(sycl::cpu_selector_v);
   }
   return d;
 }
@@ -42,8 +41,6 @@ inline void list_devices() {
 }
 
 template <typename Selector> void list_devices(Selector &&selector) {
-  namespace sycl = cl::sycl;
-
   sycl::platform p(std::forward<Selector>(selector));
   auto devices = p.get_devices();
 
@@ -58,10 +55,9 @@ template <typename Selector> void list_devices(Selector &&selector) {
     printf("  %lu %s\n", i,
            device.get_info<sycl::info::device::name>().c_str());
 
-    using namespace sycl::info;
     auto subdevices = device.create_sub_devices<
-        partition_property::partition_by_affinity_domain>(
-        partition_affinity_domain::numa);
+        sycl::info::partition_property::partition_by_affinity_domain>(
+        sycl::info::partition_affinity_domain::numa);
 
     printf("   Subdevices:\n");
     for (size_t j = 0; j < subdevices.size(); j++) {
@@ -75,19 +71,16 @@ template <typename Selector> void list_devices(Selector &&selector) {
 }
 
 template <typename Selector>
-std::vector<cl::sycl::device> get_numa_devices_impl_(Selector &&selector) {
-  namespace sycl = cl::sycl;
-
+std::vector<sycl::device> get_numa_devices_impl_(Selector &&selector) {
   std::vector<sycl::device> devices;
 
   sycl::platform p(std::forward<Selector>(selector));
   auto root_devices = p.get_devices();
 
   for (auto &&root_device : root_devices) {
-    using namespace sycl::info;
     auto subdevices = root_device.create_sub_devices<
-        partition_property::partition_by_affinity_domain>(
-        partition_affinity_domain::numa);
+        sycl::info::partition_property::partition_by_affinity_domain>(
+        sycl::info::partition_affinity_domain::numa);
 
     for (auto &&subdevice : subdevices) {
       devices.push_back(subdevice);
@@ -98,33 +91,35 @@ std::vector<cl::sycl::device> get_numa_devices_impl_(Selector &&selector) {
 }
 
 template <typename Selector>
-std::vector<cl::sycl::device> get_devices(Selector &&selector) {
-  namespace sycl = cl::sycl;
-
+std::vector<sycl::device> get_devices(Selector &&selector) {
   sycl::platform p(std::forward<Selector>(selector));
   return p.get_devices();
 }
 
 template <typename Selector>
-std::vector<cl::sycl::device> get_numa_devices(Selector &&selector) {
+std::vector<sycl::device> get_numa_devices(Selector &&selector) {
   try {
     return get_numa_devices_impl_(std::forward<Selector>(selector));
-  } catch (cl::sycl::feature_not_supported) {
-    std::cerr << "NUMA partitioning not supported, returning root devices..."
-              << std::endl;
-    return get_devices(std::forward<Selector>(selector));
+  } catch (sycl::exception const &e) {
+    if (e.code() == sycl::errc::feature_not_supported) {
+      std::cerr << "NUMA partitioning not supported, returning root devices..."
+                << std::endl;
+      return get_devices(std::forward<Selector>(selector));
+    } else {
+      throw;
+    }
   }
 }
 
 // Return exactly `n` devices obtained using the selector `selector`.
 // May duplicate devices
 template <typename Selector>
-std::vector<cl::sycl::device> get_duplicated_devices(Selector &&selector,
-                                                     std::size_t n) {
+std::vector<sycl::device> get_duplicated_devices(Selector &&selector,
+                                                 std::size_t n) {
   auto devices = get_numa_devices(std::forward<Selector>(selector));
 
   if (devices.size() >= n) {
-    return std::vector<cl::sycl::device>(devices.begin(), devices.begin() + n);
+    return std::vector<sycl::device>(devices.begin(), devices.begin() + n);
   } else {
     std::size_t i = 0;
     while (devices.size() < n) {
@@ -225,7 +220,7 @@ void range_details(R &&r, std::size_t width = 80) {
 
 template <typename T>
 auto allocate_device_span(std::size_t size, std::size_t rank,
-                          cl::sycl::context context, auto &&devices) {
+                          sycl::context context, auto &&devices) {
   auto data = shp::device_allocator<T>(context, devices[rank]).allocate(size);
 
   return shp::device_span<T, decltype(data)>(data, size, rank);
@@ -234,7 +229,7 @@ auto allocate_device_span(std::size_t size, std::size_t rank,
 // Return a range of spans, with one span allocated on each device using
 // device memory.
 template <typename T>
-auto allocate_device_spans(std::size_t size, cl::sycl::context context,
+auto allocate_device_spans(std::size_t size, sycl::context context,
                            auto &&devices) {
   std::vector<shp::device_span<T, shp::device_ptr<T>>> spans;
   for (size_t rank = 0; rank < devices.size(); rank++) {
@@ -246,8 +241,8 @@ auto allocate_device_spans(std::size_t size, cl::sycl::context context,
 template <typename T>
 shp::device_span<T> allocate_shared_span(std::size_t size, std::size_t rank,
                                          auto &&devices) {
-  cl::sycl::queue q(devices[rank]);
-  T *data = cl::sycl::malloc_shared<T>(size, q);
+  sycl::queue q(devices[rank]);
+  T *data = sycl::malloc_shared<T>(size, q);
 
   return shp::device_span<T>(data, size, rank);
 }
@@ -263,5 +258,20 @@ std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
   }
   return spans;
 }
+
+namespace __detail {
+
+inline void wait(sycl::event &event) { event.wait(); }
+
+inline void wait(sycl::event &&event) { event.wait(); }
+
+inline void wait(const std::vector<sycl::event> &events) {
+  sycl::queue q;
+  auto e = q.submit([&](auto &&h) { h.depends_on(events); });
+
+  e.wait();
+}
+
+} // namespace __detail
 
 } // namespace shp

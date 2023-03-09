@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
 #include <dr/shp/device_ptr.hpp>
 #include <dr/shp/device_vector.hpp>
+#include <sycl/sycl.hpp>
 #include <vector>
 
 #include <dr/details/segments_tools.hpp>
@@ -60,7 +60,6 @@ public:
     }
 
     if (offset < 0) {
-      difference_type new_idx = difference_type(idx_) + offset;
       size_type new_global_idx = get_global_idx() + offset;
       segment_id_ = new_global_idx / segment_size_;
       idx_ = new_global_idx % segment_size_;
@@ -133,32 +132,32 @@ public:
   using const_iterator =
       distributed_vector_iterator<const T, const_segment_type>;
 
-  distributed_vector() {}
-
-  distributed_vector(std::size_t count) {
-    assert(shp::nprocs() > 0);
+  distributed_vector(std::size_t count = 0) {
+    assert(shp::devices().size() > 0);
     size_ = count;
-
-    segment_size_ = (count + shp::nprocs() - 1) / shp::nprocs();
-
-    capacity_ = segment_size_ * shp::nprocs();
-
-    std::vector<cl::sycl::event> events;
+    segment_size_ = (count + shp::devices().size() - 1) / shp::devices().size();
+    capacity_ = segment_size_ * shp::devices().size();
 
     size_t rank = 0;
-    for (auto &&device : shp::devices()) {
-      Allocator alloc(shp::context(), device);
-      segment_type segment(segment_size_, alloc, rank++);
+    for (auto &&device : shp::devices())
+      segments_.emplace_back(segment_type(
+          segment_size_, Allocator(shp::context(), device), rank++));
+  }
 
-      auto e = shp::fill_async(segment.begin(), segment.end(), T{});
-      events.push_back(e);
+  distributed_vector(std::size_t count, const T &value)
+      : distributed_vector(count) {
+    std::vector<sycl::event> events;
 
-      segments_.push_back(std::move(segment));
+    for (auto &&segment : segments_) {
+      events.push_back(shp::fill_async(segment.begin(), segment.end(), value));
     }
 
-    for (auto &&event : events) {
-      event.wait();
-    }
+    sycl::queue().submit([=](auto &&h) { h.depends_on(events); }).wait();
+  }
+
+  distributed_vector(std::initializer_list<T> init)
+      : distributed_vector(init.size()) {
+    shp::copy(rng::begin(init), rng::end(init), begin());
   }
 
   reference operator[](size_type pos) {
@@ -188,13 +187,15 @@ public:
   }
 
   iterator end() {
-    return iterator(segments_, size() / segment_size_, size() % segment_size_,
-                    segment_size_);
+    return size_ ? iterator(segments_, size() / segment_size_,
+                            size() % segment_size_, segment_size_)
+                 : begin();
   }
 
   const_iterator end() const {
-    return const_iterator(segments_, size() / segment_size_,
-                          size() % segment_size_, segment_size_);
+    return size_ ? const_iterator(segments_, size() / segment_size_,
+                                  size() % segment_size_, segment_size_)
+                 : begin();
   }
 
 private:

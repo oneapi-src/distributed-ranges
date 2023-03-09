@@ -17,6 +17,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CheckLanguage)
   include(CTest)
 
+  option(DISABLED_TESTS "Run disabled tests" OFF)
   option(ENABLE_SYCL "Build sycl shp examples" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
@@ -32,7 +33,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-fconcepts-diagnostics-depth=10)
-    add_compile_options(-Wno-stringop-overflow)
   endif()
 
   if(GCC_TOOLCHAIN)
@@ -98,7 +98,7 @@ FetchContent_MakeAvailable(range-v3)
 FetchContent_Declare(
   cpp-format
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 9.1.0
+  GIT_TAG 0b0f7cf
 )
 FetchContent_MakeAvailable(cpp-format)
 
@@ -125,20 +125,24 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include(GoogleTest)
 
-  if(ENABLE_SYCL)
-    add_subdirectory(examples/shp)
-    add_subdirectory(test/gtest/shp)
-  endif()
-
-  # shp has warnings, but do for everything else
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
 
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wno-error=stringop-overflow=)
+  endif()
+
   # This must be appear after -Wall
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    # Most code get warnings with -ffast-math
     add_compile_options(-Wno-tautological-constant-compare)
-    # DPL uses deprecated API
-    add_compile_options(-Wno-deprecated-declarations)
+    # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel stl
+    add_compile_options(-Wno-error=pass-failed)
+  endif()
+
+  if(ENABLE_SYCL)
+    add_subdirectory(examples/shp)
+    add_subdirectory(test/gtest/shp)
   endif()
 
   add_subdirectory(examples/serial)

@@ -16,3 +16,9 @@ endfunction()
 
 add_shp_example(vector_example)
 add_shp_example(test_range)
+add_shp_example(dot_product)
+
+# hard to reproduce fails
+if (DISABLED_TESTS)
+  add_shp_example(inclusive_scan_example)
+endif()

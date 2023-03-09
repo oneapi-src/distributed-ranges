@@ -39,14 +39,12 @@ TEST(ShpTests, Zip) {
   rng::iota(dv_a, 100);
   rng::iota(dv_b, 200);
   auto dz = shp::views::zip(dv_a, dv_b, dv_a);
-  auto dz2 = shp::views::zip(dv_a, dv_b);
   auto dzi = shp::views::zip(rng::views::iota(1, 10), dv_b, dv_a);
 
   DV v_a(n), v_b(n);
   rng::iota(v_a, 100);
   rng::iota(v_b, 200);
   auto z = rng::views::zip(v_a, v_b, v_a);
-  auto z2 = rng::views::zip(v_a, v_b);
   auto zi = rng::views::zip(rng::views::iota(1, 10), dv_b, dv_a);
 
   EXPECT_TRUE(equal(z, dz));
@@ -54,9 +52,12 @@ TEST(ShpTests, Zip) {
 
 #if 0
   // zip and dr zip have different value types: tuple/pair
+  auto dz2 = shp::views::zip(dv_a, dv_b);
+  auto z2 = rng::views::zip(v_a, v_b);
   EXPECT_TRUE(equal(z2, dz2));
 #endif
 
+  /*
   fmt::print("a: {}\n"
              "b: {}\n"
              "dz: {}\n"
@@ -66,6 +67,7 @@ TEST(ShpTests, Zip) {
              "z: {}\n",
              dv_a, dv_b, dz, dzi, lib::ranges::segments(dz),
              lib::ranges::segments(dzi), z);
+             */
 }
 
 TEST(ShpTests, Drop) {
@@ -82,17 +84,35 @@ TEST(ShpTests, Drop) {
   auto dv_aview = dv_a | rng::views::drop(2);
   EXPECT_TRUE(equal(aview, dv_aview));
 
-  fmt::print("segments(dv_a):     {}\n"
-             "segments(dv_aview): {}\n"
-             //"xsegments(dv_aview): {}\n"
-             ,
-             lib::ranges::segments(dv_a), lib::ranges::segments(dv_aview)
-             // ranges::xsegments_(dv_aview)
-  );
+  /*
+    fmt::print("segments(dv_a):     {}\n"
+               "segments(dv_aview): {}\n"
+               //"xsegments(dv_aview): {}\n"
+               ,
+               lib::ranges::segments(dv_a), lib::ranges::segments(dv_aview)
+               // ranges::xsegments_(dv_aview)
+    );
+    */
   std::ranges::for_each(aview, incr);
   shp::for_each(shp::par_unseq, dv_aview, incr);
+  /*
   fmt::print("segments(dv_a):     {}\n"
              "segments(dv_aview): {}\n",
              lib::ranges::segments(dv_a), lib::ranges::segments(dv_aview));
+             */
   EXPECT_TRUE(equal(aview, dv_aview));
+}
+
+TEST(ShpTests, Transform) {
+  const int n = 10;
+
+  DV dv_a(n);
+  rng::iota(dv_a, 20);
+  auto plus1 = [](auto x) { return x + 1; };
+  auto dv_a_view = lib::views::transform(dv_a, plus1);
+
+  V v_a(n);
+  rng::iota(v_a, 20);
+  auto v_a_view = rng::views::transform(v_a, plus1);
+  EXPECT_TRUE(equal(v_a_view, dv_a_view));
 }

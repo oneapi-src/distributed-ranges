@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/ranges_shim.hpp>
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/distributed_span.hpp>
+#include <dr/shp/init.hpp>
+#include <dr/shp/util.hpp>
 #include <dr/shp/zip_view.hpp>
+#include <sycl/sycl.hpp>
 
 namespace shp {
 
@@ -20,20 +20,18 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
   auto devices = policy.get_devices();
-  std::vector<cl::sycl::event> events;
+  std::vector<sycl::event> events;
 
   for (auto &&segment : lib::ranges::segments(r)) {
     assert(rng::size(segment) > 0);
+    // sometimes segment substituted into
+    // auto local_segment = lib::ranges::local(segment);
     events.emplace_back(
-        sycl::queue(devices[lib::ranges::rank(segment)])
-            .parallel_for(rng::size(segment), [=](cl::sycl::id<1> idx) {
-              fn(*(rng::begin(segment) + idx));
-            }));
+        sycl::queue(shp::context(), devices[lib::ranges::rank(segment)])
+            .parallel_for(rng::size(segment),
+                          [=](auto idx) { fn(*(rng::begin(segment) + idx)); }));
   }
-
-  for (auto &&event : events) {
-    event.wait();
-  }
+  __detail::wait(events);
 }
 
 template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename Fn>

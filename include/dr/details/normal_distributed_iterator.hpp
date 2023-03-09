@@ -3,11 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/iterator_adaptor.hpp>
-#include <dr/details/ranges_shim.hpp>
-
-namespace shp {
+namespace lib {
 
 template <rng::viewable_range V>
 /*
@@ -64,6 +60,7 @@ public:
           std::min(-offset, difference_type(idx_) + 1);
 
       difference_type new_idx = difference_type(idx_) - current_offset;
+      offset += current_offset;
 
       if (new_idx < 0) {
         segment_id_--;
@@ -121,4 +118,4 @@ template <rng::viewable_range T>
 using normal_distributed_iterator =
     lib::iterator_adaptor<normal_distributed_iterator_accessor<T>>;
 
-} // namespace shp
+} // namespace lib

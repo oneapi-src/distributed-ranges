@@ -147,6 +147,7 @@ struct local_fn_ {
 
   template <rng::forward_range R>
     requires(has_local_adl<R> || has_local_method<rng::iterator_t<R>> ||
+             has_local_method<R> ||
              std::contiguous_iterator<rng::iterator_t<R>> ||
              rng::contiguous_range<R>)
   auto operator()(R &&r) const {

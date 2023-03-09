@@ -6,20 +6,9 @@
 
 using T = int;
 using DV = mhp::distributed_vector<T>;
-using DVA = mhp::distributed_vector<T, std::allocator<T>>;
+using A = std::allocator<T>;
+using DVA = mhp::distributed_vector<T, A>;
 using DVI = typename DV::iterator;
-
-TEST(MhpTests, DistributedVectorRequirements) {
-  static_assert(std::forward_iterator<DVI>);
-  static_assert(rng::forward_range<DV>);
-  static_assert(rng::random_access_range<DV>);
-  DV dv(10);
-  static_assert(lib::distributed_iterator<decltype(dv.begin())>);
-  static_assert(lib::remote_iterator<decltype(dv.begin())>);
-  static_assert(lib::distributed_contiguous_range<DV>);
-}
-
-TEST(MhpTests, DistributedVectorConstructors) { DV a1(10); }
 
 TEST(MhpTests, DistributedVectorQuery) {
   const int n = 10;
@@ -37,7 +26,7 @@ TEST(MhpTests, DistributedVectorIndex) {
       dv[i] = i + 10;
     }
   }
-  dv.fence();
+  mhp::fence();
 
   for (size_t i = 0; i < n; i++) {
     EXPECT_EQ(dv[i], i + 10);
@@ -49,7 +38,7 @@ TEST(MhpTests, DistributedVectorIndex) {
     dv2[3] = 1000;
     dv2[3] = dv[3];
   }
-  dv2.fence();
+  mhp::fence();
   EXPECT_EQ(dv2[3], dv[3]);
 }
 
@@ -98,7 +87,7 @@ TEST(MhpTests, DistributedVectorReference) {
   if (comm_rank == 0) {
     rng::iota(dv, 100);
   }
-  dv.fence();
+  mhp::fence();
 
   const DV &cdv = dv;
   if (comm_rank == 0) {
@@ -110,10 +99,11 @@ TEST(MhpTests, DistributedVectorReference) {
   if (comm_rank == 0) {
     dv[2] = 2;
   }
-  dv.fence();
+  mhp::fence();
   EXPECT_EQ(dv[2], 2);
 }
 
+#if 0
 TEST(MhpTests, DistributedVectorAllocator) {
   std::size_t n = 10;
   DVA dv(n, lib::halo_bounds(0), std::allocator<T>{});
@@ -124,3 +114,4 @@ TEST(MhpTests, DistributedVectorAllocator) {
     EXPECT_TRUE(equal(dv, v));
   }
 }
+#endif

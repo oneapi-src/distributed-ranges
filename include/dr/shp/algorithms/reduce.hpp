@@ -4,12 +4,11 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #include <oneapi/dpl/execution>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
-#include <dr/shp/distributed_span.hpp>
 #include <dr/shp/init.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
@@ -18,7 +17,7 @@
 
 namespace {
 
-// Precondition: std::distance(begin, end) >= 2
+// Precondition: rng::distance(begin, end) >= 2
 // Postcondition: return future to [begin, end) reduced with fn
 template <typename T, typename ExecutionPolicy,
           std::bidirectional_iterator Iter, typename Fn>
@@ -42,8 +41,6 @@ template <typename ExecutionPolicy, lib::distributed_range R, typename T,
           typename BinaryOp>
 T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
 
-  namespace sycl = cl::sycl;
-
   static_assert(
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
@@ -64,7 +61,7 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
 
-      auto dist = std::distance(rng::begin(segment), rng::end(segment));
+      auto dist = rng::distance(segment);
       if (dist <= 0) {
         continue;
       } else if (dist == 1) {
@@ -86,6 +83,42 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
   } else {
     assert(false);
   }
+}
+
+template <typename ExecutionPolicy, lib::distributed_range R, typename T>
+T reduce(ExecutionPolicy &&policy, R &&r, T init) {
+  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<R>(r), init,
+                std::plus<>());
+}
+
+template <typename ExecutionPolicy, lib::distributed_range R>
+rng::range_value_t<R> reduce(ExecutionPolicy &&policy, R &&r) {
+  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<R>(r),
+                rng::range_value_t<R>{}, std::plus<>());
+}
+
+// Iterator versions
+
+template <typename ExecutionPolicy, lib::distributed_iterator Iter>
+std::iter_value_t<Iter> reduce(ExecutionPolicy &&policy, Iter begin, Iter end) {
+  return reduce(std::forward<ExecutionPolicy>(policy),
+                rng::subrange(begin, end), std::iter_value_t<Iter>{},
+                std::plus<>());
+}
+
+template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename T>
+T reduce(ExecutionPolicy &&policy, Iter begin, Iter end, T init) {
+  return reduce(std::forward<ExecutionPolicy>(policy),
+                rng::subrange(begin, end), init, std::plus<>());
+}
+
+template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename T,
+          typename BinaryOp>
+T reduce(ExecutionPolicy &&policy, Iter begin, Iter end, T init,
+         BinaryOp &&binary_op) {
+  return reduce(std::forward<ExecutionPolicy>(policy),
+                rng::subrange(begin, end), init,
+                std::forward<BinaryOp>(binary_op));
 }
 
 } // namespace shp

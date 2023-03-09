@@ -4,10 +4,7 @@
 
 #pragma once
 
-#include <dr/details/ranges_shim.hpp>
-#include <dr/shp/normal_distributed_iterator.hpp>
-
-namespace shp {
+namespace lib {
 
 template <rng::forward_range V, std::copy_constructible F>
 class transform_view : public rng::view_interface<transform_view<V, F>> {
@@ -17,21 +14,25 @@ public:
       : base_(rng::views::all(std::forward<R>(r))), fn_(fn) {}
 
   auto begin() const {
-    return normal_distributed_iterator<decltype(segments())>(segments(), 0, 0);
+    return normal_distributed_iterator<decltype(segments())>(segments(),
+                                                             std::size_t(0), 0);
   }
 
   auto end() const {
     auto segs = segments();
     return normal_distributed_iterator<decltype(segments())>(
-        segs, size_t(segs.size()), 0);
+        std::move(segs), std::size_t(segs.size()), 0);
   }
 
   auto segments() const {
+    auto fn = fn_;
     return lib::ranges::segments(base_) |
-           rng::views::transform([=](auto &&segment) {
-             return segment | rng::views::transform(fn_);
+           rng::views::transform([fn](auto &&segment) {
+             return segment | rng::views::transform(fn);
            });
   }
+
+  V base() const { return base_; }
 
 private:
   V base_;
@@ -48,7 +49,7 @@ public:
   transform_adapter_closure(F fn) : fn_(fn) {}
 
   template <rng::viewable_range R> auto operator()(R &&r) const {
-    return shp::transform_view(std::forward<R>(r), fn_);
+    return lib::transform_view(std::forward<R>(r), fn_);
   }
 
   template <rng::viewable_range R>
@@ -75,4 +76,4 @@ public:
 inline constexpr auto transform = transform_fn_{};
 } // namespace views
 
-} // namespace shp
+} // namespace lib

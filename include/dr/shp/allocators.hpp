@@ -5,14 +5,13 @@
 #pragma once
 
 #include "device_ptr.hpp"
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <type_traits>
 
 namespace shp {
 
 template <typename T>
-using shared_allocator =
-    cl::sycl::usm_allocator<T, cl::sycl::usm::alloc::shared>;
+using shared_allocator = sycl::usm_allocator<T, sycl::usm::alloc::shared>;
 
 template <typename T, std::size_t Alignment = 0>
   requires(std::is_trivially_copyable_v<T>)
@@ -30,10 +29,9 @@ public:
   device_allocator(const device_allocator<U, Alignment> &other) noexcept
       : device_(other.get_device()), context_(other.get_context()) {}
 
-  device_allocator(const cl::sycl::queue &q) noexcept
+  device_allocator(const sycl::queue &q) noexcept
       : device_(q.get_device()), context_(q.get_context()) {}
-  device_allocator(const cl::sycl::context &ctxt,
-                   const sycl::device &dev) noexcept
+  device_allocator(const sycl::context &ctxt, const sycl::device &dev) noexcept
       : device_(dev), context_(ctxt) {}
 
   device_allocator(const device_allocator &) = default;
@@ -44,15 +42,15 @@ public:
 
   pointer allocate(std::size_t size) {
     if constexpr (Alignment == 0) {
-      return pointer(cl::sycl::malloc_device<T>(size, device_, context_));
+      return pointer(sycl::malloc_device<T>(size, device_, context_));
     } else {
-      return pointer(cl::sycl::aligned_alloc_device<T>(Alignment, size, device_,
-                                                       context_));
+      return pointer(
+          sycl::aligned_alloc_device<T>(Alignment, size, device_, context_));
     }
   }
 
   void deallocate(pointer ptr, std::size_t n) {
-    cl::sycl::free(ptr.get_raw_pointer(), context_);
+    sycl::free(ptr.get_raw_pointer(), context_);
   }
 
   bool operator==(const device_allocator &) const = default;
@@ -62,13 +60,13 @@ public:
     using other = device_allocator<U, Alignment>;
   };
 
-  cl::sycl::device get_device() const noexcept { return device_; }
+  sycl::device get_device() const noexcept { return device_; }
 
-  cl::sycl::context get_context() const noexcept { return context_; }
+  sycl::context get_context() const noexcept { return context_; }
 
 private:
-  cl::sycl::device device_;
-  cl::sycl::context context_;
+  sycl::device device_;
+  sycl::context context_;
 };
 
 } // namespace shp

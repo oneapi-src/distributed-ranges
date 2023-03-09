@@ -12,10 +12,12 @@
 
 #include <cassert>
 #include <concepts>
+#include <execution>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <set>
 #include <span>
 #include <string>
 #include <utility>
@@ -36,15 +38,23 @@ namespace fmt {}
 namespace rng = ranges;
 
 // clang-format off
-#include "details/logger.hpp"
-#include "details/communicator.hpp"
 #include "concepts/concepts.hpp"
+
+#include "details/logger.hpp"
 #include "details/view_detectors.hpp"
 #include "details/segments_tools.hpp"
-#include "details/views.hpp"
+#include "details/iterator_adaptor.hpp"
+#include "details/normal_distributed_iterator.hpp"
 #include "details/memory.hpp"
+#include "details/communicator.hpp"
 #include "details/halo.hpp"
-#include "mhp/cpos.hpp"
-#include "mhp/containers/distributed_vector.hpp"
+
+#include "views/views.hpp"
+#include "views/transform.hpp"
+
+#include "mhp/global.hpp"
+#include "mhp/sycl_support.hpp"
+#include "mhp/alignment.hpp"
 #include "mhp/views.hpp"
-#include "mhp/algorithms/cpu_algorithms.hpp"
+#include "mhp/algorithms/algorithms.hpp"
+#include "mhp/containers/distributed_vector.hpp"

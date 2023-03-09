@@ -18,13 +18,14 @@ void check_fill(std::size_t n, std::size_t b, std::size_t size) {
   mhp::iota(dv1, 10);
   mhp::iota(dv2, 10);
   mhp::iota(dv3, 10);
+
   mhp::fill(dv1.begin() + b, dv1.begin() + e, val);
   mhp::fill(rng::subrange(dv3.begin() + b, dv3.begin() + e), val);
 
   if (comm_rank == 0) {
     std::fill(dv2.begin() + b, dv2.begin() + e, val);
   }
-  dv2.fence();
+  mhp::fence();
 
   if (comm_rank == 0) {
     V v(n);
@@ -53,7 +54,7 @@ TEST(MhpTests, ForEach) {
 
   DV dv_a(n);
   mhp::iota(dv_a, 100);
-  mhp::for_each(dv_a, negate{});
+  mhp::for_each(std::execution::par_unseq, dv_a, negate{});
 
   if (comm_rank == 0) {
     V a(n), a_in(n);
@@ -90,7 +91,7 @@ TEST(MhpTests, Copy) {
   }
 }
 
-TEST(MhpTests, transform) {
+TEST(MhpTests, Transform) {
   std::size_t n = 10;
 
   auto copy = [](auto x) { return x; };
@@ -117,5 +118,18 @@ TEST(MhpTests, transform) {
     std::transform(v_src.begin() + 1, v_src.end() - 1, v_dst3.begin() + 2,
                    copy);
     EXPECT_TRUE(equal(dv_dst3, v_dst3));
+  }
+}
+
+TEST(MhpTests, Reduce) {
+  std::size_t n = 10;
+  DV dv(n);
+  mhp::iota(dv, 100);
+  auto dresult = mhp::reduce(0, dv.begin(), dv.end(), 0, std::plus{});
+  if (comm_rank == 0) {
+    V v(n);
+    rng::iota(v, 100);
+    auto result = std::reduce(v.begin(), v.end(), 0, std::plus{});
+    EXPECT_EQ(dresult, result);
   }
 }

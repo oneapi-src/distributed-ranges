@@ -184,7 +184,7 @@ public:
     std::size_t tile_idx = tile_index[0] * grid_shape_[1] + tile_index[1];
     auto values = values_[tile_idx].begin();
     auto rowptr = rowptr_[tile_idx].begin();
-    auto colind = rowptr_[tile_idx].begin();
+    auto colind = colind_[tile_idx].begin();
     auto nnz = nnz_[tile_idx];
 
     size_t tm =
