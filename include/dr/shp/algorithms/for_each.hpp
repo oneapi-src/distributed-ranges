@@ -13,8 +13,14 @@
 
 namespace shp {
 
-template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          typename Fn>
+namespace __detail {
+auto get_local_segment(lib::remote_contiguous_range auto &&r) {
+  return lib::ranges::local(r);
+}
+auto get_local_segment(rng::forward_range auto &&r) { return r; }
+} // namespace __detail
+
+template <typename ExecutionPolicy, lib::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
@@ -24,12 +30,13 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
   for (auto &&segment : lib::ranges::segments(r)) {
     assert(rng::size(segment) > 0);
-    // sometimes segment substituted into
-    // auto local_segment = lib::ranges::local(segment);
+    auto local_segment = __detail::get_local_segment(segment);
+    assert(rng::size(segment) == rng::size(local_segment));
     events.emplace_back(
         sycl::queue(shp::context(), devices[lib::ranges::rank(segment)])
-            .parallel_for(rng::size(segment),
-                          [=](auto idx) { fn(*(rng::begin(segment) + idx)); }));
+            .parallel_for(rng::size(local_segment), [=](auto idx) {
+              fn(*(rng::begin(local_segment) + idx));
+            }));
   }
   __detail::wait(events);
 }

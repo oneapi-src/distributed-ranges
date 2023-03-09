@@ -36,7 +36,10 @@ concept distributed_iterator =
 
 template <typename R>
 concept remote_contiguous_range =
-    remote_range<R> && rng::random_access_range<R>;
+    remote_range<R> && rng::random_access_range<R> &&
+    requires(R &r) {
+      { lib::ranges::local(r) } -> rng::contiguous_range;
+    };
 
 template <typename R>
 concept distributed_contiguous_range =
