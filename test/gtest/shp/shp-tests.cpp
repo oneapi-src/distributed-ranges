@@ -4,30 +4,17 @@
 
 #include "shp-tests.hpp"
 
-// Instantiate SHP-specific configurations for common tests
-template <typename T> struct CommonTestConfig {
-  using DV = shp::distributed_vector<T>;
-  using DVA = shp::distributed_vector<T, shp::device_allocator<int>>;
-  using V = std::vector<T>;
-  static auto policy() { return shp::par_unseq; }
+using Types = ::testing::Types<shp::distributed_vector<int>,
+                               shp::distributed_vector<float>>;
 
-  // Need shp::iota
-  // Why doesn't rng::iota work?
-  static auto iota(auto &&r, auto val) {
-    return std::iota(r.begin(), r.end(), val);
-  }
-};
-using Common_Types =
-    ::testing::Types<CommonTestConfig<int>, CommonTestConfig<float>>;
-
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Drop, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, ForEach, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Reduce, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Subrange, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Take, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, TransformView, Common_Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Zip, Common_Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Drop, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, ForEach, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Reduce, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Subrange, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Take, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, TransformView, Types);
+INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Zip, Types);
 
 // To share tests with MHP
 std::size_t comm_rank = 0;

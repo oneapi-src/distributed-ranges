@@ -82,7 +82,7 @@ TYPED_TEST_P(Reduce, RangeDefaultInit) {
 
   TypeParam dv_a(n);
   iota(dv_a, 100);
-  auto d_result = xhp::reduce(default_policy(dv_a), dv_a);
+  auto d_result = reduce(default_policy(dv_a), dv_a);
 
   LocalVec<TypeParam> a(n);
   rng::iota(a, 100);
