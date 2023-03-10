@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "vendor/source_location/source_location.hpp"
+
 namespace lib {
 
 #if DR_FORMAT

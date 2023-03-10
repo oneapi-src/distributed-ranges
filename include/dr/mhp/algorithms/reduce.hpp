@@ -21,7 +21,7 @@ auto reduce(ExecutionPolicy &&policy, DR &&dr, T init, auto &&binary_op,
   T result = 0;
   auto comm = default_comm();
 
-  if (aligned(rng::begin(dr))) {
+  if (lib::__details::aligned(rng::begin(dr))) {
     lib::drlog.debug("Parallel reduce\n");
 
     auto reduce = [=](auto &&r) {
