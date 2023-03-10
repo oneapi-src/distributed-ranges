@@ -32,7 +32,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
-void copy(InputIt first, InputIt last, OutputIt d_first) {
+OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
   return d_first + (last - first);
 }

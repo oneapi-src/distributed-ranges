@@ -59,7 +59,10 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
         auto &&[i, k] = index;
         auto &&b_v = *(b_iter + k);
         auto &&c_v = *(c_iter + i);
-        c_v += a_v * b_v;
+        sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                         sycl::memory_scope::device>
+            c_ref(c_v);
+        c_ref += a_v * b_v;
       });
     });
     comp_events.push_back(event);
@@ -128,7 +131,11 @@ void gemv_rows(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
                          auto &&b_v = *(b_iter + k);
                          auto &&c_v = *(c_iter + i);
 
-                         c_v += a_v * b_v;
+                         sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                                          sycl::memory_scope::work_group>
+                             c_ref(c_v);
+
+                         c_ref += a_v * b_v;
                        }
                      });
     });
