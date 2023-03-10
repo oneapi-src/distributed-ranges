@@ -85,26 +85,25 @@ int stencil() {
 
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
-  fmt::print("a.size() {}\n", a.size());
-  fmt::print("in.size() {}\n", in.size());
   for (std::size_t s = 0; s < steps; s++) {
     mhp::halo(in).exchange();
-    auto x = rng::views::zip(in, out);
-    auto x_seg = lib::ranges::segments(x);
-    fmt::print("x.size() {}\n"
-               "x_seg.size() {}\n"
-               "x_seg[0]/size() {}\n",
-               std::size_t(x.size()), std::size_t(x_seg.size()),
-               std::size_t(x_seg[0].size()));
     mhp::for_each(rng::views::zip(in, out), stencil_op);
     std::swap(in, out);
   }
 
+  auto error = 0;
   if (comm_rank == 0) {
-    return check(steps % 2 ? b : a);
-  } else {
-    return 0;
+    error = check(steps % 2 ? b : a);
+
+    if (error) {
+      fmt::print("Fail\n");
+    } else {
+      fmt::print("Pass\n");
+    }
   }
+
+  MPI_Barrier(comm);
+  return error;
 }
 
 int main(int argc, char *argv[]) {
@@ -132,7 +131,7 @@ int main(int argc, char *argv[]) {
   rows = options["rows"].as<std::size_t>();
   steps = options["steps"].as<std::size_t>();
   auto error = stencil();
-
+  fmt::print("Returned\n");
   MPI_Finalize();
   return error;
 }
