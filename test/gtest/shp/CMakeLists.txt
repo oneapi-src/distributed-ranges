@@ -9,7 +9,6 @@ add_executable(
   algorithms.cpp
   copy.cpp
   fill.cpp
-  views.cpp
 )
 
 add_executable(

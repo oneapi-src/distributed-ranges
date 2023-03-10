@@ -17,9 +17,8 @@ TYPED_TEST_P(Zip, Basic) {
   iota(dv_b, 200);
   iota(dv_c, 300);
 
-  // DISABLE 2 zip
-  // auto d_z2 = zhp::zip(dv_a, dv_b);
-  // EXPECT_TRUE(check_segments(d_z2));
+  auto d_z2 = zhp::zip(dv_a, dv_b);
+  EXPECT_TRUE(check_segments(d_z2));
 
   auto d_z3 = zhp::zip(dv_a, dv_b, dv_c);
   EXPECT_TRUE(check_segments(d_z3));
@@ -31,9 +30,8 @@ TYPED_TEST_P(Zip, Basic) {
     rng::iota(b, 200);
     rng::iota(c, 300);
 
-    // DISABLE 2 zip
-    // auto z2 = rng::views::zip(a,  b);
-    // EXPECT_TRUE(equal(z2, d_z2));
+    auto z2 = rng::views::zip(a, b);
+    EXPECT_TRUE(equal(z2, d_z2));
 
     auto z3 = rng::views::zip(a, b, c);
     EXPECT_TRUE(equal(z3, d_z3));
@@ -41,3 +39,4 @@ TYPED_TEST_P(Zip, Basic) {
 }
 
 REGISTER_TYPED_TEST_SUITE_P(Zip, Basic);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, TestTypes);

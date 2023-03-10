@@ -30,3 +30,4 @@ TYPED_TEST_P(Subrange, Basic) {
 }
 
 REGISTER_TYPED_TEST_SUITE_P(Subrange, Basic);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, TestTypes);

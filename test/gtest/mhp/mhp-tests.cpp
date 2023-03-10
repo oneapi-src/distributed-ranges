@@ -4,22 +4,23 @@
 
 #include "mhp-tests.hpp"
 
-using Types = ::testing::Types<
+using TestTypes = ::testing::Types<
 #ifdef SYCL_LANGUAGE_VERSION
     mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>,
     mhp::distributed_vector<float, mhp::sycl_shared_allocator<float>>,
 #endif
     mhp::distributed_vector<int>, mhp::distributed_vector<float>>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Drop, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Reduce, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ReduceMHP, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Subrange, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Take, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, Types);
+#include "common/distributed_vector.hpp"
+#include "common/drop.hpp"
+#include "common/for_each.hpp"
+#include "common/reduce.hpp"
+#include "common/subrange.hpp"
+#include "common/take.hpp"
+#include "common/transform_view.hpp"
+#include "common/zip.hpp"
+
+#include "mhp/reduce.hpp"
 
 MPI_Comm comm;
 std::size_t comm_rank;
