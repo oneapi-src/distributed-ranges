@@ -21,15 +21,25 @@ namespace shp {
 
 namespace __detail {
 
-template <typename T, typename I>
-auto convert_to_csr(const shp::__detail::coo_matrix<T, I> &tuples) {
-  size_t nnz = tuples.size();
+// Preconditions:
+// 1) `tuples` sorted by row, column
+// 2) `tuples` has shape `shape`
+// 3) `tuples` has `nnz` elements
+template <typename Tuples, typename Allocator>
+auto convert_to_csr(Tuples &&tuples, shp::index<> shape, std::size_t nnz,
+                    Allocator &&allocator) {
+  auto &&[index, v] = *tuples.begin();
+  auto &&[i, j] = index;
 
-  auto shape = tuples.shape();
+  using T = std::remove_reference_t<decltype(v)>;
+  using I = std::remove_reference_t<decltype(i)>;
 
-  T *values = new T[nnz];
-  I *rowptr = new I[shape[0] + 1];
-  I *colind = new I[nnz];
+  typename std::allocator_traits<Allocator>::template rebind_alloc<I>
+      i_allocator(allocator);
+
+  T *values = allocator.allocate(nnz);
+  I *rowptr = i_allocator.allocate(shape[0] + 1);
+  I *colind = i_allocator.allocate(nnz);
 
   rowptr[0] = 0;
 
@@ -184,23 +194,56 @@ inline coo_matrix<T, I> mmread(std::string file_path, bool one_indexed = true) {
     }
   }
 
-  // std::sort(matrix.matrix_.begin(), matrix.matrix_.end(), sort_fn);
+  auto sort_fn = [](const auto &a, const auto &b) {
+    auto &&[a_index, a_value] = a;
+    auto &&[b_index, b_value] = b;
+    auto &&[a_i, a_j] = a_index;
+    auto &&[b_i, b_j] = b_index;
+    if (a_i < b_i) {
+      return true;
+    } else if (a_i == b_i) {
+      if (a_j < b_j) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  std::sort(matrix.begin(), matrix.end(), sort_fn);
 
   f.close();
 
   return matrix;
 }
 
+template <typename T, typename I, typename Allocator, typename... Args>
+void destroy_csr_matrix_view(shp::csr_matrix_view<T, I, Args...> view,
+                             Allocator &&alloc) {
+  alloc.deallocate(view.values_data(), view.size());
+  typename std::allocator_traits<Allocator>::template rebind_alloc<I> i_alloc(
+      alloc);
+  i_alloc.deallocate(view.colind_data(), view.size());
+  i_alloc.deallocate(view.rowptr_data(), view.shape()[0] + 1);
+}
+
 } // namespace __detail
 
 template <typename T, typename I = std::size_t>
 auto mmread(std::string file_path, bool one_indexed = true) {
-  auto local_mat =
-      __detail::convert_to_csr(__detail::mmread<T, I>(file_path, one_indexed));
+  auto m = __detail::mmread<T, I>(file_path, one_indexed);
+  auto shape = m.shape();
+  auto nnz = m.size();
+
+  auto local_mat = __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
 
   shp::sparse_matrix<T, I> a(
       local_mat.shape(),
       shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}));
+
+  std::vector<shp::csr_matrix_view<T, I>> views;
+  std::vector<sycl::event> events;
+  views.reserve(a.grid_shape()[0] * a.grid_shape()[1]);
+  events.reserve(a.grid_shape()[0] * a.grid_shape()[1]);
 
   for (size_t i = 0; i < a.grid_shape()[0]; i++) {
     for (size_t j = 0; j < a.grid_shape()[1]; j++) {
@@ -212,12 +255,29 @@ auto mmread(std::string file_path, bool one_indexed = true) {
 
       auto local_submat = local_mat.submatrix(row_bounds, column_bounds);
 
-      fmt::print("Tile {}, {}\n", i, j);
-      for (auto &&[index, v] : local_submat) {
-        fmt::print("({}, {}): {}\n", index[0], index[1], v);
-      }
+      auto submatrix_shape = shp::index<I>(row_bounds[1] - row_bounds[0],
+                                           column_bounds[1] - column_bounds[0]);
+
+      auto copied_submat = __detail::convert_to_csr(
+          local_submat, submatrix_shape, rng::distance(local_submat),
+          std::allocator<T>{});
+
+      auto e = a.copy_tile_async({i, j}, copied_submat);
+
+      views.push_back(copied_submat);
+      events.push_back(e);
     }
   }
+
+  __detail::wait(events);
+
+  for (auto &&view : views) {
+    __detail::destroy_csr_matrix_view(view, std::allocator<T>{});
+  }
+
+  __detail::destroy_csr_matrix_view(local_mat, std::allocator<T>{});
+
+  return a;
 }
 
 } // namespace shp

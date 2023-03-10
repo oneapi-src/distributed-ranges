@@ -187,6 +187,12 @@ public:
                     rng::views::take_while([=](auto &&e) {
                       auto &&[index, v] = e;
                       return index[1] < columns[1];
+                    }) |
+                    rng::views::transform([=](auto &&elem) {
+                      auto &&[index, v] = elem;
+                      auto &&[i, j] = index;
+                      return reference(key_type(i - rows[0], j - columns[0]),
+                                       v);
                     });
            }) |
            rng::views::join;

@@ -174,9 +174,26 @@ int main(int argc, char **argv) {
   fmt::print("{} nonzeros.\n", size);
 
   fmt::print("Reading matrix...\n");
-  shp::mmread<float, std::size_t>("/nfs/site/home/bbrock/data/com-Orkut.mtx");
+  auto x = shp::mmread<float, std::size_t>(
+      "/nfs/site/home/bbrock/data/mouse_gene.mtx");
 
-  // fmt::print("{} nonzeros.\n", mat.size());
+  fmt::print("{} x {}, {} nnz\n", x.shape()[0], x.shape()[1], x.size());
+
+  for (size_t i = 0; i < x.grid_shape()[0]; i++) {
+    for (size_t j = 0; j < x.grid_shape()[1]; j++) {
+      auto &&tile = x.tile({i, j});
+      fmt::print("Tile {}, {}: {}, {}\n", i, j, tile.shape(), tile.size());
+      /*
+      for (auto&& [index, v] : x.tile({i, j})) {
+        fmt::print("{}: {}\n", index, v);
+      }
+      */
+    }
+  }
+
+  for (auto &&[index, v] : x) {
+    fmt::print("{}: {}\n", index, v);
+  }
 
   shp::finalize();
   return 0;
