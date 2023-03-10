@@ -32,12 +32,12 @@ TYPED_TEST(DistributedVectorTest, fill_constructor) {
 }
 
 TYPED_TEST(DistributedVectorTest, fill_constructor_one_item) {
-  EXPECT_TRUE(equal(typename TestFixture::DistVec(1),
-                    typename TestFixture::LocalVec(1)));
+  EXPECT_TRUE(equal(typename TestFixture::DistVec(1, 77),
+                    typename TestFixture::LocalVec(1, 77)));
 }
 TYPED_TEST(DistributedVectorTest, fill_constructor_no_items) {
-  EXPECT_TRUE(equal(typename TestFixture::DistVec(),
-                    typename TestFixture::LocalVec()));
+  EXPECT_TRUE(
+      equal(typename TestFixture::DistVec(), typename TestFixture::LocalVec()));
 }
 
 TYPED_TEST(DistributedVectorTest, initializer_list) {
@@ -47,15 +47,13 @@ TYPED_TEST(DistributedVectorTest, initializer_list) {
 }
 
 TYPED_TEST(DistributedVectorTest, initializer_list_constructor_one_item) {
-    EXPECT_TRUE(
-      equal(typename TestFixture::DistVec{0},
-            typename TestFixture::LocalVec{0}));
+  EXPECT_TRUE(equal(typename TestFixture::DistVec{0},
+                    typename TestFixture::LocalVec{0}));
 }
 
 TYPED_TEST(DistributedVectorTest, initializer_list_constructor_no_items) {
-    EXPECT_TRUE(
-      equal(typename TestFixture::DistVec{},
-            typename TestFixture::LocalVec{}));
+  EXPECT_TRUE(
+      equal(typename TestFixture::DistVec{}, typename TestFixture::LocalVec{}));
 }
 
 TYPED_TEST(DistributedVectorTest, Iterator) {
