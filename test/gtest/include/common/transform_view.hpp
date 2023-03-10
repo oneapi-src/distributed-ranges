@@ -28,3 +28,4 @@ TYPED_TEST_P(TransformView, Basic) {
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TransformView, Basic);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, TestTypes);

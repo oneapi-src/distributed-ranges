@@ -27,3 +27,4 @@ TYPED_TEST_P(ForEach, Basic) {
 }
 
 REGISTER_TYPED_TEST_SUITE_P(ForEach, Basic);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, TestTypes);

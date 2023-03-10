@@ -41,3 +41,4 @@ TYPED_TEST_P(ReduceMHP, IteratorsRoot) {
 }
 
 REGISTER_TYPED_TEST_SUITE_P(ReduceMHP, RangeRoot, IteratorsRoot);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ReduceMHP, TestTypes);

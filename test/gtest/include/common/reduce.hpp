@@ -93,3 +93,4 @@ TYPED_TEST_P(Reduce, RangeDefaultInit) {
 REGISTER_TYPED_TEST_SUITE_P(Reduce, Range, RangeDefaultOp, RangeDefaultInit,
                             Iterators, IteratorsDefaultOp,
                             IteratorsDefaultInit);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Reduce, TestTypes);

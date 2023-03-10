@@ -36,3 +36,4 @@ TYPED_TEST_P(DistributedVector, Constructors) {
 }
 
 REGISTER_TYPED_TEST_SUITE_P(DistributedVector, Requirements, Constructors);
+INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, TestTypes);

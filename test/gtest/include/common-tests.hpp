@@ -4,6 +4,10 @@
 #pragma once
 
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
+  auto any = [](auto &&x) { return true; };
+  if (rng::count_if(r1, any) != rng::count_if(r2, any)) {
+    return false;
+  }
   for (auto e : rng::zip_view(r1, r2)) {
     if (e.first != e.second) {
       return false;
@@ -89,12 +93,3 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 
 template <lib::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
-
-#include "common/distributed_vector.hpp"
-#include "common/drop.hpp"
-#include "common/for_each.hpp"
-#include "common/reduce.hpp"
-#include "common/subrange.hpp"
-#include "common/take.hpp"
-#include "common/transform_view.hpp"
-#include "common/zip.hpp"
