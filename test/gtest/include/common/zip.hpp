@@ -38,5 +38,31 @@ TYPED_TEST_P(Zip, Basic) {
   }
 }
 
-REGISTER_TYPED_TEST_SUITE_P(Zip, Basic);
+auto zip_inner(auto &&r1, auto &&r2) {
+  return rng::views::zip(rng::subrange(r1.begin() + 1, r1.end() - 1),
+                         rng::subrange(r2.begin() + 1, r2.end() - 1));
+}
+
+TYPED_TEST_P(Zip, Subrange) {
+  std::size_t n = 10;
+
+  TypeParam dv_a(n), dv_b(n);
+  iota(dv_a, 100);
+  iota(dv_b, 200);
+
+  auto dv_z = zip_inner(dv_a, dv_b);
+  EXPECT_TRUE(check_segments(dv_z));
+  barrier();
+
+  if (comm_rank == 0) {
+    LocalVec<TypeParam> a(n), b(n);
+    rng::iota(a, 100);
+    rng::iota(b, 200);
+
+    auto z = zip_inner(a, b);
+    EXPECT_TRUE(equal(z, dv_z));
+  }
+}
+
+REGISTER_TYPED_TEST_SUITE_P(Zip, Basic, Subrange);
 INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Zip, TestTypes);

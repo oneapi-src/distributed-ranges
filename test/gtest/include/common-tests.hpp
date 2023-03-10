@@ -4,8 +4,8 @@
 #pragma once
 
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
-  auto any = [](auto &&x) { return true; };
-  if (rng::count_if(r1, any) != rng::count_if(r2, any)) {
+  if (rng::distance(rng::begin(r1), rng::end(r1)) !=
+      rng::distance(rng::begin(r2), rng::end(r2))) {
     return false;
   }
   for (auto e : rng::zip_view(r1, r2)) {
@@ -43,7 +43,9 @@ testing::AssertionResult check_segments(rng::range auto &&r) {
     return testing::AssertionSuccess();
   }
   return testing::AssertionFailure()
-         << fmt::format("\n    range: {}\n    segments: {}\n  ",
+         << fmt::format("\n"
+                        "    range:    {}\n"
+                        "    segments: {}\n  ",
                         rng::views::all(r), rng::views::all(segments));
 }
 
