@@ -72,7 +72,8 @@ auto convert_to_csr(Tuples &&tuples, shp::index<> shape, std::size_t nnz,
     rowptr[r + 1] = nnz;
   }
 
-  return csr_matrix_view(values, rowptr, colind, shape, nnz, 0);
+  return csr_matrix_view(values, rowptr, colind,
+                         shp::index<I>(shape[0], shape[1]), nnz, 0);
 }
 
 /// Read in the Matrix Market file at location `file_path` and a return
@@ -245,8 +246,8 @@ auto mmread(std::string file_path, bool one_indexed = true) {
   views.reserve(a.grid_shape()[0] * a.grid_shape()[1]);
   events.reserve(a.grid_shape()[0] * a.grid_shape()[1]);
 
-  for (size_t i = 0; i < a.grid_shape()[0]; i++) {
-    for (size_t j = 0; j < a.grid_shape()[1]; j++) {
+  for (I i = 0; i < a.grid_shape()[0]; i++) {
+    for (I j = 0; j < a.grid_shape()[1]; j++) {
       auto &&tile = a.tile({i, j});
       shp::index<I> row_bounds(i * a.tile_shape()[0],
                                i * a.tile_shape()[0] + tile.shape()[0]);

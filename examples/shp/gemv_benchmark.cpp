@@ -25,13 +25,13 @@ template <grb::MatrixRange M> auto local_gemv(M &&a) {
 }
 
 int main(int argc, char **argv) {
-  auto devices = shp::get_duplicated_devices(sycl::default_selector_v, 8);
+  auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
   std::string fname = "/nfs/site/home/bbrock/data/mouse_gene.mtx";
 
-  using T = int;
-  using I = std::size_t;
+  using T = float;
+  using I = int;
 
   auto a = shp::mmread<T, I>(fname);
 
