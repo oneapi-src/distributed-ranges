@@ -25,18 +25,23 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
-  auto devices = policy.get_devices();
+  auto &&devices = policy.get_devices();
   std::vector<sycl::event> events;
 
   for (auto &&segment : lib::ranges::segments(r)) {
-    assert(rng::size(segment) > 0);
+    auto device = devices[lib::ranges::rank(segment)];
+
+    sycl::queue q(shp::context(), device);
+
+    assert(rng::distance(segment) > 0);
+
     auto local_segment = __detail::get_local_segment(segment);
-    assert(rng::size(segment) == rng::size(local_segment));
-    events.emplace_back(
-        sycl::queue(shp::context(), devices[lib::ranges::rank(segment)])
-            .parallel_for(rng::size(local_segment), [=](auto idx) {
-              fn(*(rng::begin(local_segment) + idx));
-            }));
+
+    auto first = rng::begin(local_segment);
+
+    auto event = q.parallel_for(rng::distance(local_segment),
+                                [=](auto idx) { fn(*(first + idx)); });
+    events.emplace_back(event);
   }
   __detail::wait(events);
 }
