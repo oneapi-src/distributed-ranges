@@ -289,7 +289,7 @@ public:
   void unpack(const auto &op) {
     for (std::size_t i = 0; i < data_.size(); i++) {
       drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
-      data_[i] = op(data_[i], *buffer++);
+      data_[i] = op(data_[i], buffer[i]);
       drlog.debug("       after {}\n", data_[i]);
     }
   }

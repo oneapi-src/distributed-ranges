@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
   cxxopts::Options options_spec(argv[0], "stencil 1d");
   // clang-format off
   options_spec.add_options()
+    ("log", "Enable logging")
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10"))
     ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
     ("help", "Print help");
@@ -130,8 +131,14 @@ int main(int argc, char *argv[]) {
 
   rows = options["rows"].as<std::size_t>();
   steps = options["steps"].as<std::size_t>();
+  std::ofstream *logfile = nullptr;
+  if (options.count("log")) {
+    logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
+    lib::drlog.set_file(*logfile);
+  }
+  lib::drlog.debug("Rank: {}\n", comm_rank);
+
   auto error = stencil();
-  fmt::print("Returned\n");
   MPI_Finalize();
   return error;
 }
