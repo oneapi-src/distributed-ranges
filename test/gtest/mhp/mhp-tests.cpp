@@ -4,46 +4,38 @@
 
 #include "mhp-tests.hpp"
 
-// Instantiate MHP-specific configurations for common tests
-template <typename T> struct CommonTestConfigBase {
-  using DV = mhp::distributed_vector<T>;
-  using DVA = mhp::distributed_vector<T, std::allocator<T>>;
-  using V = std::vector<T>;
+using TestTypes = ::testing::Types<
+#ifdef SYCL_LANGUAGE_VERSION
+    mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>,
+    mhp::distributed_vector<float, mhp::sycl_shared_allocator<float>>,
+#endif
+    mhp::distributed_vector<int>, mhp::distributed_vector<float>>;
 
-  static auto iota(auto &&r, auto val) { return mhp::iota(r, val); }
-};
-template <typename T>
-struct CommonTestConfigCPU : public CommonTestConfigBase<T> {
-  using DV = mhp::distributed_vector<T>;
-  using DVA = mhp::distributed_vector<T, std::allocator<T>>;
-  static auto policy() { return std::execution::par_unseq; }
-};
-#ifdef SYCL_LANGUAGE_VERSION
-template <typename T>
-struct CommonTestConfigSYCL : public CommonTestConfigBase<T> {
-  using DV = mhp::distributed_vector<T, mhp::sycl_shared_allocator<T>>;
-  using DVA = DV;
-  static auto policy() { return mhp::device_policy(); }
-};
-#endif
-using Common_Types = ::testing::Types<
-#ifdef SYCL_LANGUAGE_VERSION
-    CommonTestConfigSYCL<int>, CommonTestConfigSYCL<float>,
-#endif
-    CommonTestConfigCPU<int>, CommonTestConfigCPU<float>>;
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, CommonTests, Common_Types);
+#include "common/distributed_vector.hpp"
+#include "common/drop.hpp"
+#include "common/for_each.hpp"
+#include "common/reduce.hpp"
+#include "common/subrange.hpp"
+#include "common/take.hpp"
+#include "common/transform_view.hpp"
+#include "common/zip.hpp"
+
+#include "mhp/reduce.hpp"
 
 MPI_Comm comm;
-int comm_rank;
-int comm_size;
+std::size_t comm_rank;
+std::size_t comm_size;
 
 cxxopts::ParseResult options;
 
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &comm_rank);
-  MPI_Comm_size(comm, &comm_size);
+  int rank, size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+  comm_rank = rank;
+  comm_size = size;
   mhp::init();
 
   ::testing::InitGoogleTest(&argc, argv);

@@ -202,7 +202,8 @@ auto segments_(V &&v) {
 template <rng::range V>
   requires(lib::is_zip_view_v<std::remove_cvref_t<V>>)
 auto segments_(V &&zip) {
-  return lib::internal::zip_iter_segments(zip.begin());
+  return take_segments(lib::internal::zip_iter_segments(zip.begin()),
+                       rng::distance(rng::begin(zip), rng::end(zip)));
 }
 
 template <lib::internal::is_zip_iterator ZI> auto segments_(ZI zi) {

@@ -116,52 +116,6 @@ void iota(lib::distributed_contiguous_range auto &&r, auto value) {
 
 //
 //
-// Reduce
-//
-//
-
-/// Collective reduction on a distributed range
-template <lib::distributed_iterator DI, typename T>
-T reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op) {
-  T result = 0;
-  auto comm = default_comm();
-
-  if (aligned(first)) {
-    lib::drlog.debug("Parallel reduce\n");
-    // reduce each segment, collect in a vector
-    std::vector<T> locals;
-    rng::for_each(
-        local_segments(rng::subrange(first, last)),
-        [&](auto v) { locals.push_back(v); },
-        [=](auto sr) {
-          return std::reduce(std::execution::par_unseq, sr.begin(), sr.end(),
-                             T(0), binary_op);
-        });
-    // reduce the vector
-    auto local = std::reduce(std::execution::par_unseq, locals.begin(),
-                             locals.end(), T(0), binary_op);
-
-    // Collect rank values in a vector
-    std::vector<T> all(comm.size());
-    comm.gather(local, all, root);
-    if (comm.rank() == root) {
-      result = std::reduce(std::execution::par_unseq, all.begin(), all.end(),
-                           init, binary_op);
-    }
-  } else {
-    lib::drlog.debug("Serialreduce\n");
-    if (comm.rank() == root) {
-      // Reduce on root node
-      result =
-          std::reduce(std::execution::par_unseq, first, last, init, binary_op);
-    }
-    barrier();
-  }
-  return result;
-}
-
-//
-//
 // transform
 //
 //

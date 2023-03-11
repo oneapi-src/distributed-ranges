@@ -4,6 +4,10 @@
 #pragma once
 
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
+  if (rng::distance(rng::begin(r1), rng::end(r1)) !=
+      rng::distance(rng::begin(r2), rng::end(r2))) {
+    return false;
+  }
   for (auto e : rng::zip_view(r1, r2)) {
     if (e.first != e.second) {
       return false;
@@ -39,7 +43,9 @@ testing::AssertionResult check_segments(rng::range auto &&r) {
     return testing::AssertionSuccess();
   }
   return testing::AssertionFailure()
-         << fmt::format("\n    range: {}\n    segments: {}\n  ",
+         << fmt::format("\n"
+                        "    range:    {}\n"
+                        "    segments: {}\n  ",
                         rng::views::all(r), rng::views::all(segments));
 }
 
@@ -87,15 +93,5 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
   return v;
 }
 
-template <typename T> class CommonTests : public testing::Test {
-public:
-};
-
-TYPED_TEST_SUITE_P(CommonTests);
-
-#include "common/algorithm-tests.hpp"
-#include "common/dv-tests.hpp"
-#include "common/view-tests.hpp"
-REGISTER_TYPED_TEST_SUITE_P(CommonTests, DistributedVectorConstructors,
-                            DistributedVectorRequirements, Drop, ForEach,
-                            Subrange, DISABLED_Take, TransformView, ZipView);
+template <lib::distributed_range DR>
+using LocalVec = std::vector<typename DR::value_type>;

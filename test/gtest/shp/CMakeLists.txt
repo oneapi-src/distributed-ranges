@@ -7,8 +7,8 @@ add_executable(
   shp-tests.cpp
   containers.cpp
   algorithms.cpp
-  views.cpp
   copy.cpp
+  fill.cpp
 )
 
 add_executable(

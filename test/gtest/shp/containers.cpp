@@ -26,6 +26,36 @@ TYPED_TEST(DistributedVectorTest,
   EXPECT_EQ(second[0], lib::ranges::segments(second)[0][0]);
 }
 
+TYPED_TEST(DistributedVectorTest, fill_constructor) {
+  EXPECT_TRUE(equal(typename TestFixture::DistVec(10, 1),
+                    typename TestFixture::LocalVec(10, 1)));
+}
+
+TYPED_TEST(DistributedVectorTest, fill_constructor_one_item) {
+  EXPECT_TRUE(equal(typename TestFixture::DistVec(1, 77),
+                    typename TestFixture::LocalVec(1, 77)));
+}
+TYPED_TEST(DistributedVectorTest, fill_constructor_no_items) {
+  EXPECT_TRUE(
+      equal(typename TestFixture::DistVec(), typename TestFixture::LocalVec()));
+}
+
+TYPED_TEST(DistributedVectorTest, initializer_list) {
+  EXPECT_TRUE(
+      equal(typename TestFixture::DistVec{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+            typename TestFixture::LocalVec{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+}
+
+TYPED_TEST(DistributedVectorTest, initializer_list_constructor_one_item) {
+  EXPECT_TRUE(equal(typename TestFixture::DistVec{0},
+                    typename TestFixture::LocalVec{0}));
+}
+
+TYPED_TEST(DistributedVectorTest, initializer_list_constructor_no_items) {
+  EXPECT_TRUE(
+      equal(typename TestFixture::DistVec{}, typename TestFixture::LocalVec{}));
+}
+
 TYPED_TEST(DistributedVectorTest, Iterator) {
   const int n = 10;
   typename TestFixture::DistVec dv_a(n);

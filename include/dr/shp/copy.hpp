@@ -19,6 +19,7 @@ concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
                              std::is_trivially_copyable_v<Dest>;
 } // namespace __detail
 
+// TODO: move copy file into algorithms directory
 // TODO: (general for copy functions) in case the destination area is too small
 // segfault may occur - add some error handling
 
@@ -142,7 +143,7 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 }
 
 // fill with value
-
+// TODO: move fill code to seperate file
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
