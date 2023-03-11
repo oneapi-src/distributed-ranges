@@ -52,9 +52,15 @@ repos:
 
 - repo: local
   hooks:
-  - id: dr-style
-    name: dr-style
+  - id: dr-style-all
+    name: dr-style-all
     entry: python scripts/dr-style.py --Werror include test examples
+    language: system
+    pass_filenames: false
+    always_run: true
+  - id: dr-style-include
+    name: dr-style-include
+    entry: python scripts/dr-style.py --Werror --include include/dr/mhp
     language: system
     pass_filenames: false
     always_run: true
