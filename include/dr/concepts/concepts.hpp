@@ -38,7 +38,6 @@ template <typename R>
 concept remote_contiguous_range =
     remote_range<R> && rng::random_access_range<R> &&
     requires(R &r) {
-      lib::ranges::rank(r);
       { lib::ranges::local(r) } -> rng::contiguous_range;
     };
 
