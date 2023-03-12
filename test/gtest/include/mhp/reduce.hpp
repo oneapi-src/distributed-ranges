@@ -7,9 +7,9 @@ template <typename T> class ReduceMHP : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE_P(ReduceMHP);
+TYPED_TEST_SUITE(ReduceMHP, TestTypes);
 
-TYPED_TEST_P(ReduceMHP, RangeRoot) {
+TYPED_TEST(ReduceMHP, RangeRoot) {
   std::size_t root = 0;
   std::size_t n = 10;
   TypeParam dv_a(n);
@@ -24,7 +24,7 @@ TYPED_TEST_P(ReduceMHP, RangeRoot) {
   }
 }
 
-TYPED_TEST_P(ReduceMHP, IteratorsRoot) {
+TYPED_TEST(ReduceMHP, IteratorsRoot) {
   std::size_t root = 0;
   std::size_t n = 10;
   TypeParam dv_a(n);
@@ -39,6 +39,3 @@ TYPED_TEST_P(ReduceMHP, IteratorsRoot) {
     EXPECT_EQ(result, d_result);
   }
 }
-
-REGISTER_TYPED_TEST_SUITE_P(ReduceMHP, RangeRoot, IteratorsRoot);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ReduceMHP, TestTypes);

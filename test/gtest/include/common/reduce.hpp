@@ -4,93 +4,60 @@
 
 // Fixture
 template <typename T> class Reduce : public testing::Test {
-public:
+protected:
 };
 
-TYPED_TEST_SUITE_P(Reduce);
+TYPED_TEST_SUITE(Reduce, TestTypes);
 
-TYPED_TEST_P(Reduce, Range) {
-  std::size_t n = 10;
-
-  TypeParam dv_a(n);
-  iota(dv_a, 100);
-  auto d_result = xhp::reduce(default_policy(dv_a), dv_a, 0, std::plus{});
-
-  LocalVec<TypeParam> a(n);
-  rng::iota(a, 100);
-  auto result = std::reduce(a.begin(), a.end(), 0, std::plus{});
-  EXPECT_EQ(result, d_result);
+auto reduce_basic(const auto &op) {
+  return std::reduce(op.v.begin(), op.v.end(), 3, std::plus{});
 }
 
-TYPED_TEST_P(Reduce, Iterators) {
-  std::size_t n = 10;
-
-  TypeParam dv_a(n);
-  iota(dv_a, 100);
-  auto d_result = xhp::reduce(default_policy(dv_a), dv_a.begin() + 1,
-                              dv_a.end() - 1, 0, std::plus{});
-
-  LocalVec<TypeParam> a(n);
-  rng::iota(a, 100);
-  auto result = std::reduce(a.begin() + 1, a.end() - 1, 0, std::plus{});
-  EXPECT_EQ(result, d_result);
+auto reduce_default_op(const auto &op) {
+  return std::reduce(op.v.begin(), op.v.end(), 2);
 }
 
-TYPED_TEST_P(Reduce, IteratorsDefaultOp) {
-  std::size_t n = 10;
-
-  TypeParam dv_a(n);
-  iota(dv_a, 100);
-  auto d_result =
-      xhp::reduce(default_policy(dv_a), dv_a.begin() + 1, dv_a.end() - 1, 0);
-
-  LocalVec<TypeParam> a(n);
-  rng::iota(a, 100);
-  auto result = std::reduce(a.begin() + 1, a.end() - 1, 0);
-  EXPECT_EQ(result, d_result);
+auto reduce_default_init(const auto &op) {
+  return std::reduce(op.v.begin(), op.v.end());
 }
 
-TYPED_TEST_P(Reduce, IteratorsDefaultInit) {
-  std::size_t n = 10;
+TYPED_TEST(Reduce, Range) {
+  Op1<TypeParam> op(10);
 
-  TypeParam dv_a(n);
-  iota(dv_a, 100);
-  auto d_result =
-      xhp::reduce(default_policy(dv_a), dv_a.begin() + 1, dv_a.end() - 1);
-
-  LocalVec<TypeParam> a(n);
-  rng::iota(a, 100);
-  auto result = std::reduce(a.begin() + 1, a.end() - 1);
-  EXPECT_EQ(result, d_result);
+  EXPECT_EQ(reduce_basic(op),
+            xhp::reduce(default_policy(op.dv), op.dv, 3, std::plus{}));
 }
 
-TYPED_TEST_P(Reduce, RangeDefaultOp) {
-  std::size_t n = 10;
+TYPED_TEST(Reduce, Iterators) {
+  Op1<TypeParam> op(10);
 
-  TypeParam dv_a(n);
-  iota(dv_a, 100);
-  auto d_result = xhp::reduce(default_policy(dv_a), dv_a, 0);
-
-  LocalVec<TypeParam> a(n);
-  rng::iota(a, 100);
-  auto result = std::reduce(a.begin(), a.end(), 0);
-  EXPECT_EQ(result, d_result);
+  EXPECT_EQ(reduce_basic(op), xhp::reduce(default_policy(op.dv), op.dv.begin(),
+                                          op.dv.end(), 3, std::plus{}));
 }
 
-TYPED_TEST_P(Reduce, RangeDefaultInit) {
-  std::size_t n = 10;
+TYPED_TEST(Reduce, RangeDefaultOp) {
+  Op1<TypeParam> op(10);
 
-  TypeParam dv_a(n);
-  iota(dv_a, 100);
-  auto d_result = xhp::reduce(default_policy(dv_a), dv_a);
-
-  LocalVec<TypeParam> a(n);
-  rng::iota(a, 100);
-  auto result = std::reduce(a.begin(), a.end());
-  EXPECT_EQ(result, d_result);
+  EXPECT_EQ(reduce_default_op(op),
+            xhp::reduce(default_policy(op.dv), op.dv, 2));
 }
 
-REGISTER_TYPED_TEST_SUITE_P(Reduce, Range, RangeDefaultOp, RangeDefaultInit,
-                            Iterators, IteratorsDefaultOp,
-                            IteratorsDefaultInit);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, Reduce, TestTypes);
+TYPED_TEST(Reduce, IteratorsDefaultOp) {
+  Op1<TypeParam> op(10);
+
+  EXPECT_EQ(reduce_default_op(op),
+            xhp::reduce(default_policy(op.dv), op.dv.begin(), op.dv.end(), 2));
+}
+
+TYPED_TEST(Reduce, RangeDefaultInit) {
+  Op1<TypeParam> op(10);
+
+  EXPECT_EQ(reduce_default_init(op), xhp::reduce(default_policy(op.dv), op.dv));
+}
+
+TYPED_TEST(Reduce, IteratorsDefaultInit) {
+  Op1<TypeParam> op(10);
+
+  EXPECT_EQ(reduce_default_init(op),
+            xhp::reduce(default_policy(op.dv), op.dv.begin(), op.dv.end()));
+}

@@ -7,9 +7,9 @@ template <typename T> class ForEach : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE_P(ForEach);
+TYPED_TEST_SUITE(ForEach, TestTypes);
 
-TYPED_TEST_P(ForEach, Basic) {
+TYPED_TEST(ForEach, Basic) {
   std::size_t n = 10;
 
   auto neg = [](auto &v) { v = -v; };
@@ -25,6 +25,3 @@ TYPED_TEST_P(ForEach, Basic) {
     EXPECT_TRUE(unary_check(a_in, a, dv_a));
   }
 }
-
-REGISTER_TYPED_TEST_SUITE_P(ForEach, Basic);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, ForEach, TestTypes);

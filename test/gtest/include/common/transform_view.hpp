@@ -7,9 +7,9 @@ template <typename T> class TransformView : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE_P(TransformView);
+TYPED_TEST_SUITE(TransformView, TestTypes);
 
-TYPED_TEST_P(TransformView, Basic) {
+TYPED_TEST(TransformView, Basic) {
   std::size_t n = 10;
 
   auto neg = [](auto v) { return -v; };
@@ -26,6 +26,3 @@ TYPED_TEST_P(TransformView, Basic) {
     EXPECT_TRUE(equal(t, dv_t));
   }
 }
-
-REGISTER_TYPED_TEST_SUITE_P(TransformView, Basic);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, TestTypes);
