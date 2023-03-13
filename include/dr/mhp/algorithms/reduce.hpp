@@ -28,31 +28,31 @@ auto reduce(ExecutionPolicy &&policy, DR &&dr, T init, auto &&binary_op,
       if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                    device_policy>) {
         lib::drlog.debug("  with DPL\n");
-        return std::reduce(policy.dpl_policy, &*r.begin(), &*r.end(), T(0),
-                           binary_op);
+        return std::reduce(policy.dpl_policy, &*rng::begin(r), &*rng::end(r),
+                           T(0), binary_op);
       } else {
         lib::drlog.debug("  with CPU\n");
-        return std::reduce(std::execution::par_unseq, r.begin(), r.end(), T(0),
-                           binary_op);
+        return std::reduce(std::execution::par_unseq, rng::begin(r),
+                           rng::end(r), T(0), binary_op);
       }
     };
     auto locals = rng::views::transform(local_segments(dr), reduce);
-    auto local = std::reduce(std::execution::par_unseq, locals.begin(),
-                             locals.end(), T(0), binary_op);
+    auto local = std::reduce(std::execution::par_unseq, rng::begin(locals),
+                             rng::end(locals), T(0), binary_op);
 
     // Reduce locally, gather, reduce globally
-    std::vector<T> all(comm.size());
+    std::vector<T> all(comm.size()); // dr-style ignore
     // If root is provided, final reduce on root
     if (root) {
       comm.gather(local, all, *root);
       if (*root == comm.rank()) {
-        result = std::reduce(std::execution::par_unseq, all.begin(), all.end(),
-                             init, binary_op);
+        result = std::reduce(std::execution::par_unseq, rng::begin(all),
+                             rng::end(all), init, binary_op);
       }
     } else {
       comm.all_gather(local, all);
-      result = std::reduce(std::execution::par_unseq, all.begin(), all.end(),
-                           init, binary_op);
+      result = std::reduce(std::execution::par_unseq, rng::begin(all),
+                           rng::end(all), init, binary_op);
     }
     lib::drlog.debug("  locals: {}\n"
                      "  local: {}\n"

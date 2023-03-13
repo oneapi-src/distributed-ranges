@@ -209,7 +209,9 @@ public:
   }
 
   auto begin() const { return iterator(segments(), 0, 0); }
-  auto end() const { return iterator(segments(), segments().size(), 0); }
+  auto end() const {
+    return iterator(segments(), rng::distance(segments()), 0);
+  }
 
   auto size() const { return size_; }
   auto operator[](difference_type n) const { return *(begin() + n); }
@@ -219,9 +221,9 @@ private:
   void init(auto size, auto hb, auto allocator) {
     allocator_ = allocator;
     size_ = size;
+    auto comm_size = default_comm().size(); // dr-style ignore
     segment_size_ =
-        std::max({(size + default_comm().size() - 1) / default_comm().size(),
-                  hb.prev, hb.next});
+        std::max({(size + comm_size - 1) / comm_size, hb.prev, hb.next});
     data_size_ = segment_size_ + hb.prev + hb.next;
     data_ = allocator.allocate(data_size_);
     halo_ = new lib::span_halo<T>(default_comm(), data_, data_size_, hb);
@@ -256,11 +258,11 @@ private:
 template <typename DR>
 concept has_halo_method = lib::distributed_range<DR> &&
                           requires(DR &&dr) {
-                            { lib::ranges::segments(dr)[0].begin().halo() };
+                            { rng::begin(lib::ranges::segments(dr)[0]).halo() };
                           };
 
 auto &halo(has_halo_method auto &&dr) {
-  return lib::ranges::segments(dr)[0].begin().halo();
+  return rng::begin(lib::ranges::segments(dr)[0]).halo();
 }
 
 } // namespace mhp

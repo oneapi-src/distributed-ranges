@@ -35,10 +35,10 @@ void fill(DI first, DI last, auto value) {
 
 void copy(lib::distributed_contiguous_range auto &&in,
           lib::distributed_iterator auto out) {
-  if (aligned(in.begin(), out)) {
+  if (aligned(rng::begin(in), out)) {
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
-      rng::copy(in_seg, out_seg.begin());
+      rng::copy(in_seg, rng::begin(out_seg));
     }
     barrier();
   } else {
@@ -67,7 +67,7 @@ void for_each(ExecutionPolicy &&policy, lib::distributed_range auto &&dr,
                                device_policy>) {
     lib::drlog.debug("for_each: dpl execution\n");
     for (const auto &s : local_segments(dr)) {
-      std::for_each(policy.dpl_policy, &*s.begin(), &*s.end(), op);
+      std::for_each(policy.dpl_policy, &*rng::begin(s), &*rng::end(s), op);
     }
   } else {
     lib::drlog.debug("for_each: parallel cpu execution\n");
@@ -111,7 +111,7 @@ void iota(DI first, DI last, auto value) {
 
 /// Collective iota on distributed range
 void iota(lib::distributed_contiguous_range auto &&r, auto value) {
-  mhp::iota(r.begin(), r.end(), value);
+  mhp::iota(rng::begin(r), rng::end(r), value);
 }
 
 //
@@ -122,10 +122,10 @@ void iota(lib::distributed_contiguous_range auto &&r, auto value) {
 
 void transform(lib::distributed_range auto &&in,
                lib::distributed_iterator auto out, auto op) {
-  if (aligned(in.begin(), out)) {
+  if (aligned(rng::begin(in), out)) {
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
-      rng::transform(in_seg, out_seg.begin(), op);
+      rng::transform(in_seg, rng::begin(out_seg), op);
     }
     barrier();
   } else {
