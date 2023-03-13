@@ -22,6 +22,7 @@ using TestTypes = ::testing::Types<
 
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
+#include "common/fill.hpp"
 #include "common/for_each.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
