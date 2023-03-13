@@ -19,3 +19,15 @@ TYPED_TEST(ForEach, Range) {
   rng::for_each(ops.vec, negate);
   EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
 }
+
+TYPED_TEST(ForEach, Iterators) {
+  Ops1<TypeParam> ops(10);
+
+  auto negate = [](auto &v) { v = -v; };
+  auto input = ops.vec;
+
+  xhp::for_each(default_policy(ops.dist_vec), ops.dist_vec.begin() + 1,
+                ops.dist_vec.end() - 1, negate);
+  rng::for_each(ops.vec.begin() + 1, ops.vec.end() - 1, negate);
+  EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
+}
