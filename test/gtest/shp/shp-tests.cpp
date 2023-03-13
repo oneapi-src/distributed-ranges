@@ -9,6 +9,8 @@ using TestTypes = ::testing::Types<shp::distributed_vector<int>,
 
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
+// Not implemented???
+// #include "common/fill.hpp"
 #include "common/for_each.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
