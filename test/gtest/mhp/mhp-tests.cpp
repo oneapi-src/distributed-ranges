@@ -4,6 +4,15 @@
 
 #include "mhp-tests.hpp"
 
+// Use this for shorter build time
+// #define MINIMAL_TEST 1
+#ifdef MINIMAL_TEST
+
+using TestTypes = ::testing::Types<mhp::distributed_vector<int>>;
+#include "common/zip.hpp"
+
+#else
+
 using TestTypes = ::testing::Types<
 #ifdef SYCL_LANGUAGE_VERSION
     mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>,
@@ -20,7 +29,9 @@ using TestTypes = ::testing::Types<
 #include "common/transform_view.hpp"
 #include "common/zip.hpp"
 
-#include "mhp/reduce.hpp"
+#include "reduce.hpp"
+
+#endif
 
 MPI_Comm comm;
 std::size_t comm_rank;
