@@ -50,6 +50,6 @@ TEST(MhpTests, Stencil) {
     rng::fill(v_out, 100);
     std::transform(v_in.begin() + radius, v_in.end() - radius,
                    v_out.begin() + radius, sum);
-    EXPECT_TRUE(unary_check(v_in, v_out, dv_out));
+    EXPECT_TRUE(check_unary_op(v_in, v_out, dv_out));
   }
 }

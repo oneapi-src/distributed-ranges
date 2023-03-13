@@ -6,40 +6,41 @@
 template <lib::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
-template <typename T> struct Op1 {
-  Op1(std::size_t n) : dv(n), v(n) {
-    iota(dv, 100);
-    rng::iota(v, 100);
+template <typename T> struct Ops1 {
+  Ops1(std::size_t n) : dist_vec(n), vec(n) {
+    iota(dist_vec, 100);
+    rng::iota(vec, 100);
   }
 
-  T dv;
-  LocalVec<T> v;
+  T dist_vec;
+  LocalVec<T> vec;
 };
 
-template <typename T> struct Op2 {
-  Op2(std::size_t n) : dv_a(n), dv_b(n), v_a(n), v_b(n) {
-    iota(dv_a, 100);
-    iota(dv_b, 200);
-    rng::iota(v_a, 100);
-    rng::iota(v_b, 200);
+template <typename T> struct Ops2 {
+  Ops2(std::size_t n) : dist_vec0(n), dist_vec1(n), vec0(n), vec1(n) {
+    iota(dist_vec0, 100);
+    iota(dist_vec1, 200);
+    rng::iota(vec0, 100);
+    rng::iota(vec1, 200);
   }
 
-  T dv_a, dv_b;
-  LocalVec<T> v_a, v_b;
+  T dist_vec0, dist_vec1;
+  LocalVec<T> vec0, vec1;
 };
 
-template <typename T> struct Op3 {
-  Op3(std::size_t n) : dv_a(n), dv_b(n), dv_c(n), v_a(n), v_b(n), v_c(n) {
-    iota(dv_a, 100);
-    iota(dv_b, 200);
-    iota(dv_c, 200);
-    rng::iota(v_a, 100);
-    rng::iota(v_b, 200);
-    rng::iota(v_c, 200);
+template <typename T> struct Ops3 {
+  Ops3(std::size_t n)
+      : dist_vec0(n), dist_vec1(n), dist_vec2(n), vec0(n), vec1(n), vec2(n) {
+    iota(dist_vec0, 100);
+    iota(dist_vec1, 200);
+    iota(dist_vec2, 300);
+    rng::iota(vec0, 100);
+    rng::iota(vec1, 200);
+    rng::iota(vec2, 300);
   }
 
-  T dv_a, dv_b, dv_c;
-  LocalVec<T> v_a, v_b, v_c;
+  T dist_vec0, dist_vec1, dist_vec2;
+  LocalVec<T> vec0, vec1, vec2;
 };
 
 bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
@@ -108,7 +109,7 @@ auto check_view_message(rng::range auto &&ref, rng::range auto &&actual) {
          equal_message(ref, actual, "view mismatch");
 }
 
-auto check_mutable_view_message(auto &op, rng::range auto &&ref,
+auto check_mutable_view_message(auto &ops, rng::range auto &&ref,
                                 rng::range auto &&actual) {
   // Check view
   auto message = check_view_message(ref, actual);
@@ -117,9 +118,9 @@ auto check_mutable_view_message(auto &op, rng::range auto &&ref,
 
   // Mutate view
   auto negate = [](auto &val) { val = -val; };
-  auto input_vector = op.v;
+  auto input_vector = ops.vec;
   std::vector input_view(ref.begin(), ref.end());
-  xhp::for_each(default_policy(op.dv), actual, negate);
+  xhp::for_each(default_policy(ops.dist_vec), actual, negate);
   rng::for_each(ref, negate);
 
   // Check mutated view
@@ -127,15 +128,13 @@ auto check_mutable_view_message(auto &op, rng::range auto &&ref,
       unary_check_message(input_view, actual, ref, "mutated view mismatch");
 
   // Check underlying dv
-  message += unary_check_message(input_vector, op.v, op.dv,
+  message += unary_check_message(input_vector, ops.vec, ops.dist_vec,
                                  "mutated distributed range mismatch");
 
   return message;
 }
 
-auto equal(rng::range auto &&ref, rng::range auto &&actual,
-           std::string title = " ") {
-  auto message = equal_message(ref, actual, title);
+auto gtest_result(const auto &message) {
   if (message == "") {
     return testing::AssertionSuccess();
   } else {
@@ -143,24 +142,25 @@ auto equal(rng::range auto &&ref, rng::range auto &&actual,
   }
 }
 
-auto unary_check(rng::range auto &&in, rng::range auto &&ref,
-                 rng::range auto &&tst, std::string title = "") {
-  auto result = unary_check_message(in, ref, tst, title);
-  if (result == "") {
-    return testing::AssertionSuccess();
-  } else {
-    return testing::AssertionFailure() << result;
-  }
+auto equal(rng::range auto &&ref, rng::range auto &&actual,
+           std::string title = " ") {
+  return gtest_result(equal_message(ref, actual, title));
 }
 
-auto binary_check(rng::range auto &&a, rng::range auto &&b,
-                  rng::range auto &&ref, rng::range auto &&tst) {
-  if (is_equal(ref, tst)) {
+auto check_unary_op(rng::range auto &&in, rng::range auto &&ref,
+                    rng::range auto &&tst, std::string title = "") {
+  return gtest_result(unary_check_message(in, ref, tst, title));
+}
+
+auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
+                           rng::range auto &&ref, rng::range auto &&actual) {
+  if (is_equal(ref, actual)) {
     return testing::AssertionSuccess();
   } else {
-    return testing::AssertionFailure() << fmt::format(
-               "\n      a: {}\n      b: {}\n    ref: {}\n    tst: {}\n  ", a, b,
-               ref, tst);
+    return testing::AssertionFailure()
+           << fmt::format("\n        a: {}\n        b: {}\n      ref: {}\n    "
+                          "actual: {}\n  ",
+                          a, b, ref, actual);
   }
 }
 
@@ -175,34 +175,16 @@ auto check_segments(std::forward_iterator auto di) {
 }
 
 auto check_segments(rng::range auto &&dr) {
-  auto message = check_segments_message(dr);
-  if (message == "") {
-    return testing::AssertionSuccess();
-  } else {
-    return testing::AssertionFailure() << message;
-    ;
-  }
+  return gtest_result(check_segments_message(dr));
 }
 
 auto check_view(rng::range auto &&ref, rng::range auto &&actual) {
-  auto message = check_view_message(ref, actual);
-  if (message == "") {
-    return testing::AssertionSuccess();
-  } else {
-    return testing::AssertionFailure() << message;
-    ;
-  }
+  return gtest_result(check_view_message(ref, actual));
 }
 
 auto check_mutable_view(auto &op, rng::range auto &&ref,
                         rng::range auto &&actual) {
-  auto message = check_mutable_view_message(op, ref, actual);
-  if (message == "") {
-    return testing::AssertionSuccess();
-  } else {
-    return testing::AssertionFailure() << message;
-    ;
-  }
+  return gtest_result(check_mutable_view_message(op, ref, actual));
 }
 
 template <typename T>

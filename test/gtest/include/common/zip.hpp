@@ -10,19 +10,18 @@ public:
 TYPED_TEST_SUITE(Zip, TestTypes);
 
 TYPED_TEST(Zip, Basic) {
-  Op2<TypeParam> ops(10);
+  Ops2<TypeParam> ops(10);
 
-  auto d_z = zhp::zip(ops.dv_a, ops.dv_b);
-  EXPECT_TRUE(check_segments(d_z));
-  EXPECT_TRUE(equal(rng::views::zip(ops.v_a, ops.v_b), d_z));
+  EXPECT_TRUE(check_view(rng::views::zip(ops.vec0, ops.vec1),
+                         zhp::zip(ops.dist_vec0, ops.dist_vec1)));
 }
 
 TYPED_TEST(Zip, Zip3) {
-  Op3<TypeParam> ops(10);
+  Ops3<TypeParam> ops(10);
 
-  auto d_z = zhp::zip(ops.dv_a, ops.dv_b, ops.dv_c);
-  EXPECT_TRUE(check_segments(d_z));
-  EXPECT_TRUE(equal(rng::views::zip(ops.v_a, ops.v_b, ops.v_c), d_z));
+  EXPECT_TRUE(
+      check_view(rng::views::zip(ops.vec0, ops.vec1, ops.vec2),
+                 zhp::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
 }
 
 auto zip_inner(auto &&r1, auto &&r2) {
@@ -31,9 +30,8 @@ auto zip_inner(auto &&r1, auto &&r2) {
 }
 
 TYPED_TEST(Zip, Subrange) {
-  Op2<TypeParam> ops(10);
+  Ops2<TypeParam> ops(10);
 
-  auto dv_z = zip_inner(ops.dv_a, ops.dv_b);
-  EXPECT_TRUE(check_segments(dv_z));
-  EXPECT_TRUE(equal(zip_inner(ops.v_a, ops.v_b), dv_z));
+  EXPECT_TRUE(check_view(zip_inner(ops.vec0, ops.vec1),
+                         zip_inner(ops.dist_vec0, ops.dist_vec1)));
 }

@@ -10,8 +10,15 @@ public:
 TYPED_TEST_SUITE(Drop, TestTypes);
 
 TYPED_TEST(Drop, Basic) {
-  Op1<TypeParam> op(10);
+  Ops1<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_mutable_view(op, rng::views::drop(op.v, 2),
-                                 rng::views::drop(op.dv, 2)));
+  EXPECT_TRUE(check_view(rng::views::drop(ops.vec, 2),
+                         rng::views::drop(ops.dist_vec, 2)));
+}
+
+TYPED_TEST(Drop, Mutate) {
+  Ops1<TypeParam> ops(10);
+
+  EXPECT_TRUE(check_mutable_view(ops, rng::views::drop(ops.vec, 2),
+                                 rng::views::drop(ops.dist_vec, 2)));
 }

@@ -9,55 +9,48 @@ protected:
 
 TYPED_TEST_SUITE(Reduce, TestTypes);
 
-auto reduce_basic(const auto &op) {
-  return std::reduce(op.v.begin(), op.v.end(), 3, std::plus{});
-}
-
-auto reduce_default_op(const auto &op) {
-  return std::reduce(op.v.begin(), op.v.end(), 2);
-}
-
-auto reduce_default_init(const auto &op) {
-  return std::reduce(op.v.begin(), op.v.end());
-}
-
 TYPED_TEST(Reduce, Range) {
-  Op1<TypeParam> op(10);
+  Ops1<TypeParam> ops(10);
 
-  EXPECT_EQ(reduce_basic(op),
-            xhp::reduce(default_policy(op.dv), op.dv, 3, std::plus{}));
+  EXPECT_EQ(
+      std::reduce(ops.vec.begin(), ops.vec.end(), 3, std::plus{}),
+      xhp::reduce(default_policy(ops.dist_vec), ops.dist_vec, 3, std::plus{}));
 }
 
 TYPED_TEST(Reduce, Iterators) {
-  Op1<TypeParam> op(10);
+  Ops1<TypeParam> ops(10);
 
-  EXPECT_EQ(reduce_basic(op), xhp::reduce(default_policy(op.dv), op.dv.begin(),
-                                          op.dv.end(), 3, std::plus{}));
+  EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end(), 3, std::plus{}),
+            xhp::reduce(default_policy(ops.dist_vec), ops.dist_vec.begin(),
+                        ops.dist_vec.end(), 3, std::plus{}));
 }
 
 TYPED_TEST(Reduce, RangeDefaultOp) {
-  Op1<TypeParam> op(10);
+  Ops1<TypeParam> ops(10);
 
-  EXPECT_EQ(reduce_default_op(op),
-            xhp::reduce(default_policy(op.dv), op.dv, 2));
+  EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end(), 3),
+            xhp::reduce(default_policy(ops.dist_vec), ops.dist_vec, 3));
 }
 
 TYPED_TEST(Reduce, IteratorsDefaultOp) {
-  Op1<TypeParam> op(10);
+  Ops1<TypeParam> ops(10);
 
-  EXPECT_EQ(reduce_default_op(op),
-            xhp::reduce(default_policy(op.dv), op.dv.begin(), op.dv.end(), 2));
+  EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end(), 3),
+            xhp::reduce(default_policy(ops.dist_vec), ops.dist_vec.begin(),
+                        ops.dist_vec.end(), 3));
 }
 
 TYPED_TEST(Reduce, RangeDefaultInit) {
-  Op1<TypeParam> op(10);
+  Ops1<TypeParam> ops(10);
 
-  EXPECT_EQ(reduce_default_init(op), xhp::reduce(default_policy(op.dv), op.dv));
+  EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end()),
+            xhp::reduce(default_policy(ops.dist_vec), ops.dist_vec));
 }
 
 TYPED_TEST(Reduce, IteratorsDefaultInit) {
-  Op1<TypeParam> op(10);
+  Ops1<TypeParam> ops(10);
 
-  EXPECT_EQ(reduce_default_init(op),
-            xhp::reduce(default_policy(op.dv), op.dv.begin(), op.dv.end()));
+  EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end()),
+            xhp::reduce(default_policy(ops.dist_vec), ops.dist_vec.begin(),
+                        ops.dist_vec.end()));
 }

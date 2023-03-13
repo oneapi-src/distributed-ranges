@@ -4,12 +4,12 @@
 
 #include "mhp-tests.hpp"
 
+// Use this for shorter build time
 // #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
-// Use this for smaller build time
 using TestTypes = ::testing::Types<mhp::distributed_vector<int>>;
-#include "common/drop.hpp"
+#include "common/zip.hpp"
 
 #else
 
@@ -29,7 +29,7 @@ using TestTypes = ::testing::Types<
 #include "common/transform_view.hpp"
 #include "common/zip.hpp"
 
-#include "mhp/reduce.hpp"
+#include "reduce.hpp"
 
 #endif
 
