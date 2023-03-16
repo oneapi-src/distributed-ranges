@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/algorithms/gemv.hpp>
-#include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/shp.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -51,7 +49,7 @@ int main(int argc, char **argv) {
   std::vector<double> durations;
   durations.reserve(n_iterations);
 
-  shp::gemv_rows(c, a, b);
+  shp::gemv(c, a, b);
   std::vector<T> l(c.size());
   shp::copy(c.begin(), c.end(), l.begin());
   for (std::size_t i = 0; i < l.size(); i++) {
@@ -63,7 +61,7 @@ int main(int argc, char **argv) {
 
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
-    shp::gemv_rows(c, a, b);
+    shp::gemv(c, a, b);
     auto end = std::chrono::high_resolution_clock::now();
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
@@ -97,7 +95,7 @@ int main(int argc, char **argv) {
 
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
-    shp::gemv(c, a, b);
+    shp::flat_gemv(c, a, b);
     auto end = std::chrono::high_resolution_clock::now();
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
