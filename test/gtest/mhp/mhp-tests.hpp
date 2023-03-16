@@ -33,5 +33,3 @@ default_policy(const mhp::distributed_vector<T, std::allocator<T>> &dv) {
 }
 
 #include "common-tests.hpp"
-
-#include "mhp/reduce.hpp"

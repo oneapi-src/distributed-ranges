@@ -13,67 +13,37 @@
 
 namespace shp {
 
-template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          typename Fn>
-void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
-  static_assert(
-      std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
-
-  if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
-                               device_policy>) {
-    auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
-
-    std::vector<sycl::event> events;
-
-    for (auto &&segment : lib::ranges::segments(r)) {
-      auto device = devices[lib::ranges::rank(segment)];
-
-      sycl::queue q(shp::context(), device);
-
-      auto local_segment = lib::ranges::local(segment);
-
-      auto begin = rng::begin(local_segment);
-
-      assert(rng::size(segment) > 0);
-      auto event = q.parallel_for(rng::size(segment),
-                                  [=](auto idx) { fn(*(begin + idx)); });
-      events.emplace_back(event);
-    }
-
-    __detail::wait(events);
-  } else {
-    assert(false);
-  }
+namespace __detail {
+auto get_local_segment(lib::remote_contiguous_range auto &&r) {
+  return lib::ranges::local(r);
 }
+auto get_local_segment(rng::forward_range auto &&r) { return r; }
+} // namespace __detail
 
 template <typename ExecutionPolicy, lib::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
-
-  static_assert(
+  static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
-  if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
-                               device_policy>) {
-    auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
+  auto &&devices = policy.get_devices();
+  std::vector<sycl::event> events;
 
-    std::vector<sycl::event> events;
+  for (auto &&segment : lib::ranges::segments(r)) {
+    auto device = devices[lib::ranges::rank(segment)];
 
-    for (auto &&segment : lib::ranges::segments(r)) {
-      auto device = devices[lib::ranges::rank(segment)];
+    sycl::queue q(shp::context(), device);
 
-      sycl::queue q(shp::context(), device);
+    assert(rng::distance(segment) > 0);
 
-      auto begin = rng::begin(segment);
+    auto local_segment = __detail::get_local_segment(segment);
 
-      auto event = q.parallel_for(rng::size(segment),
-                                  [=](auto idx) { fn(*(begin + idx)); });
-      events.emplace_back(event);
-    }
+    auto first = rng::begin(local_segment);
 
-    __detail::wait(events);
-  } else {
-    assert(false);
+    auto event = q.parallel_for(rng::distance(local_segment),
+                                [=](auto idx) { fn(*(first + idx)); });
+    events.emplace_back(event);
   }
+  __detail::wait(events);
 }
 
 template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename Fn>

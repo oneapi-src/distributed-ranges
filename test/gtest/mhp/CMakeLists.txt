@@ -12,7 +12,6 @@ add_executable(
   alignment.cpp
   distributed_vector.cpp
   stencil.cpp
-  views.cpp
 )
 
 target_link_libraries(

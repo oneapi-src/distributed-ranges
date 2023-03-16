@@ -4,17 +4,20 @@
 
 #include "shp-tests.hpp"
 
-using Types = ::testing::Types<shp::distributed_vector<int>,
-                               shp::distributed_vector<float>>;
+using TestTypes = ::testing::Types<shp::distributed_vector<int>,
+                                   shp::distributed_vector<float>>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, DistributedVector, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Drop, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, ForEach, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Reduce, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Subrange, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Take, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, TransformView, Types);
-INSTANTIATE_TYPED_TEST_SUITE_P(SHP, Zip, Types);
+#include "common/distributed_vector.hpp"
+#include "common/drop.hpp"
+// Not implemented???
+// #include "common/fill.hpp"
+#include "common/for_each.hpp"
+#include "common/reduce.hpp"
+#include "common/subrange.hpp"
+#include "common/take.hpp"
+#include "common/transform_view.hpp"
+// Issue with 2 element zips
+// #include "common/zip.hpp"
 
 // To share tests with MHP
 std::size_t comm_rank = 0;

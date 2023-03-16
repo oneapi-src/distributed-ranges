@@ -7,37 +7,31 @@ template <typename T> class Zip : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE_P(Zip);
+TYPED_TEST_SUITE(Zip, TestTypes);
 
-TYPED_TEST_P(Zip, Basic) {
-  std::size_t n = 10;
+TYPED_TEST(Zip, Basic) {
+  Ops2<TypeParam> ops(10);
 
-  TypeParam dv_a(n), dv_b(n), dv_c(n);
-  iota(dv_a, 100);
-  iota(dv_b, 200);
-  iota(dv_c, 300);
-
-  // DISABLE 2 zip
-  // auto d_z2 = zhp::zip(dv_a, dv_b);
-  // EXPECT_TRUE(check_segments(d_z2));
-
-  auto d_z3 = zhp::zip(dv_a, dv_b, dv_c);
-  EXPECT_TRUE(check_segments(d_z3));
-  barrier();
-
-  if (comm_rank == 0) {
-    LocalVec<TypeParam> a(n), b(n), c(n);
-    rng::iota(a, 100);
-    rng::iota(b, 200);
-    rng::iota(c, 300);
-
-    // DISABLE 2 zip
-    // auto z2 = rng::views::zip(a,  b);
-    // EXPECT_TRUE(equal(z2, d_z2));
-
-    auto z3 = rng::views::zip(a, b, c);
-    EXPECT_TRUE(equal(z3, d_z3));
-  }
+  EXPECT_TRUE(check_view(rng::views::zip(ops.vec0, ops.vec1),
+                         zhp::zip(ops.dist_vec0, ops.dist_vec1)));
 }
 
-REGISTER_TYPED_TEST_SUITE_P(Zip, Basic);
+TYPED_TEST(Zip, Zip3) {
+  Ops3<TypeParam> ops(10);
+
+  EXPECT_TRUE(
+      check_view(rng::views::zip(ops.vec0, ops.vec1, ops.vec2),
+                 zhp::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
+}
+
+auto zip_inner(auto &&r1, auto &&r2) {
+  return rng::views::zip(rng::subrange(r1.begin() + 1, r1.end() - 1),
+                         rng::subrange(r2.begin() + 1, r2.end() - 1));
+}
+
+TYPED_TEST(Zip, Subrange) {
+  Ops2<TypeParam> ops(10);
+
+  EXPECT_TRUE(check_view(zip_inner(ops.vec0, ops.vec1),
+                         zip_inner(ops.dist_vec0, ops.dist_vec1)));
+}

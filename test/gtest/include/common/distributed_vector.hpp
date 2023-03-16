@@ -7,9 +7,9 @@ template <typename T> class DistributedVector : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE_P(DistributedVector);
+TYPED_TEST_SUITE(DistributedVector, TestTypes);
 
-TYPED_TEST_P(DistributedVector, Requirements) {
+TYPED_TEST(DistributedVector, Requirements) {
   TypeParam dv(10);
 
   static_assert(rng::random_access_range<decltype(dv.segments())>);
@@ -24,7 +24,7 @@ TYPED_TEST_P(DistributedVector, Requirements) {
   static_assert(lib::distributed_contiguous_range<decltype(dv)>);
 }
 
-TYPED_TEST_P(DistributedVector, Constructors) {
+TYPED_TEST(DistributedVector, Constructors) {
   TypeParam a1(10);
   iota(a1, 10);
 
@@ -34,5 +34,3 @@ TYPED_TEST_P(DistributedVector, Constructors) {
     EXPECT_TRUE(equal(a3, v3));
   }
 }
-
-REGISTER_TYPED_TEST_SUITE_P(DistributedVector, Requirements, Constructors);

@@ -20,7 +20,9 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 logger.propagate = False
 
-positives = [
+exclude_rule = re.compile('dr-style ignore')
+
+all_rules = [
     (
         r'using namespace sycl|using namespace cl::sycl',
         'eliminate using',
@@ -57,7 +59,35 @@ positives = [
     ),
 ]
 
-compiled_positives = []
+all_rules_compiled = []
+
+include_rules = [
+    (
+        r'\.begin()',
+        'use rng::begin()',
+    ),
+    (
+        r'\.end()',
+        'use rng::end()',
+    ),
+    (
+        r'\.size()',
+        'use rng::distance()',
+    ),
+    (
+        r'std::begin\(',
+        'use rng::begin()',
+    ),
+    (
+        r'std::end\(',
+        'use rng::end()',
+    ),
+    (
+        r'std::distance\(',
+        'use rng::distance()',
+    ),
+]
+include_rules_compiled = []
 
 
 def parse_args():
@@ -72,7 +102,10 @@ def parse_args():
         '--Werror', action='store_true', help='treat warnings as errors'
     )
     parser.add_argument(
-        '--verbose', action='store_true', help='emit informational messages'
+        '--verbose', action='store_true', help='debugging output'
+    )
+    parser.add_argument(
+        '--include', action='store_true', help='use include directory rules'
     )
     return parser.parse_args()
 
@@ -81,17 +114,18 @@ def warning(warning, file, line, message):
     global errors
     if args.Werror:
         errors += 1
-    logger.warning('%s:%d: warning: %s: %s' % (file, line, warning, message))
+    logger.warning(f'{file}:{line}: warning: {warning}: {message}')
 
 
 def check_file(path):
-    logging.info('Checking %s' % path)
+    logging.info(f'Checking {path}')
+    rules = include_rules_compiled if args.include else all_rules_compiled
     lineno = 1
     with open(path) as fin:
         for line in fin.readlines():
-            for check in compiled_positives:
-                if check[0].search(line):
-                    warning(check[1], path, lineno, line.rstrip())
+            for rule in rules:
+                if rule[0].search(line) and not exclude_rule.search(line):
+                    warning(rule[1], path, lineno, line.rstrip())
             lineno += 1
 
 
@@ -102,9 +136,12 @@ def check_files():
 
 
 def compile_checks():
-    global compiled_positives
-    compiled_positives = [
-        (re.compile(check[0]), check[1]) for check in positives
+    global all_rules_compiled, include_rules_compiled
+    all_rules_compiled = [
+        (re.compile(check[0]), check[1]) for check in all_rules
+    ]
+    include_rules_compiled = [
+        (re.compile(check[0]), check[1]) for check in include_rules
     ]
 
 
@@ -112,7 +149,7 @@ def main():
     global args
     args = parse_args()
     if args.verbose:
-        ch.setLevel(logging.INFO)
+        logging.basicConfig(level=logging.INFO)
     compile_checks()
     check_files()
     print(f'Errors: {errors}')
