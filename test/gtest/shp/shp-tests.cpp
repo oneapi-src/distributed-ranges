@@ -52,16 +52,18 @@ int main(int argc, char *argv[]) {
 
   if (dev_num > 0) {
     unsigned int i = 0;
-    while (devices.size() < dev_num)
+    while (devices.size() < dev_num) {
       devices.push_back(devices[i++]);
+    }
     devices.resize(dev_num); // if too many devices
   }
 
   shp::init(devices);
 
-  for (auto &device : devices)
+  for (auto &device : devices) {
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
               << "\n";
+  }
 
   return RUN_ALL_TESTS();
 }
