@@ -9,6 +9,7 @@ add_executable(
   algorithms.cpp
   copy.cpp
   fill.cpp
+  gemv.cpp
 )
 
 add_executable(

@@ -208,9 +208,10 @@ private:
   TIter values_;
   IIter rowptr_;
   IIter colind_;
-  size_type nnz_;
 
   key_type shape_;
+  size_type nnz_;
+
   size_type rank_;
   key_type idx_offset_;
 };
