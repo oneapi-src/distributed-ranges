@@ -56,6 +56,11 @@ public:
       : shp::span<T, Iter>(rng::begin(r), rng::size(r)),
         rank_(lib::ranges::rank(r)) {}
 
+  template <rng::random_access_range R>
+  device_span(R &&r, std::size_t rank)
+      : shp::span<T, Iter>(rng::begin(r), rng::size(r)),
+        rank_(rank) {}
+
   template <class It>
   constexpr device_span(It first, std::size_t count, std::size_t rank)
       : shp::span<T, Iter>(first, count), rank_(rank) {}
@@ -85,5 +90,9 @@ private:
 
 template <rng::random_access_range R>
 device_span(R &&) -> device_span<rng::range_value_t<R>, rng::iterator_t<R>>;
+
+template <rng::random_access_range R>
+device_span(R &&, std::size_t) -> device_span<rng::range_value_t<R>, rng::iterator_t<R>>;
+
 
 } // namespace shp
