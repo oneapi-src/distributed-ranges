@@ -117,7 +117,7 @@ auto check_mutable_view_message(auto &ops, rng::range auto &&ref,
   barrier();
 
   // Mutate view
-  auto negate = [](auto &val) { val = -val; };
+  auto negate = [](auto &&val) { val = -val; };
   auto input_vector = ops.vec;
   std::vector input_view(ref.begin(), ref.end());
   xhp::for_each(default_policy(ops.dist_vec), actual, negate);

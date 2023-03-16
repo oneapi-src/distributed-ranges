@@ -111,7 +111,7 @@ using distributed_vector_iterator =
 
 // TODO: support teams, distributions
 
-template <typename T, typename Allocator = shp::shared_allocator<T>>
+template <typename T, typename Allocator = shp::device_allocator<T>>
 struct distributed_vector {
 public:
   using segment_type = shp::device_vector<T, Allocator>;

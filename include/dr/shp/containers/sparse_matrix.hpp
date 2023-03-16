@@ -138,7 +138,7 @@ public:
   using reference = shp::matrix_ref<T, scalar_reference>;
   using const_reference = shp::matrix_ref<const T, const_scalar_reference>;
 
-  using key_type = shp::index<>;
+  using key_type = shp::index<I>;
 
   using segment_type = shp::csr_matrix_view<
       T, I, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>,
@@ -192,8 +192,57 @@ public:
     size_t tn =
         std::min(tile_shape_[1], shape()[1] - tile_index[1] * tile_shape_[1]);
 
-    return segment_type(values, rowptr, colind, key_type{tm, tn}, nnz,
+    return segment_type(values, rowptr, colind, key_type(tm, tn), nnz,
                         values_[tile_idx].rank());
+  }
+
+  template <typename... Args>
+  auto copy_tile_async(key_type tile_index,
+                       csr_matrix_view<T, I, Args...> tile_view) {
+    std::size_t tile_idx = tile_index[0] * grid_shape_[1] + tile_index[1];
+    auto &&values = values_[tile_idx];
+    auto &&colind = colind_[tile_idx];
+    auto &&rowptr = rowptr_[tile_idx];
+    auto &&nnz = nnz_[tile_idx];
+
+    total_nnz_ -= nnz;
+    nnz = tile_view.size();
+
+    total_nnz_ += tile_view.size();
+
+    values.resize(tile_view.size());
+    colind.resize(tile_view.size());
+    rowptr.resize(tile_view.shape()[0] + 1);
+
+    auto v_e =
+        shp::copy_async(tile_view.values_data(),
+                        tile_view.values_data() + values.size(), values.data());
+
+    auto c_e =
+        shp::copy_async(tile_view.colind_data(),
+                        tile_view.colind_data() + colind.size(), colind.data());
+
+    auto r_e =
+        shp::copy_async(tile_view.rowptr_data(),
+                        tile_view.rowptr_data() + rowptr.size(), rowptr.data());
+
+    tiles_ = generate_tiles_();
+    segments_ = generate_segments_();
+
+    sycl::queue q;
+
+    auto e = q.submit([&](auto &&h) {
+      h.depends_on(v_e);
+      h.depends_on(c_e);
+      h.depends_on(r_e);
+    });
+    return e;
+  }
+
+  template <typename... Args>
+  void copy_tile(key_type tile_index,
+                 csr_matrix_view<T, I, Args...> tile_view) {
+    copy_tile_async(tile_index, tile_view).wait();
   }
 
   key_type tile_shape() const noexcept { return tile_shape_; }
@@ -210,8 +259,10 @@ private:
 
     for (size_t i = 0; i < grid_shape_[0]; i++) {
       for (size_t j = 0; j < grid_shape_[1]; j++) {
-        size_t tm = std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
+        size_t tm = std::min<std::size_t>(tile_shape_[0],
+                                          shape()[0] - i * tile_shape_[0]);
+        size_t tn = std::min<std::size_t>(tile_shape_[1],
+                                          shape()[1] - j * tile_shape_[1]);
 
         std::size_t tile_idx = i * grid_shape_[1] + j;
 
@@ -220,7 +271,7 @@ private:
         auto colind = colind_[tile_idx].begin();
         auto nnz = nnz_[tile_idx];
 
-        views_.emplace_back(values, rowptr, colind, key_type{tm, tn}, nnz,
+        views_.emplace_back(values, rowptr, colind, key_type(tm, tn), nnz,
                             values_[tile_idx].rank());
       }
     }
@@ -232,8 +283,10 @@ private:
 
     for (size_t i = 0; i < grid_shape_[0]; i++) {
       for (size_t j = 0; j < grid_shape_[1]; j++) {
-        size_t tm = std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
+        size_t tm = std::min<std::size_t>(tile_shape_[0],
+                                          shape()[0] - i * tile_shape_[0]);
+        size_t tn = std::min<std::size_t>(tile_shape_[1],
+                                          shape()[1] - j * tile_shape_[1]);
 
         std::size_t tile_idx = i * grid_shape_[1] + j;
 
@@ -245,9 +298,9 @@ private:
         size_t m_offset = i * tile_shape_[0];
         size_t n_offset = j * tile_shape_[1];
 
-        views_.emplace_back(values, rowptr, colind, key_type{tm, tn}, nnz,
+        views_.emplace_back(values, rowptr, colind, key_type(tm, tn), nnz,
                             values_[i * grid_shape_[1] + j].rank(),
-                            key_type{m_offset, n_offset});
+                            key_type(m_offset, n_offset));
       }
     }
     return views_;
@@ -255,8 +308,8 @@ private:
 
 private:
   void init_() {
-    grid_shape_ = partition_->grid_shape(shape());
-    tile_shape_ = partition_->tile_shape(shape());
+    grid_shape_ = key_type(partition_->grid_shape(shape()));
+    tile_shape_ = key_type(partition_->tile_shape(shape()));
 
     values_.reserve(grid_shape_[0] * grid_shape_[1]);
     rowptr_.reserve(grid_shape_[0] * grid_shape_[1]);
@@ -296,8 +349,10 @@ private:
       for (std::size_t j = 0; j < grid_shape_[1]; j++) {
         std::size_t rank = partition_->tile_rank(shape(), {i, j});
 
-        size_t tm = std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
+        size_t tm = std::min<std::size_t>(tile_shape_[0],
+                                          shape()[0] - i * tile_shape_[0]);
+        size_t tn = std::min<std::size_t>(tile_shape_[1],
+                                          shape()[1] - j * tile_shape_[1]);
 
         auto device = shp::devices()[rank];
         shp::device_allocator<T> alloc(shp::context(), device);

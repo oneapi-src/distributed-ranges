@@ -20,9 +20,7 @@ concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
 } // namespace __detail
 
 // TODO: move copy file into algorithms directory
-// TODO: (general for copy functions) in case the destination area is too small
-// segfault may occur - add some error handling
-
+// Copy between contiguous ranges
 template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
@@ -35,11 +33,12 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
-void copy(InputIt first, InputIt last, OutputIt d_first) {
+OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
   return d_first + (last - first);
 }
 
+// Copy from contiguous range to device
 template <std::contiguous_iterator Iter, typename T>
   requires __detail::is_syclmemcopyable<std::iter_value_t<Iter>, T>
 sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
@@ -55,6 +54,7 @@ device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
   return d_first + (last - first);
 }
 
+// Copy from device to contiguous range
 template <typename T, std::contiguous_iterator Iter>
   requires __detail::is_syclmemcopyable<T, std::iter_value_t<Iter>>
 sycl::event copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
@@ -66,6 +66,26 @@ sycl::event copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
 template <typename T, std::contiguous_iterator Iter>
   requires __detail::is_syclmemcopyable<T, std::iter_value_t<Iter>>
 Iter copy(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
+  copy_async(first, last, d_first).wait();
+  return d_first + (last - first);
+}
+
+// Copy from device to device
+template <typename T>
+  requires(!std::is_const_v<T> && std::is_trivially_copyable_v<T>)
+sycl::event
+    copy_async(device_ptr<std::add_const_t<T>> first,
+               device_ptr<std::add_const_t<T>> last, device_ptr<T> d_first) {
+  sycl::queue q;
+  return q.memcpy(d_first.get_raw_pointer(), first.get_raw_pointer(),
+                  sizeof(T) * (last - first));
+}
+
+template <typename T>
+  requires(!std::is_const_v<T> && std::is_trivially_copyable_v<T>)
+device_ptr<T> copy(device_ptr<std::add_const_t<T>> first,
+                   device_ptr<std::add_const_t<T>> last,
+                   device_ptr<T> d_first) {
   copy_async(first, last, d_first).wait();
   return d_first + (last - first);
 }
@@ -142,8 +162,8 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   return d_first + (last - first);
 }
 
-// fill with value
 // TODO: move fill code to seperate file
+// fill with value
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)

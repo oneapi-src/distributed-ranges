@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/algorithms/gemv.hpp>
 #include <dr/shp/shp.hpp>
 
 int main(int argc, char **argv) {
