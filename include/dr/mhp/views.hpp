@@ -20,4 +20,11 @@ auto local_segments(auto &&dr) {
          rng::views::transform(local_iter);
 }
 
+// return locally stored elements as a vector
+auto local_vector(auto &&dr) {
+  int _i = dr;
+  auto lvector = rng::views::zip(local_segments(dr));
+  return std::get<0>(*lvector.begin());
+}
+
 } // namespace mhp

@@ -6,6 +6,7 @@
 #include "mpi.h"
 
 #include "dr/mhp.hpp"
+#include "dr/mhp/containers/distributed_vector.hpp"
 
 using T = float;
 
