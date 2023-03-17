@@ -9,6 +9,8 @@ using TestTypes = ::testing::Types<shp::distributed_vector<int>,
 
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
+// Not implemented???
+// #include "common/fill.hpp"
 #include "common/for_each.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
@@ -50,16 +52,18 @@ int main(int argc, char *argv[]) {
 
   if (dev_num > 0) {
     unsigned int i = 0;
-    while (devices.size() < dev_num)
+    while (devices.size() < dev_num) {
       devices.push_back(devices[i++]);
+    }
     devices.resize(dev_num); // if too many devices
   }
 
   shp::init(devices);
 
-  for (auto &device : devices)
+  for (auto &device : devices) {
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
               << "\n";
+  }
 
   return RUN_ALL_TESTS();
 }

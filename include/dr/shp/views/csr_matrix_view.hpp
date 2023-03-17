@@ -177,6 +177,27 @@ public:
            });
   }
 
+  auto submatrix(key_type rows, key_type columns) const {
+    return rng::views::iota(rows[0], rows[1]) |
+           rng::views::transform([=](auto &&row_index) {
+             return row(row_index) | rng::views::drop_while([=](auto &&e) {
+                      auto &&[index, v] = e;
+                      return index[1] < columns[0];
+                    }) |
+                    rng::views::take_while([=](auto &&e) {
+                      auto &&[index, v] = e;
+                      return index[1] < columns[1];
+                    }) |
+                    rng::views::transform([=](auto &&elem) {
+                      auto &&[index, v] = elem;
+                      auto &&[i, j] = index;
+                      return reference(key_type(i - rows[0], j - columns[0]),
+                                       v);
+                    });
+           }) |
+           rng::views::join;
+  }
+
   auto values_data() const { return values_; }
 
   auto rowptr_data() const { return rowptr_; }
@@ -187,9 +208,10 @@ private:
   TIter values_;
   IIter rowptr_;
   IIter colind_;
-  size_type nnz_;
 
   key_type shape_;
+  size_type nnz_;
+
   size_type rank_;
   key_type idx_offset_;
 };

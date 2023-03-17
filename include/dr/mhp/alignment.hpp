@@ -19,7 +19,7 @@ bool aligned(lib::distributed_iterator auto iter1,
     return false;
   for (auto seg : combined) {
     if (lib::ranges::rank(seg.first) != lib::ranges::rank(seg.second) ||
-        seg.first.size() != seg.second.size()) {
+        rng::distance(seg.first) != rng::distance(seg.second)) {
       return false;
     }
   }

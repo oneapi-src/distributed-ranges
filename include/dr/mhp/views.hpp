@@ -12,9 +12,8 @@ auto local_segments(auto &&dr) {
   };
   // Convert from remote iter to local iter
   auto local_iter = [](auto &&segment) {
-    auto b = lib::ranges::local(segment.begin());
-    auto size = segment.end() - segment.begin();
-    return rng::subrange(b, b + size);
+    auto b = lib::ranges::local(rng::begin(segment));
+    return rng::subrange(b, b + rng::distance(segment));
   };
   return lib::ranges::segments(dr) | rng::views::filter(is_local) |
          rng::views::transform(local_iter);
