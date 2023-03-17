@@ -49,13 +49,13 @@ namespace rng = ranges;
 #include "details/memory.hpp"
 #include "details/communicator.hpp"
 #include "details/halo.hpp"
-#include "details/alignment.hpp"
 
 #include "views/views.hpp"
 #include "views/transform.hpp"
 
 #include "mhp/global.hpp"
 #include "mhp/sycl_support.hpp"
+#include "mhp/alignment.hpp"
 #include "mhp/views.hpp"
 #include "mhp/algorithms/algorithms.hpp"
 #include "mhp/algorithms/reduce.hpp"

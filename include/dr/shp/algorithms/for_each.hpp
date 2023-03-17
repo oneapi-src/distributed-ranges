@@ -12,33 +12,30 @@
 #include <sycl/sycl.hpp>
 
 namespace shp {
-namespace __detail {
-
-sycl::event for_each_async(const device_policy &policy,
-                           lib::remote_range auto &&r, auto &&fn) {
-
-  const std::size_t range_size = rng::distance(r);
-  assert(range_size > 0);
-
-  auto local_segment = __detail::get_local_segment(r);
-  auto first = rng::begin(local_segment);
-
-  auto device_of_rank = policy.get_devices()[lib::ranges::rank(r)];
-  return sycl::queue(shp::context(), device_of_rank)
-      .parallel_for(range_size, [=](auto idx) { fn(*(first + idx)); });
-}
-} // namespace __detail
 
 template <typename ExecutionPolicy, lib::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
+  auto &&devices = policy.get_devices();
   std::vector<sycl::event> events;
 
-  for (auto &&segment : lib::ranges::segments(r))
-    events.emplace_back(__detail::for_each_async(policy, segment, fn));
+  for (auto &&segment : lib::ranges::segments(r)) {
+    auto device = devices[lib::ranges::rank(segment)];
 
+    sycl::queue q(shp::context(), device);
+
+    assert(rng::distance(segment) > 0);
+
+    auto local_segment = __detail::get_local_segment(segment);
+
+    auto first = rng::begin(local_segment);
+
+    auto event = q.parallel_for(rng::distance(local_segment),
+                                [=](auto idx) { fn(*(first + idx)); });
+    events.emplace_back(event);
+  }
   __detail::wait(events);
 }
 

@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-add_compile_definitions(DR_TESTING)
-
 add_executable(
   shp-tests
   shp-tests.cpp
