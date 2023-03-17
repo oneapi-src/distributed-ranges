@@ -276,6 +276,11 @@ auto get_local_segment(lib::remote_contiguous_range auto &&r) {
 }
 auto get_local_segment(rng::forward_range auto &&r) { return r; }
 
+template <class T> T *get_local_pointer(shp::device_ptr<T> r) {
+  return r.local();
+}
+template <class T> T *get_local_pointer(T *t) { return t; }
+
 } // namespace __detail
 
 } // namespace shp

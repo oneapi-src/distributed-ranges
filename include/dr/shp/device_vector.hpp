@@ -31,6 +31,7 @@ private:
 };
 
 template <class Alloc>
-device_vector(std::size_t, const Alloc, std::size_t) -> device_vector<typename Alloc::value_type, Alloc>;
+device_vector(std::size_t, const Alloc, std::size_t)
+    -> device_vector<typename Alloc::value_type, Alloc>;
 
 } // namespace shp

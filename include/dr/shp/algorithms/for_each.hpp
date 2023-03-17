@@ -14,7 +14,8 @@
 namespace shp {
 namespace __detail {
 
-sycl::event for_each_async(const device_policy & policy, lib::remote_range auto && r, auto && fn) {
+sycl::event for_each_async(const device_policy &policy,
+                           lib::remote_range auto &&r, auto &&fn) {
 
   const std::size_t range_size = rng::distance(r);
   assert(range_size > 0);
@@ -26,7 +27,7 @@ sycl::event for_each_async(const device_policy & policy, lib::remote_range auto 
   return sycl::queue(shp::context(), device_of_rank)
       .parallel_for(range_size, [=](auto idx) { fn(*(first + idx)); });
 }
-}
+} // namespace __detail
 
 template <typename ExecutionPolicy, lib::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {

@@ -14,6 +14,7 @@
 #include "algorithms/for_each.hpp"
 #include "algorithms/inclusive_scan.hpp"
 #include "algorithms/reduce.hpp"
+#include "algorithms/transform.hpp"
 #include "allocators.hpp"
 #include "containers/dense_matrix.hpp"
 #include "containers/sparse_matrix.hpp"

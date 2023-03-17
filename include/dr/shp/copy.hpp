@@ -144,6 +144,7 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 
 // fill with value
 // TODO: move fill code to seperate file
+// TODO: get rid of fill versions without rank, they don't work on PVC
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
@@ -151,6 +152,16 @@ sycl::event
     fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
   sycl::queue q;
   return q.fill(std::to_address(first), value, last - first);
+}
+
+sycl::event fill_async(const device_policy &policy,
+                       lib::remote_contiguous_range auto &&r,
+                       const auto &value) {
+  using RangeValT = std::remove_cvref_t<decltype(*__detail::get_local_pointer(
+      rng::begin(r)))>;
+  const RangeValT val = value;
+  return sycl::queue(shp::context(), policy.get_devices()[r.rank()])
+      .fill(__detail::get_local_pointer(rng::begin(r)), val, rng::size(r));
 }
 
 template <std::contiguous_iterator Iter>
