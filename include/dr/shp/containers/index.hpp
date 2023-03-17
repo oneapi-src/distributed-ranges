@@ -56,6 +56,12 @@ public:
     return index<U>(first, second);
   }
 
+  template <std::integral U>
+    requires(std::numeric_limits<U>::max() < std::numeric_limits<T>::max())
+  constexpr explicit operator index<U>() const noexcept {
+    return index<U>(first, second);
+  }
+
   constexpr index(index_type first, index_type second)
       : first(first), second(second) {}
 

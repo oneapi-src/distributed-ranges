@@ -55,8 +55,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g -ggdb")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb")
-  set(CMAKE_C_FLAGS_RELEASE "-O3 -g")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g")
+  set(CMAKE_C_FLAGS_RELEASE "-O3")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
   #
   # Common dependencies for examples

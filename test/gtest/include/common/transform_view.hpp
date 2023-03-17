@@ -7,25 +7,12 @@ template <typename T> class TransformView : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE_P(TransformView);
+TYPED_TEST_SUITE(TransformView, TestTypes);
 
-TYPED_TEST_P(TransformView, Basic) {
-  std::size_t n = 10;
+TYPED_TEST(TransformView, Basic) {
+  Ops1<TypeParam> ops(10);
 
-  auto neg = [](auto v) { return -v; };
-  TypeParam dv_a(n);
-  iota(dv_a, 100);
-  auto dv_t = lib::views::transform(dv_a, neg);
-  EXPECT_TRUE(check_segments(dv_t));
-  barrier();
-  if (comm_rank == 0) {
-    LocalVec<TypeParam> a(n), a_in(n);
-    rng::iota(a, 100);
-    rng::iota(a_in, 100);
-    auto t = rng::views::transform(a, neg);
-    EXPECT_TRUE(equal(t, dv_t));
-  }
+  auto negate = [](auto v) { return -v; };
+  EXPECT_TRUE(check_view(rng::views::transform(ops.vec, negate),
+                         lib::views::transform(ops.dist_vec, negate)));
 }
-
-REGISTER_TYPED_TEST_SUITE_P(TransformView, Basic);
-INSTANTIATE_TYPED_TEST_SUITE_P(MHP, TransformView, TestTypes);

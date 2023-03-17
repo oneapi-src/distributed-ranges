@@ -149,6 +149,7 @@ public:
       pointer new_data = get_allocator().allocate(new_cap);
       using namespace std;
       if (begin() != end()) {
+        using namespace std;
         copy(begin(), end(), new_data);
       }
       if (data_ != nullptr) {
@@ -194,9 +195,11 @@ public:
       reserve(count);
     }
     if (count > size()) {
+      /*
       for (size_t i = 0; i < count - size(); i++) {
         end()[i] = T();
       }
+      */
     }
     size_ = count;
   }

@@ -43,3 +43,8 @@ template <lib::remote_range R>
 remote_subrange(R &&) -> remote_subrange<rng::iterator_t<R>>;
 
 } // namespace lib
+
+// Needed to satisfy concepts for rng::begin
+template <typename R>
+inline constexpr bool rng::enable_borrowed_range<lib::remote_subrange<R>> =
+    true;
