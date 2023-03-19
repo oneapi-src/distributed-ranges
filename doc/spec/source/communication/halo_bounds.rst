@@ -22,7 +22,7 @@ stencil computation.
 
 .. seealso::
 
-   :ref:`distributed_vector`
+   :ref:`mhp_distributed_vector`
 
 Usage
 =====

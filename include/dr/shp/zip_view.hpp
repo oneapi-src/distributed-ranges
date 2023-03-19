@@ -86,6 +86,7 @@ private:
 template <std::random_access_iterator... Iters>
 using zip_iterator = lib::iterator_adaptor<zip_accessor<Iters...>>;
 
+/// zip
 template <rng::random_access_range... Rs>
 class zip_view : public rng::view_interface<zip_view<Rs...>> {
 public:
@@ -324,6 +325,7 @@ template <typename... Rs> zip_view(Rs &&...rs) -> zip_view<Rs...>;
 
 namespace views {
 
+/// Zip
 template <rng::random_access_range... Rs> auto zip(Rs &&...rs) {
   return shp::zip_view(std::forward<Rs>(rs)...);
 }

@@ -10,8 +10,24 @@
  ``copy``
 ==========
 
-Interface
-=========
+Synopsis
+========
+
+MHP
+---
+
+.. doxygenfunction:: mhp::copy(lib::distributed_contiguous_range auto &&in, lib::distributed_iterator auto out)
+   :outline:
+.. doxygenfunction:: mhp::copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out)
+   :outline:
+
+SHP
+---
+
+.. doxygenfunction:: shp::copy(InputIt first, InputIt last, OutputIt d_first)
+   :outline:
+.. doxygenfunction:: shp::copy(device_ptr<T> first, device_ptr<T> last, Iter d_first)
+   :outline:
 
 
 Description
@@ -23,6 +39,3 @@ Description
      Standard C++ algorithm
    `std::copy`_
      Standard C++ algorithm
-
-Examples
-========
