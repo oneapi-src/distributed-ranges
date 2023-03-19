@@ -10,9 +10,9 @@
 
 template <typename T> struct vector_add_serial {
   std::vector<T> a, b, c;
-  size_t size;
+  std::size_t size;
 
-  void init(size_t n) {
+  void init(std::size_t n) {
     size = n;
     a.resize(n);
     b.resize(n);
@@ -24,7 +24,7 @@ template <typename T> struct vector_add_serial {
   }
 
   void compute() {
-    for (size_t i = 0; i < size; i++) {
+    for (std::size_t i = 0; i < size; i++) {
       c[i] = a[i] + b[i];
     }
   }

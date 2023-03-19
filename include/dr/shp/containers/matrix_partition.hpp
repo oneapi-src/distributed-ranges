@@ -75,7 +75,7 @@ private:
   std::vector<std::size_t> processor_grid_() const {
     std::vector<std::size_t> grid(grid_shape_[0] * grid_shape_[1]);
 
-    for (size_t i = 0; i < grid.size(); i++) {
+    for (std::size_t i = 0; i < grid.size(); i++) {
       grid[i] = i;
     }
     return grid;

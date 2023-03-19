@@ -196,7 +196,7 @@ public:
     }
     if (count > size()) {
       /*
-      for (size_t i = 0; i < count - size(); i++) {
+      for (std::size_t i = 0; i < count - size(); i++) {
         end()[i] = T();
       }
       */
@@ -209,7 +209,7 @@ public:
       reserve(count);
     }
     if (count > size()) {
-      for (size_t i = 0; i < count - size(); i++) {
+      for (std::size_t i = 0; i < count - size(); i++) {
         end()[i] = value;
       }
     }

@@ -103,7 +103,7 @@ public:
 private:
   size_type get_global_idx() const noexcept {
     size_type cumulative_size = 0;
-    for (size_t i = 0; i < segment_id_; i++) {
+    for (std::size_t i = 0; i < segment_id_; i++) {
       cumulative_size += segments_[i].size();
     }
     return cumulative_size + idx_;

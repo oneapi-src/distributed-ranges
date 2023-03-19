@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-inline size_t partition_up(size_t num, size_t multiple) {
+inline std::size_t partition_up(std::size_t num, std::size_t multiple) {
   return (num + multiple - 1) / multiple;
 }
 
@@ -18,7 +18,7 @@ void set_step(Seq &seq, typename Seq::value_type v = 0,
 int check(const auto &actual, const auto &reference, int max_errors = 10) {
   int errors = 0;
 
-  for (size_t i = 0; i < std::min(actual.size(), reference.size()); i++) {
+  for (std::size_t i = 0; i < std::min(actual.size(), reference.size()); i++) {
     if (actual[i] != reference[i]) {
       if (errors == 0)
         fmt::print("Value mismatches (actual):(reference)\n");

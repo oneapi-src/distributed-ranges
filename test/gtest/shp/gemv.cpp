@@ -9,8 +9,8 @@
 
 // hard to reproduce fails
 TEST(SparseMatrix, DISABLED_Gemv) {
-  size_t m = 100;
-  size_t k = 100;
+  std::size_t m = 100;
+  std::size_t k = 100;
 
   shp::sparse_matrix<float> a(
       {m, k}, 0.1f,

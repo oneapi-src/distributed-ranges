@@ -35,7 +35,7 @@ TEST(ShpTests, DISABLED_InclusiveScan) {
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
   shp::inclusive_scan(shp::par_unseq, v, v);
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     EXPECT_EQ(lv[i], v[i]);
   }
 
@@ -48,7 +48,7 @@ TEST(ShpTests, DISABLED_InclusiveScan) {
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
   shp::inclusive_scan(shp::par_unseq, v, o, std::plus<>());
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     EXPECT_EQ(lv[i], o[i]);
   }
 
@@ -62,7 +62,7 @@ TEST(ShpTests, DISABLED_InclusiveScan) {
                       12);
   shp::inclusive_scan(shp::par_unseq, v, o, std::multiplies<>(), 12);
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     EXPECT_EQ(lv[i], o[i]);
   }
 
@@ -75,7 +75,7 @@ TEST(ShpTests, DISABLED_InclusiveScan) {
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
   shp::inclusive_scan(shp::par_unseq, v.begin(), v.end(), v.begin());
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     EXPECT_EQ(lv[i], v[i]);
   }
 
@@ -89,7 +89,7 @@ TEST(ShpTests, DISABLED_InclusiveScan) {
   shp::inclusive_scan(shp::par_unseq, v.begin(), v.end(), o.begin(),
                       std::plus<>());
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     EXPECT_EQ(lv[i], o[i]);
   }
 
@@ -104,7 +104,7 @@ TEST(ShpTests, DISABLED_InclusiveScan) {
   shp::inclusive_scan(shp::par_unseq, v.begin(), v.end(), o.begin(),
                       std::multiplies<>(), 12);
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     EXPECT_EQ(lv[i], o[i]);
   }
 }

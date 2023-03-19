@@ -59,7 +59,8 @@ enum class Algorithms {
   Last,
 };
 
-extern "C" int LLVMFuzzerTestOneInput(const fuzz_spec *my_spec, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const fuzz_spec *my_spec,
+                                      std::size_t size) {
   // Controller broadcasts its fuzz spec
   MPI_Bcast(&size, sizeof(size), MPI_BYTE, controller_rank, comm);
   if (sizeof(fuzz_spec) < size)

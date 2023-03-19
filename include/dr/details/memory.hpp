@@ -10,14 +10,14 @@ template <typename T> struct default_memory {
   using value_type = T;
   std::allocator<T> std_allocator;
 
-  T *allocate(size_t size) {
+  T *allocate(std::size_t size) {
     auto p = std_allocator.allocate(size);
     assert(p != nullptr);
     memset(p, 0, sizeof(T) * size);
     return p;
   }
 
-  template <typename F> F *allocate(size_t size) {
+  template <typename F> F *allocate(std::size_t size) {
     std::allocator<F> allocator;
     auto p = allocator.allocate(size);
     assert(p != nullptr);
@@ -25,15 +25,17 @@ template <typename T> struct default_memory {
     return p;
   }
 
-  constexpr void deallocate(T *p, size_t n) { std_allocator.deallocate(p, n); }
+  constexpr void deallocate(T *p, std::size_t n) {
+    std_allocator.deallocate(p, n);
+  }
 
-  template <typename F> void deallocate(F *p, size_t n) {
+  template <typename F> void deallocate(F *p, std::size_t n) {
     std::allocator<F> allocator;
     allocator.deallocate(p, n);
     p = nullptr;
   }
 
-  void memcpy(void *dst, const void *src, size_t numBytes) {
+  void memcpy(void *dst, const void *src, std::size_t numBytes) {
     std::memcpy(dst, src, numBytes);
   }
 
@@ -48,22 +50,22 @@ template <typename T> struct sycl_memory {
   sycl::device device_;
   sycl::context context_;
   sycl::usm::alloc kind_;
-  size_t alignment_;
+  std::size_t alignment_;
   sycl::queue offload_queue_;
 
   sycl_memory(sycl::queue queue,
               sycl::usm::alloc kind = sycl::usm::alloc::shared,
-              size_t alignment = 1)
+              std::size_t alignment = 1)
       : device_(queue.get_device()), context_(queue.get_context()), kind_(kind),
         alignment_(alignment), offload_queue_(queue) {}
 
-  T *allocate(size_t n) {
+  T *allocate(std::size_t n) {
     auto p = sycl::aligned_alloc<T>(alignment_, n, device_, context_, kind_);
     assert(p != nullptr);
     return p;
   }
 
-  template <typename F> F *allocate(size_t n) {
+  template <typename F> F *allocate(std::size_t n) {
     auto p = sycl::aligned_alloc<F>(alignment_, n, device_, context_, kind_);
     assert(p != nullptr);
     return p;
@@ -81,7 +83,7 @@ template <typename T> struct sycl_memory {
     p = nullptr;
   }
 
-  void memcpy(void *dst, const void *src, size_t numBytes) {
+  void memcpy(void *dst, const void *src, std::size_t numBytes) {
     assert(dst != nullptr);
     assert(src != nullptr);
     offload_queue_.memcpy(dst, src, numBytes).wait();

@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
   fmt::print(" (after)  v: {}\n", v);
   fmt::print(" (after) lv: {}\n", lv);
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     int x = lv[i];
     int y = v[i];
     if (x != y) {
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
              rng::subrange(o.begin(), o.begin() + v.size()));
   fmt::print(" (after) lv: {}\n", lv);
 
-  for (size_t i = 0; i < lv.size(); i++) {
+  for (std::size_t i = 0; i < lv.size(); i++) {
     int x = lv[i];
     int y = o[i];
     if (x != y) {
