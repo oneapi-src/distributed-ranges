@@ -9,11 +9,12 @@
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml
 
-Proposal and reference implementation for Distributed Ranges.
+Productivity library for distributed and partitioned memory based on
+C++ Ranges.
 
 `Overview slides`_
 
-.. _`Overview slides`: doc/Distributed%20Ranges.pdf
+.. _`Overview slides`: doc/presentations/Distributed%20Ranges.pdf
 
 The documentation is built from main branch on every commit and
 published at `latest spec`_ and `latest doxygen`_.

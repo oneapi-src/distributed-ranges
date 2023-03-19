@@ -23,6 +23,9 @@
 .. _`std::ranges::iota`: https://en.cppreference.com/w/cpp/algorithm/ranges/iota
 .. _`std::ranges::transform`: https://en.cppreference.com/w/cpp/algorithm/ranges/transform
 
+.. _`std::ranges::drop_view`: https://en.cppreference.com/w/cpp/ranges/drop_view
+.. _`std::ranges::zip_view`: https://en.cppreference.com/w/cpp/ranges/zip_view
+
 .. C++ paper links
 
 .. _`std::mdarray`: https://www.open-std.org/JTC1/SC22/WG21/docs/papers/2022/p1684r2.html
