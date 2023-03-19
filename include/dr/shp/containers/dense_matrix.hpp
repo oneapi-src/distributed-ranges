@@ -51,7 +51,7 @@ public:
         matrix_shape_(matrix_shape) {}
 
   constexpr dense_matrix_accessor &operator+=(difference_type offset) noexcept {
-    size_t new_global_idx_ = get_global_idx_() + offset;
+    std::size_t new_global_idx_ = get_global_idx_() + offset;
     key_type new_global_idx = {new_global_idx_ / matrix_shape_[1],
                                new_global_idx_ % matrix_shape_[1]};
     key_type new_grid_idx = {new_global_idx[0] / tile_shape_[0],
@@ -203,8 +203,10 @@ public:
     auto &&[i, j] = tile_index;
     auto iter = tiles_[i * grid_shape()[1] + j].begin();
 
-    size_t tm = std::min(tile_shape()[0], shape()[0] - i * tile_shape()[0]);
-    size_t tn = std::min(tile_shape()[1], shape()[1] - j * tile_shape()[1]);
+    std::size_t tm =
+        std::min(tile_shape()[0], shape()[0] - i * tile_shape()[0]);
+    std::size_t tn =
+        std::min(tile_shape()[1], shape()[1] - j * tile_shape()[1]);
 
     return dense_matrix_view<
         T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>(
@@ -219,12 +221,14 @@ public:
         T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>>
         views_;
 
-    for (size_t i = 0; i < grid_shape_[0]; i++) {
-      for (size_t j = 0; j < grid_shape_[1]; j++) {
+    for (std::size_t i = 0; i < grid_shape_[0]; i++) {
+      for (std::size_t j = 0; j < grid_shape_[1]; j++) {
         auto iter = tiles_[i * grid_shape_[1] + j].begin();
 
-        size_t tm = std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
+        std::size_t tm =
+            std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
+        std::size_t tn =
+            std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
 
         views_.emplace_back(iter, key_type{tm, tn}, tile_shape_[1],
                             tiles_[i * grid_shape_[1] + j].rank());
@@ -240,15 +244,17 @@ public:
         T, rng::iterator_t<shp::device_vector<T, shp::device_allocator<T>>>>>
         views_;
 
-    for (size_t i = 0; i < grid_shape_[0]; i++) {
-      for (size_t j = 0; j < grid_shape_[1]; j++) {
+    for (std::size_t i = 0; i < grid_shape_[0]; i++) {
+      for (std::size_t j = 0; j < grid_shape_[1]; j++) {
         auto iter = tiles_[i * grid_shape_[1] + j].begin();
 
-        size_t tm = std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
+        std::size_t tm =
+            std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
+        std::size_t tn =
+            std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
 
-        size_t m_offset = i * tile_shape_[0];
-        size_t n_offset = j * tile_shape_[1];
+        std::size_t m_offset = i * tile_shape_[0];
+        std::size_t n_offset = j * tile_shape_[1];
 
         views_.emplace_back(iter, key_type{tm, tn},
                             key_type{m_offset, n_offset}, tile_shape_[1],

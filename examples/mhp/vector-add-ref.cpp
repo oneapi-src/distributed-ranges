@@ -14,8 +14,8 @@ int comm_size;
 void vector_add() {
   using T = int;
 
-  const size_t slice_size = 5;
-  const size_t full_size = slice_size * comm_size;
+  const std::size_t slice_size = 5;
+  const std::size_t full_size = slice_size * comm_size;
 
   // Compute the reference data
   vector_add_serial<T> ref_adder;
@@ -34,7 +34,7 @@ void vector_add() {
 
 // multi-threaded vector add on slice
 #pragma omp parallel for
-  for (size_t i = 0; i < slice_size; i++) {
+  for (std::size_t i = 0; i < slice_size; i++) {
     c[i] = a[i] + b[i];
   }
 

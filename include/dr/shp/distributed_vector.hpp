@@ -139,7 +139,7 @@ public:
     segment_size_ = (count + shp::devices().size() - 1) / shp::devices().size();
     capacity_ = segment_size_ * shp::devices().size();
 
-    size_t rank = 0;
+    std::size_t rank = 0;
     for (auto &&device : shp::devices())
       segments_.emplace_back(segment_type(
           segment_size_, Allocator(shp::context(), device), rank++));
