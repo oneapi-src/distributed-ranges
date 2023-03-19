@@ -24,6 +24,8 @@ SHP
 
 .. doxygenclass:: shp::zip_view
    :outline:
+.. doxygenfunction:: shp::views::zip
+   :outline:
 
 Description
 ===========

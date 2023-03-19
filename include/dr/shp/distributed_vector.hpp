@@ -111,6 +111,7 @@ using distributed_vector_iterator =
 
 // TODO: support teams, distributions
 
+/// distributed vector
 template <typename T, typename Allocator = shp::device_allocator<T>>
 struct distributed_vector {
 public:
