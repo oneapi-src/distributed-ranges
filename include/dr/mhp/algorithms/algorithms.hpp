@@ -33,6 +33,7 @@ void fill(DI first, DI last, auto value) {
 //
 //
 
+/// Copy
 void copy(lib::distributed_contiguous_range auto &&in,
           lib::distributed_iterator auto out) {
   if (aligned(rng::begin(in), out)) {
@@ -48,6 +49,7 @@ void copy(lib::distributed_contiguous_range auto &&in,
   }
 }
 
+/// Copy
 template <lib::distributed_iterator DI_IN>
 void copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out) {
   mhp::copy(rng::subrange(first, last), out);

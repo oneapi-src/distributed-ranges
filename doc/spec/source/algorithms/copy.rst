@@ -10,8 +10,17 @@
  ``copy``
 ==========
 
-Interface
-=========
+Synopsis
+========
+
+MHP
+---
+
+.. doxygenfunction::copy(lib::distributed_contiguous_range auto &&in, lib::distributed_iterator auto out)
+.. doxygenfunction::copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out)
+
+SHP
+---
 
 
 Description
