@@ -9,7 +9,7 @@
 namespace shp {
 
 template <class ExecutionPolicy>
-void transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
+auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
                lib::distributed_iterator auto out, auto &&fn) {
 
   static_assert( // currently only one policy supported
@@ -18,10 +18,10 @@ void transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
   std::vector<sycl::event> events;
   using OutT = typename decltype(out)::value_type;
   std::vector<void *> buffers;
+  const auto out_end = out + rng::size(in);
 
   for (auto &&[in_seg, out_seg] :
-       views::zip(in, rng::subrange(out, out + rng::size(in)))
-           .zipped_segments()) {
+       views::zip(in, rng::subrange(out, out_end)).zipped_segments()) {
     auto in_device = policy.get_devices()[in_seg.rank()];
     sycl::queue q(shp::context(), in_device);
     const std::size_t seg_size = rng::size(in_seg);
@@ -49,6 +49,9 @@ void transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
 
   for (auto *b : buffers)
     sycl::free(b, shp::context());
+
+  return rng::unary_transform_result<decltype(rng::end(in)), decltype(out_end)>{
+      rng::end(in), out_end};
 }
 
 } // namespace shp

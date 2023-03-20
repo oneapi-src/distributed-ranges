@@ -15,7 +15,10 @@ TYPED_TEST_SUITE(TransformTest, AllocatorTypes);
 TYPED_TEST(TransformTest, whole_aligned) {
   const typename TestFixture::DistVec a = {0, 1, 2, 3, 4};
   typename TestFixture::DistVec b = {9, 9, 9, 9, 9};
-  shp::transform(shp::par_unseq, a, rng::begin(b), TestFixture::add_10_func);
+  auto r = shp::transform(shp::par_unseq, a, rng::begin(b),
+                          TestFixture::add_10_func);
+  EXPECT_EQ(r.in, a.end());
+  EXPECT_EQ(r.out, b.end());
 
   EXPECT_TRUE(equal(b, typename TestFixture::LocalVec{10, 11, 12, 13, 14}));
 }
@@ -25,7 +28,10 @@ TYPED_TEST(TransformTest, whole_non_aligned) {
   typename TestFixture::DistVec b = {50, 51, 52, 53, 54, 55,
                                      56, 57, 58, 59, 60};
 
-  shp::transform(shp::par_unseq, a, rng::begin(b), TestFixture::add_10_func);
+  auto r = shp::transform(shp::par_unseq, a, rng::begin(b),
+                          TestFixture::add_10_func);
+  EXPECT_EQ(r.in, a.end());
+  EXPECT_EQ(*r.out, 55);
 
   EXPECT_TRUE(equal(b, typename TestFixture::LocalVec{10, 11, 12, 13, 14, 55,
                                                       56, 57, 58, 59, 60}));
@@ -35,8 +41,11 @@ TYPED_TEST(TransformTest, part_aligned) {
   const typename TestFixture::DistVec a = {0, 1, 2, 3, 4};
   typename TestFixture::DistVec b = {9, 9, 9, 9, 9};
 
-  shp::transform(shp::par_unseq, rng::subrange(++rng::begin(a), --rng::end(a)),
-                 ++rng::begin(b), TestFixture::add_10_func);
+  auto [r_in, r_out] = shp::transform(
+      shp::par_unseq, rng::subrange(++rng::begin(a), --rng::end(a)),
+      ++rng::begin(b), TestFixture::add_10_func);
+  EXPECT_EQ(*r_in, 4);
+  EXPECT_EQ(*r_out, 9);
 
   EXPECT_TRUE(equal(b, typename TestFixture::LocalVec{9, 11, 12, 13, 9}));
 }
@@ -45,8 +54,11 @@ TYPED_TEST(TransformTest, part_not_aligned) {
   const typename TestFixture::DistVec a = {0, 1, 2, 3};
   typename TestFixture::DistVec b = {9, 9, 9, 9, 9, 9, 9, 9, 9};
 
-  shp::transform(shp::par_unseq, rng::subrange(++rng::begin(a), rng::end(a)),
-                 rng::begin(b) + 5, TestFixture::add_10_func);
+  auto [r_in, r_out] = shp::transform(
+      shp::par_unseq, rng::subrange(++rng::begin(a), rng::end(a)),
+      rng::begin(b) + 5, TestFixture::add_10_func);
+  EXPECT_EQ(r_in, a.end());
+  EXPECT_EQ(r_out, rng::begin(b) + 8); // initial shift in b + subrange size
 
   EXPECT_TRUE(
       equal(b, typename TestFixture::LocalVec{9, 9, 9, 9, 9, 11, 12, 13, 9}));
