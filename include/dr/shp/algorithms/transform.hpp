@@ -8,6 +8,16 @@
 
 namespace shp {
 
+/**
+ * Applies the given function to a range and stores the result in another range, beginning at out.
+ * \tparam ExecutionPolicy can only be of
+ * \param policy use `shp::par_unseq` here only
+ * \param in the range of elements to transform
+ * \param out the beginning of the destination range, may be equal to the beginning of `in` range
+ * \param fn operation to apply to input elements
+ * \return an [unary_transform_result](https://en.cppreference.com/w/cpp/algorithm/ranges/transform) containing an input iterator equal to the end of `in` range and an output iterator to the element past the last element transformed
+ */
+
 template <class ExecutionPolicy>
 auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
                lib::distributed_iterator auto out, auto &&fn) {
