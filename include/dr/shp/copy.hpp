@@ -30,6 +30,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
                   sizeof(std::iter_value_t<InputIt>) * (last - first));
 }
 
+/// Copy
 template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>

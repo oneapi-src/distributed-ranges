@@ -169,6 +169,7 @@ private:
   const DV *dv_;
 }; // dv_segments
 
+/// distributed vector
 template <typename T, typename Allocator = std::allocator<T>>
 class distributed_vector {
 public:
@@ -188,11 +189,13 @@ public:
   distributed_vector &operator=(const distributed_vector &) = delete;
   distributed_vector(distributed_vector &&) { assert(false); }
 
+  /// Constructor
   distributed_vector(std::size_t size = 0,
                      lib::halo_bounds hb = lib::halo_bounds()) {
     init(size, hb, Allocator());
   }
 
+  /// Constructor
   distributed_vector(std::size_t size, value_type fill_value,
                      lib::halo_bounds hb = lib::halo_bounds()) {
     init(size, hb, Allocator());
@@ -208,12 +211,16 @@ public:
     delete halo_;
   }
 
+  /// Returns iterator to beginning
   auto begin() const { return iterator(segments(), 0, 0); }
+  /// Returns iterator to end
   auto end() const {
     return iterator(segments(), rng::distance(segments()), 0);
   }
 
+  /// Returns size
   auto size() const { return size_; }
+  /// Returns reference using index
   auto operator[](difference_type n) const { return *(begin() + n); }
   auto &halo() { return *halo_; }
 
@@ -267,6 +274,10 @@ auto &halo(has_halo_method auto &&dr) {
 
 } // namespace mhp
 
+#if !defined(DR_SPEC)
+
 // Needed to satisfy rng::viewable_range
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<mhp::dv_segments<T>> = true;
+
+#endif

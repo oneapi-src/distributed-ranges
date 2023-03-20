@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
   shp::for_each(shp::par_unseq, v, [](auto &&value) { value = value + 2; });
 
-  size_t sum = shp::reduce(shp::par_unseq, v, int(0), std::plus{});
+  std::size_t sum = shp::reduce(shp::par_unseq, v, int(0), std::plus{});
 
   shp::print_range(v);
 
