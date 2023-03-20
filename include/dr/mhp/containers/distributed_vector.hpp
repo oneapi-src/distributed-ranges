@@ -224,6 +224,8 @@ public:
   auto operator[](difference_type n) const { return *(begin() + n); }
   auto &halo() { return *halo_; }
 
+  auto operator==(const std::vector<T> &local) const { return false; }
+
 private:
   void init(auto size, auto hb, auto allocator) {
     allocator_ = allocator;
@@ -273,6 +275,23 @@ auto &halo(has_halo_method auto &&dr) {
 }
 
 } // namespace mhp
+
+template <typename T, typename Alloc>
+std::ostream &operator<<(std::ostream &os,
+                         const mhp::distributed_vector<T, Alloc> &dist) {
+  os << "{ ";
+  bool first = true;
+  for (const auto &val : dist) {
+    if (first) {
+      first = false;
+    } else {
+      os << ", ";
+    }
+    os << val;
+  }
+  os << " }";
+  return os;
+}
 
 #if !defined(DR_SPEC)
 
