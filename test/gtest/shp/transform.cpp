@@ -64,6 +64,27 @@ TYPED_TEST(TransformTest, part_not_aligned) {
       equal(b, typename TestFixture::LocalVec{9, 9, 9, 9, 9, 11, 12, 13, 9}));
 }
 
+TYPED_TEST(TransformTest, inplace_whole) {
+  typename TestFixture::DistVec a = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+  auto [r_in, r_out] = shp::transform(shp::par_unseq, a, rng::begin(a),
+                                      TestFixture::add_10_func);
+  EXPECT_EQ(r_in, rng::end(a));
+  EXPECT_EQ(r_out, rng::end(a));
+  EXPECT_TRUE(equal(
+      a, typename TestFixture::LocalVec{10, 11, 12, 13, 14, 15, 16, 17, 18}));
+}
+
+TYPED_TEST(TransformTest, inplace_part) {
+  typename TestFixture::DistVec a = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+  auto [r_in, r_out] = shp::transform(
+      shp::par_unseq, rng::subrange(++rng::begin(a), --rng::end(a)),
+      ++rng::begin(a), TestFixture::add_10_func);
+  EXPECT_EQ(*r_in, 8);
+  EXPECT_EQ(r_out, --rng::end(a));
+  EXPECT_TRUE(equal(
+      a, typename TestFixture::LocalVec{0, 11, 12, 13, 14, 15, 16, 17, 8}));
+}
+
 TYPED_TEST(TransformTest, large_aligned_whole) {
   const typename TestFixture::DistVec a(12345, 7);
   typename TestFixture::DistVec b(12345, 3);
@@ -137,4 +158,27 @@ TYPED_TEST(TransformTest, large_not_aligned) {
   EXPECT_EQ(b[15999], 17);
   EXPECT_EQ(b[16000], 3);
   EXPECT_EQ(b[16001], 3);
+}
+
+TYPED_TEST(TransformTest, large_inplace) {
+  typename TestFixture::DistVec a(77000, 7);
+  auto r = shp::transform(
+      shp::par_unseq,
+      rng::subrange(rng::begin(a) + 22222, rng::begin(a) + 55555),
+      rng::begin(a) + 22222, TestFixture::add_10_func);
+
+  EXPECT_EQ(r.in, rng::begin(a) + 55555);
+  EXPECT_EQ(r.out, rng::begin(a) + 55555);
+
+  EXPECT_EQ(a[11111], 7);
+  EXPECT_EQ(a[22221], 7);
+  EXPECT_EQ(a[22222], 17);
+
+  EXPECT_EQ(a[33333], 17);
+  EXPECT_EQ(a[44444], 17);
+
+  EXPECT_EQ(a[55554], 17);
+  EXPECT_EQ(a[55555], 7);
+
+  EXPECT_EQ(a[66666], 7);
 }
