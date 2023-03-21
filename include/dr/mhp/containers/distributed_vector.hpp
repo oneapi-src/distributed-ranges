@@ -222,22 +222,6 @@ public:
   auto operator[](difference_type n) const { return *(begin() + n); }
   auto &halo() { return *halo_; }
 
-#if 0
-  auto operator==(const std::vector<T> &local) const {
-    if (size() == rng::size(local)) {
-      return false;
-    }
-
-    for (std::size_t i = 0; i < size(); i++) {
-      if (T((*this)[i]) != T(local[i])) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-#endif
-
 private:
   void init(auto size, auto hb, auto allocator) {
     allocator_ = allocator;
