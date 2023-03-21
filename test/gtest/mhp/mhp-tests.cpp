@@ -5,11 +5,11 @@
 #include "mhp-tests.hpp"
 
 // Use this for shorter build time
-// #define MINIMAL_TEST 1
+#define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
 using TestTypes = ::testing::Types<mhp::distributed_vector<int>>;
-#include "common/zip.hpp"
+#include "common/distributed_vector.hpp"
 
 #else
 

@@ -109,15 +109,13 @@ public:
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
     auto value =
         dv_->win_.template get<value_type>(segment_index_, segment_offset);
-    lib::drlog.debug("get {} =  ({}:{})\n", value, segment_index_,
-                     segment_offset);
+    lib::drlog.debug("get ({}:{})\n", segment_index_, segment_offset);
     return value;
   }
 
   void put(const value_type &value) const {
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
-    lib::drlog.debug("put ({}:{}) = {}\n", segment_index_, segment_offset,
-                     value);
+    lib::drlog.debug("put ({}:{})\n", segment_index_, segment_offset);
     dv_->win_.put(value, segment_index_, segment_offset);
   }
 
@@ -224,7 +222,21 @@ public:
   auto operator[](difference_type n) const { return *(begin() + n); }
   auto &halo() { return *halo_; }
 
-  auto operator==(const std::vector<T> &local) const { return false; }
+#if 0
+  auto operator==(const std::vector<T> &local) const {
+    if (size() == rng::size(local)) {
+      return false;
+    }
+
+    for (std::size_t i = 0; i < size(); i++) {
+      if (T((*this)[i]) != T(local[i])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+#endif
 
 private:
   void init(auto size, auto hb, auto allocator) {
@@ -275,23 +287,6 @@ auto &halo(has_halo_method auto &&dr) {
 }
 
 } // namespace mhp
-
-template <typename T, typename Alloc>
-std::ostream &operator<<(std::ostream &os,
-                         const mhp::distributed_vector<T, Alloc> &dist) {
-  os << "{ ";
-  bool first = true;
-  for (const auto &val : dist) {
-    if (first) {
-      first = false;
-    } else {
-      os << ", ";
-    }
-    os << val;
-  }
-  os << " }";
-  return os;
-}
 
 #if !defined(DR_SPEC)
 

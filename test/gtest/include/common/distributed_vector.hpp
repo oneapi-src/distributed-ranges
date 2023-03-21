@@ -24,17 +24,19 @@ TYPED_TEST(DistributedVectorTestTypes, Requirements) {
   static_assert(lib::distributed_contiguous_range<decltype(dv)>);
 }
 
-// For testing infrastructure
+// gtest support
 TYPED_TEST(DistributedVectorTestTypes, Stream) {
   Ops1<TypeParam> ops(10);
   std::cout << ops.dist_vec << "\n";
 }
 
+// gtest support
 TYPED_TEST(DistributedVectorTestTypes, Equality) {
   Ops1<TypeParam> ops(10);
   iota(ops.dist_vec, 100);
   rng::iota(ops.vec, 100);
-  EXPECT_EQ(ops.dist_vec, ops.vec);
+  EXPECT_TRUE(ops.dist_vec == ops.vec);
+  EXPECT_EQ(ops.vec, ops.dist_vec);
 }
 
 TEST(DistributedVector, ConstructorBasic) {
@@ -44,17 +46,26 @@ TEST(DistributedVector, ConstructorBasic) {
   std::vector<int> local_vec(10);
   rng::iota(local_vec, 100);
 
-  // local_vec == dist_vec;
-  // EXPECT_EQ(local_vec, dist_vec);
+  EXPECT_EQ(local_vec, dist_vec);
 }
 
-#if 0
 TEST(DistributedVector, ConstructorFill) {
   xhp::distributed_vector<int> dist_vec(10, 1);
 
   std::vector<int> local_vec(10, 1);
 
-  //EXPECT_EQ(local_vec, dist_vec);
+  EXPECT_EQ(local_vec, dist_vec);
 }
 
-#endif
+TEST(DistributedVector, ConstructorBasicAOS) {
+  OpsAOS ops(10);
+  EXPECT_EQ(ops.vec, ops.dist_vec);
+}
+
+TEST(DistributedVector, ConstructorFillAOS) {
+  OpsAOS::Struct fill_value{1, 2};
+  OpsAOS::dist_vec_type dist_vec(10, fill_value);
+  OpsAOS::vec_type local_vec(10, fill_value);
+
+  EXPECT_EQ(local_vec, dist_vec);
+}
