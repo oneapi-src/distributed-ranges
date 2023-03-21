@@ -26,8 +26,6 @@ SHP
 
 .. doxygenfunction:: shp::copy(InputIt first, InputIt last, OutputIt d_first)
    :outline:
-.. doxygenfunction:: shp::copy(device_ptr<T> first, device_ptr<T> last, Iter d_first)
-   :outline:
 
 
 Description

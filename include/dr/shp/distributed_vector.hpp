@@ -156,14 +156,7 @@ public:
 
   distributed_vector(std::initializer_list<T> init)
       : distributed_vector(init.size()) {
-    // shp::copy(rng::begin(init), rng::end(init), begin());
-    //  copy sometimes does not work due to bug outside dist-ranges thus we
-    //  use slow workaround below cuz initializer_list is used by tests
-    auto it = begin();
-    for (auto &&item : init) {
-      *it = item;
-      ++it;
-    }
+    shp::copy(rng::begin(init), rng::end(init), begin());
   }
 
   reference operator[](size_type pos) {
