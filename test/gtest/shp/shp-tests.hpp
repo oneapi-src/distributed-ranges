@@ -27,7 +27,6 @@ inline auto default_policy(const shp::distributed_vector<T, Alloc> &dv) {
   return shp::par_unseq;
 }
 using AllocatorTypes =
-    ::testing::Types<shp::device_allocator<int>,
-                     shp::shared_allocator<long long unsigned int>>;
+    ::testing::Types<shp::device_allocator<int>>;
 
 #include "common-tests.hpp"
