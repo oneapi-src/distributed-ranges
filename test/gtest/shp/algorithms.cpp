@@ -19,7 +19,7 @@ TEST(ShpTests, Iota) {
 }
 
 // hard to reproduce fails
-TEST(ShpTests, DISABLED_InclusiveScan) {
+TEST(ShpTests, InclusiveScan) {
   std::size_t n = 100;
 
   shp::distributed_vector<int, shp::device_allocator<int>> v(n);
