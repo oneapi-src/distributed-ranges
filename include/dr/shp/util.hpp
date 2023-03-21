@@ -272,6 +272,10 @@ inline void wait(const std::vector<sycl::event> &events) {
   e.wait();
 }
 
+inline auto default_queue() {
+  return sycl::queue(shp::context(), shp::devices()[0]);
+}
+
 } // namespace __detail
 
 } // namespace shp
