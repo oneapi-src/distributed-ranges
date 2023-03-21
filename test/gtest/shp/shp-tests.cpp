@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   }
 
   const unsigned int dev_num = options["devicesCount"].as<unsigned int>();
-  auto devices = shp::get_numa_devices(sycl::default_selector_v);
+  auto devices = shp::get_numa_devices(sycl::cpu_selector_v);
 
   if (dev_num > 0) {
     unsigned int i = 0;

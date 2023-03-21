@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <dr/shp/allocators.hpp>
 #include <iostream>
 #include <sycl/sycl.hpp>
 
@@ -216,49 +215,6 @@ void range_details(R &&r, std::size_t width = 80) {
   std::cout << std::endl;
 }
 
-// Allocate spans on a number of devices.
-
-template <typename T>
-auto allocate_device_span(std::size_t size, std::size_t rank,
-                          sycl::context context, auto &&devices) {
-  auto data = shp::device_allocator<T>(context, devices[rank]).allocate(size);
-
-  return shp::device_span<T, decltype(data)>(data, size, rank);
-}
-
-// Return a range of spans, with one span allocated on each device using
-// device memory.
-template <typename T>
-auto allocate_device_spans(std::size_t size, sycl::context context,
-                           auto &&devices) {
-  std::vector<shp::device_span<T, shp::device_ptr<T>>> spans;
-  for (std::size_t rank = 0; rank < devices.size(); rank++) {
-    spans.push_back(allocate_device_span<T>(size, rank, context, devices));
-  }
-  return spans;
-}
-
-template <typename T>
-shp::device_span<T> allocate_shared_span(std::size_t size, std::size_t rank,
-                                         auto &&devices) {
-  sycl::queue q(devices[rank]);
-  T *data = sycl::malloc_shared<T>(size, q);
-
-  return shp::device_span<T>(data, size, rank);
-}
-
-// Return a range of spans, with one span allocated on each device using
-// shared memory.
-template <typename T>
-std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
-                                                       auto &&devices) {
-  std::vector<shp::device_span<T>> spans;
-  for (std::size_t rank = 0; rank < devices.size(); rank++) {
-    spans.push_back(allocate_shared_span<T>(size, rank, devices));
-  }
-  return spans;
-}
-
 namespace __detail {
 
 inline void wait(sycl::event &event) { event.wait(); }
@@ -270,10 +226,6 @@ inline void wait(const std::vector<sycl::event> &events) {
   auto e = q.submit([&](auto &&h) { h.depends_on(events); });
 
   e.wait();
-}
-
-inline auto default_queue() {
-  return sycl::queue(shp::context(), shp::devices()[0]);
 }
 
 } // namespace __detail
