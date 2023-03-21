@@ -75,13 +75,14 @@ template <typename T> struct Ops3 {
 };
 
 template <rng::range R1, rng::range R2> bool is_equal(R1 &&r1, R2 &&r2) {
-  using T = typename std::remove_cvref_t<R1>::value_type;
   if (rng::distance(rng::begin(r1), rng::end(r1)) !=
       rng::distance(rng::begin(r2), rng::end(r2))) {
     return false;
   }
   for (auto e : rng::zip_view(r1, r2)) {
-    if (T(e.first) != T(e.second)) {
+    auto v1 = e.first;
+    auto v2 = e.second;
+    if (v1 != v2) {
       return false;
     }
   }
