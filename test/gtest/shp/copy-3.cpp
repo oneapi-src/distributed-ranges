@@ -22,7 +22,7 @@ TYPED_TEST(CopyTest, dist2local_wholesegment) {
   EXPECT_EQ(ret_it, rng::end(local_vec));
 }
 
-TYPED_TEST(CopyTest, DISABLED_local2dist_wholesegment) {
+TYPED_TEST(CopyTest, local2dist_wholesegment) {
   // when running on 3 devices copy into exactly one segment
   const typename TestFixture::LocalVec local_vec = {50, 60, 70, 80};
   typename TestFixture::DistVec dist_vec = {1, 2, 3, 4,  5,  6,
