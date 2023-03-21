@@ -6,8 +6,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
 #include <fstream>
 #include <sstream>
 #include <string>

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <dr/shp/init.hpp>
 #include <sycl/sycl.hpp>
 #include <type_traits>
 
@@ -23,8 +24,7 @@ public:
 #ifdef __SYCL_DEVICE_ONLY__
     return *pointer_;
 #else
-    // sycl::queue q(shp::context(), sycl::gpu_selector());
-    sycl::queue q;
+    auto q = shp::__detail::default_queue();
     char buffer[sizeof(T)] __attribute__((aligned(sizeof(T))));
     q.memcpy(reinterpret_cast<T *>(buffer), pointer_, sizeof(T)).wait();
     return *reinterpret_cast<T *>(buffer);
@@ -37,8 +37,7 @@ public:
 #ifdef __SYCL_DEVICE_ONLY__
     *pointer_ = value;
 #else
-    // sycl::queue q(shp::context(), sycl::gpu_selector());
-    sycl::queue q;
+    auto q = shp::__detail::default_queue();
     q.memcpy(pointer_, &value, sizeof(T)).wait();
 #endif
     return *this;
