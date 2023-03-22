@@ -53,9 +53,7 @@ inline void finalize() { delete internal::global_context_; }
 
 namespace __detail {
 
-inline auto default_queue() {
-  return sycl::queue(shp::context(), shp::devices()[0]);
-}
+inline auto default_queue() { return sycl::queue(); }
 
 } // namespace __detail
 
