@@ -152,3 +152,24 @@ TYPED_TEST(CopyTest, IotaShp) {
   shp::iota(dv_a.begin(), dv_a.end(), 20);
   EXPECT_TRUE(equal(a, dv_a));
 }
+
+TYPED_TEST(CopyTest, IotaShp_sliced_left) {
+  typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  shp::iota(dist_vec.begin() + 2, dist_vec.end(), 2);
+  EXPECT_TRUE(equal(
+      dist_vec, typename TestFixture::DistVec{0, 0, 2, 3, 4, 5, 6, 7, 8, 9}));
+}
+
+TYPED_TEST(CopyTest, IotaShp_sliced_right) {
+  typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  shp::iota(dist_vec.begin(), dist_vec.end() - 2, 2);
+  EXPECT_TRUE(equal(
+      dist_vec, typename TestFixture::DistVec{2, 3, 4, 5, 6, 7, 8, 9, 0, 0}));
+}
+
+TYPED_TEST(CopyTest, IotaShp_sliced_both_sides) {
+  typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  shp::iota(dist_vec.begin() + 1, dist_vec.end() - 1, 2);
+  EXPECT_TRUE(equal(
+      dist_vec, typename TestFixture::DistVec{0, 2, 3, 4, 5, 6, 7, 8, 9, 0}));
+}
