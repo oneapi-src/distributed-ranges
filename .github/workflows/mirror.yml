@@ -11,7 +11,7 @@ on:
 jobs:
   sync:
     if: ${{ vars.ENABLE_MIRROR }}
-     runs-on: dds-base
+    runs-on: dds-base
     steps:
     - name: Checkout
       uses: actions/checkout@v3
