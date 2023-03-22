@@ -10,7 +10,8 @@ on:
 
 jobs:
   sync:
-    if: ${{ vars.ENABLE_MIRROR }}
+    #if: ${{ vars.ENABLE_MIRROR }}
+    if: 1
     runs-on: dds-base
     steps:
     - name: Checkout
