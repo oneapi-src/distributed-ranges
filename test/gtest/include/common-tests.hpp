@@ -295,7 +295,7 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 template <typename T, typename Allocator>
-auto operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
+bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
                 const std::vector<T> &local_vec) {
   return is_equal(dist_vec, local_vec);
 }
