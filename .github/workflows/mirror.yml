@@ -10,15 +10,13 @@ on:
 
 jobs:
   sync:
-    #if: ${{ vars.ENABLE_MIRROR }}
-    if: 1
-    runs-on: dds-base
+    if: ${{ vars.ENABLE_MIRROR }}
+     runs-on: dds-base
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Fetch upstream and sync
       run: |
-        echo ENV ${{ vars.ENABLE_MIRROR }}
         git remote rm upstream || true
         git remote add -f upstream https://github.com/oneapi-src/distributed-ranges
         git checkout upstream/main
