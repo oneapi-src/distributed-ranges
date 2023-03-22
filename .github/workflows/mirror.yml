@@ -21,4 +21,4 @@ jobs:
         git remote add -f upstream https://github.com/oneapi-src/distributed-ranges
         git checkout upstream/main
         git switch -c upstream-main
-        #git push origin upstream-main:main
+        git push origin upstream-main:main
