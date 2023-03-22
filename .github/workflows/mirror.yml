@@ -18,8 +18,9 @@ jobs:
       uses: actions/checkout@v3
     - name: Fetch upstream and sync
       run: |
-        git remote add upstream https://github.com/oneapi-src/distributed-ranges
-        git fetch upstream
+        echo ENV ${{ vars.ENABLE_MIRROR }}
+        git remote rm upstream || true
+        git remote add -f upstream https://github.com/oneapi-src/distributed-ranges
         git checkout upstream/main
         git switch -c upstream-main
         #git push origin upstream-main:main
