@@ -6,6 +6,37 @@
 template <lib::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
+struct AOS_Struct {
+  bool operator==(const AOS_Struct &other) const {
+    return first == other.first && second == other.second;
+  }
+
+  int first, second;
+};
+
+struct OpsAOS {
+
+  using dist_vec_type = xhp::distributed_vector<AOS_Struct>;
+  using vec_type = std::vector<AOS_Struct>;
+
+  OpsAOS(std::size_t n) : dist_vec(n), vec(n) {
+    for (std::size_t i = 0; i < n; i++) {
+      AOS_Struct s{100 + int(i), 200 + int(i)};
+      dist_vec[i] = s;
+      vec[i] = s;
+    }
+    fence();
+  }
+
+  dist_vec_type dist_vec;
+  vec_type vec;
+};
+
+inline std::ostream &operator<<(std::ostream &os, const AOS_Struct &st) {
+  os << "[ " << st.first << " " << st.second << " ]";
+  return os;
+}
+
 template <typename T> struct Ops1 {
   Ops1(std::size_t n) : dist_vec(n), vec(n) {
     iota(dist_vec, 100);
@@ -43,13 +74,15 @@ template <typename T> struct Ops3 {
   LocalVec<T> vec0, vec1, vec2;
 };
 
-bool is_equal(rng::range auto &&r1, rng::range auto &&r2) {
+template <rng::range R1, rng::range R2> bool is_equal(R1 &&r1, R2 &&r2) {
   if (rng::distance(rng::begin(r1), rng::end(r1)) !=
       rng::distance(rng::begin(r2), rng::end(r2))) {
     return false;
   }
   for (auto e : rng::zip_view(r1, r2)) {
-    if (e.first != e.second) {
+    auto v1 = e.first;
+    auto v2 = e.second;
+    if (v1 != v2) {
       return false;
     }
   }
@@ -199,3 +232,72 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 
   return v;
 }
+
+template <typename T>
+concept streamable = requires(std::ostream &os, T value) {
+                       { os << value } -> std::convertible_to<std::ostream &>;
+                     };
+
+namespace mhp {
+
+// gtest relies on ADL to find the printer
+template <typename T, typename Alloc>
+std::ostream &operator<<(std::ostream &os,
+                         const xhp::distributed_vector<T, Alloc> &dist) {
+  os << "{ ";
+  bool first = true;
+  for (const auto &val : dist) {
+    if (first) {
+      first = false;
+    } else {
+      os << ", ";
+    }
+    if constexpr (streamable<T>) {
+      os << val;
+    } else {
+      os << "Unstreamable";
+    }
+  }
+  os << " }";
+  return os;
+}
+
+template <typename T, typename Allocator>
+bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
+                const std::vector<T> &local_vec) {
+  return is_equal(local_vec, dist_vec);
+}
+
+} // namespace mhp
+
+namespace shp {
+
+// gtest relies on ADL to find the printer
+template <typename T, typename Alloc>
+std::ostream &operator<<(std::ostream &os,
+                         const xhp::distributed_vector<T, Alloc> &dist) {
+  os << "{ ";
+  bool first = true;
+  for (const auto &val : dist) {
+    if (first) {
+      first = false;
+    } else {
+      os << ", ";
+    }
+    if constexpr (streamable<T>) {
+      os << val;
+    } else {
+      os << "Unstreamable";
+    }
+  }
+  os << " }";
+  return os;
+}
+
+template <typename T, typename Allocator>
+bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
+                const std::vector<T> &local_vec) {
+  return is_equal(dist_vec, local_vec);
+}
+
+} // namespace shp

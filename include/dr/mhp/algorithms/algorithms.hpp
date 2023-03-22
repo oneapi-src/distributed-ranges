@@ -12,11 +12,8 @@ namespace mhp {
 
 /// Collective fill on distributed range
 void fill(lib::distributed_contiguous_range auto &&dr, auto value) {
-  lib::drlog.debug("fill: dr: {}\n", dr);
   for (const auto &s : local_segments(dr)) {
-    lib::drlog.debug("fill: segment before: {}\n", s);
     rng::fill(s, value);
-    lib::drlog.debug("fill: segment after: {}\n", s);
   }
   barrier();
 }
