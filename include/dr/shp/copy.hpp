@@ -69,7 +69,7 @@ template <typename T>
 sycl::event
     copy_async(device_ptr<std::add_const_t<T>> first,
                device_ptr<std::add_const_t<T>> last, device_ptr<T> d_first) {
-  sycl::queue q;
+  auto q = shp::__detail::default_queue();
   return q.memcpy(d_first.get_raw_pointer(), first.get_raw_pointer(),
                   sizeof(T) * (last - first));
 }
@@ -162,7 +162,7 @@ template <std::contiguous_iterator Iter>
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
 sycl::event
     fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
-  sycl::queue q;
+  auto q = shp::__detail::default_queue();
   return q.fill(std::to_address(first), value, last - first);
 }
 
@@ -186,7 +186,7 @@ template <typename T>
   requires(!std::is_const_v<T>)
 sycl::event
     fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  sycl::queue q;
+  auto q = shp::__detail::default_queue();
   return q.fill(first.get_raw_pointer(), value, last - first);
 }
 

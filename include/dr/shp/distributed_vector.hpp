@@ -141,9 +141,10 @@ public:
     capacity_ = segment_size_ * shp::devices().size();
 
     std::size_t rank = 0;
-    for (auto &&device : shp::devices())
+    for (auto &&device : shp::devices()) {
       segments_.emplace_back(segment_type(
           segment_size_, Allocator(shp::context(), device), rank++));
+    }
   }
 
   distributed_vector(std::size_t count, const T &value)

@@ -51,4 +51,10 @@ inline void init(R &&devices)
 
 inline void finalize() { delete internal::global_context_; }
 
+namespace __detail {
+
+inline auto default_queue() { return sycl::queue(); }
+
+} // namespace __detail
+
 } // namespace shp

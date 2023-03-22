@@ -5,7 +5,7 @@
 #include "shp-tests.hpp"
 
 using T = int;
-using DV = shp::distributed_vector<T, shp::shared_allocator<T>>;
+using DV = shp::distributed_vector<T, shp::device_allocator<T>>;
 using V = std::vector<T>;
 
 TEST(ShpTests, Iota) {
