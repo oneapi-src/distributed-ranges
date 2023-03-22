@@ -63,7 +63,7 @@ TEST(DistributedVector, ConstructorBasicAOS) {
 }
 
 TEST(DistributedVector, ConstructorFillAOS) {
-  OpsAOS::Struct fill_value{1, 2};
+  AOS_Struct fill_value{1, 2};
   OpsAOS::dist_vec_type dist_vec(10, fill_value);
   OpsAOS::vec_type local_vec(10, fill_value);
 

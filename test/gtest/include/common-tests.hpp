@@ -6,21 +6,22 @@
 template <lib::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
+struct AOS_Struct {
+  bool operator==(const AOS_Struct &other) const {
+    return first == other.first && second == other.second;
+  }
+
+  int first, second;
+};
+
 struct OpsAOS {
-  struct Struct {
-    bool operator==(const Struct &other) const {
-      return first == other.first && second == other.second;
-    }
 
-    int first, second;
-  };
-
-  using dist_vec_type = xhp::distributed_vector<Struct>;
-  using vec_type = std::vector<Struct>;
+  using dist_vec_type = xhp::distributed_vector<AOS_Struct>;
+  using vec_type = std::vector<AOS_Struct>;
 
   OpsAOS(std::size_t n) : dist_vec(n), vec(n) {
     for (std::size_t i = 0; i < n; i++) {
-      Struct s{100 + int(i), 200 + int(i)};
+      AOS_Struct s{100 + int(i), 200 + int(i)};
       dist_vec[i] = s;
       vec[i] = s;
     }
@@ -31,8 +32,7 @@ struct OpsAOS {
   vec_type vec;
 };
 
-inline std::ostream &operator<<(std::ostream &os,
-                                const typename OpsAOS::Struct &st) {
+inline std::ostream &operator<<(std::ostream &os, const AOS_Struct &st) {
   os << "[ " << st.first << " " << st.second << " ]";
   return os;
 }
