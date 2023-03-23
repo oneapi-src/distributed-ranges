@@ -22,5 +22,7 @@ jobs:
       run: |
         module load cmake
         module load intel/oneapi/2023.0.0
-        cmake -B build -DENABLE_SYCL=on 
-        make -j 2 -C build/test/gtest/shp all test
+        cmake -B build -DENABLE_SYCL=on
+        cd build/test/gtest/shp
+        make -j 2
+        srun -p QZ1J-SPR-PVC-2C -w sdp5259 make test
