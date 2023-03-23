@@ -36,11 +36,9 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
   if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                device_policy>) {
 
-    auto &&devices = std::forward<ExecutionPolicy>(policy).get_devices();
-
     std::vector<sycl::event> events;
 
-    auto root = devices[0];
+    auto root = shp::devices()[0];
     shp::device_allocator<T> allocator(shp::context(), root);
     shp::vector<T, shp::device_allocator<T>> partial_sums(
         std::size_t(zipped_segments.size()), allocator);
@@ -49,7 +47,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
 
-      auto device = devices[lib::ranges::rank(in_segment)];
+      auto device = shp::devices()[lib::ranges::rank(in_segment)];
 
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);
@@ -115,7 +113,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     std::size_t idx = 0;
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
-      auto device = devices[lib::ranges::rank(out_segment)];
+      auto device = shp::devices()[lib::ranges::rank(out_segment)];
 
       sycl::queue q(shp::context(), device);
       oneapi::dpl::execution::device_policy local_policy(q);

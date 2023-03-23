@@ -25,11 +25,10 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
-  auto &&devices = policy.get_devices();
   std::vector<sycl::event> events;
 
   for (auto &&segment : lib::ranges::segments(r)) {
-    auto device = devices[lib::ranges::rank(segment)];
+    auto device = shp::devices()[lib::ranges::rank(segment)];
 
     sycl::queue q(shp::context(), device);
 
