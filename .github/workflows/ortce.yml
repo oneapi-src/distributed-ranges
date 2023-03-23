@@ -10,7 +10,6 @@ on:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
-  MKLROOT: /opt/intel/oneapi/mkl/2023.0.0
   MKL_DIR: /opt/intel/oneapi/mkl/2023.0.0
   CXX: icpx
 
@@ -22,6 +21,6 @@ jobs:
     - name: Build and test
       run: |
         module load cmake
-        module load intel-release
-        cmake -B build -DGCC_TOOLCHAIN=/opt/hpc_software/compilers/gnu/12.1.0
-        make -j 2 -C build all
+        module load intel/oneapi/2023.0.0
+        cmake -DENABLE_SYCL:BOOL=ON -DENABLE_SYCL_MPI:BOOL=ON -S . -B build-icpx
+
