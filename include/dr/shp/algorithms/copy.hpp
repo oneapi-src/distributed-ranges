@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <dr/shp/device_ptr.hpp>
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/segments_tools.hpp>
+#include <dr/shp/device_ptr.hpp>
 #include <memory>
 #include <sycl/sycl.hpp>
 #include <type_traits>
