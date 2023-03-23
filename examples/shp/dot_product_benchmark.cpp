@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 
   // Execute on all devices with SHP:
   T sum = 0;
-  for (size_t i = 0; i < n_iterations; i++) {
+  for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
     auto v = dot_product_distributed(x, y);
     auto end = std::chrono::high_resolution_clock::now();
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
   sycl::queue q(shp::context(), shp::devices()[0]);
 
   sum = 0;
-  for (size_t i = 0; i < n_iterations; i++) {
+  for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
     auto v = dot_product_onedpl(q, x, y);
     auto end = std::chrono::high_resolution_clock::now();
