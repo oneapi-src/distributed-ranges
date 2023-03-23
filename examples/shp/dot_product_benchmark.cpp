@@ -39,11 +39,24 @@ auto dot_product_sequential(X &&x, Y &&y) {
   return std::reduce(z.begin(), z.end(), 0, std::plus());
 }
 
+template <lib::distributed_iterator Iter, std::integral T>
+void iota(Iter begin, Iter end, T value) {
+  auto r = rng::subrange(begin, end);
+
+  auto iota_view = rng::views::iota(T(value), T(value + rng::distance(r)));
+
+  shp::for_each(shp::par_unseq, shp::views::zip(iota_view, r),
+                [=](auto&& elem) {
+                  auto&& [idx, v] = elem;
+                  v = idx;
+                });
+}
+
 int main(int argc, char **argv) {
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
-  std::size_t n = 256 * 1024 * 1024;
+  std::size_t n = 100;
 
   using T = int;
 
@@ -57,8 +70,8 @@ int main(int argc, char **argv) {
   shp::distributed_vector<T> x(n);
   shp::distributed_vector<T> y(n);
 
-  std::iota(x.begin(), x.end(), 0);
-  std::iota(y.begin(), y.end(), 0);
+  iota(x.begin(), x.end(), 0);
+  iota(y.begin(), y.end(), 0);
 
   std::size_t n_iterations = 10;
 
@@ -96,8 +109,15 @@ int main(int argc, char **argv) {
 
   sycl::queue q(shp::context(), shp::devices()[0]);
 
+  T* x_d = sycl::malloc_device<T>(n, shp::devices()[0], shp::context());
+  T* y_d = sycl::malloc_device<T>(n, shp::devices()[0], shp::context());
+  q.memcpy(x_d, x_local.data(), n*sizeof(T)).wait();
+  q.memcpy(y_d, y_local.data(), n*sizeof(T)).wait();
+
   sum = 0;
   for (std::size_t i = 0; i < n_iterations; i++) {
+    std::span<T> x(x_d, n);
+    std::span<T> y(y_d, n);
     auto begin = std::chrono::high_resolution_clock::now();
     auto v = dot_product_onedpl(q, x, y);
     auto end = std::chrono::high_resolution_clock::now();
