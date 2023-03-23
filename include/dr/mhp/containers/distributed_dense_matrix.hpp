@@ -63,26 +63,26 @@ template <typename T> class dm_row_view {
 public:
   using iterator = dm_row_iterator<dmatrix>;
 
-  dm_row_view(size_t idx, T *ptr, dmsegment &segment, size_t size)
+  dm_row_view(std::size_t idx, T *ptr, dmsegment &segment, std::size_t size)
       : index_(idx), data_(ptr), segmentref_(segment), size_(size){};
 
   iterator begin() { return iterator(data_, segmentref_.dm()); }
   iterator end() { return begin() + size_; }
 
-  T &operator[](size_t idx) {
+  T &operator[](std::size_t idx) {
     assert(data_ != nullptr);
     assert(idx < size_);
     return data_[idx];
   }
 
   dmsegment &segment() { return segmentref_; }
-  size_t idx() { return index_; }
+  std::size_t idx() { return index_; }
 
 private:
-  size_t index_;
+  std::size_t index_;
   T *data_ = nullptr;
   dmsegment &segmentref_;
-  size_t size_ = 0;
+  std::size_t size_ = 0;
 };
 template <typename DM>
 class dm_rows : public std::vector<dm_row_view<typename DM::value_type>> {
@@ -123,7 +123,7 @@ public:
     init_(hb, allocator);
   }
 
-  distributed_dense_matrix(size_t rows, size_t cols,
+  distributed_dense_matrix(std::size_t rows, std::size_t cols,
                            lib::halo_bounds hb = lib::halo_bounds(),
                            Allocator allocator = Allocator())
       : shape_(key_type(rows, cols)), // partition_(new mhp::block_cyclic()),
@@ -150,10 +150,10 @@ public:
 
   dm_rows<distributed_dense_matrix<T>> local_rows() {
     dm_rows row_view_(this);
-    size_t row_index_ = 0;
+    std::size_t row_index_ = 0;
     for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
       if ((*_titr).is_local()) {
-        for (size_t s = 0; s < (*_titr).shape()[0]; s++) {
+        for (std::size_t s = 0; s < (*_titr).shape()[0]; s++) {
           row_view_.emplace_back(row_index_ + s,
                                  data_ + s * (*_titr).shape()[1], *_titr,
                                  (*_titr).shape()[1]);
@@ -190,7 +190,7 @@ private:
 
     segments_.reserve(grid_shape_[0] * grid_shape_[1]);
 
-    size_t idx = 0;
+    std::size_t idx = 0;
     for (std::size_t i = 0; i < grid_shape_[0]; i++) {
       for (std::size_t j = 0; j < grid_shape_[1]; j++) {
         T *_ptr = (idx == default_comm().rank()) ? data_ : nullptr;
@@ -205,9 +205,9 @@ private:
       }
     }
 
-    size_t row_index_ = 0;
+    std::size_t row_index_ = 0;
     for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
-      for (size_t s = 0; s < (*_titr).shape()[0]; s++) {
+      for (std::size_t s = 0; s < (*_titr).shape()[0]; s++) {
         T *_dataptr =
             (*_titr).is_local() ? (data_ + s * (*_titr).shape()[1]) : nullptr;
         rows_.emplace_back(row_index_++, _dataptr, *_titr, (*_titr).shape()[1]);

@@ -290,7 +290,9 @@ public:
     return *this;
   }
 
-  size_t operator-(dm_row_iterator<DM> other) { return (other.data_ - data_); }
+  std::size_t operator-(dm_row_iterator<DM> other) {
+    return (other.data_ - data_);
+  }
   value_type &operator*() const { return *data_; }
 
   auto &halo() const { return dm_->halo(); }
