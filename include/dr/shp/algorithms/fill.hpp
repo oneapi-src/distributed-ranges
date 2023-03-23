@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <dr/shp/device_ptr.hpp>
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/segments_tools.hpp>
+#include <dr/shp/device_ptr.hpp>
 #include <memory>
 #include <sycl/sycl.hpp>
 #include <type_traits>
@@ -43,22 +43,20 @@ void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
 }
 
 template <typename T, lib::remote_contiguous_range R>
-sycl::event
-fill_async(R&& r, const T& value) {
+sycl::event fill_async(R &&r, const T &value) {
   sycl::queue q(shp::context(), shp::devices()[lib::ranges::rank(r)]);
-  return q.fill(std::to_address(rng::begin(lib::ranges::local(r))), value, rng::distance(r));
+  return q.fill(std::to_address(rng::begin(lib::ranges::local(r))), value,
+                rng::distance(r));
 }
 
 template <typename T, lib::remote_contiguous_range R>
-auto fill(R&& r, const T& value) {
+auto fill(R &&r, const T &value) {
   fill_async(r, value).wait();
   return rng::end(r);
 }
 
-
 template <typename T, lib::distributed_contiguous_range R>
-sycl::event
-fill_async(R&& r, const T& value) {
+sycl::event fill_async(R &&r, const T &value) {
   std::vector<sycl::event> events;
 
   for (auto &&segment : lib::ranges::segments(r)) {
@@ -71,7 +69,7 @@ fill_async(R&& r, const T& value) {
 }
 
 template <typename T, lib::distributed_contiguous_range R>
-auto fill(R&& r, const T& value) {
+auto fill(R &&r, const T &value) {
   fill_async(r, value).wait();
   return rng::end(r);
 }
