@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  CTEST_OUTPUT_ON_FAILURE: 1
+  MKLROOT: /opt/intel/oneapi/mkl/2023.0.0
+  MKL_DIR: /opt/intel/oneapi/mkl/2023.0.0
+  CXX: icpx
+
+jobs:
+  ortce:
+    runs-on: ortce
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build and test
+      run: |
+        module load cmake
+        module load intel-release
+        cmake -B build
+        make -j 2 -C build all
