@@ -66,8 +66,7 @@ fill_async(R&& r, const T& value) {
     events.push_back(e);
   }
 
-  auto event = sycl::queue().submit([=](auto &&h) { h.depends_on(events); });
-  return event;
+  return shp::__detail::combine_events(events);
 }
 
 template <typename T, lib::distributed_contiguous_range R>

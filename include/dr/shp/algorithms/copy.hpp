@@ -117,9 +117,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     rng::advance(first, n_to_copy);
   }
 
-  auto root_event =
-      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
-  return root_event;
+  return shp::__detail::combine_events(events);
 }
 
 template <std::contiguous_iterator InputIt, lib::distributed_iterator OutputIt>
@@ -150,9 +148,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     rng::advance(d_first, size);
   }
 
-  auto root_event =
-      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
-  return root_event;
+  return shp::__detail::combine_events(events);
 }
 
 template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>

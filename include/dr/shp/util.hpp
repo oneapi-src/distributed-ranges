@@ -228,6 +228,13 @@ inline void wait(const std::vector<sycl::event> &events) {
   e.wait();
 }
 
+inline sycl::event combine_events(const std::vector<sycl::event> &events) {
+  sycl::queue q;
+  auto e = q.submit([=](auto &&h) { h.depends_on(events); });
+
+  return e;
+}
+
 } // namespace __detail
 
 } // namespace shp
