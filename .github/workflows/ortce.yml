@@ -23,5 +23,5 @@ jobs:
       run: |
         module load cmake
         module load intel-release
-        cmake -B build
+        cmake -B build -DGCC_TOOLCHAIN=/opt/hpc_software/compilers/gnu/12.1.0
         make -j 2 -C build all
