@@ -43,7 +43,7 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     copy_events.push_back(event);
   }
 
-  for (size_t i = 0; i < a.grid_shape()[0]; i++) {
+  for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
     auto a_tile = a.tile(shp::index<I>(i, 0));
 
     auto a_iter = a_tile.begin();
@@ -53,7 +53,7 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto device = devices[a_tile.rank()];
     sycl::queue q(shp::context(), device);
 
-    auto event = q.submit([&](auto &&h) {
+    auto event = q.submit([=](auto &&h) {
       h.depends_on(copy_events[i]);
       h.parallel_for(a_tile.size(), [=](auto idx) {
         auto &&[index, a_v] = *(a_iter + idx);
@@ -102,7 +102,7 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     copy_events.push_back(event);
   }
 
-  for (size_t i = 0; i < a.grid_shape()[0]; i++) {
+  for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
     auto a_tile = a.tile(shp::index<I>(i, 0));
 
     auto b_iter = lib::ranges::local(local_b[i].begin());

@@ -134,8 +134,8 @@ template <rng::forward_range R> auto distributed_iota_view(R &&r) {
   static_assert(lib::distributed_contiguous_range<R>);
   if constexpr (lib::distributed_contiguous_range<R>) {
     std::vector<segment_range<>> iota_segments;
-    size_t global_offset = 0;
-    size_t segment_id = 0;
+    std::size_t global_offset = 0;
+    std::size_t segment_id = 0;
     for (auto &&segment : r.segments()) {
       iota_segments.push_back(
           segment_range(segment_id, segment.size(), global_offset));

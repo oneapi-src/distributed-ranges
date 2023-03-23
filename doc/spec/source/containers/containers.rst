@@ -14,5 +14,5 @@ processes and can be accessed by any process in the team.
 .. toctree::
    :maxdepth: 1
 
-   distributed_mdarray
-   distributed_vector
+   mhp_distributed_vector
+   shp_distributed_vector

@@ -24,6 +24,14 @@ exclude_rule = re.compile('dr-style ignore')
 
 all_rules = [
     (
+        r'[( ]size_t ',
+        'use std::size_t',
+    ),
+    (
+        r' string ',
+        'use std::string',
+    ),
+    (
         r'using namespace sycl|using namespace cl::sycl',
         'eliminate using',
     ),

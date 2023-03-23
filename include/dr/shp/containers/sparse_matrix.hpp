@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <dr/shp/algorithms/copy.hpp>
 #include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
-#include <dr/shp/copy.hpp>
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/distributed_span.hpp>
 #include <dr/shp/init.hpp>
@@ -108,7 +108,7 @@ public:
 private:
   size_type get_global_idx() const noexcept {
     size_type cumulative_size = 0;
-    for (size_t i = 0; i < segment_id_; i++) {
+    for (std::size_t i = 0; i < segment_id_; i++) {
       cumulative_size += segments_[i].size();
     }
     return cumulative_size + idx_;
@@ -187,9 +187,9 @@ public:
     auto colind = colind_[tile_idx].begin();
     auto nnz = nnz_[tile_idx];
 
-    size_t tm =
+    std::size_t tm =
         std::min(tile_shape_[0], shape()[0] - tile_index[0] * tile_shape_[0]);
-    size_t tn =
+    std::size_t tn =
         std::min(tile_shape_[1], shape()[1] - tile_index[1] * tile_shape_[1]);
 
     return segment_type(values, rowptr, colind, key_type(tm, tn), nnz,
@@ -231,7 +231,7 @@ public:
 
     sycl::queue q;
 
-    auto e = q.submit([&](auto &&h) {
+    auto e = q.submit([=](auto &&h) {
       h.depends_on(v_e);
       h.depends_on(c_e);
       h.depends_on(r_e);
@@ -257,12 +257,12 @@ private:
   std::vector<segment_type> generate_tiles_() {
     std::vector<segment_type> views_;
 
-    for (size_t i = 0; i < grid_shape_[0]; i++) {
-      for (size_t j = 0; j < grid_shape_[1]; j++) {
-        size_t tm = std::min<std::size_t>(tile_shape_[0],
-                                          shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min<std::size_t>(tile_shape_[1],
-                                          shape()[1] - j * tile_shape_[1]);
+    for (std::size_t i = 0; i < grid_shape_[0]; i++) {
+      for (std::size_t j = 0; j < grid_shape_[1]; j++) {
+        std::size_t tm = std::min<std::size_t>(tile_shape_[0],
+                                               shape()[0] - i * tile_shape_[0]);
+        std::size_t tn = std::min<std::size_t>(tile_shape_[1],
+                                               shape()[1] - j * tile_shape_[1]);
 
         std::size_t tile_idx = i * grid_shape_[1] + j;
 
@@ -281,12 +281,12 @@ private:
   std::vector<segment_type> generate_segments_() {
     std::vector<segment_type> views_;
 
-    for (size_t i = 0; i < grid_shape_[0]; i++) {
-      for (size_t j = 0; j < grid_shape_[1]; j++) {
-        size_t tm = std::min<std::size_t>(tile_shape_[0],
-                                          shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min<std::size_t>(tile_shape_[1],
-                                          shape()[1] - j * tile_shape_[1]);
+    for (std::size_t i = 0; i < grid_shape_[0]; i++) {
+      for (std::size_t j = 0; j < grid_shape_[1]; j++) {
+        std::size_t tm = std::min<std::size_t>(tile_shape_[0],
+                                               shape()[0] - i * tile_shape_[0]);
+        std::size_t tn = std::min<std::size_t>(tile_shape_[1],
+                                               shape()[1] - j * tile_shape_[1]);
 
         std::size_t tile_idx = i * grid_shape_[1] + j;
 
@@ -295,8 +295,8 @@ private:
         auto colind = colind_[tile_idx].begin();
         auto nnz = nnz_[tile_idx];
 
-        size_t m_offset = i * tile_shape_[0];
-        size_t n_offset = j * tile_shape_[1];
+        std::size_t m_offset = i * tile_shape_[0];
+        std::size_t n_offset = j * tile_shape_[1];
 
         views_.emplace_back(values, rowptr, colind, key_type(tm, tn), nnz,
                             values_[i * grid_shape_[1] + j].rank(),
@@ -349,10 +349,10 @@ private:
       for (std::size_t j = 0; j < grid_shape_[1]; j++) {
         std::size_t rank = partition_->tile_rank(shape(), {i, j});
 
-        size_t tm = std::min<std::size_t>(tile_shape_[0],
-                                          shape()[0] - i * tile_shape_[0]);
-        size_t tn = std::min<std::size_t>(tile_shape_[1],
-                                          shape()[1] - j * tile_shape_[1]);
+        std::size_t tm = std::min<std::size_t>(tile_shape_[0],
+                                               shape()[0] - i * tile_shape_[0]);
+        std::size_t tn = std::min<std::size_t>(tile_shape_[1],
+                                               shape()[1] - j * tile_shape_[1]);
 
         auto device = shp::devices()[rank];
         shp::device_allocator<T> alloc(shp::context(), device);

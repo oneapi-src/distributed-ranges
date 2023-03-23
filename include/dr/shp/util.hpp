@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <dr/shp/allocators.hpp>
 #include <iostream>
 #include <sycl/sycl.hpp>
 
@@ -49,7 +48,7 @@ template <typename Selector> void list_devices(Selector &&selector) {
   printf("Platform %s has %lu root devices.\n",
          p.get_info<sycl::info::platform::name>().c_str(), devices.size());
 
-  for (size_t i = 0; i < devices.size(); i++) {
+  for (std::size_t i = 0; i < devices.size(); i++) {
     auto &&device = devices[i];
 
     printf("  %lu %s\n", i,
@@ -60,7 +59,7 @@ template <typename Selector> void list_devices(Selector &&selector) {
         sycl::info::partition_affinity_domain::numa);
 
     printf("   Subdevices:\n");
-    for (size_t j = 0; j < subdevices.size(); j++) {
+    for (std::size_t j = 0; j < subdevices.size(); j++) {
       auto &&subdevice = subdevices[j];
       printf("     %lu.%lu %s\n", i, j,
              subdevice.get_info<sycl::info::device::name>().c_str());
@@ -131,7 +130,7 @@ std::vector<sycl::device> get_duplicated_devices(Selector &&selector,
 }
 
 template <typename Range> void print_range(Range &&r, std::string label = "") {
-  size_t indent = 1;
+  std::size_t indent = 1;
 
   if (label != "") {
     std::cout << "\"" << label << "\": ";
@@ -141,8 +140,8 @@ template <typename Range> void print_range(Range &&r, std::string label = "") {
   std::string indent_whitespace(indent, ' ');
 
   std::cout << "[";
-  size_t columns = 10;
-  size_t count = 1;
+  std::size_t columns = 10;
+  std::size_t count = 1;
   for (auto iter = r.begin(); iter != r.end(); ++iter) {
     std::cout << static_cast<rng::range_value_t<Range>>(*iter);
 
@@ -216,49 +215,6 @@ void range_details(R &&r, std::size_t width = 80) {
   std::cout << std::endl;
 }
 
-// Allocate spans on a number of devices.
-
-template <typename T>
-auto allocate_device_span(std::size_t size, std::size_t rank,
-                          sycl::context context, auto &&devices) {
-  auto data = shp::device_allocator<T>(context, devices[rank]).allocate(size);
-
-  return shp::device_span<T, decltype(data)>(data, size, rank);
-}
-
-// Return a range of spans, with one span allocated on each device using
-// device memory.
-template <typename T>
-auto allocate_device_spans(std::size_t size, sycl::context context,
-                           auto &&devices) {
-  std::vector<shp::device_span<T, shp::device_ptr<T>>> spans;
-  for (size_t rank = 0; rank < devices.size(); rank++) {
-    spans.push_back(allocate_device_span<T>(size, rank, context, devices));
-  }
-  return spans;
-}
-
-template <typename T>
-shp::device_span<T> allocate_shared_span(std::size_t size, std::size_t rank,
-                                         auto &&devices) {
-  sycl::queue q(devices[rank]);
-  T *data = sycl::malloc_shared<T>(size, q);
-
-  return shp::device_span<T>(data, size, rank);
-}
-
-// Return a range of spans, with one span allocated on each device using
-// shared memory.
-template <typename T>
-std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
-                                                       auto &&devices) {
-  std::vector<shp::device_span<T>> spans;
-  for (size_t rank = 0; rank < devices.size(); rank++) {
-    spans.push_back(allocate_shared_span<T>(size, rank, devices));
-  }
-  return spans;
-}
-
 namespace __detail {
 
 inline void wait(sycl::event &event) { event.wait(); }
@@ -270,6 +226,13 @@ inline void wait(const std::vector<sycl::event> &events) {
   auto e = q.submit([&](auto &&h) { h.depends_on(events); });
 
   e.wait();
+}
+
+inline sycl::event combine_events(const std::vector<sycl::event> &events) {
+  sycl::queue q;
+  auto e = q.submit([=](auto &&h) { h.depends_on(events); });
+
+  return e;
 }
 
 } // namespace __detail

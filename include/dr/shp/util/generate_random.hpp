@@ -34,7 +34,7 @@ auto generate_random_csr(shp::index<I> shape, double density = 0.01,
 
   std::map<std::pair<I, I>, T> tuples;
 
-  size_t nnz = density * shape[0] * shape[1];
+  std::size_t nnz = density * shape[0] * shape[1];
 
   std::mt19937 gen(seed);
   std::uniform_int_distribution<I> row(0, shape[0] - 1);

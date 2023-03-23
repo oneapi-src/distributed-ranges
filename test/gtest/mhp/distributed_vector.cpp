@@ -22,13 +22,13 @@ TEST(MhpTests, DistributedVectorIndex) {
   DV dv(n);
 
   if (comm_rank == 0) {
-    for (size_t i = 0; i < n; i++) {
+    for (std::size_t i = 0; i < n; i++) {
       dv[i] = i + 10;
     }
   }
   mhp::fence();
 
-  for (size_t i = 0; i < n; i++) {
+  for (std::size_t i = 0; i < n; i++) {
     EXPECT_EQ(dv[i], i + 10);
   }
 

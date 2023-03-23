@@ -107,7 +107,7 @@ public:
 private:
   size_type get_global_idx() const noexcept {
     size_type cumulative_size = 0;
-    for (size_t i = 0; i < segment_id_; i++) {
+    for (std::size_t i = 0; i < segment_id_; i++) {
       cumulative_size += segments_[i].size();
     }
     return cumulative_size + idx_;
@@ -180,8 +180,9 @@ public:
 
   constexpr reference operator[](size_type idx) const {
     // TODO: optimize this
-    size_t span_id = 0;
-    for (size_t span_id = 0; idx >= segments()[span_id].size(); span_id++) {
+    std::size_t span_id = 0;
+    for (std::size_t span_id = 0; idx >= segments()[span_id].size();
+         span_id++) {
       idx -= segments()[span_id].size();
     }
     return segments()[span_id][idx];
@@ -196,7 +197,7 @@ public:
     std::vector<segment_type> new_segments;
 
     // Forward to segment_id that contains global index `Offset`.
-    size_t segment_id = 0;
+    std::size_t segment_id = 0;
     for (segment_id = 0; Offset >= segments()[segment_id].size();
          segment_id++) {
       Offset -= segments()[segment_id].size();
@@ -205,7 +206,7 @@ public:
     // Our Offset begins at `segment_id, Offset`
 
     while (Count > 0) {
-      size_t local_count =
+      std::size_t local_count =
           std::min(Count, segments()[segment_id].size() - Offset);
       auto new_segment = segments()[segment_id].subspan(Offset, local_count);
       new_segments.push_back(new_segment);

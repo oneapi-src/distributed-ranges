@@ -21,7 +21,7 @@ template <typename T>
 auto allocate_device_spans(std::size_t size, sycl::context context,
                            auto &&devices) {
   std::vector<shp::device_span<T, shp::device_ptr<T>>> spans;
-  for (size_t rank = 0; rank < devices.size(); rank++) {
+  for (std::size_t rank = 0; rank < devices.size(); rank++) {
     spans.push_back(allocate_device_span<T>(size, rank, context, devices));
   }
   return spans;
@@ -40,7 +40,7 @@ template <typename T>
 std::vector<shp::device_span<T>> allocate_shared_spans(std::size_t size,
                                                        auto &&devices) {
   std::vector<shp::device_span<T>> spans;
-  for (size_t rank = 0; rank < devices.size(); rank++) {
+  for (std::size_t rank = 0; rank < devices.size(); rank++) {
     spans.push_back(allocate_shared_span<T>(size, rank, devices));
   }
   return spans;
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   shp::distributed_span dspan(segments);
 
   printf("Launching on segments...\n");
-  size_t iteration = 0;
+  std::size_t iteration = 0;
   for (auto &&segment : dspan.segments()) {
     printf("Segment %lu\n", iteration++);
     // sycl::queue q(shp::context(), devices[segment.rank()]);

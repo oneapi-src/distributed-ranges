@@ -111,6 +111,7 @@ using distributed_vector_iterator =
 
 // TODO: support teams, distributions
 
+/// distributed vector
 template <typename T, typename Allocator = shp::device_allocator<T>>
 struct distributed_vector {
 public:
@@ -139,21 +140,16 @@ public:
     segment_size_ = (count + shp::devices().size() - 1) / shp::devices().size();
     capacity_ = segment_size_ * shp::devices().size();
 
-    size_t rank = 0;
-    for (auto &&device : shp::devices())
+    std::size_t rank = 0;
+    for (auto &&device : shp::devices()) {
       segments_.emplace_back(segment_type(
           segment_size_, Allocator(shp::context(), device), rank++));
+    }
   }
 
   distributed_vector(std::size_t count, const T &value)
       : distributed_vector(count) {
-    std::vector<sycl::event> events;
-
-    for (auto &&segment : segments_) {
-      events.push_back(shp::fill_async(segment.begin(), segment.end(), value));
-    }
-
-    sycl::queue().submit([=](auto &&h) { h.depends_on(events); }).wait();
+    shp::fill(*this, value);
   }
 
   distributed_vector(std::initializer_list<T> init)
