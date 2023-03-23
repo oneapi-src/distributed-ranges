@@ -22,5 +22,5 @@ jobs:
       run: |
         module load cmake
         module load intel/oneapi/2023.0.0
-        cmake -DENABLE_SYCL:BOOL=ON -DENABLE_SYCL_MPI:BOOL=ON -S . -B build-icpx
-
+        cmake -B build -DENABLE_SYCL=on 
+        make -j 2 -C build/test/gtest/shp all test
