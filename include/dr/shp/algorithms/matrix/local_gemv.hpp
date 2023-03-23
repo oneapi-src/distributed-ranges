@@ -35,7 +35,6 @@ auto local_gemv(sycl::queue q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
   auto event =
       oneapi::mkl::sparse::gemv(q, oneapi::mkl::transpose::nontrans, T(1),
                                 a_handle, b, T(1), c, dependencies);
-  event.wait();
   return event;
 }
 
