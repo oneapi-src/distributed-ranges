@@ -7,7 +7,7 @@
 #include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
-#include <dr/shp/copy.hpp>
+#include <dr/shp/algorithms/copy.hpp>
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/distributed_span.hpp>
 #include <dr/shp/init.hpp>

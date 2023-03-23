@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "copy.hpp"
+#include "fill.hpp"
 #include "execution_policy.hpp"
 #include "for_each.hpp"
 #include "inclusive_scan.hpp"
