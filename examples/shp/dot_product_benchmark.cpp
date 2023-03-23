@@ -46,8 +46,8 @@ void iota(Iter begin, Iter end, T value) {
   auto iota_view = rng::views::iota(T(value), T(value + rng::distance(r)));
 
   shp::for_each(shp::par_unseq, shp::views::zip(iota_view, r),
-                [=](auto&& elem) {
-                  auto&& [idx, v] = elem;
+                [=](auto &&elem) {
+                  auto &&[idx, v] = elem;
                   v = idx;
                 });
 }
@@ -109,10 +109,10 @@ int main(int argc, char **argv) {
 
   sycl::queue q(shp::context(), shp::devices()[0]);
 
-  T* x_d = sycl::malloc_device<T>(n, shp::devices()[0], shp::context());
-  T* y_d = sycl::malloc_device<T>(n, shp::devices()[0], shp::context());
-  q.memcpy(x_d, x_local.data(), n*sizeof(T)).wait();
-  q.memcpy(y_d, y_local.data(), n*sizeof(T)).wait();
+  T *x_d = sycl::malloc_device<T>(n, shp::devices()[0], shp::context());
+  T *y_d = sycl::malloc_device<T>(n, shp::devices()[0], shp::context());
+  q.memcpy(x_d, x_local.data(), n * sizeof(T)).wait();
+  q.memcpy(y_d, y_local.data(), n * sizeof(T)).wait();
 
   sum = 0;
   for (std::size_t i = 0; i < n_iterations; i++) {
