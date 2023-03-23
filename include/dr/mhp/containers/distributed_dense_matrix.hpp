@@ -4,57 +4,70 @@
 
 #pragma once
 
+#include "distributed_iterators.hpp"
 #include "index.hpp"
 
 namespace mhp {
 
-template <typename T> class dm_tile {
-public:
-  using key_type = mhp::index<>;
+using key_type = mhp::index<>;
 
-  dm_tile(T *data, key_type shape, size_t rank)
-      : data_(data), rank_(rank), shape_(shape){};
+template <typename DM> class dm_segment {
+private:
+  using iterator = dm_segment_iterator<DM>;
+  using value_type = typename DM::value_type;
+
+public:
+  using difference_type = std::ptrdiff_t;
+  dm_segment() = default;
+  dm_segment(DM *dm, value_type *ptr, key_type shape,
+             std::size_t segment_index) {
+    dm_ = dm;
+    ptr_ = ptr;
+    shape_ = shape;
+    rank_ = segment_index;
+    size_ = shape[0] * shape[1];
+  }
+
+  auto size() const { return size_; }
+
+  auto begin() const { return iterator(dm_, rank_, 0); }
+  auto end() const { return begin() + size(); }
+
+  auto operator[](difference_type n) const { return *(begin() + n); }
 
   bool is_local() { return rank_ == default_comm().rank(); }
-
-  size_t rank() { return rank_; }
   key_type shape() { return shape_; }
 
+  DM *dm() { return dm_; }
+
 private:
-  T *data_ = nullptr;
-  size_t rank_;
+  DM *dm_;
+  value_type *ptr_;
   key_type shape_;
+  std::size_t rank_;
+  std::size_t size_;
 };
-
-template <typename T>
-class dm_row_iterator : public std::iterator<std::forward_iterator_tag, T> {
+template <typename DM> class dm_segments : public std::span<dm_segment<DM>> {
 public:
-  dm_row_iterator(T *p, dm_tile<T> &tile) : p_(p), tile_(tile){};
-
-  dm_row_iterator &operator++() {
-    p_++;
-    return *this;
-  };
-  bool operator==(dm_row_iterator other) const { return p_ == other.p_; }
-  bool operator!=(dm_row_iterator other) const { return p_ != other.p_; }
-  T &operator*() { return *p_; }
-
-  dm_tile<T> &tile() { return tile_; }
+  dm_segments() {}
+  dm_segments(DM *dm) : std::span<dm_segment<DM>>(dm->segments_) { dm_ = dm; }
 
 private:
-  T *p_;
-  dm_tile<T> &tile_;
-};
+  const DM *dm_;
+}; // dm_segments
 
 template <typename T> class dm_row_view {
-  using iterator = dm_row_iterator<T>;
+  using dmatrix = distributed_dense_matrix<T>;
+  using dmsegment = dm_segment<dmatrix>;
 
 public:
-  dm_row_view(size_t idx, T *ptr, dm_tile<T> &tile, size_t size)
-      : index_(idx), data_(ptr), tileref_(tile), size_(size){};
+  using iterator = dm_row_iterator<dmatrix>;
 
-  iterator begin() { return iterator(data_, tileref_); }
-  iterator end() { return iterator(data_ + size_, tileref_); }
+  dm_row_view(size_t idx, T *ptr, dmsegment &segment, size_t size)
+      : index_(idx), data_(ptr), segmentref_(segment), size_(size){};
+
+  iterator begin() { return iterator(data_, segmentref_.dm()); }
+  iterator end() { return begin() + size_; }
 
   T &operator[](size_t idx) {
     assert(data_ != nullptr);
@@ -62,36 +75,83 @@ public:
     return data_[idx];
   }
 
-  dm_tile<T> &tile() { return tileref_; }
+  dmsegment &segment() { return segmentref_; }
   size_t idx() { return index_; }
 
 private:
   size_t index_;
   T *data_ = nullptr;
-  dm_tile<T> &tileref_;
+  dmsegment &segmentref_;
   size_t size_ = 0;
 };
-
-template <typename T, typename Allocator = std::allocator<T>>
-class distributed_dense_matrix {
+template <typename DM>
+class dm_rows : public std::vector<dm_row_view<typename DM::value_type>> {
 public:
+  using iterator = dm_rows_iterator<DM>;
+
+  dm_rows(DM *dm) : dm_(dm){};
+
+  auto &halo() const { return dm_->halo(); }
+  auto segments() { return dm_->segments(); }
+
+private:
+  DM *dm_ = nullptr;
+};
+
+template <typename T, typename Allocator> class distributed_dense_matrix {
+public:
+  using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-
-  // using value_type = mhp::matrix_entry<T>;
-
   using key_type = mhp::index<>;
 
-  using iterator = lib::iterator_adaptor<distributed_dense_matrix<T>>;
+  using iterator =
+      lib::normal_distributed_iterator<dm_segments<distributed_dense_matrix>>;
 
-  size_type size() const noexcept { return shape()[0] * shape()[1]; }
+  distributed_dense_matrix(key_type shape,
+                           lib::halo_bounds hb = lib::halo_bounds(),
+                           Allocator allocator = Allocator())
+      : shape_(shape), grid_shape_(default_comm().size(), 1),
+        segment_shape_((shape_[0] + default_comm().size() - 1) /
+                           default_comm().size(),
+                       shape_[1]),
+        segment_size_(std::max({segment_shape_[0] * segment_shape_[1],
+                                hb.prev * segment_shape_[1],
+                                hb.next * segment_shape_[1]})),
+        data_size_(segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1]),
+        rows_(this) {
+    init_(hb, allocator);
+  }
 
-  key_type shape() const noexcept { return shape_; }
+  distributed_dense_matrix(size_t rows, size_t cols,
+                           lib::halo_bounds hb = lib::halo_bounds(),
+                           Allocator allocator = Allocator())
+      : shape_(key_type(rows, cols)), // partition_(new mhp::block_cyclic()),
+        grid_shape_(default_comm().size(), 1),
+        segment_shape_((shape_[0] + default_comm().size() - 1) /
+                           default_comm().size(),
+                       shape_[1]),
+        segment_size_(std::max({segment_shape_[0] * segment_shape_[1],
+                                hb.prev * segment_shape_[1],
+                                hb.next * segment_shape_[1]})),
+        data_size_(segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1]),
+        rows_(this) {
 
-  std::vector<dm_row_view<T>> local_rows() {
-    std::vector<dm_row_view<T>> row_view_;
+    init_(hb, allocator);
+  }
+  ~distributed_dense_matrix() {
+    fence();
+    active_wins().erase(win_.mpi_win());
+    win_.free();
+    allocator_.deallocate(data_, data_size_);
+    data_ = nullptr;
+    delete halo_;
+  }
+
+  dm_rows<distributed_dense_matrix<T>> local_rows() {
+    dm_rows row_view_(this);
     size_t row_index_ = 0;
-    for (auto _titr = tiles_.begin(); _titr != tiles_.end(); ++_titr) {
+    for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
       if ((*_titr).is_local()) {
         for (size_t s = 0; s < (*_titr).shape()[0]; s++) {
           row_view_.emplace_back(row_index_ + s,
@@ -104,60 +164,31 @@ public:
     return row_view_;
   }
 
-  std::vector<dm_row_view<T>> rows() {
-    std::vector<dm_row_view<T>> row_view_;
-    size_t row_index_ = 0;
-    for (auto _titr = tiles_.begin(); _titr != tiles_.end(); ++_titr) {
-      for (size_t s = 0; s < (*_titr).shape()[0]; s++) {
-        T *_dataptr =
-            (*_titr).is_local() ? (data_ + s * (*_titr).shape()[1]) : nullptr;
-        row_view_.emplace_back(row_index_++, _dataptr, *_titr,
-                               (*_titr).shape()[1]);
-      }
-    };
-    return row_view_;
+  auto &rows() { return rows_; }
+
+  auto begin() const { return iterator(segments(), 0, 0); }
+  auto end() const {
+    return iterator(segments(), rng::distance(segments()), 0);
   }
 
-  distributed_dense_matrix(key_type shape,
-                           lib::halo_bounds hb = lib::halo_bounds(),
-                           Allocator allocator = Allocator())
-      : shape_(shape), // partition_(new mhp::block_cyclic()),
-        grid_shape_(default_comm().size(), 1),
-        tile_shape_((shape_[0] + default_comm().size() - 1) /
-                        default_comm().size(),
-                    shape_[1]),
-        segment_size_(
-            std::max({tile_shape_[0] * tile_shape_[1], hb.prev * tile_shape_[1],
-                      hb.next * tile_shape_[1]})),
-        data_size_(segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1]),
-        data_(allocator.allocate(data_size_)),
-        halo_(lib::span_halo<T>(default_comm(), data_, data_size_, hb)) {
-    init_();
+  T *data() { return data(); }
+  key_type shape() const noexcept { return shape_; }
+  size_type size() const noexcept { return shape()[0] * shape()[1]; }
+  dm_segments<distributed_dense_matrix> segments() const {
+    return dm_segments_;
   }
-
-  distributed_dense_matrix(size_t rows, size_t cols,
-                           lib::halo_bounds hb = lib::halo_bounds(),
-                           Allocator allocator = Allocator())
-      : shape_(key_type(rows, cols)), // partition_(new mhp::block_cyclic()),
-        grid_shape_(default_comm().size(), 1),
-        tile_shape_((shape_[0] + default_comm().size() - 1) /
-                        default_comm().size(),
-                    shape_[1]),
-        segment_size_(
-            std::max({tile_shape_[0] * tile_shape_[1], hb.prev * tile_shape_[1],
-                      hb.next * tile_shape_[1]})),
-        data_size_(segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1]),
-        data_(allocator.allocate(data_size_)),
-        halo_(lib::span_halo<T>(default_comm(), data_, data_size_, hb)) {
-    init_();
-  }
+  auto &halo() { return *halo_; }
+  lib::halo_bounds &halo_bounds() { return halo_bounds_; }
 
 private:
-  void init_() {
+  void init_(lib::halo_bounds hb, auto allocator) {
 
-    // one tile per node, 1-d arrangement of tiles
+    data_ = allocator.allocate(data_size_);
+    halo_ = new lib::span_halo<T>(default_comm(), data_, data_size_, hb);
 
-    tiles_.reserve(grid_shape_[0] * grid_shape_[1]);
+    // one segment per node, 1-d arrangement of segments
+
+    segments_.reserve(grid_shape_[0] * grid_shape_[1]);
 
     size_t idx = 0;
     for (std::size_t i = 0; i < grid_shape_[0]; i++) {
@@ -165,42 +196,74 @@ private:
         T *_ptr = (idx == default_comm().rank()) ? data_ : nullptr;
 
         key_type _ts(
-            tile_shape_[0] -
+            segment_shape_[0] -
                 ((idx + 1) / default_comm().size()) *
-                    (default_comm().size() * tile_shape_[0] - shape_[0]),
-            tile_shape_[1]);
-        tiles_.emplace_back(_ptr, _ts, idx);
+                    (default_comm().size() * segment_shape_[0] - shape_[0]),
+            segment_shape_[1]);
+        segments_.emplace_back(this, _ptr, _ts, idx);
         idx++;
       }
     }
+
+    size_t row_index_ = 0;
+    for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
+      for (size_t s = 0; s < (*_titr).shape()[0]; s++) {
+        T *_dataptr =
+            (*_titr).is_local() ? (data_ + s * (*_titr).shape()[1]) : nullptr;
+        rows_.emplace_back(row_index_++, _dataptr, *_titr, (*_titr).shape()[1]);
+      }
+    };
+
+    win_.create(default_comm(), data_, data_size_ * sizeof(T));
+    active_wins().insert(win_.mpi_win());
+    dm_segments_ = dm_segments<distributed_dense_matrix>(this);
+    fence();
   }
 
 private:
+  friend dm_segment_iterator<distributed_dense_matrix>;
+  friend dm_segments<distributed_dense_matrix>;
+
   key_type shape_;
   key_type grid_shape_; // currently (N, 1)
-  key_type tile_shape_;
+  key_type segment_shape_;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
   T *data_ = nullptr;
-  lib::span_halo<T> halo_;
+
+  dm_rows<distributed_dense_matrix<T>> rows_;
+
+  lib::span_halo<T> *halo_;
   lib::halo_bounds halo_bounds_;
   std::size_t size_;
 
   // std::vector<dm_segment<distributed_dense_matrix>> segments_;
   // dm_segments<distributed_dense_matrix> dm_segments_;
 
-  std::vector<dm_tile<T>> tiles_;
+  dm_segments<distributed_dense_matrix> dm_segments_;
+  std::vector<dm_segment<distributed_dense_matrix>> segments_;
   lib::rma_window win_;
   Allocator allocator_;
 };
 
-template <typename T> void for_each(std::vector<dm_row_view<T>> view, auto op) {
+template <typename T>
+void for_each(dm_rows<distributed_dense_matrix<T>> view, auto op) {
   for (auto itr = view.begin(); itr != view.end(); itr++) {
-    if ((*itr).tile().is_local()) {
+    if ((*itr).segment().is_local()) {
       op(*itr);
     }
   }
 };
 
 } // namespace mhp
+
+// Needed to satisfy rng::viewable_range
+template <typename T>
+inline constexpr bool rng::enable_borrowed_range<
+    mhp::dm_segments<mhp::distributed_dense_matrix<T>>> = true;
+
+template <typename T>
+inline constexpr bool
+    rng::enable_borrowed_range<mhp::dm_rows<mhp::distributed_dense_matrix<T>>> =
+        true;

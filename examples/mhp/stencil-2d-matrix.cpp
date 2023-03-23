@@ -13,16 +13,17 @@ int comm_rank;
 int comm_size;
 
 constexpr size_t Size = 10;
-using ET = int;
+using eltype = int;
 
 cxxopts::ParseResult options;
 
-void dump_matrix(std::string msg, mhp::distributed_dense_matrix<ET> &dm) {
+void dump_matrix(std::string msg, mhp::distributed_dense_matrix<eltype> &dm) {
   std::stringstream s;
   s << comm_rank << ": " << msg << " :\n";
   for (auto r : dm.local_rows()) {
     s << comm_rank << ": row : ";
-    for (auto _i = r.begin(); _i != r.end(); ++_i)
+    for (auto _i = ((mhp::dm_row_view<eltype>)r).begin();
+         _i != ((mhp::dm_row_view<eltype>)r).end(); ++_i)
       s << *_i << " ";
     s << ENDL;
   }
@@ -30,20 +31,37 @@ void dump_matrix(std::string msg, mhp::distributed_dense_matrix<ET> &dm) {
 }
 
 int stencil(const size_t n, auto steps) {
-  // lib::halo_bounds hb(1);
-  mhp::distributed_dense_matrix<ET> a(n, n);
+  lib::halo_bounds hb(Size);
+  mhp::distributed_dense_matrix<eltype> a(n, n, hb);
 
-  size_t init = 0;
-  mhp::for_each<ET>(a.rows(), [&init](auto &&row) {
+  // mhp::dm_row_view<eltype> row = *(a.rows().begin());
+  // *(row.begin()) = 5;
+
+  for (mhp::dm_row_view<eltype> r : a.local_rows()) {
+    std::fill(r.begin(), r.end(), -1);
+  }
+  dump_matrix("Filled with -1", a);
+
+  for (mhp::dm_row_view<eltype> r : a.local_rows()) {
+    std::fill(r.begin() + 1, r.end() - 1,
+              Size * r.idx() + mhp::default_comm().rank());
+  }
+  dump_matrix("After iteration over local_rows()", a);
+
+  mhp::for_each(a.rows(), [](mhp::dm_row_view<eltype> &row) {
     std::iota(row.begin(), row.end(), Size * row.idx());
   });
   dump_matrix("After for_each", a);
 
-  init = 0;
-  for (auto r : a.local_rows()) {
-    std::iota(r.begin(), r.end(), Size * r.idx() + mhp::default_comm().rank());
-  }
-  dump_matrix("After iteration over local_rows()", a);
+  mhp::for_each(a.rows(), [](mhp::dm_row_view<eltype> &row) {
+    std::fill(row.begin(), row.end(), mhp::default_comm().rank());
+  });
+  dump_matrix("Fill before exchange", a);
+
+  auto in = rng::subrange(a.begin(), a.end());
+
+  mhp::halo(in).exchange();
+  dump_matrix("After exchange", a);
 
   return 0;
 }
@@ -75,10 +93,4 @@ int main(int argc, char *argv[]) {
 
   MPI_Finalize();
   return error;
-}
-
-// return locally stored elements as a vector
-auto local_vector(auto &&dr) {
-  auto lvector = rng::views::zip(local_segments(dr));
-  return std::get<0>(*lvector.begin());
 }
