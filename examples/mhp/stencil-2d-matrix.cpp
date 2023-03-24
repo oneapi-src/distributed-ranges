@@ -12,7 +12,7 @@ MPI_Comm comm;
 int comm_rank;
 int comm_size;
 
-constexpr size_t Size = 10;
+constexpr std::size_t Size = 10;
 using eltype = int;
 
 cxxopts::ParseResult options;
@@ -21,47 +21,52 @@ void dump_matrix(std::string msg, mhp::distributed_dense_matrix<eltype> &dm) {
   std::stringstream s;
   s << comm_rank << ": " << msg << " :\n";
   for (auto r : dm.local_rows()) {
-    s << comm_rank << ": row : ";
-    for (auto _i = ((mhp::dm_row_view<eltype>)r).begin();
-         _i != ((mhp::dm_row_view<eltype>)r).end(); ++_i)
+    s << comm_rank << ": row " << r.idx() << " : ";
+    for (auto _i = r.begin(); _i != r.end(); ++_i)
       s << *_i << " ";
-    s << ENDL;
+    s << std::endl;
   }
   std::cout << s.str();
 }
 
-int stencil(const size_t n, auto steps) {
-  lib::halo_bounds hb(Size);
+void dump_vector(std::string msg, mhp::distributed_vector<eltype> &v) {
+  std::stringstream s;
+  s << comm_rank << ": " << msg << " :\n";
+  mhp::for_each(v, [&s](auto &&el) { s << comm_rank << ":" << el << std::endl; });
+  std::cout << s.str();
+}
+
+int stencil(const std::size_t n, auto steps) {
+  lib::halo_bounds hb(1); // number of rows
   mhp::distributed_dense_matrix<eltype> a(n, n, hb);
 
-  // mhp::dm_row_view<eltype> row = *(a.rows().begin());
-  // *(row.begin()) = 5;
-
-  for (mhp::dm_row_view<eltype> r : a.local_rows()) {
+  for (mhp::dm_row<eltype> r : a.local_rows()) {
     std::fill(r.begin(), r.end(), -1);
   }
   dump_matrix("Filled with -1", a);
 
-  for (mhp::dm_row_view<eltype> r : a.local_rows()) {
+  for (mhp::dm_row<eltype> r : a.local_rows()) {
     std::fill(r.begin() + 1, r.end() - 1,
               Size * r.idx() + mhp::default_comm().rank());
   }
   dump_matrix("After iteration over local_rows()", a);
 
-  mhp::for_each(a.rows(), [](mhp::dm_row_view<eltype> &row) {
-    std::iota(row.begin(), row.end(), Size * row.idx());
-  });
-  dump_matrix("After for_each", a);
+  // mhp::for_each(a.rows(), [](mhp::dm_row<eltype> &row) {
+  //   std::iota(row.begin(), row.end(), Size * row.idx());
+  // });
+  // dump_matrix("After for_each", a);
 
-  mhp::for_each(a.rows(), [](mhp::dm_row_view<eltype> &row) {
-    std::fill(row.begin(), row.end(), mhp::default_comm().rank());
-  });
-  dump_matrix("Fill before exchange", a);
+  for (mhp::dm_row<eltype> r : a.local_rows()) {
+    std::fill(r.begin(), r.end(), Size * r.idx() + mhp::default_comm().rank());
+  }
 
-  auto in = rng::subrange(a.begin(), a.end());
+  dump_matrix("DM before exchange", a);
 
-  mhp::halo(in).exchange();
-  dump_matrix("After exchange", a);
+  // auto mxrng = rng::subrange(a.rows().begin(), a.rows().end());
+  auto mxrng = rng::subrange(a.begin(), a.end());
+
+  mhp::halo(mxrng).exchange();
+  dump_matrix("DM After exchange", a);
 
   return 0;
 }

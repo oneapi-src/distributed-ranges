@@ -9,16 +9,39 @@ namespace mhp {
 template <typename T, typename Allocator = std::allocator<T>>
 class distributed_dense_matrix;
 
-template <typename DM> class dm_row_reference;
+template <typename DM> class dm_rows_iterator;
 
 template <typename DM> class dm_segment_iterator;
 
-template <typename T> class dm_row_view;
+template <typename T> class dm_row;
+
+template <typename DM> class dm_row_reference {
+  using iterator = dm_rows_iterator<DM>;
+
+public:
+  using value_type = dm_row<typename DM::value_type>;
+
+  dm_row_reference(const iterator it) : iterator_(it) {}
+
+  operator value_type() const { return iterator_.get(); }
+  auto operator=(const value_type &value) const {
+    iterator_.put(value);
+    return *this;
+  }
+  auto operator=(const dm_row_reference &other) const {
+    *this = value_type(other);
+    return *this;
+  }
+  auto operator&() const { return iterator_; }
+
+private:
+  const iterator iterator_;
+}; // dm_row_reference
 
 template <typename DM> class dm_rows_iterator {
 public:
-  using value_type = typename mhp::dm_row_view<typename DM::value_type>;
-  // using size_type = typename mhp::dm_row_view<typename DM::value_type>;
+  using value_type = typename mhp::dm_row<typename DM::value_type>;
+  // using size_type = typename mhp::dm_row<typename DM::value_type>;
   // using value_type = typename DM::value_type;
   using size_type = typename DM::value_type;
   using difference_type = typename DM::difference_type;
@@ -142,29 +165,6 @@ private:
   const iterator iterator_;
 }; // dm_segment_reference
 
-template <typename DM> class dm_row_reference {
-  using iterator = dm_rows_iterator<DM>;
-
-public:
-  using value_type = dm_row_view<typename DM::value_type>;
-
-  dm_row_reference(const iterator it) : iterator_(it) {}
-
-  operator value_type() const { return iterator_.get(); }
-  auto operator=(const value_type &value) const {
-    iterator_.put(value);
-    return *this;
-  }
-  auto operator=(const dm_row_reference &other) const {
-    *this = value_type(other);
-    return *this;
-  }
-  auto operator&() const { return iterator_; }
-
-private:
-  const iterator iterator_;
-}; // dm_row_reference
-
 template <typename DM> class dm_segment_iterator {
 public:
   using value_type = typename DM::value_type;
@@ -266,40 +266,5 @@ private:
   std::size_t rank_;
   std::size_t index_;
 }; // dm_segment_iterator
-
-template <typename DM>
-class dm_row_iterator
-    : public std::iterator<std::input_iterator_tag, typename DM::value_type> {
-public:
-  using value_type = typename DM::value_type;
-  dm_row_iterator(value_type *data, DM *dm) : dm_(dm), data_(data){};
-
-  dm_row_iterator &operator++() {
-    data_++;
-    return *this;
-  };
-  bool operator==(dm_row_iterator other) const { return data_ == other.data_; }
-  bool operator!=(dm_row_iterator other) const { return data_ != other.data_; }
-
-  dm_row_iterator operator+(std::size_t n) {
-    data_ += n;
-    return *this;
-  }
-  dm_row_iterator operator-(std::size_t n) {
-    data_ -= n;
-    return *this;
-  }
-
-  std::size_t operator-(dm_row_iterator<DM> other) {
-    return (other.data_ - data_);
-  }
-  value_type &operator*() const { return *data_; }
-
-  auto &halo() const { return dm_->halo(); }
-
-private:
-  DM *dm_;
-  value_type *data_;
-};
 
 } // namespace mhp
