@@ -35,3 +35,15 @@ TYPED_TEST(Zip, Subrange) {
   EXPECT_TRUE(check_view(zip_inner(ops.vec0, ops.vec1),
                          zip_inner(ops.dist_vec0, ops.dist_vec1)));
 }
+
+TYPED_TEST(Zip, ForEach) {
+  Ops2<TypeParam> ops(10);
+
+  auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
+  xhp::for_each(default_policy(ops.dist_vec0),
+                rng::views::zip(ops.dist_vec0, ops.dist_vec1), copy);
+  rng::for_each(rng::views::zip(ops.vec0, ops.vec1), copy);
+
+  EXPECT_EQ(ops.vec0, ops.dist_vec0);
+  EXPECT_EQ(ops.vec1, ops.dist_vec1);
+}
