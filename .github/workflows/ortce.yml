@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 on:
+  workflow_dispatch:
+  pull_request:
   push:
     branches:
-      - dev/ortce
-  pull_request:
+      - main
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
@@ -15,6 +16,7 @@ env:
 
 jobs:
   ortce:
+    if: ${{ vars.ENABLE_ORTCE }}
     runs-on: ortce
     steps:
     - uses: actions/checkout@v3
@@ -23,6 +25,7 @@ jobs:
         module load cmake
         module load intel/oneapi/2023.0.0
         cmake -B build -DENABLE_SYCL=on
+        # Build/test shp
         cd build/test/gtest/shp
         make -j 2
-        srun -p QZ1J-SPR-PVC-2C -w sdp5259 make test
+        srun -p QZ1J-SPR-PVC-2C make test
