@@ -22,46 +22,54 @@ concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
 
 // TODO: move copy file into algorithms directory
 // Copy between contiguous ranges
-template <lib::remote_contiguous_range R, std::contiguous_iterator OutputIt>
-  requires __detail::is_syclmemcopyable<rng::range_value_t<R>,
+template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
+  requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
-sycl::event copy_async(const device_policy &policy, R &&r, OutputIt d_first) {
-  return sycl::queue(shp::context(), policy.get_devices()[r.rank()])
-      .copy(__detail::get_local_pointer(rng::begin(r)),
-            std::to_address(d_first), rng::size(r));
+sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
+  auto q = shp::__detail::default_queue();
+  return q.memcpy(std::to_address(d_first), std::to_address(first),
+                  sizeof(std::iter_value_t<InputIt>) * (last - first));
 }
 
 /// Copy
-template <lib::remote_contiguous_range R, std::contiguous_iterator OutputIt>
-  requires __detail::is_syclmemcopyable<rng::range_value_t<R>,
+template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
+  requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
-OutputIt copy(const device_policy &policy, R &&r, OutputIt d_first) {
-  const auto range_size = rng::size(r);
-  copy_async(policy, std::forward(r), d_first).wait();
-  return d_first + range_size;
+OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
+  copy_async(first, last, d_first).wait();
+  return d_first + (last - first);
 }
 
 // Copy from contiguous range to device
-template <rng::random_access_range SrcRangeT,
-          lib::remote_contiguous_range DstRangeT>
-  requires __detail::is_syclmemcopyable<rng::range_value_t<SrcRangeT>,
-                                        rng::range_value_t<DstRangeT>>
-sycl::event copy_async(const device_policy &policy, SrcRangeT &&src,
-                       DstRangeT &&dst) {
-  return sycl::queue(shp::context(), policy.get_devices()[dst.rank()])
-      .copy(std::to_address(rng::begin(src)),
-            __detail::get_local_pointer(rng::begin(dst)),
-            std::min(rng::size(src), rng::size(dst)));
+template <std::contiguous_iterator Iter, typename T>
+  requires __detail::is_syclmemcopyable<std::iter_value_t<Iter>, T>
+sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
+  auto q = shp::__detail::default_queue();
+  return q.memcpy(d_first.get_raw_pointer(), std::to_address(first),
+                  sizeof(T) * (last - first));
 }
 
-template <rng::random_access_range SrcRangeT,
-          lib::remote_contiguous_range DstRangeT>
-  requires __detail::is_syclmemcopyable<rng::range_value_t<SrcRangeT>,
-                                        rng::range_value_t<DstRangeT>>
-auto copy(const device_policy &policy, SrcRangeT &&src, DstRangeT &&dst) {
-  const auto range_size = std::min(rng::size(src), rng::size(dst));
-  copy_async(policy, std::forward(src), std::forward(dst)).wait();
-  return rng::begin(dst) + range_size;
+template <std::contiguous_iterator Iter, typename T>
+  requires __detail::is_syclmemcopyable<std::iter_value_t<Iter>, T>
+device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
+  copy_async(first, last, d_first).wait();
+  return d_first + (last - first);
+}
+
+// Copy from device to contiguous range
+template <typename T, std::contiguous_iterator Iter>
+  requires __detail::is_syclmemcopyable<T, std::iter_value_t<Iter>>
+sycl::event copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
+  auto q = shp::__detail::default_queue();
+  return q.memcpy(std::to_address(d_first), first.get_raw_pointer(),
+                  sizeof(T) * (last - first));
+}
+
+template <typename T, std::contiguous_iterator Iter>
+  requires __detail::is_syclmemcopyable<T, std::iter_value_t<Iter>>
+Iter copy(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
+  copy_async(first, last, d_first).wait();
+  return d_first + (last - first);
 }
 
 // Copy from device to device
@@ -103,11 +111,11 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     auto local_last = first;
     rng::advance(local_last, n_to_copy);
 
-    events.emplace_back(shp::copy_async(
-        shp::par_unseq, rng::make_subrange(first, local_last), segment));
+    events.emplace_back(
+        shp::copy_async(first, local_last, rng::begin(segment)));
 
     ++segment_iter;
-    first = local_last;
+    rng::advance(first, n_to_copy);
   }
 
   return shp::__detail::combine_events(events);
@@ -135,7 +143,8 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   for (auto &&segment : segments) {
     auto size = rng::distance(segment);
 
-    events.emplace_back(shp::copy_async(shp::par_unseq, segment, d_first));
+    events.emplace_back(
+        shp::copy_async(rng::begin(segment), rng::end(segment), d_first));
 
     rng::advance(d_first, size);
   }
