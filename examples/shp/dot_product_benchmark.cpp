@@ -5,6 +5,7 @@
 #include <dr/shp/shp.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
 
@@ -20,23 +21,26 @@ auto dot_product_distributed(X &&x, Y &&y) {
 
 template <rng::forward_range X, rng::forward_range Y>
 auto dot_product_onedpl(sycl::queue q, X &&x, Y &&y) {
-  auto z = rng::views::zip(x, y) | rng::views::transform([](auto &&elem) {
+  auto z = rng::views::zip(x, y) | lib::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
-
   oneapi::dpl::execution::device_policy policy(q);
-  return oneapi::dpl::reduce(policy, z.begin(), z.end(), 0, std::plus());
+  shp::__detail::direct_iterator d_first(z.begin());
+  shp::__detail::direct_iterator d_last(z.end());
+  return oneapi::dpl::experimental::reduce_async(
+             policy, d_first, d_last, rng::range_value_t<X>(0), std::plus())
+      .get();
 }
 
 template <rng::forward_range X, rng::forward_range Y>
 auto dot_product_sequential(X &&x, Y &&y) {
-  auto z = rng::views::zip(x, y) | rng::views::transform([](auto &&elem) {
+  auto z = shp::views::zip(x, y) | rng::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
 
-  return std::reduce(z.begin(), z.end(), 0, std::plus());
+  return std::reduce(z.begin(), z.end(), rng::range_value_t<X>(0), std::plus());
 }
 
 template <lib::distributed_iterator Iter, std::integral T>
@@ -56,7 +60,7 @@ int main(int argc, char **argv) {
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
-  std::size_t n = 100;
+  std::size_t n = 1uul * 1024 * 1024 * 1024ull;
 
   using T = int;
 
