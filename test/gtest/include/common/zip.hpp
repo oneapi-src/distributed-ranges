@@ -25,8 +25,8 @@ TYPED_TEST(Zip, Zip3) {
 }
 
 auto zip_inner(auto &&r1, auto &&r2) {
-  return rng::views::zip(rng::subrange(r1.begin() + 1, r1.end() - 1),
-                         rng::subrange(r2.begin() + 1, r2.end() - 1));
+  return zhp::zip(rng::subrange(r1.begin() + 1, r1.end() - 1),
+                  rng::subrange(r2.begin() + 1, r2.end() - 1));
 }
 
 TYPED_TEST(Zip, Subrange) {
@@ -41,7 +41,7 @@ TYPED_TEST(Zip, ForEach) {
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
   xhp::for_each(default_policy(ops.dist_vec0),
-                rng::views::zip(ops.dist_vec0, ops.dist_vec1), copy);
+                zhp::zip(ops.dist_vec0, ops.dist_vec1), copy);
   rng::for_each(rng::views::zip(ops.vec0, ops.vec1), copy);
 
   EXPECT_EQ(ops.vec0, ops.dist_vec0);
