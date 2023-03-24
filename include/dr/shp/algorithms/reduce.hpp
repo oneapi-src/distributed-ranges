@@ -9,6 +9,7 @@
 #include <oneapi/dpl/execution>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/detail/onedpl_direct_iterator.hpp>
 #include <dr/shp/init.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
@@ -17,19 +18,22 @@
 
 namespace {
 
-// Precondition: rng::distance(begin, end) >= 2
-// Postcondition: return future to [begin, end) reduced with fn
+// Precondition: rng::distance(first, last) >= 2
+// Postcondition: return future to [first, last) reduced with fn
 template <typename T, typename ExecutionPolicy,
           std::bidirectional_iterator Iter, typename Fn>
-auto reduce_no_init_async(ExecutionPolicy &&policy, Iter begin, Iter end,
+auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
                           Fn &&fn) {
-  Iter new_end = end;
-  --new_end;
+  Iter new_last = last;
+  --new_last;
 
-  std::iter_value_t<Iter> init = *new_end;
+  std::iter_value_t<Iter> init = *new_last;
+
+  shp::__detail::direct_iterator d_first(first);
+  shp::__detail::direct_iterator d_last(new_last);
 
   return oneapi::dpl::experimental::reduce_async(
-      std::forward<ExecutionPolicy>(policy), begin, new_end,
+      std::forward<ExecutionPolicy>(policy), d_first, d_last,
       static_cast<T>(init), std::forward<Fn>(fn));
 }
 
@@ -98,24 +102,25 @@ rng::range_value_t<R> reduce(ExecutionPolicy &&policy, R &&r) {
 // Iterator versions
 
 template <typename ExecutionPolicy, lib::distributed_iterator Iter>
-std::iter_value_t<Iter> reduce(ExecutionPolicy &&policy, Iter begin, Iter end) {
+std::iter_value_t<Iter> reduce(ExecutionPolicy &&policy, Iter first,
+                               Iter last) {
   return reduce(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(begin, end), std::iter_value_t<Iter>{},
+                rng::subrange(first, last), std::iter_value_t<Iter>{},
                 std::plus<>());
 }
 
 template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename T>
-T reduce(ExecutionPolicy &&policy, Iter begin, Iter end, T init) {
+T reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init) {
   return reduce(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(begin, end), init, std::plus<>());
+                rng::subrange(first, last), init, std::plus<>());
 }
 
 template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename T,
           typename BinaryOp>
-T reduce(ExecutionPolicy &&policy, Iter begin, Iter end, T init,
+T reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init,
          BinaryOp &&binary_op) {
   return reduce(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(begin, end), init,
+                rng::subrange(first, last), init,
                 std::forward<BinaryOp>(binary_op));
 }
 

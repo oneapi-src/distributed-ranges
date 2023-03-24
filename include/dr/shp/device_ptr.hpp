@@ -15,7 +15,6 @@ template <typename T>
 class device_ptr {
 public:
   using value_type = T;
-  using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
   using pointer = device_ptr<T>;
   using const_pointer = device_ptr<std::add_const_t<T>>;
@@ -123,7 +122,7 @@ public:
 
   reference operator*() const noexcept { return reference(pointer_); }
 
-  reference operator[](size_type offset) const noexcept {
+  reference operator[](difference_type offset) const noexcept {
     return reference(*(*this + offset));
   }
 
