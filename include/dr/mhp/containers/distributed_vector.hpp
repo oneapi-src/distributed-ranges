@@ -109,15 +109,13 @@ public:
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
     auto value =
         dv_->win_.template get<value_type>(segment_index_, segment_offset);
-    lib::drlog.debug("get {} =  ({}:{})\n", value, segment_index_,
-                     segment_offset);
+    lib::drlog.debug("get ({}:{})\n", segment_index_, segment_offset);
     return value;
   }
 
   void put(const value_type &value) const {
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
-    lib::drlog.debug("put ({}:{}) = {}\n", segment_index_, segment_offset,
-                     value);
+    lib::drlog.debug("put ({}:{})\n", segment_index_, segment_offset);
     dv_->win_.put(value, segment_index_, segment_offset);
   }
 

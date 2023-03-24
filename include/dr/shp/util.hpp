@@ -237,6 +237,13 @@ template <class T> T *get_local_pointer(shp::device_ptr<T> r) {
 }
 template <class T> T *get_local_pointer(T *t) { return t; }
 
+inline sycl::event combine_events(const std::vector<sycl::event> &events) {
+  sycl::queue q;
+  auto e = q.submit([=](auto &&h) { h.depends_on(events); });
+
+  return e;
+}
+
 } // namespace __detail
 
 } // namespace shp

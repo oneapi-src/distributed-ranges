@@ -53,7 +53,7 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto device = devices[a_tile.rank()];
     sycl::queue q(shp::context(), device);
 
-    auto event = q.submit([&](auto &&h) {
+    auto event = q.submit([=](auto &&h) {
       h.depends_on(copy_events[i]);
       h.parallel_for(a_tile.size(), [=](auto idx) {
         auto &&[index, a_v] = *(a_iter + idx);

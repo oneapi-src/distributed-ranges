@@ -35,7 +35,6 @@ auto local_gemv(sycl::queue q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
   auto event =
       oneapi::mkl::sparse::gemv(q, oneapi::mkl::transpose::nontrans, T(1),
                                 a_handle, b, T(1), c, dependencies);
-  event.wait();
   return event;
 }
 
@@ -48,7 +47,7 @@ auto local_gemv(sycl::queue q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
                 std::vector<sycl::event> dependencies = {}) {
   std::size_t wg = 32;
 
-  auto event = q.submit([&](auto &&h) {
+  auto event = q.submit([=](auto &&h) {
     h.depends_on(dependencies);
     h.parallel_for(sycl::nd_range<1>(a.shape()[0] * wg, wg), [=](auto item) {
       auto row_index = item.get_group(0);

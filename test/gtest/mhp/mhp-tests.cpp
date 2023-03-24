@@ -9,7 +9,7 @@
 #ifdef MINIMAL_TEST
 
 using TestTypes = ::testing::Types<mhp::distributed_vector<int>>;
-#include "common/zip.hpp"
+#include "common/distributed_vector.hpp"
 
 #else
 

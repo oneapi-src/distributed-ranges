@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include "device_ptr.hpp"
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/segments_tools.hpp>
+#include <dr/shp/device_ptr.hpp>
+#include <dr/shp/util.hpp>
 #include <memory>
 #include <sycl/sycl.hpp>
 #include <type_traits>
@@ -109,9 +110,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     first = local_last;
   }
 
-  auto root_event =
-      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
-  return root_event;
+  return shp::__detail::combine_events(events);
 }
 
 template <std::contiguous_iterator InputIt, lib::distributed_iterator OutputIt>
@@ -141,9 +140,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     rng::advance(d_first, size);
   }
 
-  auto root_event =
-      sycl::queue().submit([&](auto &&h) { h.depends_on(events); });
-  return root_event;
+  return shp::__detail::combine_events(events);
 }
 
 template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
@@ -152,48 +149,6 @@ template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   copy_async(first, last, d_first).wait();
   return d_first + (last - first);
-}
-
-// TODO: move fill code to seperate file
-// TODO: get rid of fill versions without rank, they don't work on PVC
-// fill with value
-template <std::contiguous_iterator Iter>
-  requires(!std::is_const_v<std::iter_value_t<Iter>> &&
-           std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
-sycl::event
-    fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
-  auto q = shp::__detail::default_queue();
-  return q.fill(std::to_address(first), value, last - first);
-}
-
-sycl::event fill_async(const device_policy &policy,
-                       lib::remote_contiguous_range auto &&r,
-                       const auto &value) {
-  using RangeValT = std::remove_cvref_t<decltype(*__detail::get_local_pointer(
-      rng::begin(r)))>;
-  const RangeValT val = value;
-  return sycl::queue(shp::context(), policy.get_devices()[r.rank()])
-      .fill(__detail::get_local_pointer(rng::begin(r)), val, rng::size(r));
-}
-
-template <std::contiguous_iterator Iter>
-  requires(!std::is_const_v<std::iter_value_t<Iter>>)
-void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
-  fill_async(first, last, value).wait();
-}
-
-template <typename T>
-  requires(!std::is_const_v<T>)
-sycl::event
-    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  auto q = shp::__detail::default_queue();
-  return q.fill(first.get_raw_pointer(), value, last - first);
-}
-
-template <typename T>
-  requires(!std::is_const_v<T>)
-void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  fill_async(first, last, value).wait();
 }
 
 } // namespace shp
