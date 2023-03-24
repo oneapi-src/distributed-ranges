@@ -27,7 +27,9 @@ TYPED_TEST(DistributedVectorTestTypes, Requirements) {
 // gtest support
 TYPED_TEST(DistributedVectorTestTypes, Stream) {
   Ops1<TypeParam> ops(10);
-  std::cout << ops.dist_vec << "\n";
+  std::ostringstream os;
+  os << ops.dist_vec;
+  EXPECT_EQ(os.str(), "{ 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 }");
 }
 
 // gtest support

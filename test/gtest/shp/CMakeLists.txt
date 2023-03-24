@@ -10,6 +10,7 @@ add_executable(
   copy.cpp
   fill.cpp
   gemv.cpp
+  transform.cpp
 )
 
 add_executable(

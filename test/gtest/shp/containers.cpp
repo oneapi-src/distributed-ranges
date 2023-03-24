@@ -31,6 +31,23 @@ TYPED_TEST(DistributedVectorTest, fill_constructor) {
                     typename TestFixture::LocalVec(10, 1)));
 }
 
+TYPED_TEST(DistributedVectorTest, fill_constructor_large) {
+  const typename TestFixture::DistVec v(12345, 17);
+  EXPECT_EQ(v[0], 17);
+  EXPECT_EQ(v[1111], 17);
+  EXPECT_EQ(v[2222], 17);
+  EXPECT_EQ(v[3333], 17);
+  EXPECT_EQ(v[4444], 17);
+  EXPECT_EQ(v[5555], 17);
+  EXPECT_EQ(v[6666], 17);
+  EXPECT_EQ(v[7777], 17);
+  EXPECT_EQ(v[8888], 17);
+  EXPECT_EQ(v[9999], 17);
+  EXPECT_EQ(v[11111], 17);
+  EXPECT_EQ(v[12222], 17);
+  EXPECT_EQ(v[12344], 17);
+}
+
 TYPED_TEST(DistributedVectorTest, fill_constructor_one_item) {
   EXPECT_TRUE(equal(typename TestFixture::DistVec(1, 77),
                     typename TestFixture::LocalVec(1, 77)));
@@ -65,4 +82,15 @@ TYPED_TEST(DistributedVectorTest, Iterator) {
   std::iota(v_a.begin(), v_a.end(), 20);
 
   EXPECT_TRUE(std::equal(v_a.begin(), v_a.end(), dv_a.begin()));
+}
+
+template <typename AllocT> class DeviceVectorTest : public testing::Test {
+public:
+  using DeviceVec = shp::device_vector<typename AllocT::value_type, AllocT>;
+};
+
+TYPED_TEST_SUITE(DeviceVectorTest, AllocatorTypes);
+
+TYPED_TEST(DeviceVectorTest, is_remote_contiguous_range) {
+  static_assert(lib::remote_contiguous_range<typename TestFixture::DeviceVec>);
 }

@@ -11,3 +11,4 @@
 #include "inclusive_scan.hpp"
 #include "matrix/matrix_algorithms.hpp"
 #include "reduce.hpp"
+#include "transform.hpp"

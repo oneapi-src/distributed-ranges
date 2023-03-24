@@ -13,13 +13,6 @@
 
 namespace shp {
 
-namespace __detail {
-auto get_local_segment(lib::remote_contiguous_range auto &&r) {
-  return lib::ranges::local(r);
-}
-auto get_local_segment(rng::forward_range auto &&r) { return r; }
-} // namespace __detail
-
 template <typename ExecutionPolicy, lib::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   static_assert( // currently only one policy supported
