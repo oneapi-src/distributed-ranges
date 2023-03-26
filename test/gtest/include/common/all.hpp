@@ -19,6 +19,6 @@ TYPED_TEST(All, Basic) {
 TYPED_TEST(All, Mutate) {
   Ops1<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_mutable_view(ops, rng::views::all(ops.vec),
-                                 rng::views::all(ops.dist_vec)));
+  EXPECT_TRUE(check_mutate_view(ops, rng::views::all(ops.vec),
+                                rng::views::all(ops.dist_vec)));
 }
