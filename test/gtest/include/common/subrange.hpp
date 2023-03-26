@@ -7,7 +7,7 @@ template <typename T> class Subrange : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(Subrange, TestTypes);
+TYPED_TEST_SUITE(Subrange, AllTypes);
 
 TYPED_TEST(Subrange, Basic) {
   Ops1<TypeParam> ops(10);

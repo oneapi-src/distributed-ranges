@@ -7,7 +7,7 @@ template <typename T> class ReduceMHP : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(ReduceMHP, TestTypes);
+TYPED_TEST_SUITE(ReduceMHP, AllTypes);
 
 const std::size_t root = 0;
 

@@ -13,12 +13,15 @@ using TestTypes = ::testing::Types<mhp::distributed_vector<int>>;
 
 #else
 
-using TestTypes = ::testing::Types<
+using AllTypes = ::testing::Types<
 #ifdef SYCL_LANGUAGE_VERSION
     mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>,
     mhp::distributed_vector<float, mhp::sycl_shared_allocator<float>>,
 #endif
     mhp::distributed_vector<int>, mhp::distributed_vector<float>>;
+
+using CPUTypes = ::testing::Types<mhp::distributed_vector<int>,
+                                  mhp::distributed_vector<float>>;
 
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"

@@ -7,7 +7,7 @@ template <typename T> class Drop : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(Drop, TestTypes);
+TYPED_TEST_SUITE(Drop, AllTypes);
 
 TYPED_TEST(Drop, Basic) {
   Ops1<TypeParam> ops(10);

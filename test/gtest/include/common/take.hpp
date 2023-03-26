@@ -7,7 +7,7 @@ template <typename T> class Take : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(Take, TestTypes);
+TYPED_TEST_SUITE(Take, AllTypes);
 
 TYPED_TEST(Take, Basic) {
   Ops1<TypeParam> ops(10);
