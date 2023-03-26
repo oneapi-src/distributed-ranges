@@ -8,8 +8,8 @@
 // #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
-using TestTypes = ::testing::Types<mhp::distributed_vector<int>>;
-#include "common/distributed_vector.hpp"
+using AllTypes = ::testing::Types<mhp::distributed_vector<int>>;
+#include "common/zip.hpp"
 
 #else
 
@@ -23,6 +23,7 @@ using AllTypes = ::testing::Types<
 using CPUTypes = ::testing::Types<mhp::distributed_vector<int>,
                                   mhp::distributed_vector<float>>;
 
+#include "common/all.hpp"
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
 #include "common/fill.hpp"
