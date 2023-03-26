@@ -13,7 +13,7 @@ extern std::size_t comm_rank;
 extern std::size_t comm_size;
 
 // Namespace aliases and wrapper functions to make the tests uniform
-namespace zhp = shp::views;
+namespace zhp = shp;
 namespace xhp = shp;
 
 inline void barrier() {}

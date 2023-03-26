@@ -4,8 +4,8 @@
 
 #include "shp-tests.hpp"
 
-using TestTypes = ::testing::Types<shp::distributed_vector<int>,
-                                   shp::distributed_vector<float>>;
+using AllTypes = ::testing::Types<shp::distributed_vector<int>,
+                                  shp::distributed_vector<float>>;
 
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
