@@ -28,4 +28,6 @@ jobs:
         # Build/test shp
         cd build/test/gtest/shp
         make -j 2
+        srun -p QZ1J-ICX-PVC make test
         srun -p QZ1J-SPR-PVC-2C make test
+        srun -p QZ1B-SPR-4oam-PVC make test
