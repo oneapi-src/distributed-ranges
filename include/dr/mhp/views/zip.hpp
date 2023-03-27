@@ -36,7 +36,18 @@ public:
       return rng::views::zip(lib::ranges::segments(base)...) |
              rng::views::transform(zip_segment);
     };
-    return std::apply(zip_segments, base_);
+
+    auto z = std::apply(zip_segments, base_);
+    auto check_aligned = [z](auto &&...base) {
+      if (aligned(rng::begin(base)...)) {
+        return z;
+      } else {
+        // return empty on unaligned
+        return decltype(z){};
+      }
+    };
+
+    return std::apply(check_aligned, base_);
   }
 
   auto base() const { return base_; }
