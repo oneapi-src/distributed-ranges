@@ -7,7 +7,7 @@ template <typename T> class Reduce : public testing::Test {
 protected:
 };
 
-TYPED_TEST_SUITE(Reduce, TestTypes);
+TYPED_TEST_SUITE(Reduce, AllTypes);
 
 TYPED_TEST(Reduce, Range) {
   Ops1<TypeParam> ops(10);
