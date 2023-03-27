@@ -8,67 +8,135 @@
 #include "dr/mhp.hpp"
 #include "dr/mhp/containers/distributed_dense_matrix.hpp"
 
+using T = float;
+
 MPI_Comm comm;
 int comm_rank;
 int comm_size;
 
-constexpr std::size_t Size = 10;
-using eltype = int;
-
 cxxopts::ParseResult options;
 
-void dump_matrix(std::string msg, mhp::distributed_dense_matrix<eltype> &dm) {
-  std::stringstream s;
-  s << comm_rank << ": " << msg << " :\n";
-  for (auto r : dm.local_rows()) {
-    s << comm_rank << ": row " << r.idx() << " : ";
-    for (auto _i = r.begin(); _i != r.end(); ++_i)
-      s << *_i << " ";
-    s << std::endl;
+std::size_t m = 10;
+std::size_t n = 10;
+std::size_t steps = 0;
+
+auto stencil_op = [](auto &&v) {
+  auto &[in_row, out_row] = v;
+  auto p = &in_row;
+  for (std::size_t i = 1; i < m - 1; i++) {
+    out_row[i] = p[-1][i] + p[0][i - 1] + p[0][i] + p[0][i + 1] + p[1][i];
   }
-  std::cout << s.str();
+};
+/*
+auto format_matrix(auto &&m) {
+  std::string str;
+  for (auto &&row : m) {
+    str += fmt::format("  {}\n", Row(row));
+  }
+  return str;
 }
 
-void dump_vector(std::string msg, mhp::distributed_vector<eltype> &v) {
-  std::stringstream s;
-  s << comm_rank << ": " << msg << " :\n";
-  mhp::for_each(v, [&s](auto &&el) { s << comm_rank << ":" << el << std::endl; });
-  std::cout << s.str();
+auto equal(auto &&a, auto &&b) {
+  for (std::size_t i = 0; i < a.size(); i++) {
+    if (Row(a[i]) != Row(b[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
-int stencil(const std::size_t n, auto steps) {
-  lib::halo_bounds hb(1); // number of rows
-  mhp::distributed_dense_matrix<eltype> a(n, n, hb);
-
-  for (mhp::dm_row<eltype> r : a.local_rows()) {
-    std::fill(r.begin(), r.end(), -1);
-  }
-  dump_matrix("Filled with -1", a);
-
-  for (mhp::dm_row<eltype> r : a.local_rows()) {
-    std::fill(r.begin() + 1, r.end() - 1,
-              Size * r.idx() + mhp::default_comm().rank());
-  }
-  dump_matrix("After iteration over local_rows()", a);
-
-  // mhp::for_each(a.rows(), [](mhp::dm_row<eltype> &row) {
-  //   std::iota(row.begin(), row.end(), Size * row.idx());
-  // });
-  // dump_matrix("After for_each", a);
-
-  for (mhp::dm_row<eltype> r : a.local_rows()) {
-    std::fill(r.begin(), r.end(), Size * r.idx() + mhp::default_comm().rank());
+auto compare(auto &&ref, auto &&actual) {
+  if (equal(ref, actual)) {
+    return 0;
   }
 
-  dump_matrix("DM before exchange", a);
+  fmt::print("Mismatch\n");
+  if (rows <= 10 && cols <= 10) {
+    fmt::print("ref:\n{}\nactual:\n{}\n", format_matrix(ref),
+               format_matrix(actual));
+  }
 
-  // auto mxrng = rng::subrange(a.rows().begin(), a.rows().end());
-  auto mxrng = rng::subrange(a.begin(), a.end());
+  return 1;
+}
 
-  mhp::halo(mxrng).exchange();
-  dump_matrix("DM After exchange", a);
+int check(auto &&actual) {
+  // Serial stencil
+  std::vector<Row> a(rows), b(rows);
+  rng::for_each(a, [](auto &row) { rng::iota(row, 100); });
+  rng::for_each(b, [](auto &row) { rng::fill(row, 0); });
 
-  return 0;
+  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
+  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
+  for (std::size_t s = 0; s < steps; s++) {
+    rng::for_each(rng::views::zip(in, out), stencil_op);
+    std::swap(in, out);
+  }
+
+  // Check the result
+  return compare(steps % 2 ? b : a, actual);
+}
+ */
+int stencil_1() {
+  lib::halo_bounds hb(1); // 1 row
+  mhp::distributed_dense_matrix<T> a(n, m, hb), b(n, m, hb);
+
+  mhp::for_each(a.rows(),
+                [](auto &row) { std::iota(row.begin(), row.end(), 100); });
+  mhp::for_each(b.rows(),
+                [](auto &row) { std::fill(row.begin(), row.end(), 0); });
+
+  // all rows except 1st and last
+  auto in = rng::subrange(a.rows().begin() + 1, a.rows().end() - 1);
+  auto out = rng::subrange(b.rows().begin() + 1, b.rows().end() - 1);
+
+  for (std::size_t s = 0; s < steps; s++) {
+    mhp::halo(in).exchange();
+    // all elements in a row except 1st and last
+    auto inrow = rng::subrange(in.begin() + 1, in.end() - 1);
+    auto outrow = rng::subrange(out.begin() + 1, out.end() - 1);
+    mhp::for_each(rng::views::zip(inrow, outrow), stencil_op);
+    std::swap(in, out);
+  }
+
+  /* auto error = 0;
+  if (comm_rank == 0) {
+    error = check(steps % 2 ? b : a);
+
+    if (error) {
+      fmt::print("Fail\n");
+    } else {
+      fmt::print("Pass\n");
+    }
+  } */
+
+  MPI_Barrier(comm);
+  return error;
+}
+
+int stencil_2() {
+  lib::halo_bounds hb(1); // 1 row
+  mhp::distributed_dense_matrix<T> a(n, m, hb), b(n, m, hb);
+
+  mhp::for_each(a.rows(),
+                [](auto &row) { std::iota(row.begin(), row.end(), 100); });
+  mhp::for_each(b.rows(),
+                [](auto &row) { std::fill(row.begin(), row.end(), 0); });
+
+  // to implement
+  auto in = mhp::subrange(a, {1, 1}, {a.shape()[0] - 1, a.shape()[1] - 1});
+  auto out = mhp::subrange(b, {1, 1}, {a.shape()[0] - 1, a.shape()[1] - 1});
+
+  for (std::size_t s = 0; s < steps; s++) {
+    mhp::halo(in).exchange();
+    mhp::transform(in, out.begin(), stencil_op);
+    std::swap(in, out);
+  }
+
+  /* if (comm_rank == 0) {
+    return check(in, n, steps);
+  } else {
+    return 0;
+  } */
 }
 
 int main(int argc, char *argv[]) {
@@ -81,8 +149,10 @@ int main(int argc, char *argv[]) {
   cxxopts::Options options_spec(argv[0], "stencil 2d");
   // clang-format off
   options_spec.add_options()
-    ("n", "Size n of array", cxxopts::value<std::size_t>()->default_value(std::to_string(Size)))
-    ("s", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
+    ("log", "Enable logging")
+    ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10"))
+    ("cols", "Number of columns", cxxopts::value<std::size_t>()->default_value("10"))
+    ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
     ("help", "Print help");
   // clang-format on
 
@@ -93,9 +163,19 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  auto error =
-      stencil(options["n"].as<std::size_t>(), options["s"].as<std::size_t>());
+  n = options["rows"].as<std::size_t>();
+  m = options["cols"].as<std::size_t>();
+  steps = options["steps"].as<std::size_t>();
+  std::ofstream *logfile = nullptr;
+  if (options.count("log")) {
+    logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
+    lib::drlog.set_file(*logfile);
+  }
+  lib::drlog.debug("Rank: {}\n", comm_rank);
 
+  // version _1 or _2, of choice
+  auto error = stencil_1();
+  // auto error = stencil_2();
   MPI_Finalize();
   return error;
 }

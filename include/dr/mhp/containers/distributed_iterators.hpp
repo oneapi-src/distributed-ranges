@@ -41,9 +41,9 @@ private:
 template <typename DM> class dm_rows_iterator {
 public:
   using value_type = typename mhp::dm_row<typename DM::value_type>;
-  // using size_type = typename mhp::dm_row<typename DM::value_type>;
+  using size_type = typename mhp::dm_row<typename DM::value_type>;
   // using value_type = typename DM::value_type;
-  using size_type = typename DM::value_type;
+  // using size_type = typename DM::value_type;
   using difference_type = typename DM::difference_type;
 
   dm_rows_iterator() = default;
@@ -266,5 +266,17 @@ private:
   std::size_t rank_;
   std::size_t index_;
 }; // dm_segment_iterator
+
+template <typename T> class dm_row_iterator : public std::span<T>::iterator {
+public:
+  dm_row_iterator(distributed_dense_matrix<T> *dm)
+      : std::span<T>::iterator(), dm_(dm){};
+
+  auto segments() const { return dm_->segments(); }
+  auto &halo() const { return dm_->halo(); }
+
+private:
+  mhp::distributed_dense_matrix<T> *dm_;
+};
 
 } // namespace mhp
