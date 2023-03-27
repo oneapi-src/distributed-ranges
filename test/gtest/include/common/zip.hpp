@@ -25,6 +25,16 @@ TYPED_TEST(Zip, All) {
                       rng::views::all(ops.dist_vec1))));
 }
 
+TYPED_TEST(Zip, L_Value) {
+  Ops2<TypeParam> ops(10);
+
+  auto l_value = rng::views::all(ops.vec0);
+  auto d_l_value = rng::views::all(ops.dist_vec0);
+  EXPECT_TRUE(
+      check_view(rng::views::zip(l_value, rng::views::all(ops.vec1)),
+                 zhp::views::zip(d_l_value, rng::views::all(ops.dist_vec1))));
+}
+
 TYPED_TEST(Zip, Zip3) {
   Ops3<TypeParam> ops(10);
 

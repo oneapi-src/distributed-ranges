@@ -11,7 +11,10 @@ concept is_zip_iterator =
 template <rng::viewable_range... R>
 class zip_view : public rng::view_interface<zip_view<R...>> {
 public:
-  zip_view(R &&...r) : base_(rng::views::all(std::forward<R>(r))...) {}
+  zip_view(const zip_view &z) : base_(z.base_) {}
+  zip_view(zip_view &&z) : base_(std::move(z.base_)) {}
+  template <typename... V>
+  zip_view(V &&...v) : base_(rng::views::all(std::forward<V>(v))...) {}
 
   auto begin() const {
     return lib::normal_distributed_iterator<decltype(segments())>(
@@ -21,7 +24,7 @@ public:
   auto end() const {
     auto segs = segments();
     return lib::normal_distributed_iterator<decltype(segments())>(
-        std::move(segs), std::size_t(segs.size()), 0);
+        std::move(segs), std::size_t(rng::distance(segs)), 0);
   }
 
   auto segments() const {
@@ -61,9 +64,8 @@ template <mhp::is_zip_iterator ZI> auto local_(ZI zi) {
   auto refs_to_local_zip_iterator = [](auto &&...refs) {
     // Convert the first segment of each component to local and then
     // zip them together, returning the begin() of the zip view
-    return rng::zip_view(
-               (lib::ranges::local(lib::ranges::segments(&refs)[0]))...)
-        .begin();
+    return rng::begin(rng::zip_view(
+        (lib::ranges::local(lib::ranges::segments(&refs)[0]))...));
   };
   return std::apply(refs_to_local_zip_iterator, *zi);
 }
