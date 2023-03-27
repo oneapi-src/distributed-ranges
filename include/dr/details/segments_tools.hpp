@@ -111,13 +111,6 @@ template <typename R>
 concept zip_segment =
     requires(R &segment) { lib::ranges::rank(&(std::get<0>(segment[0]))); };
 
-template <typename R>
-concept distributed_zip_reference = requires(R &&reference) {
-                                      {
-                                        &std::get<0>(reference)
-                                        } -> lib::distributed_iterator;
-                                    };
-
 template <zip_segment Segment> auto rank_(Segment &&segment) {
   return lib::ranges::rank(&(std::get<0>(segment[0])));
 }
@@ -155,29 +148,6 @@ auto segments_(V &&v) {
   auto size = rng::distance(first, last);
 
   return lib::internal::take_segments(lib::ranges::segments(first), size);
-}
-
-template <rng::range V>
-  requires(lib::is_zip_view_v<std::remove_cvref_t<V>> &&
-           distributed_zip_reference<rng::range_reference_t<V>>)
-auto segments_(V &&zip) {
-  return take_segments(lib::internal::zip_iter_segments(zip.begin()),
-                       rng::distance(rng::begin(zip), rng::end(zip)));
-}
-
-template <lib::internal::is_zip_iterator ZI> auto segments_(ZI zi) {
-  return lib::internal::zip_iter_segments(zi);
-}
-
-template <lib::internal::is_zip_iterator ZI> auto local_(ZI zi) {
-  auto refs_to_local_zip_iterator = [](auto &&...refs) {
-    // Convert the first segment of each component to local and then
-    // zip them together, returning the begin() of the zip view
-    return rng::zip_view(
-               (lib::ranges::local(lib::ranges::segments(&refs)[0]))...)
-        .begin();
-  };
-  return std::apply(refs_to_local_zip_iterator, *zi);
 }
 
 } // namespace DR_RANGES_NAMESPACE
