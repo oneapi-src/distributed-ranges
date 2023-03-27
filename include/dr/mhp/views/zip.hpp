@@ -33,21 +33,17 @@ public:
         auto zip = [](auto &&...refs) { return rng::views::zip(refs...); };
         return std::apply(zip, v);
       };
-      return rng::views::zip(lib::ranges::segments(base)...) |
-             rng::views::transform(zip_segment);
-    };
 
-    auto z = std::apply(zip_segments, base_);
-    auto check_aligned = [z](auto &&...base) {
+      auto z = rng::views::zip(lib::ranges::segments(base)...) |
+               rng::views::transform(zip_segment);
       if (aligned(rng::begin(base)...)) {
         return z;
       } else {
-        // return empty on unaligned
         return decltype(z){};
       }
     };
 
-    return std::apply(check_aligned, base_);
+    return std::apply(zip_segments, base_);
   }
 
   auto base() const { return base_; }
