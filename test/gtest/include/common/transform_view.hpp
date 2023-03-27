@@ -7,7 +7,7 @@ template <typename T> class TransformView : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(TransformView, TestTypes);
+TYPED_TEST_SUITE(TransformView, AllTypes);
 
 TYPED_TEST(TransformView, Basic) {
   Ops1<TypeParam> ops(10);

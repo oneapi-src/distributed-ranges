@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 // Fixture
-template <typename T> class DistributedVectorTestTypes : public testing::Test {
+template <typename T> class DistributedVectorAllTypes : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(DistributedVectorTestTypes, TestTypes);
+TYPED_TEST_SUITE(DistributedVectorAllTypes, AllTypes);
 
-TYPED_TEST(DistributedVectorTestTypes, Requirements) {
+TYPED_TEST(DistributedVectorAllTypes, Requirements) {
   TypeParam dv(10);
 
   static_assert(rng::random_access_range<decltype(dv.segments())>);
@@ -25,13 +25,15 @@ TYPED_TEST(DistributedVectorTestTypes, Requirements) {
 }
 
 // gtest support
-TYPED_TEST(DistributedVectorTestTypes, Stream) {
+TYPED_TEST(DistributedVectorAllTypes, Stream) {
   Ops1<TypeParam> ops(10);
-  std::cout << ops.dist_vec << "\n";
+  std::ostringstream os;
+  os << ops.dist_vec;
+  EXPECT_EQ(os.str(), "{ 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 }");
 }
 
 // gtest support
-TYPED_TEST(DistributedVectorTestTypes, Equality) {
+TYPED_TEST(DistributedVectorAllTypes, Equality) {
   Ops1<TypeParam> ops(10);
   iota(ops.dist_vec, 100);
   rng::iota(ops.vec, 100);

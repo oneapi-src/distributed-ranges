@@ -7,7 +7,7 @@ template <typename T> class ForEach : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(ForEach, TestTypes);
+TYPED_TEST_SUITE(ForEach, AllTypes);
 
 TYPED_TEST(ForEach, Range) {
   Ops1<TypeParam> ops(10);

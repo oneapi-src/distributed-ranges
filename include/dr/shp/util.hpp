@@ -224,9 +224,18 @@ inline void wait(sycl::event &&event) { event.wait(); }
 inline void wait(const std::vector<sycl::event> &events) {
   sycl::queue q;
   auto e = q.submit([&](auto &&h) { h.depends_on(events); });
-
   e.wait();
 }
+
+auto get_local_segment(lib::remote_contiguous_range auto &&r) {
+  return lib::ranges::local(r);
+}
+auto get_local_segment(rng::forward_range auto &&r) { return r; }
+
+template <class T> T *get_local_pointer(shp::device_ptr<T> r) {
+  return r.local();
+}
+template <class T> T *get_local_pointer(T *t) { return t; }
 
 inline sycl::event combine_events(const std::vector<sycl::event> &events) {
   sycl::queue q;

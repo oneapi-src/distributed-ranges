@@ -7,7 +7,7 @@ template <typename T> class Fill : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(Fill, TestTypes);
+TYPED_TEST_SUITE(Fill, AllTypes);
 
 TYPED_TEST(Fill, Range) {
   Ops1<TypeParam> ops(10);
