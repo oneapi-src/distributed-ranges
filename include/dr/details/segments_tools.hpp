@@ -160,6 +160,13 @@ template <typename R>
 concept zip_segment =
     requires(R &segment) { lib::ranges::rank(&(std::get<0>(segment[0]))); };
 
+template <typename R>
+concept distributed_zip_reference = requires(R &&reference) {
+                                      {
+                                        &std::get<0>(reference)
+                                        } -> lib::distributed_iterator;
+                                    };
+
 template <zip_segment Segment> auto rank_(Segment &&segment) {
   return lib::ranges::rank(&(std::get<0>(segment[0])));
 }
@@ -200,7 +207,8 @@ auto segments_(V &&v) {
 }
 
 template <rng::range V>
-  requires(lib::is_zip_view_v<std::remove_cvref_t<V>>)
+  requires(lib::is_zip_view_v<std::remove_cvref_t<V>> &&
+           distributed_zip_reference<rng::range_reference_t<V>>)
 auto segments_(V &&zip) {
   return take_segments(lib::internal::zip_iter_segments(zip.begin()),
                        rng::distance(rng::begin(zip), rng::end(zip)));
