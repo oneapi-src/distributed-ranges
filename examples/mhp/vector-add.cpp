@@ -22,7 +22,7 @@ void vector_add() {
 
   auto add = [](auto ops) { return ops.first + ops.second; };
 
-  mhp::transform(rng::views::zip(a, b), c.begin(), add);
+  mhp::transform(mhp::views::zip(a, b), c.begin(), add);
 
   if (comm_rank == 0) {
     fmt::print("a: {}\n"

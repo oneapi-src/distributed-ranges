@@ -77,8 +77,8 @@ void for_each(ExecutionPolicy &&policy, lib::distributed_range auto &&dr,
   barrier();
 }
 
-void for_each(lib::distributed_range auto &&dr, auto op) {
-  for_each(std::execution::par_unseq, dr, op);
+template <lib::distributed_range DR> void for_each(DR &&dr, auto op) {
+  for_each(std::execution::par_unseq, std::forward<DR>(dr), op);
 }
 
 /// Collective for_each on iterator/sentinel for a distributed range

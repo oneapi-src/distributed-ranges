@@ -12,7 +12,6 @@ extern MPI_Comm comm;
 extern std::size_t comm_rank;
 extern std::size_t comm_size;
 
-namespace zhp = rng;
 namespace xhp = mhp;
 
 inline void barrier() { mhp::barrier(); }
