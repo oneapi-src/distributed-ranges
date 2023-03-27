@@ -13,7 +13,7 @@ TYPED_TEST(Zip, Basic) {
   Ops2<TypeParam> ops(10);
 
   EXPECT_TRUE(check_view(rng::views::zip(ops.vec0, ops.vec1),
-                         zhp::views::zip(ops.dist_vec0, ops.dist_vec1)));
+                         xhp::views::zip(ops.dist_vec0, ops.dist_vec1)));
 }
 
 TYPED_TEST(Zip, All) {
@@ -21,7 +21,7 @@ TYPED_TEST(Zip, All) {
 
   EXPECT_TRUE(check_view(
       rng::views::zip(rng::views::all(ops.vec0), rng::views::all(ops.vec1)),
-      zhp::views::zip(rng::views::all(ops.dist_vec0),
+      xhp::views::zip(rng::views::all(ops.dist_vec0),
                       rng::views::all(ops.dist_vec1))));
 }
 
@@ -32,7 +32,7 @@ TYPED_TEST(Zip, L_Value) {
   auto d_l_value = rng::views::all(ops.dist_vec0);
   EXPECT_TRUE(
       check_view(rng::views::zip(l_value, rng::views::all(ops.vec1)),
-                 zhp::views::zip(d_l_value, rng::views::all(ops.dist_vec1))));
+                 xhp::views::zip(d_l_value, rng::views::all(ops.dist_vec1))));
 }
 
 TYPED_TEST(Zip, Zip3) {
@@ -40,7 +40,7 @@ TYPED_TEST(Zip, Zip3) {
 
   EXPECT_TRUE(
       check_view(rng::views::zip(ops.vec0, ops.vec1, ops.vec2),
-                 zhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
+                 xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
 }
 
 TYPED_TEST(Zip, Subrange) {
@@ -49,7 +49,7 @@ TYPED_TEST(Zip, Subrange) {
   EXPECT_TRUE(check_view(
       rng::views::zip(rng::subrange(ops.vec0.begin() + 1, ops.vec0.end() - 1),
                       rng::subrange(ops.vec1.begin() + 1, ops.vec1.end() - 1)),
-      zhp::views::zip(
+      xhp::views::zip(
           rng::subrange(ops.dist_vec0.begin() + 1, ops.dist_vec0.end() - 1),
           rng::subrange(ops.dist_vec1.begin() + 1, ops.dist_vec1.end() - 1))));
 }
@@ -60,7 +60,7 @@ TEST(ZipExSycl, ForEach) {
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
   xhp::for_each(default_policy(ops.dist_vec0),
-                zhp::views::zip(ops.dist_vec0, ops.dist_vec1), copy);
+                xhp::views::zip(ops.dist_vec0, ops.dist_vec1), copy);
   rng::for_each(rng::views::zip(ops.vec0, ops.vec1), copy);
 
   EXPECT_EQ(ops.vec0, ops.dist_vec0);
