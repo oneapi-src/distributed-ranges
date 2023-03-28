@@ -17,6 +17,7 @@
 #include <oneapi/dpl/numeric>
 
 #include <dr/concepts/concepts.hpp>
+#include <dr/shp/detail/onedpl_direct_iterator.hpp>
 
 namespace shp {
 
