@@ -4,32 +4,137 @@
 
 #pragma once
 
+#include <concepts>
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/ranges_shim.hpp>
+#include <iterator>
+#include <type_traits>
+
 namespace lib {
 
-template <rng::forward_range V, std::copy_constructible F>
+template <std::random_access_iterator Iter, std::copy_constructible F>
+class transform_iterator {
+public:
+  using value_type = std::invoke_result_t<F, std::iter_value_t<Iter>>;
+  using difference_type = std::iter_difference_t<Iter>;
+  using iterator = transform_iterator<Iter, F>;
+  using reference = value_type;
+
+  using pointer = iterator;
+
+  using iterator_category = std::random_access_iterator_tag;
+
+  transform_iterator(Iter iter, F fn) noexcept : iter_(iter) {}
+  transform_iterator() noexcept = default;
+  ~transform_iterator() noexcept = default;
+  transform_iterator(const transform_iterator &) noexcept = default;
+  transform_iterator &operator=(const transform_iterator &) noexcept = default;
+
+  bool operator==(const transform_iterator &other) const noexcept {
+    return iter_ == other.iter_;
+  }
+
+  bool operator!=(const transform_iterator &other) const noexcept {
+    return iter_ != other.iter_;
+  }
+
+  iterator operator+(difference_type offset) const noexcept {
+    return iterator(iter_ + offset, fn_);
+  }
+
+  iterator operator-(difference_type offset) const noexcept {
+    return iterator(iter_ - offset, fn_);
+  }
+
+  difference_type operator-(iterator other) const noexcept {
+    return iter_ - other.iter_;
+  }
+
+  bool operator<(iterator other) const noexcept { return iter_ < other.iter_; }
+
+  bool operator>(iterator other) const noexcept { return iter_ > iter_; }
+
+  bool operator<=(iterator other) const noexcept {
+    return iter_ <= other.iter_;
+  }
+
+  bool operator>=(iterator other) const noexcept {
+    return iter_ >= other.iter_;
+  }
+
+  iterator &operator++() noexcept {
+    ++iter_;
+    return *this;
+  }
+
+  iterator operator++(int) noexcept {
+    iterator other = *this;
+    ++(*this);
+    return other;
+  }
+
+  iterator &operator--() noexcept {
+    --iter_;
+    return *this;
+  }
+
+  iterator operator--(int) noexcept {
+    iterator other = *this;
+    --(*this);
+    return other;
+  }
+
+  iterator &operator+=(difference_type offset) noexcept {
+    iter_ += offset;
+    return *this;
+  }
+
+  iterator &operator-=(difference_type offset) noexcept {
+    iter_ -= offset;
+    return *this;
+  }
+
+  reference operator*() const noexcept { return fn_(*iter_); }
+
+  reference operator[](difference_type offset) const noexcept {
+    return *(*this + offset);
+  }
+
+  friend iterator operator+(difference_type n, iterator iter) {
+    return iter.iter_ + n;
+  }
+
+private:
+  Iter iter_;
+  F fn_;
+};
+
+template <rng::random_access_range V, std::copy_constructible F>
 class transform_view : public rng::view_interface<transform_view<V, F>> {
 public:
   template <rng::viewable_range R>
   transform_view(R &&r, F fn)
       : base_(rng::views::all(std::forward<R>(r))), fn_(fn) {}
 
-  auto begin() const {
-    return normal_distributed_iterator<decltype(segments())>(segments(),
-                                                             std::size_t(0), 0);
-  }
+  auto begin() const { return transform_iterator(rng::begin(base_), fn_); }
 
-  auto end() const {
-    auto segs = segments();
-    return normal_distributed_iterator<decltype(segments())>(
-        std::move(segs), std::size_t(segs.size()), 0);
-  }
+  auto end() const { return transform_iterator(rng::end(base_), fn_); }
 
-  auto segments() const {
+  auto segments() const
+    requires(lib::distributed_range<V>)
+  {
     auto fn = fn_;
     return lib::ranges::segments(base_) |
            rng::views::transform([fn](auto &&segment) {
-             return segment | rng::views::transform(fn);
+             return transform_view<rng::views::all_t<decltype(segment)>, F>(
+                 segment, fn);
            });
+  }
+
+  auto rank() const
+    requires(lib::remote_range<V>)
+  {
+    return lib::ranges::rank(base_);
   }
 
   V base() const { return base_; }
