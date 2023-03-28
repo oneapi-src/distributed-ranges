@@ -6,6 +6,7 @@
 
 #include "distributed_iterators.hpp"
 #include "index.hpp"
+#include "subrange.hpp"
 
 namespace mhp {
 
@@ -61,7 +62,7 @@ template <typename T> class dm_row : public std::span<T> {
   using dmsegment = mhp::dm_segment<dmatrix>;
 
 public:
-  using iterator = mhp::dm_row_iterator<T>;
+  // using iterator = mhp::dm_row_iterator<T>;
 
   dm_row(signed long idx, T *ptr, dmsegment &segment, std::size_t size)
       : std::span<T>({ptr, size}), index_(idx), data_(ptr),
@@ -70,8 +71,8 @@ public:
   dmsegment &segment() { return segmentref_; }
   signed long idx() { return index_; }
 
-  auto begin() { return iterator(segmentref_.dm()); }
-  auto end() { return begin() + size_; }
+  // auto begin() { return iterator(segmentref_.dm()); }
+  // auto end() { return begin() + size_; }
 
 private:
   signed long index_;
@@ -151,6 +152,8 @@ public:
   dm_segments<distributed_dense_matrix> segments() const {
     return dm_segments_;
   }
+  size_type segsize() { return segment_size_; }
+
   auto &halo() { return *halo_; }
   lib::halo_bounds &halo_bounds() { return halo_bounds_; }
 

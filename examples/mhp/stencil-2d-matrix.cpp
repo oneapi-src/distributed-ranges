@@ -7,6 +7,7 @@
 
 #include "dr/mhp.hpp"
 #include "dr/mhp/containers/distributed_dense_matrix.hpp"
+#include "dr/mhp/containers/subrange.hpp"
 
 using T = float;
 
@@ -20,12 +21,17 @@ std::size_t m = 10;
 std::size_t n = 10;
 std::size_t steps = 0;
 
-auto stencil_op = [](auto &&v) {
+auto stencil_op1 = [](auto &&v) {
   auto &[in_row, out_row] = v;
   auto p = &in_row;
   for (std::size_t i = 1; i < m - 1; i++) {
     out_row[i] = p[-1][i] + p[0][i - 1] + p[0][i] + p[0][i + 1] + p[1][i];
   }
+};
+
+auto stencil_op2 = [](auto &&v) {
+  auto p = &v;
+  return p[-1] + p[0] + p[+1] + p[-n] + p[+n];
 };
 /*
 auto format_matrix(auto &&m) {
@@ -76,42 +82,39 @@ int check(auto &&actual) {
   return compare(steps % 2 ? b : a, actual);
 }
  */
-int stencil_1() {
-  lib::halo_bounds hb(1); // 1 row
-  mhp::distributed_dense_matrix<T> a(n, m, hb), b(n, m, hb);
+// int stencil_1() {
+//   lib::halo_bounds hb(1); // 1 row
+//   mhp::distributed_dense_matrix<T> a(n, m, hb), b(n, m, hb);
 
-  mhp::for_each(a.rows(),
-                [](auto &row) { std::iota(row.begin(), row.end(), 100); });
-  mhp::for_each(b.rows(),
-                [](auto &row) { std::fill(row.begin(), row.end(), 0); });
+//   mhp::for_each(a.rows(),
+//                 [](auto &row) { std::iota(row.begin(), row.end(), 100); });
+//   mhp::for_each(b.rows(),
+//                 [](auto &row) { std::fill(row.begin(), row.end(), 0); });
 
-  // all rows except 1st and last
-  auto in = rng::subrange(a.rows().begin() + 1, a.rows().end() - 1);
-  auto out = rng::subrange(b.rows().begin() + 1, b.rows().end() - 1);
+//   // all rows except 1st and last
+//   auto in = rng::subrange(a.rows().begin() + 1, a.rows().end() - 1);
+//   auto out = rng::subrange(b.rows().begin() + 1, b.rows().end() - 1);
 
-  for (std::size_t s = 0; s < steps; s++) {
-    mhp::halo(in).exchange();
-    // all elements in a row except 1st and last
-    auto inrow = rng::subrange(in.begin() + 1, in.end() - 1);
-    auto outrow = rng::subrange(out.begin() + 1, out.end() - 1);
-    mhp::for_each(rng::views::zip(inrow, outrow), stencil_op);
-    std::swap(in, out);
-  }
+//   for (std::size_t s = 0; s < steps; s++) {
+//     mhp::halo(in).exchange();
+//     mhp::for_each(rng::views::zip(in, out), stencil_op1);
+//     std::swap(in, out);
+//   }
 
-  /* auto error = 0;
-  if (comm_rank == 0) {
-    error = check(steps % 2 ? b : a);
+//   /* auto error = 0;
+//   if (comm_rank == 0) {
+//     error = check(steps % 2 ? b : a);
 
-    if (error) {
-      fmt::print("Fail\n");
-    } else {
-      fmt::print("Pass\n");
-    }
-  } */
+//     if (error) {
+//       fmt::print("Fail\n");
+//     } else {
+//       fmt::print("Pass\n");
+//     }
+//   } */
 
-  MPI_Barrier(comm);
-  return error;
-}
+//   MPI_Barrier(comm);
+//   return error;
+// }
 
 int stencil_2() {
   lib::halo_bounds hb(1); // 1 row
@@ -126,11 +129,14 @@ int stencil_2() {
   auto in = mhp::subrange(a, {1, 1}, {a.shape()[0] - 1, a.shape()[1] - 1});
   auto out = mhp::subrange(b, {1, 1}, {a.shape()[0] - 1, a.shape()[1] - 1});
 
-  for (std::size_t s = 0; s < steps; s++) {
-    mhp::halo(in).exchange();
-    mhp::transform(in, out.begin(), stencil_op);
-    std::swap(in, out);
-  }
+  int _i = lib::ranges::segments(in);
+  // rng::begin(lib::ranges::segments(in)[0]); //.halo();
+
+  // for (std::size_t s = 0; s < steps; s++) {
+  //   mhp::halo(in).exchange();
+  //   mhp::transform(in, out.begin(), stencil_op2);
+  //   std::swap(in, out);
+  // }
 
   /* if (comm_rank == 0) {
     return check(in, n, steps);
@@ -174,8 +180,8 @@ int main(int argc, char *argv[]) {
   lib::drlog.debug("Rank: {}\n", comm_rank);
 
   // version _1 or _2, of choice
-  auto error = stencil_1();
-  // auto error = stencil_2();
+  // auto error = stencil_1();
+  auto error = stencil_2();
   MPI_Finalize();
   return error;
 }
