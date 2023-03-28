@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
-  std::size_t n = 1ull * 1024 * 1024 * 1024ull;
+  std::size_t n = 1ull * 1024 * 1024ull;
 
   using T = int;
 
