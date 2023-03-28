@@ -59,24 +59,18 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto last = rng::end(in_segment);
       auto d_first = rng::begin(out_segment);
 
-      // NOTE: some very odd runtime behavior is happening here.
-      // `inclusive_scan_async`
-      //       is failing with raw pointers and *succeeding with iterators*,
-      //       while everything else (`dpl::for_each`, `single_task`,
-      //       `parallel_for`) works with raw pointers but *fails with
-      //       iterators*.
-      //
-      // More investigation (and some bug reports) are likely necessary, but
-      // this works for now.
-
       sycl::event event;
 
       if (segment_id == 0 && init.has_value()) {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, first, last, d_first, binary_op, init.value());
+            local_policy, shp::__detail::direct_iterator(first),
+            shp::__detail::direct_iterator(last),
+            shp::__detail::direct_iterator(d_first), binary_op, init.value());
       } else {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, first, last, d_first, binary_op);
+            local_policy, shp::__detail::direct_iterator(first),
+            shp::__detail::direct_iterator(last),
+            shp::__detail::direct_iterator(d_first), binary_op);
       }
 
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
@@ -125,7 +119,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
         auto last = rng::end(out_segment);
 
         sycl::event e = oneapi::dpl::experimental::for_each_async(
-            local_policy, first, last,
+            local_policy, shp::__detail::direct_iterator(first),
+            shp::__detail::direct_iterator(last),
             [=](auto &&x) { x = binary_op(x, sum); });
 
         events.push_back(e);
