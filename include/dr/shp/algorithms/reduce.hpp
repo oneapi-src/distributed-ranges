@@ -37,6 +37,19 @@ auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
       static_cast<T>(init), std::forward<Fn>(fn));
 }
 
+template <typename T, typename ExecutionPolicy,
+          std::bidirectional_iterator Iter, typename Fn>
+  requires(sycl::has_known_identity_v<Fn, T>)
+auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
+                          Fn &&fn) {
+  shp::__detail::direct_iterator d_first(first);
+  shp::__detail::direct_iterator d_last(last);
+
+  return oneapi::dpl::experimental::reduce_async(
+      std::forward<ExecutionPolicy>(policy), d_first, d_last,
+      sycl::known_identity_v<Fn, T>, std::forward<Fn>(fn));
+}
+
 } // namespace
 
 namespace shp {
