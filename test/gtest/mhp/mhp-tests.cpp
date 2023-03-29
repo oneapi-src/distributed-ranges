@@ -8,7 +8,8 @@
 // #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
-using AllTypes = ::testing::Types<mhp::distributed_vector<int>>;
+using AllTypes = ::testing::Types<
+    mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>>;
 #include "common/zip.hpp"
 
 #else

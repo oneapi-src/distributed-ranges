@@ -8,8 +8,8 @@
 
 #include <oneapi/dpl/execution>
 
+#include <dr/details/onedpl_direct_iterator.hpp>
 #include <dr/shp/algorithms/execution_policy.hpp>
-#include <dr/shp/detail/onedpl_direct_iterator.hpp>
 #include <dr/shp/init.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
@@ -29,8 +29,8 @@ auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
 
   std::iter_value_t<Iter> init = *new_last;
 
-  shp::__detail::direct_iterator d_first(first);
-  shp::__detail::direct_iterator d_last(new_last);
+  lib::__detail::direct_iterator d_first(first);
+  lib::__detail::direct_iterator d_last(new_last);
 
   return oneapi::dpl::experimental::reduce_async(
       std::forward<ExecutionPolicy>(policy), d_first, d_last,
@@ -42,8 +42,8 @@ template <typename T, typename ExecutionPolicy,
   requires(sycl::has_known_identity_v<Fn, T>)
 auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
                           Fn &&fn) {
-  shp::__detail::direct_iterator d_first(first);
-  shp::__detail::direct_iterator d_last(last);
+  lib::__detail::direct_iterator d_first(first);
+  lib::__detail::direct_iterator d_last(last);
 
   return oneapi::dpl::experimental::reduce_async(
       std::forward<ExecutionPolicy>(policy), d_first, d_last,

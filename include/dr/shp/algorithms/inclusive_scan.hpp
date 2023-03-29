@@ -17,7 +17,7 @@
 #include <oneapi/dpl/numeric>
 
 #include <dr/concepts/concepts.hpp>
-#include <dr/shp/detail/onedpl_direct_iterator.hpp>
+#include <dr/details/onedpl_direct_iterator.hpp>
 
 namespace shp {
 
@@ -64,14 +64,14 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
       if (segment_id == 0 && init.has_value()) {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, shp::__detail::direct_iterator(first),
-            shp::__detail::direct_iterator(last),
-            shp::__detail::direct_iterator(d_first), binary_op, init.value());
+            local_policy, lib::__detail::direct_iterator(first),
+            lib::__detail::direct_iterator(last),
+            lib::__detail::direct_iterator(d_first), binary_op, init.value());
       } else {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, shp::__detail::direct_iterator(first),
-            shp::__detail::direct_iterator(last),
-            shp::__detail::direct_iterator(d_first), binary_op);
+            local_policy, lib::__detail::direct_iterator(first),
+            lib::__detail::direct_iterator(last),
+            lib::__detail::direct_iterator(d_first), binary_op);
       }
 
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
@@ -120,8 +120,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
         auto last = rng::end(out_segment);
 
         sycl::event e = oneapi::dpl::experimental::for_each_async(
-            local_policy, shp::__detail::direct_iterator(first),
-            shp::__detail::direct_iterator(last),
+            local_policy, lib::__detail::direct_iterator(first),
+            lib::__detail::direct_iterator(last),
             [=](auto &&x) { x = binary_op(x, sum); });
 
         events.push_back(e);
