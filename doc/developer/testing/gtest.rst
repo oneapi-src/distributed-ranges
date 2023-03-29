@@ -33,8 +33,8 @@ tests are found in ``test/gtest/include/common``, and included in
 
 There are intentional differences between the shp/mhp that make it
 impossible to directly share tests. We have some support to cover
-small common differences. Use your judgement to decide if there should
-be unified or separate tests.
+frequently occuring differences. Use your judgement to decide if there
+should be unified or separate tests.
 
 We should converge on common practices for writing shared tests, but
 it is too early to mandate specific practices. This is what I have
@@ -53,26 +53,27 @@ and shp.
 * Use ``barrier()`` when mhp requires a barrier. It does nothing for
   shp. A barrier is typically needed when you have a test that checks
   some values, and then modifies the results. The barrier ensures that
-  the check is finished before any rank modifies the test. Avoid the
+  the check is finished before any rank modifies the values. Avoid the
   need for barriers by breaking into multiple tests.
 * Use ``fence()`` when mhp requires a fence. It does nothing for
   shp. A fence is needed when there is a transition between local and
-  global updates. Mhp collectives will automatically do a fence when
-  needed. Fences are needed when using distributed vector iterators or
-  indexing.
+  global data writes. Mhp collectives will automatically do a fence
+  when needed. Fences are needed when using distributed vector
+  iterators or indexing.
 
 Templated Tests
 ---------------
 
 Templated tests are used to instantiate the same test with different
-types which is useful for covering different data types and
+types, which is useful for covering different data types and
 allocators.
 
 ``AllTypes``
   Includes a variety of ``distributed_vector`` types that can be used
   with a ``TYPED_TEST_SUITE``. In a typed test suite ``TypeParam`` is
   the ``distributed_vector`` type being tested in the instantiation of
-  the test.
+  the test. It is useful when shp/mhp have different test types that
+  cannot be unified with ``xhp::`` (e.g. allocators).
 ``Ops1``, ``Ops2``, ``Ops3``
   Provides some boiler plate code to create and initialize
   ``distributed_vector`` and ``std::vector``. Provides inputs for 1-3
