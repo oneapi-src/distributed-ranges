@@ -14,6 +14,7 @@
 #include "containers/dense_matrix.hpp"
 #include "containers/sparse_matrix.hpp"
 #include "algorithms/copy.hpp"
+#include "algorithms/numeric.hpp"
 #include "distributed_span.hpp"
 #include "distributed_vector.hpp"
 #include "init.hpp"
