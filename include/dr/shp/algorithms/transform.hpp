@@ -35,8 +35,8 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
 
   for (auto &&[in_seg, out_seg] :
        views::zip(in, rng::subrange(out, out_end)).zipped_segments()) {
-    auto in_device = policy.get_devices()[in_seg.rank()];
-    sycl::queue q(shp::context(), in_device);
+    ;
+    sycl::queue q = __detail::queue_for_rank(in_seg.rank());
     const std::size_t seg_size = rng::size(in_seg);
     assert(seg_size == rng::size(out_seg));
     auto local_in_seg = __detail::get_local_segment(in_seg);
@@ -48,7 +48,7 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
       }));
     } else {
       OutT *buffer =
-          sycl::malloc_device<OutT>(seg_size, in_device, shp::context());
+          sycl::malloc_device<OutT>(seg_size, q.get_device(), q.get_context());
       buffers.push_back(buffer);
 
       sycl::event compute_event = q.parallel_for(

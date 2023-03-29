@@ -46,14 +46,19 @@ inline void init(R &&devices)
   internal::global_context_ = new sycl::context(internal::devices_);
   internal::ngpus_ = rng::size(internal::devices_);
 
-  par_unseq = device_policy(internal::devices_);
+  par_unseq = device_policy();
 }
 
 inline void finalize() { delete internal::global_context_; }
 
 namespace __detail {
 
-inline auto default_queue() { return sycl::queue(); }
+inline sycl::queue queue_for_rank(std::size_t rank) {
+  assert(rank < internal::ngpus_);
+  return sycl::queue(internal::global_context(),
+                     internal::global_devices()[rank]);
+}
+inline sycl::queue default_queue() { return queue_for_rank(0); }
 
 } // namespace __detail
 

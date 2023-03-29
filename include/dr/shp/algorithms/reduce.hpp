@@ -47,7 +47,7 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
   if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                device_policy>) {
     using future_t = decltype(oneapi::dpl::experimental::reduce_async(
-        oneapi::dpl::execution::device_policy(policy.get_devices()[0]),
+        oneapi::dpl::execution::device_policy(__detail::default_queue()),
         lib::ranges::segments(r)[0].begin(), lib::ranges::segments(r)[0].end(),
         init, std::forward<BinaryOp>(binary_op)));
 
@@ -56,7 +56,7 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
     for (auto &&segment : lib::ranges::segments(r)) {
       auto device = shp::devices()[lib::ranges::rank(segment)];
 
-      sycl::queue q(shp::context(), device);
+      sycl::queue q = __detail::queue_for_rank(lib::ranges::rank(segment));
       oneapi::dpl::execution::device_policy local_policy(q);
 
       auto dist = rng::distance(segment);
