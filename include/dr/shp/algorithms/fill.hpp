@@ -45,7 +45,11 @@ void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
 
 template <typename T, lib::remote_contiguous_range R>
 sycl::event fill_async(R &&r, const T &value) {
-  sycl::queue q(shp::context(), shp::devices()[lib::ranges::rank(r)]);
+  // although we could use here __detail::queue_for_rank(lib::ranges::rank(r))
+  // but since iterator version uses __detail::default_queue() we use default
+  // one also here to have consistent way of using queue.fill, so either all
+  // implementations are correct and with optimal performance or none
+  auto q = __detail::default_queue();
   return q.fill(std::to_address(rng::begin(lib::ranges::local(r))), value,
                 rng::distance(r));
 }

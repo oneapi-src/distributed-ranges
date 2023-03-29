@@ -50,8 +50,7 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto b_iter = lib::ranges::local(local_b[i].begin());
     auto c_iter = lib::ranges::local(c.segments()[i].begin());
 
-    auto device = devices[a_tile.rank()];
-    sycl::queue q(shp::context(), device);
+    sycl::queue q = __detail::queue_for_rank(a_tile.rank());
 
     auto event = q.submit([=](auto &&h) {
       h.depends_on(copy_events[i]);
@@ -108,8 +107,7 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto b_iter = lib::ranges::local(local_b[i].begin());
     auto c_iter = lib::ranges::local(c.segments()[i].begin());
 
-    auto device = devices[a_tile.rank()];
-    sycl::queue q(shp::context(), device);
+    sycl::queue q = __detail::queue_for_rank(a_tile.rank());
 
     auto event =
         __detail::local_gemv(q, a_tile, b_iter, c_iter, {copy_events[i]});
