@@ -57,10 +57,11 @@ template <lib::distributed_contiguous_range R, typename T>
 sycl::event iota_async(R &&r, const T value) {
   std::vector<sycl::event> events;
 
-  // FIXME: here is a bug, value is not incremented
+  auto init_value = value;
   for (auto &&segment : lib::ranges::segments(r)) {
-    auto e = shp::iota_async(segment, value);
+    auto e = shp::iota_async(segment, init_value);
     events.push_back(e);
+    init_value = init_value + segment.size();
   }
 
   return shp::__detail::combine_events(events);
