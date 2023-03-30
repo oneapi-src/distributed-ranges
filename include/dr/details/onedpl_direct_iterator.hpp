@@ -6,8 +6,6 @@
 
 #include <iterator>
 
-#include <oneapi/dpl/numeric>
-
 #include <dr/details/iterator_adaptor.hpp>
 
 namespace lib {

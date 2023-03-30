@@ -11,11 +11,8 @@
 
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/logger.hpp>
-#include <dr/details/ranges_shim.hpp>
-
-#ifdef SYCL_LANGUAGE_VERSION
 #include <dr/details/onedpl_direct_iterator.hpp>
-#endif
+#include <dr/details/ranges_shim.hpp>
 
 namespace mhp {
 
