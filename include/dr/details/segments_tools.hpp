@@ -109,10 +109,10 @@ auto rank_(V &&v) {
 
 template <typename R>
 concept zip_segment =
-    requires(R &segment) { lib::ranges::rank(&(std::get<0>(segment[0]))); };
+    requires(R &segment) { lib::ranges::rank(&(std::get<1>(segment[0]))); };
 
 template <zip_segment Segment> auto rank_(Segment &&segment) {
-  return lib::ranges::rank(&(std::get<0>(segment[0])));
+  return lib::ranges::rank(&(std::get<1>(segment[0])));
 }
 
 template <rng::range V>
