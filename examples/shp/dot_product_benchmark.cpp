@@ -26,8 +26,8 @@ auto dot_product_onedpl(sycl::queue q, X &&x, Y &&y) {
              return a * b;
            });
   oneapi::dpl::execution::device_policy policy(q);
-  shp::__detail::direct_iterator d_first(z.begin());
-  shp::__detail::direct_iterator d_last(z.end());
+  lib::__detail::direct_iterator d_first(z.begin());
+  lib::__detail::direct_iterator d_last(z.end());
   return oneapi::dpl::experimental::reduce_async(
              policy, d_first, d_last, rng::range_value_t<X>(0), std::plus())
       .get();
