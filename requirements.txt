@@ -9,4 +9,9 @@ pre-commit
 breathe
 sphinx
 sphinx-book-theme
+
+# sphinx book theme 1.0.0 imports a private symbol in here that has
+# been eliminated in later releases
+pydata-sphinx-theme==0.13.1
+
 sphinxcontrib-spelling
