@@ -107,12 +107,22 @@ auto rank_(V &&v) {
   return lib::ranges::rank(std::forward<V>(v).base());
 }
 
-template <typename R>
-concept zip_segment =
-    requires(R &segment) { lib::ranges::rank(&(std::get<1>(segment[0]))); };
+template <typename T>
+concept zip_segment = requires(T &segment) { std::get<0>(segment[0]); };
+
+inline std::size_t select_rank_from_iter(auto iter, auto... rest) {
+  if constexpr (lib::distributed_iterator<decltype(iter)>) {
+    return lib::ranges::rank(iter);
+  } else {
+    return select_rank_from_iter(rest...);
+  }
+}
 
 template <zip_segment Segment> auto rank_(Segment &&segment) {
-  return lib::ranges::rank(&(std::get<1>(segment[0])));
+  auto select_rank_from_ref = [](auto &&...refs) {
+    return select_rank_from_iter((&refs)...);
+  };
+  return std::apply(select_rank_from_ref, segment[0]);
 }
 
 template <rng::range V>

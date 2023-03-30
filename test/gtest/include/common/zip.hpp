@@ -23,6 +23,13 @@ TYPED_TEST(Zip, Iota) {
                          xhp::views::zip(rng::views::iota(100), ops.dist_vec)));
 }
 
+TYPED_TEST(Zip, Iota2nd) {
+  Ops1<TypeParam> ops(10);
+
+  EXPECT_TRUE(check_view(rng::views::zip(ops.vec, rng::views::iota(100)),
+                         xhp::views::zip(ops.dist_vec, rng::views::iota(100))));
+}
+
 TYPED_TEST(Zip, All) {
   Ops2<TypeParam> ops(10);
 

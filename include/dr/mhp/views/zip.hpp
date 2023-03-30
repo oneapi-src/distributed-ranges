@@ -16,7 +16,7 @@
 
 namespace mhp {
 
-auto select_dist_range(auto &&v, auto &&...rest) {
+inline auto select_dist_range(auto &&v, auto &&...rest) {
   if constexpr (lib::distributed_range<decltype(v)>) {
     return rng::views::all(v);
   } else {
