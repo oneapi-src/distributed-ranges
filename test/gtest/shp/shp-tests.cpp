@@ -13,6 +13,7 @@ using AllTypes = ::testing::Types<shp::distributed_vector<int>,
 // Not implemented???
 // #include "common/fill.hpp"
 #include "common/for_each.hpp"
+#include "common/numeric.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
 #include "common/take.hpp"
