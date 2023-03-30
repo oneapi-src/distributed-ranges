@@ -136,6 +136,7 @@ public:
 
   distributed_vector(std::size_t count = 0) {
     assert(shp::devices().size() > 0);
+    static_assert(std::is_same_v<Allocator, shp::device_allocator<T>>);
     size_ = count;
     segment_size_ = (count + shp::devices().size() - 1) / shp::devices().size();
     capacity_ = segment_size_ * shp::devices().size();
