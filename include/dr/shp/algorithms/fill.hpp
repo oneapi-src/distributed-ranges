@@ -17,8 +17,8 @@ namespace shp {
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
-sycl::event
-    fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
+sycl::event fill_async(Iter first, Iter last,
+                       const std::iter_value_t<Iter> &value) {
   auto q = shp::__detail::default_queue();
   return q.fill(std::to_address(first), value, last - first);
 }
@@ -31,8 +31,8 @@ void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
 
 template <typename T>
   requires(!std::is_const_v<T>)
-sycl::event
-    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
+sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
+                       const T &value) {
   auto q = shp::__detail::default_queue();
   return q.fill(first.get_raw_pointer(), value, last - first);
 }
