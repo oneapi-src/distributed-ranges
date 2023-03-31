@@ -131,8 +131,6 @@ void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
 
   std::vector<sycl::event> events;
 
-  using b_scalar_type = rng::range_value_t<B>;
-
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
     std::size_t k_offset = i;
     for (std::size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
