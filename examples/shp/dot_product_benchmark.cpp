@@ -9,7 +9,10 @@
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
+
+#ifdef USE_MKL
 #include <oneapi/mkl.hpp>
+#endif
 
 template <lib::distributed_range X, lib::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {
@@ -144,6 +147,7 @@ int main(int argc, char **argv) {
 
   T *d_result = sycl::malloc_device<T>(1, q);
 
+#ifdef USE_MKL
   sum = 0;
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
@@ -173,6 +177,7 @@ int main(int argc, char **argv) {
   fmt::print("Median duration: {} ms\n", median_duration * 1000);
 
   fmt::print("Result: {}\n", sum);
+#endif
 
   return 0;
 }
