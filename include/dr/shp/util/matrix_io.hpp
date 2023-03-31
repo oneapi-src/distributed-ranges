@@ -227,17 +227,10 @@ void destroy_csr_matrix_view(shp::csr_matrix_view<T, I, Args...> view,
 
 } // namespace __detail
 
-template <typename T, typename I = std::size_t>
-auto mmread(std::string file_path, bool one_indexed = true) {
-  auto m = __detail::mmread<T, I>(file_path, one_indexed);
-  auto shape = m.shape();
-  auto nnz = m.size();
-
-  auto local_mat = __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
-
-  shp::sparse_matrix<T, I> a(
-      local_mat.shape(),
-      shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}));
+template <typename T, typename I>
+auto create_distributed(shp::csr_matrix_view<T, I> local_mat,
+                        const matrix_partition &partition) {
+  shp::sparse_matrix<T, I> a(local_mat.shape(), partition);
 
   std::vector<shp::csr_matrix_view<T, I>> views;
   std::vector<sycl::event> events;
@@ -267,16 +260,37 @@ auto mmread(std::string file_path, bool one_indexed = true) {
       events.push_back(e);
     }
   }
-
   __detail::wait(events);
 
   for (auto &&view : views) {
     __detail::destroy_csr_matrix_view(view, std::allocator<T>{});
   }
 
+  return a;
+}
+
+template <typename T, typename I = std::size_t>
+auto mmread(std::string file_path, const matrix_partition &partition,
+            bool one_indexed = true) {
+  auto m = __detail::mmread<T, I>(file_path, one_indexed);
+  auto shape = m.shape();
+  auto nnz = m.size();
+
+  auto local_mat = __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
+
+  auto a = create_distributed(local_mat, partition);
+
   __detail::destroy_csr_matrix_view(local_mat, std::allocator<T>{});
 
   return a;
+}
+
+template <typename T, typename I = std::size_t>
+auto mmread(std::string file_path, bool one_indexed = true) {
+  return mmread<T, I>(
+      file_path,
+      shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}),
+      one_indexed);
 }
 
 } // namespace shp
