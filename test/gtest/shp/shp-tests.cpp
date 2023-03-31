@@ -13,8 +13,7 @@ using AllTypes = ::testing::Types<shp::distributed_vector<int>,
 // need to implement same API as MHP
 // #include "common/copy.hpp"
 #include "common/drop.hpp"
-// Not implemented???
-// #include "common/fill.hpp"
+#include "common/fill.hpp"
 #include "common/for_each.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
