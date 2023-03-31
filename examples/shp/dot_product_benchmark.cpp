@@ -145,10 +145,11 @@ int main(int argc, char **argv) {
 
   fmt::print("Result: {}\n", sum);
 
-  T *d_result = sycl::malloc_device<T>(1, q);
-
 #ifdef USE_MKL
+
+  T *d_result = sycl::malloc_device<T>(1, q);
   sum = 0;
+
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
     oneapi::mkl::blas::row_major::dot(q, n, x_d, 1, y_d, 1, d_result);
