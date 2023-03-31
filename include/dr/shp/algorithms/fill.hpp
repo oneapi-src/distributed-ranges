@@ -18,8 +18,9 @@ template <typename T, lib::remote_contiguous_range R>
 sycl::event fill_async(R &&r, const T &value) {
   // fill can not be directed to node not owning memory being filled
   auto q = __detail::queue_for_rank(lib::ranges::rank(r));
-  return q.fill(std::to_address(rng::begin(lib::ranges::local(r))), value,
-                rng::distance(r));
+  T *arr = std::to_address(rng::begin(lib::ranges::local(r)));
+  return q.parallel_for(sycl::range<1>(rng::distance(r)),
+                        [arr, value](sycl::id<1> idx) { arr[idx] = value; });
 }
 
 template <typename T, lib::remote_contiguous_range R>
