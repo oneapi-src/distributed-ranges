@@ -10,8 +10,8 @@ namespace {
 
 template <typename R>
 concept has_segments_method = requires(R r) {
-                                { r.segments() };
-                              };
+  { r.segments() };
+};
 
 } // namespace
 

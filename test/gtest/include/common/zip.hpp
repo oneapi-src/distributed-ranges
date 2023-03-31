@@ -16,6 +16,20 @@ TYPED_TEST(Zip, Basic) {
                          xhp::views::zip(ops.dist_vec0, ops.dist_vec1)));
 }
 
+TYPED_TEST(Zip, Iota) {
+  Ops1<TypeParam> ops(10);
+
+  EXPECT_TRUE(check_view(rng::views::zip(rng::views::iota(100), ops.vec),
+                         xhp::views::zip(rng::views::iota(100), ops.dist_vec)));
+}
+
+TYPED_TEST(Zip, Iota2nd) {
+  Ops1<TypeParam> ops(10);
+
+  EXPECT_TRUE(check_view(rng::views::zip(ops.vec, rng::views::iota(100)),
+                         xhp::views::zip(ops.dist_vec, rng::views::iota(100))));
+}
+
 TYPED_TEST(Zip, All) {
   Ops2<TypeParam> ops(10);
 
@@ -54,9 +68,8 @@ TYPED_TEST(Zip, Subrange) {
           rng::subrange(ops.dist_vec1.begin() + 1, ops.dist_vec1.end() - 1))));
 }
 
-// Not AllTypes because SYCL MHP is broken
-TEST(ZipExSycl, ForEach) {
-  Ops2<xhp::distributed_vector<int>> ops(10);
+TYPED_TEST(Zip, ForEach) {
+  Ops2<TypeParam> ops(10);
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
   xhp::for_each(default_policy(ops.dist_vec0),

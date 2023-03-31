@@ -75,9 +75,9 @@ Iter copy(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
 // Copy from device to device
 template <typename T>
   requires(!std::is_const_v<T> && std::is_trivially_copyable_v<T>)
-sycl::event
-    copy_async(device_ptr<std::add_const_t<T>> first,
-               device_ptr<std::add_const_t<T>> last, device_ptr<T> d_first) {
+sycl::event copy_async(device_ptr<std::add_const_t<T>> first,
+                       device_ptr<std::add_const_t<T>> last,
+                       device_ptr<T> d_first) {
   auto q = shp::__detail::default_queue();
   return q.memcpy(d_first.get_raw_pointer(), first.get_raw_pointer(),
                   sizeof(T) * (last - first));

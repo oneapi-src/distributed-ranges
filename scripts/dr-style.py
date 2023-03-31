@@ -71,15 +71,19 @@ all_rules_compiled = []
 
 include_rules = [
     (
-        r'\.begin()',
+        r'\.begin\(\)',
         'use rng::begin()',
     ),
     (
-        r'\.end()',
+        r'\.end\(\)',
         'use rng::end()',
     ),
     (
-        r'\.size()',
+        r'rng::size\(',
+        'use rng::distance()',
+    ),
+    (
+        r'\.size\(\)',
         'use rng::distance()',
     ),
     (

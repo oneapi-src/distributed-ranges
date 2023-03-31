@@ -235,8 +235,8 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 
 template <typename T>
 concept streamable = requires(std::ostream &os, T value) {
-                       { os << value } -> std::convertible_to<std::ostream &>;
-                     };
+  { os << value } -> std::convertible_to<std::ostream &>;
+};
 
 namespace mhp {
 

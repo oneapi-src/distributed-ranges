@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <dr/details/iterator_adaptor.hpp>
 #include <iterator>
-#include <oneapi/dpl/numeric>
 
-namespace shp {
+#include <dr/details/iterator_adaptor.hpp>
+
+namespace lib {
 
 namespace __detail {
 
@@ -106,4 +106,4 @@ private:
 
 } // namespace __detail
 
-} // namespace shp
+} // namespace lib
