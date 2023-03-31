@@ -30,6 +30,18 @@ TYPED_TEST(Zip, Iota2nd) {
                          xhp::views::zip(ops.dist_vec, rng::views::iota(100))));
 }
 
+TYPED_TEST(Zip, IotaMutate) {
+  Ops1<TypeParam> ops(10);
+
+  auto local = rng::views::zip(rng::views::iota(100), ops.vec);
+  auto dist = xhp::views::zip(rng::views::iota(100), ops.dist_vec);
+
+  auto negate2nd = [](auto v) { std::get<1>(v) = -std::get<1>(v); };
+  rng::for_each(local, negate2nd);
+  rng::for_each(dist, negate2nd);
+  EXPECT_EQ(ops.vec, ops.dist_vec);
+}
+
 TYPED_TEST(Zip, All) {
   Ops2<TypeParam> ops(10);
 
