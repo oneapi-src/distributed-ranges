@@ -97,7 +97,7 @@ public:
   }
 
   auto segments() const noexcept {
-    return lib::internal::drop_segments(segments_, segment_id_, idx_);
+    return lib::__detail::drop_segments(segments_, segment_id_, idx_);
   }
 
 private:

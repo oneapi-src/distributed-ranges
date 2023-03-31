@@ -205,7 +205,7 @@ void range_details(R &&r, std::size_t width = 80) {
   std::size_t size = rng::size(r);
 
   for (auto &&[idx, segment] :
-       lib::internal::enumerate(lib::ranges::segments(r))) {
+       lib::__detail::enumerate(lib::ranges::segments(r))) {
     std::size_t local_size = rng::size(segment);
 
     double percent = double(local_size) / size;

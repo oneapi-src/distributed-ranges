@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/alignment.hpp>
 
 namespace mhp {

@@ -5,10 +5,11 @@
 #pragma once
 
 #include <concepts>
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/ranges_shim.hpp>
 #include <iterator>
 #include <type_traits>
+
+#include <dr/concepts/concepts.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
 namespace lib {
 

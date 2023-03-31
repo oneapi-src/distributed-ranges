@@ -4,9 +4,11 @@
 
 #pragma once
 
-#include "device_ptr.hpp"
-#include <sycl/sycl.hpp>
 #include <type_traits>
+
+#include <sycl/sycl.hpp>
+
+#include <dr/shp/device_ptr.hpp>
 
 namespace shp {
 

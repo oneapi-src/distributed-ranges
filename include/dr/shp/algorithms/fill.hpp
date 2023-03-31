@@ -4,13 +4,15 @@
 
 #pragma once
 
+#include <memory>
+#include <type_traits>
+
+#include <sycl/sycl.hpp>
+
 #include <dr/concepts/concepts.hpp>
-#include <dr/details/segments_tools.hpp>
+#include <dr/detail/segments_tools.hpp>
 #include <dr/shp/device_ptr.hpp>
 #include <dr/shp/util.hpp>
-#include <memory>
-#include <sycl/sycl.hpp>
-#include <type_traits>
 
 namespace shp {
 

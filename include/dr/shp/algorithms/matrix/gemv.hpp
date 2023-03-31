@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/ranges_shim.hpp>
 #include <dr/shp/algorithms/matrix/local_gemv.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/device_vector.hpp>
