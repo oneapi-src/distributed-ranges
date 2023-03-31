@@ -133,10 +133,10 @@ void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
 
   using b_scalar_type = rng::range_value_t<B>;
 
-  for (size_t i = 0; i < a.grid_shape()[0]; i++) {
-    size_t k_offset = i;
-    for (size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
-      size_t k = (k_ + k_offset) % a.grid_shape()[1];
+  for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
+    std::size_t k_offset = i;
+    for (std::size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
+      std::size_t k = (k_ + k_offset) % a.grid_shape()[1];
       auto a_tile = a.tile(shp::index<I>(i, k));
       auto b_segment = b.segments()[k];
       auto c_segment = c.segments()[i];
