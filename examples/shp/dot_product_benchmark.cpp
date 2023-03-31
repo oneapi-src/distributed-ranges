@@ -9,6 +9,7 @@
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
+#include <oneapi/mkl.hpp>
 
 template <lib::distributed_range X, lib::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {
