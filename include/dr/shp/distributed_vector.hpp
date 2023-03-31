@@ -11,7 +11,6 @@
 
 #include <dr/details/segments_tools.hpp>
 #include <dr/shp/allocators.hpp>
-#include <dr/shp/vector.hpp>
 
 namespace shp {
 

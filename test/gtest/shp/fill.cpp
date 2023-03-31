@@ -17,7 +17,7 @@ TYPED_TEST(FillTest, fill_all) {
   auto segments = dist_vec.segments();
   int value = 1;
   for (auto &&segment : segments) {
-    shp::fill(segment.begin(), segment.end(), value);
+    shp::fill(segment, value);
   }
   EXPECT_TRUE(equal(
       dist_vec, typename TestFixture::DistVec{1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));

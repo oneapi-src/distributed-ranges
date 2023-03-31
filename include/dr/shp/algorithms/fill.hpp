@@ -14,42 +14,10 @@
 
 namespace shp {
 
-template <std::contiguous_iterator Iter>
-  requires(!std::is_const_v<std::iter_value_t<Iter>> &&
-           std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
-sycl::event
-    fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
-  auto q = shp::__detail::default_queue();
-  return q.fill(std::to_address(first), value, last - first);
-}
-
-template <std::contiguous_iterator Iter>
-  requires(!std::is_const_v<std::iter_value_t<Iter>>)
-void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
-  fill_async(first, last, value).wait();
-}
-
-template <typename T>
-  requires(!std::is_const_v<T>)
-sycl::event
-    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  auto q = shp::__detail::default_queue();
-  return q.fill(first.get_raw_pointer(), value, last - first);
-}
-
-template <typename T>
-  requires(!std::is_const_v<T>)
-void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
-  fill_async(first, last, value).wait();
-}
-
 template <typename T, lib::remote_contiguous_range R>
 sycl::event fill_async(R &&r, const T &value) {
-  // although we could use here __detail::queue_for_rank(lib::ranges::rank(r))
-  // but since iterator version uses __detail::default_queue() we use default
-  // one also here to have consistent way of using queue.fill, so either all
-  // implementations are correct and with optimal performance or none
-  auto q = __detail::default_queue();
+  // fill can not be directed to node not owning memory being filled
+  auto q = __detail::queue_for_rank(lib::ranges::rank(r));
   return q.fill(std::to_address(rng::begin(lib::ranges::local(r))), value,
                 rng::distance(r));
 }

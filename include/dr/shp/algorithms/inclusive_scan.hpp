@@ -11,8 +11,8 @@
 
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/allocators.hpp>
+#include <dr/shp/device_vector.hpp>
 #include <dr/shp/init.hpp>
-#include <dr/shp/vector.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
 
@@ -40,8 +40,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
     sycl::queue root = __detail::default_queue();
     shp::device_allocator<T> allocator(root);
-    shp::vector<T, shp::device_allocator<T>> partial_sums(
-        std::size_t(zipped_segments.size()), allocator);
+    shp::device_vector<T, shp::device_allocator<T>> partial_sums(
+        std::size_t(zipped_segments.size()), allocator, 0);
 
     std::size_t segment_id = 0;
     for (auto &&segs : zipped_segments) {
