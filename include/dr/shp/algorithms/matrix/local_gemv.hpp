@@ -24,6 +24,8 @@ auto local_gemv(sycl::queue q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
                 std::vector<sycl::event> dependencies = {}) {
 
   oneapi::mkl::sparse::matrix_handle_t a_handle;
+  oneapi::mkl::sparse::init_matrix_handle(&a_handle);
+
   auto rowptr = a.rowptr_data().get_raw_pointer();
   auto colind = a.colind_data().get_raw_pointer();
   auto values = a.values_data().get_raw_pointer();
