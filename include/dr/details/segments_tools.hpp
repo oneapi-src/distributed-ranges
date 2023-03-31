@@ -107,44 +107,6 @@ auto rank_(V &&v) {
   return lib::ranges::rank(std::forward<V>(v).base());
 }
 
-inline std::size_t select_rank_from_iter(auto iter, auto... rest) {
-  if constexpr (lib::distributed_iterator<decltype(iter)>) {
-    return lib::ranges::rank(iter);
-  } else {
-    return select_rank_from_iter(rest...);
-  }
-}
-
-inline std::size_t zip_segment_rank(auto &&segment) {
-  auto select_rank_from_ref = [](auto &&...refs) {
-    return select_rank_from_iter((&refs)...);
-  };
-  return std::apply(select_rank_from_ref, segment[0]);
-}
-
-template <typename T>
-concept distributed_reference = requires(T &t) { lib::ranges::rank(&t); };
-
-template <typename T>
-concept tuple_like = requires(T &t) { std::get<0>(t); };
-
-template <typename T>
-concept tuple_has_distributed_reference =
-    []<std::size_t... N>(std::index_sequence<N...>) {
-      return (distributed_reference<typename std::tuple_element<N, T>::type> ||
-              ...);
-    }(std::make_index_sequence<std::tuple_size_v<T>>());
-
-template <typename ZR>
-concept zip_segment =
-    rng::forward_range<ZR>
-    // value is a tuple
-    && tuple_like<rng::range_reference_t<ZR>>
-    // at least 1 member of the tuple is a distributed reference
-    && tuple_has_distributed_reference<rng::range_reference_t<ZR>>;
-
-template <zip_segment V> auto rank_(V &&v) { return zip_segment_rank(v); }
-
 template <rng::range V>
   requires(lib::is_ref_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
