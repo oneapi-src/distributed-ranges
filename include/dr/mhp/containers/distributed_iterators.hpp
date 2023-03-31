@@ -10,12 +10,11 @@ template <typename T, typename Allocator = std::allocator<T>>
 class distributed_dense_matrix;
 
 template <typename DM> class dm_rows_iterator;
-
+template <typename DM> class dm_segment;
 template <typename DM> class dm_segment_iterator;
-
 template <typename T> class dm_row;
 
-template <typename DM> class dm_row_reference {
+/* template <typename DM> class dm_row_reference {
   using iterator = dm_rows_iterator<DM>;
 
 public:
@@ -32,18 +31,19 @@ public:
     *this = value_type(other);
     return *this;
   }
-  auto operator&() const { return iterator_; }
+  auto operator&() const { return *iterator_; }
+
+  dm_segment<DM> &segment() { return (*iterator_).segment(); }
 
 private:
   const iterator iterator_;
-}; // dm_row_reference
+}; // dm_row_reference */
 
-template <typename DM> class dm_rows_iterator {
+template <typename DM>
+class dm_rows_iterator : public lib::normal_distributed_iterator<dm_rows<DM>> {
 public:
   using value_type = typename mhp::dm_row<typename DM::value_type>;
   using size_type = typename mhp::dm_row<typename DM::value_type>;
-  // using value_type = typename DM::value_type;
-  // using size_type = typename DM::value_type;
   using difference_type = typename DM::difference_type;
 
   dm_rows_iterator() = default;
@@ -51,6 +51,23 @@ public:
     dm_ = dm;
     rank_ = segment_index;
     index_ = index;
+  }
+
+  // dereference
+  value_type & operator*() { return dm_->dm_rows_[index_]; }
+  value_type & operator[](difference_type n) { return dm_->dm_rows_[n]; }
+
+  value_type get() const {
+    auto segment_offset = index_ + dm_->halo_bounds_.prev;
+    auto value = dm_->win_.template get<value_type>(rank_, segment_offset);
+    lib::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
+    return value;
+  }
+
+  void put(const value_type &value) const {
+    auto segment_offset = index_ + dm_->halo_bounds_.prev;
+    lib::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
+    dm_->win_.put(value, rank_, segment_offset);
   }
 
   // Comparison
@@ -75,10 +92,7 @@ public:
   }
 
   // prefix
-  auto &operator++() {
-    *this += 1;
-    return *this;
-  }
+  auto &operator++() { *this += 1; return *this; }
   auto &operator--() {
     *this -= 1;
     return *this;
@@ -112,23 +126,6 @@ public:
     return other + n;
   }
 
-  // dereference
-  auto operator*() const { return dm_row_reference<DM>{*this}; }
-  auto operator[](difference_type n) const { return *(*this + n); }
-
-  value_type get() const {
-    auto segment_offset = index_ + dm_->halo_bounds_.prev;
-    auto value = dm_->win_.template get<value_type>(rank_, segment_offset);
-    lib::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
-    return value;
-  }
-
-  void put(const value_type &value) const {
-    auto segment_offset = index_ + dm_->halo_bounds_.prev;
-    lib::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
-    dm_->win_.put(value, rank_, segment_offset);
-  }
-
   auto rank() const { return rank_; }
   auto local() const { return dm_->data_ + index_ + dm_->halo_bounds_.prev; }
   auto segments() const {
@@ -139,7 +136,7 @@ public:
 private:
   DM *dm_ = nullptr;
   std::size_t rank_;
-  std::size_t index_;
+  std::size_t index_ = 0;
 }; // dm_rows_iterator
 
 template <typename DM> class dm_segment_reference {

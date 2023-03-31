@@ -4,6 +4,8 @@
 
 namespace mhp {
 
+template <typename DM> class dm_rows;
+
 template <typename DV> class dv_segment_iterator;
 
 template <typename DV> class dv_segment_reference {

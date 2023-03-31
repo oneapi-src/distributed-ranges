@@ -4,111 +4,153 @@
 
 #pragma once
 
-
 namespace mhp {
 
-template<typename DM>
-class dm_subrange_iterator {
+template <typename DM>
+class dm_subrange_iterator
+    : public rng::subrange<dm_subrange_iterator<DM>, dm_subrange_iterator<DM>,
+                           rng::subrange_kind::sized>::iterator {
 public:
-    using value_type = typename DM::value_type;
-    using difference_type = typename DM::difference_type;
+  using value_type = typename DM::value_type;
+  using difference_type = typename DM::difference_type;
 
-    dm_subrange_iterator() = delete;
-    dm_subrange_iterator(DM * dm, std::pair<std::size_t, std::size_t> first, std::pair<std::size_t, std::size_t> last) { 
-        dm_ = dm; 
-        first_ = first;
-        last_ = last;
-        index_ = 0;
-    }
+  dm_subrange_iterator() = delete;
+  dm_subrange_iterator(DM *dm, std::pair<std::size_t, std::size_t> row_rng,
+                       std::pair<std::size_t, std::size_t> col_rng) {
+    dm_ = dm;
+    row_rng_ = row_rng;
+    col_rng_ = col_rng;
+    index_ = 0;
+  }
 
-    value_type & operator*() { return *(dm_->begin() + find_local_offset(index_)); }
+  value_type &operator*() {
+    return *(dm_->begin() + find_local_offset(index_));
+  }
 
-    bool operator==(dm_subrange_iterator &other) { return this->index_ == other.index_; }
-    bool operator!=(dm_subrange_iterator &other) { return this->index_ != other.index_; }
+  bool operator==(dm_subrange_iterator &other) {
+    return this->index_ == other.index_;
+  }
+  bool operator!=(dm_subrange_iterator &other) {
+    return this->index_ != other.index_;
+  }
+  auto operator<=>(const dm_subrange_iterator &other) const noexcept {
+    return this->index_ <=> other.index_;
+  }
 
-    auto operator<=>(const dm_subrange_iterator &other) const noexcept {
-        return this->index_ <=> other.index_;
-    }
-    
-    // Only these arithmetics manipulate internal state
-    auto &operator-=(difference_type n) { index_ -= n; return *this; }
-    auto &operator+=(difference_type n) { index_ += n; return *this; }
+  // Only these arithmetics manipulate internal state
+  auto &operator-=(difference_type n) {
+    index_ -= n;
+    return *this;
+  }
+  auto &operator+=(difference_type n) {
+    index_ += n;
+    return *this;
+  }
 
-    difference_type operator-(const dm_subrange_iterator &other) const noexcept {
-        return index_ - other.index_;
-    }
-    // prefix
-    auto &operator++() { *this += 1; return *this; }
-    auto &operator--() { *this -= 1; return *this; }
+  difference_type operator-(const dm_subrange_iterator &other) const noexcept {
+    return index_ - other.index_;
+  }
+  // prefix
+  auto &operator++() {
+    *this += 1;
+    return *this;
+  }
+  auto &operator--() {
+    *this -= 1;
+    return *this;
+  }
 
-    // postfix
-    auto operator++(int) { auto prev = *this; *this += 1; return prev; }
-    auto operator--(int) { auto prev = *this; *this -= 1; return prev; }
+  // postfix
+  auto operator++(int) {
+    auto prev = *this;
+    *this += 1;
+    return prev;
+  }
+  auto operator--(int) {
+    auto prev = *this;
+    *this -= 1;
+    return prev;
+  }
 
-    auto operator+(difference_type n) const { auto p = *this; p += n; return p; }
-    auto operator-(difference_type n) const { auto p = *this; p -= n; return p; }
+  auto operator+(difference_type n) const {
+    auto p = *this;
+    p += n;
+    return p;
+  }
+  auto operator-(difference_type n) const {
+    auto p = *this;
+    p -= n;
+    return p;
+  }
 
-    // When *this is not first in the expression
-    friend auto operator+(difference_type n, const dm_subrange_iterator &other) {
-        return other + n;
-    }
+  // When *this is not first in the expression
+  friend auto operator+(difference_type n, const dm_subrange_iterator &other) {
+    return other + n;
+  }
+
 private:
-    /*
-     * converts index within subrange (viewed as linear contiguous space)
-     * into index within physical segment in dm
-     */
-    std::size_t const find_local_offset(size_t index) {
-        std::size_t ind_rows, ind_cols;
-        std::size_t offset;
+  /*
+   * converts index within subrange (viewed as linear contiguous space)
+   * into index within physical segment in dm
+   */
+  std::size_t const find_local_offset(std::size_t index) {
+    std::size_t ind_rows, ind_cols;
+    std::size_t offset;
 
-        ind_rows = index / (last_.first - first_.first);
-        ind_cols = index % (last_.first - first_.first);
+    ind_rows = index / (col_rng_.second - col_rng_.first);
+    ind_cols = index % (col_rng_.second - col_rng_.first);
 
-        offset = first_.first * dm_->shape()[0] + first_.second;
-        offset += ind_rows * dm_->shape()[0] + ind_cols;
+    offset = row_rng_.first * dm_->shape()[0] + col_rng_.first;
+    offset += ind_rows * dm_->shape()[0] + ind_cols;
 
-        return offset / dm_->segsize();
-    }
+    return offset / dm_->segsize();
+  }
 
 private:
-    DM * dm_;
-    std::pair<std::size_t, std::size_t> first_;
-    std::pair<std::size_t, std::size_t> last_;
+  DM *dm_;
+  std::pair<std::size_t, std::size_t> row_rng_;
+  std::pair<std::size_t, std::size_t> col_rng_;
 
-    size_t index_ = 0;
+  std::size_t index_ = 0;
 };
 
-template <typename DM> class subrange {
-
+template <typename DM>
+class subrange
+    : public rng::subrange<dm_subrange_iterator<DM>, dm_subrange_iterator<DM>,
+                           rng::subrange_kind::sized> {
 public:
-    using iterator = dm_subrange_iterator<DM>;
-    using value_type = typename DM::value_type;
+  using iterator = dm_subrange_iterator<DM>;
+  using value_type = typename DM::value_type;
 
-    subrange(DM & dm, std::pair<std::size_t, std::size_t> first, std::pair<std::size_t, std::size_t> last) {
-        dm_ = &dm; 
-        first_ = first;
-        last_ = last;
+  subrange(){};
+  subrange(subrange &){};
+  subrange(DM &dm, std::pair<std::size_t, std::size_t> row_rng,
+           std::pair<std::size_t, std::size_t> col_rng) {
+    dm_ = &dm;
+    row_rng_ = row_rng;
+    col_rng_ = col_rng;
 
-        subrng_size_ = (last.first - first.first) * (last.second - first.second);
-    }
+    subrng_size_ =
+        (col_rng.second - col_rng.first) * (row_rng.second - row_rng.first);
+  }
 
-    iterator begin() { return iterator(dm_, first_, last_); }
-    iterator end() { return iterator(0) + subrng_size_; }
+  iterator begin() { return iterator(dm_, row_rng_, col_rng_); }
+  iterator end() { return iterator(0) + subrng_size_; }
 
-    value_type front() { return *(begin()); }
-    value_type back() { return *(end()); }
-    
+  value_type front() { return *(begin()); }
+  value_type back() { return *(end()); }
 
-    auto &halo() const { return dm_->halo(); }
-    
-    auto segments() const { return dm_->segments(); }
+  auto size() { return subrng_size_; }
+
+  auto &halo() const { return dm_->halo(); }
+  auto segments() const { return dm_->segments(); }
 
 private:
-    DM * dm_;
-    std::pair<std::size_t, std::size_t> first_;
-    std::pair<std::size_t, std::size_t> last_;
+  DM *dm_;
+  std::pair<std::size_t, std::size_t> row_rng_;
+  std::pair<std::size_t, std::size_t> col_rng_;
 
-    std::size_t subrng_size_ = 0;
+  std::size_t subrng_size_ = 0;
 
 }; // class subrange
 
