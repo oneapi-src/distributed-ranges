@@ -14,7 +14,6 @@ public:
   using value_type = typename DM::value_type;
   using difference_type = typename DM::difference_type;
 
-  dm_subrange_iterator() = delete;
   dm_subrange_iterator(DM *dm, std::pair<std::size_t, std::size_t> row_rng,
                        std::pair<std::size_t, std::size_t> col_rng) {
     dm_ = dm;
@@ -115,17 +114,17 @@ private:
 };
 
 template <typename DM>
-class subrange
+class dm_subrange
     : public rng::subrange<dm_subrange_iterator<DM>, dm_subrange_iterator<DM>,
                            rng::subrange_kind::sized> {
 public:
   using iterator = dm_subrange_iterator<DM>;
   using value_type = typename DM::value_type;
 
-  subrange(){};
-  subrange(subrange &){};
-  subrange(DM &dm, std::pair<std::size_t, std::size_t> row_rng,
-           std::pair<std::size_t, std::size_t> col_rng) {
+  // dm_subrange(){};
+  // dm_subrange(dm_subrange &){};
+  dm_subrange(DM &dm, std::pair<std::size_t, std::size_t> row_rng,
+              std::pair<std::size_t, std::size_t> col_rng) {
     dm_ = &dm;
     row_rng_ = row_rng;
     col_rng_ = col_rng;
@@ -134,11 +133,11 @@ public:
         (col_rng.second - col_rng.first) * (row_rng.second - row_rng.first);
   }
 
-  iterator begin() { return iterator(dm_, row_rng_, col_rng_); }
-  iterator end() { return iterator(0) + subrng_size_; }
-
-  value_type front() { return *(begin()); }
-  value_type back() { return *(end()); }
+  iterator begin() const { return iterator(dm_, row_rng_, col_rng_); }
+  iterator end() const {
+    return iterator(dm_, row_rng_, col_rng_) + subrng_size_;
+  }
+  value_type &operator[](int n) { return *(begin() + n); }
 
   auto size() { return subrng_size_; }
 

@@ -40,7 +40,9 @@ private:
 }; // dm_row_reference */
 
 template <typename DM>
-class dm_rows_iterator : public lib::normal_distributed_iterator<dm_rows<DM>> {
+// class dm_rows_iterator : public lib::normal_distributed_iterator<dm_rows<DM>>
+// {
+class dm_rows_iterator {
 public:
   using value_type = typename mhp::dm_row<typename DM::value_type>;
   using size_type = typename mhp::dm_row<typename DM::value_type>;
@@ -54,21 +56,21 @@ public:
   }
 
   // dereference
-  value_type & operator*() { return dm_->dm_rows_[index_]; }
-  value_type & operator[](difference_type n) { return dm_->dm_rows_[n]; }
+  value_type &operator*() { return dm_->dm_rows_[index_]; }
+  value_type &operator[](difference_type n) { return dm_->dm_rows_[n]; }
 
-  value_type get() const {
-    auto segment_offset = index_ + dm_->halo_bounds_.prev;
-    auto value = dm_->win_.template get<value_type>(rank_, segment_offset);
-    lib::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
-    return value;
-  }
+  // value_type get() const {
+  //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
+  //   auto value = dm_->win_.template get<value_type>(rank_, segment_offset);
+  //   lib::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
+  //   return value;
+  // }
 
-  void put(const value_type &value) const {
-    auto segment_offset = index_ + dm_->halo_bounds_.prev;
-    lib::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
-    dm_->win_.put(value, rank_, segment_offset);
-  }
+  // void put(const value_type &value) const {
+  //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
+  //   lib::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
+  //   dm_->win_.put(value, rank_, segment_offset);
+  // }
 
   // Comparison
   bool operator==(const dm_rows_iterator &other) const noexcept {
@@ -92,7 +94,10 @@ public:
   }
 
   // prefix
-  auto &operator++() { *this += 1; return *this; }
+  auto &operator++() {
+    *this += 1;
+    return *this;
+  }
   auto &operator--() {
     *this -= 1;
     return *this;
@@ -127,7 +132,7 @@ public:
   }
 
   auto rank() const { return rank_; }
-  auto local() const { return dm_->data_ + index_ + dm_->halo_bounds_.prev; }
+  // auto local() const { return dm_->data_ + index_ + dm_->halo_bounds_.prev; }
   auto segments() const {
     return lib::internal::drop_segments(dm_->segments(), index_);
   }

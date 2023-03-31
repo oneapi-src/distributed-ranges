@@ -67,37 +67,41 @@ template <typename T> class dm_row : public std::span<T> {
 
 public:
   dm_row(){};
-  dm_row(signed long idx, T *ptr, dmsegment * segment, std::size_t size)
-      : std::span<T>({ptr, size}), index_(idx), data_(ptr),
-        segment_(segment), size_(size){};
+  dm_row(signed long idx, T *ptr, dmsegment *segment, std::size_t size)
+      : std::span<T>({ptr, size}), index_(idx), data_(ptr), segment_(segment),
+        size_(size){};
 
-  dmsegment * segment() { return segment_; }
+  dmsegment *segment() { return segment_; }
   signed long idx() { return index_; }
+
+  T &operator[](int index) { return *(std::span<T>::begin() + index); }
 
 private:
   signed long index_ = 0;
-  T *data_;
-  dmsegment * segment_;
-  std::size_t size_;
+  T *data_ = nullptr;
+  dmsegment *segment_ = nullptr;
+  std::size_t size_ = 0;
 };
 
 template <typename DM>
 class dm_rows : public std::vector<dm_row<typename DM::value_type>> {
-// class dm_rows : public mhp::distributed_vector<dm_row<typename DM::value_type>> {
 public:
   using iterator = dm_rows_iterator<DM>;
   using value_type = dm_row<typename DM::value_type>;
 
-  dm_rows() {}
-  dm_rows(DM *dm) {
-    dm_ = dm;
-  }
+  dm_rows(DM *dm) { dm_ = dm; }
 
   auto segments() { return dm_->segments(); }
-  auto & halo() { return dm_->halo(); }
+  auto &halo() { return dm_->halo(); }
 
-  iterator begin() const { return dm_rows_iterator(dm_, 0, 0); }
-  iterator end() const { return dm_rows_iterator(dm_, 0,  dm_->shape()[1]); }
+  iterator begin() const {
+    assert(dm_ != nullptr);
+    return dm_rows_iterator(dm_, 0, 0);
+  }
+  iterator end() const {
+    assert(dm_ != nullptr);
+    return dm_rows_iterator(dm_, 0, dm_->shape()[1]);
+  }
 
 private:
   DM *dm_ = nullptr;
@@ -133,7 +137,8 @@ public:
                                 hb.prev * segment_shape_[1],
                                 hb.next * segment_shape_[1]})),
         data_size_(segment_size_ + hb.prev * segment_shape_[1] +
-                   hb.next * segment_shape_[1]) {
+                   hb.next * segment_shape_[1]),
+        dm_rows_(this) {
 
     init_(hb, allocator);
   }
@@ -192,19 +197,21 @@ private:
     }
 
     // prepare all rows
+    dm_rows_.reserve(segment_shape_[0]);
+
     std::size_t row_index_ = 0;
     for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
       for (std::size_t s = 0; s < (*_titr).shape()[0]; s++) {
         T *_dataptr =
             (*_titr).is_local() ? (data_ + s * (*_titr).shape()[1]) : nullptr;
-        dm_rows_.emplace_back(row_index_++, _dataptr, &(*_titr), (*_titr).shape()[1]);
+        dm_rows_.emplace_back(row_index_++, _dataptr, &(*_titr),
+                              (*_titr).shape()[1]);
       }
     };
 
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
     dm_segments_ = dm_segments<distributed_dense_matrix>(this);
-    dm_rows_.reserve(segment_shape_[0]);
     // dm_rows_ = dm_rows<distributed_dense_matrix>(this);
     fence();
   }
@@ -235,11 +242,11 @@ private:
 
   lib::rma_window win_;
   Allocator allocator_;
-};
+}; // class distributed_dense_matrix
 
 // template <typename T>
 // void for_each(dm_rows<distributed_dense_matrix<T>>::iterator First,
-// dm_rows<distributed_dense_matrix<T>>::iterator Last, auto op) {
+//               dm_rows<distributed_dense_matrix<T>>::iterator Last, auto op) {
 //   for (auto itr = First; itr != Last; itr++) {
 //     if ((*itr).segment().is_local()) {
 //       op(*itr);
@@ -250,9 +257,9 @@ private:
 template <typename T>
 void for_each(dm_rows<distributed_dense_matrix<T>> Rng, auto op) {
   for (auto itr = Rng.begin(); itr != Rng.end(); itr++) {
-    dm_row<T> & r = *itr;
+    dm_row<T> &r = *itr;
     if (r.segment()->is_local()) {
-      op(itr);
+      op(*itr);
     }
   }
 };
@@ -270,11 +277,3 @@ template <typename T>
 inline constexpr bool
     rng::enable_borrowed_range<mhp::dm_rows<mhp::distributed_dense_matrix<T>>> =
         true;
-
-// namespace std {
-//   namespace ranges {
-//     template <typename T>
-//     auto size(mhp::subrange<mhp::distributed_dense_matrix<T>> & s) { return
-//     s.size(); }
-//   }
-// }

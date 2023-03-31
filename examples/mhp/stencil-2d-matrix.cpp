@@ -21,6 +21,20 @@ std::size_t m = 10;
 std::size_t n = 10;
 std::size_t steps = 0;
 
+void dump_matrix(std::string msg, mhp::distributed_dense_matrix<T> &dm) {
+  std::stringstream s;
+  s << comm_rank << ": " << msg << " :\n";
+  for (auto r : dm.rows()) {
+    if (r.segment()->is_local()) {
+      s << comm_rank << ": row " << r.idx() << " : ";
+      for (auto _i = r.begin(); _i != r.end(); ++_i)
+        s << *_i << " ";
+      s << std::endl;
+    }
+  }
+  std::cout << s.str();
+}
+
 // auto stencil_op1 = [](auto &&v) {
 //   auto &[in_row, out_row] = v;
 //   auto p = &in_row;
@@ -29,11 +43,12 @@ std::size_t steps = 0;
 //   }
 // };
 
-auto stencil_op1 = [](auto &&itr) {
-  auto p = *(itr);
-  mhp::dm_row<T> out_row;
+auto stencil_op1 = [](auto &&p) {
+  mhp::distributed_dense_matrix<T> d(1, m);
+  mhp::dm_row<T> &out_row = d.rows()[0];
   for (std::size_t i = 1; i < m - 1; i++) {
-    out_row[i] = p[-1][i] + p[0][i - 1] + p[0][i] + p[0][i + 1] + p[1][i];
+    // out_row[i] = p[-1][i] + p[0][i - 1] + p[0][i] + p[0][i + 1] + p[1][i];
+    out_row[i] = p[i] + p[i - 1] + p[i + 1];
   }
   return out_row;
 };
@@ -96,28 +111,33 @@ int stencil_1() {
   lib::halo_bounds hb(1); // 1 row
   mhp::distributed_dense_matrix<T> a(n, m, hb), b(n, m, hb);
 
-  mhp::distributed_dense_matrix<T> *dm_in = &a;
-  mhp::distributed_dense_matrix<T> *dm_out = &b;
+  mhp::distributed_dense_matrix<T> & dm_in = a;
+  mhp::distributed_dense_matrix<T> & dm_out = b;
 
-  mhp::for_each(a.rows().begin(), a.rows().end(), 
-                [](auto &row) { std::iota((*row).begin(), (*row).end(), 100); });
-  mhp::for_each(b.rows().begin(), b.rows().end(), 
-                [](auto &row) { std::fill((*row).begin(), (*row).end(), 0); });
+  mhp::for_each(a.rows(),
+                [](auto &row) { std::iota(row.begin(), row.end(), 10); });
+  mhp::for_each(b.rows(),
+                [](auto &row) { std::iota(row.begin(), row.end(), 10); });
+
+  dump_matrix("After iota", a);
+  dump_matrix("After fill", b);
 
   // all rows except 1st and last
   auto in = rng::subrange(a.rows().begin() + 1, a.rows().end() - 1);
   auto out = rng::subrange(b.rows().begin() + 1, b.rows().end() - 1);
 
-  lib::ranges::segments(a.rows());
-
   for (std::size_t s = 0; s < steps; s++) {
-    mhp::halo(in).exchange();
-    // mhp::for_each(rng::views::zip(in, out), stencil_op1);
-    mhp::transform(in, out, stencil_op1);
+    mhp::halo(dm_in).exchange();
+
+    // auto z = rng::views::zip(in, out);
+    // mhp::for_each(z, stencil_op1);
+    // // mhp::for_each(rng::views::zip(in, out), stencil_op1);
+    transform(in.begin(), in.end(), out.begin(), stencil_op1);
+    dump_matrix("In", dm_in);
+    dump_matrix("Out", dm_out);
     std::swap(in, out);
     std::swap(dm_in, dm_out);
   }
-
   auto error = 0;
   /*
   if (comm_rank == 0) {
@@ -129,7 +149,6 @@ int stencil_1() {
       fmt::print("Pass\n");
     }
   } */
-
   MPI_Barrier(comm);
   return error;
 }
@@ -137,28 +156,29 @@ int stencil_1() {
 // int stencil_2() {
 //   lib::halo_bounds hb(1); // 1 row
 //   mhp::distributed_dense_matrix<T> a(n, m, hb), b(n, m, hb);
-
+//
 //   mhp::for_each(a.rows(),
-//                 [](auto &row) { std::iota(row.begin(), row.end(), 100); });
+//                 [](auto &row) { std::iota((*row).begin(), (*row).end(), 100);
+//                 });
 //   mhp::for_each(b.rows(),
-//                 [](auto &row) { std::fill(row.begin(), row.end(), 0); });
-
+//                 [](auto &row) { std::fill((*row).begin(), (*row).end(), 0);
+//                 });
+//
 //   // to implement
-//   auto in = mhp::subrange(a, {1, a.shape()[0] - 1}, {1, a.shape()[1] - 1});
-//   auto out = mhp::subrange(b, {1, a.shape()[0] - 1}, {1, a.shape()[1] - 1});
-
-//   rng::begin(lib::ranges::segments(in)[0]); //.halo();
-
-//   // for (std::size_t s = 0; s < steps; s++) {
-//   //   mhp::halo(in).exchange();
-//   //   mhp::transform(in, out.begin(), stencil_op2);
-//   //   std::swap(in, out);
-//   // }
-
+//   auto in = mhp::dm_subrange(a, {1, a.shape()[0] - 1}, {1, a.shape()[1] -
+//   1}); auto out = mhp::dm_subrange(b, {1, a.shape()[0] - 1}, {1, a.shape()[1]
+//   - 1});
+//
+//   // rng::begin(lib::ranges::segments(in)[0]); //.halo();
+//
+//   for (std::size_t s = 0; s < steps; s++) {
+//     mhp::halo(in).exchange();
+//     mhp::transform(in, out.begin(), stencil_op2);
+//     std::swap(in, out);
+//   }
 //   /* if (comm_rank == 0) {
 //     return check(in, n, steps);
 //   } */
-
 //   return 0;
 // }
 
