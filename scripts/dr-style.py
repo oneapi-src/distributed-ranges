@@ -79,6 +79,10 @@ include_rules = [
         'use namespace __detail {',
     ),
     (
+        r'namespace internal {',
+        'use namespace __detail {',
+    ),
+    (
         r'\.begin\(\)',
         'use rng::begin()',
     ),

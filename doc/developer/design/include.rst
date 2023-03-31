@@ -49,7 +49,7 @@ Structure
 ``vendor``
   External header files that we distribute.
 
-``dr/details``
+``dr/detail``
   Does not fit elsewhere
 
 ``dr/shp``
