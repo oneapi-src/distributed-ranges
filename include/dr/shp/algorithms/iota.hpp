@@ -9,15 +9,13 @@
 
 namespace shp {
 
-template <lib::distributed_range R, std::integral T>
-void iota(R&& r, T value) {
+template <lib::distributed_range R, std::integral T> void iota(R &&r, T value) {
   auto iota_view = rng::views::iota(T(value), T(value + rng::distance(r)));
 
-  shp::for_each(shp::par_unseq, shp::views::zip(iota_view, r),
-                [](auto &&elem) {
-                  auto &&[idx, v] = elem;
-                  v = idx;
-                });
+  shp::for_each(shp::par_unseq, shp::views::zip(iota_view, r), [](auto &&elem) {
+    auto &&[idx, v] = elem;
+    v = idx;
+  });
 }
 
 template <lib::distributed_iterator Iter, std::integral T>
