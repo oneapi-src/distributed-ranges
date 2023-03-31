@@ -22,8 +22,8 @@ TEST(MhpTests, IteratorConformance) {
   EXPECT_FALSE(aligned(dv1.begin() + 1, dv2.begin(), dv2.begin()));
   EXPECT_FALSE(aligned(dv2.begin(), dv1.begin() + 1, dv2.begin()));
 
-  auto aligned_z = rng::views::zip(dv1, dv2);
-  auto misaligned_z = rng::views::zip(dv1, dv2 | rng::views::drop(1));
+  auto aligned_z = mhp::views::zip(dv1, dv2);
+  auto misaligned_z = mhp::views::zip(dv1, dv2 | rng::views::drop(1));
   EXPECT_TRUE(mhp::aligned(aligned_z.begin()));
   EXPECT_FALSE(mhp::aligned(misaligned_z.begin()));
 

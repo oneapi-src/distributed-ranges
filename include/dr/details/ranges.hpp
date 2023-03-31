@@ -18,18 +18,18 @@ namespace {
 
 template <typename T>
 concept has_rank_method = requires(T t) {
-                            { t.rank() } -> std::weakly_incrementable;
-                          };
+  { t.rank() } -> std::weakly_incrementable;
+};
 
 template <typename R>
 concept has_rank_adl = requires(R &r) {
-                         { rank_(r) } -> std::weakly_incrementable;
-                       };
+  { rank_(r) } -> std::weakly_incrementable;
+};
 
 template <typename Iter>
 concept is_remote_iterator_shadow_impl_ =
-    std::forward_iterator<Iter> && has_rank_method<Iter> && !
-disable_rank<std::remove_cv_t<Iter>>;
+    std::forward_iterator<Iter> && has_rank_method<Iter> &&
+    !disable_rank<std::remove_cv_t<Iter>>;
 
 } // namespace
 
@@ -83,13 +83,13 @@ concept segments_range =
 
 template <typename R>
 concept has_segments_method = requires(R r) {
-                                { r.segments() } -> segments_range;
-                              };
+  { r.segments() } -> segments_range;
+};
 
 template <typename R>
 concept has_segments_adl = requires(R &r) {
-                             { segments_(r) } -> segments_range;
-                           };
+  { segments_(r) } -> segments_range;
+};
 
 struct segments_fn_ {
   template <rng::forward_range R>
@@ -121,14 +121,13 @@ namespace {
 
 template <typename Iter>
 concept has_local_adl = requires(Iter &iter) {
-                          { local_(iter) } -> std::forward_iterator;
-                        };
+  { local_(iter) } -> std::forward_iterator;
+};
 
 template <typename Iter>
-concept has_local_method =
-    std::forward_iterator<Iter> && requires(Iter i) {
-                                     { i.local() } -> std::forward_iterator;
-                                   };
+concept has_local_method = std::forward_iterator<Iter> && requires(Iter i) {
+  { i.local() } -> std::forward_iterator;
+};
 
 struct local_fn_ {
 

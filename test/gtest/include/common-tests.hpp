@@ -142,8 +142,8 @@ auto check_view_message(rng::range auto &&ref, rng::range auto &&actual) {
          equal_message(ref, actual, "view mismatch");
 }
 
-auto check_mutable_view_message(auto &ops, rng::range auto &&ref,
-                                rng::range auto &&actual) {
+auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
+                               rng::range auto &&actual) {
   // Check view
   auto message = check_view_message(ref, actual);
 
@@ -215,9 +215,9 @@ auto check_view(rng::range auto &&ref, rng::range auto &&actual) {
   return gtest_result(check_view_message(ref, actual));
 }
 
-auto check_mutable_view(auto &op, rng::range auto &&ref,
-                        rng::range auto &&actual) {
-  return gtest_result(check_mutable_view_message(op, ref, actual));
+auto check_mutate_view(auto &op, rng::range auto &&ref,
+                       rng::range auto &&actual) {
+  return gtest_result(check_mutate_view_message(op, ref, actual));
 }
 
 template <typename T>
@@ -235,8 +235,8 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 
 template <typename T>
 concept streamable = requires(std::ostream &os, T value) {
-                       { os << value } -> std::convertible_to<std::ostream &>;
-                     };
+  { os << value } -> std::convertible_to<std::ostream &>;
+};
 
 namespace mhp {
 

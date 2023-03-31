@@ -261,10 +261,9 @@ private:
 };
 
 template <typename DR>
-concept has_halo_method = lib::distributed_range<DR> &&
-                          requires(DR &&dr) {
-                            { rng::begin(lib::ranges::segments(dr)[0]).halo() };
-                          };
+concept has_halo_method = lib::distributed_range<DR> && requires(DR &&dr) {
+  { rng::begin(lib::ranges::segments(dr)[0]).halo() };
+};
 
 auto &halo(has_halo_method auto &&dr) {
   return rng::begin(lib::ranges::segments(dr)[0]).halo();

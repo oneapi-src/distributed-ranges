@@ -2,6 +2,18 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
+#include <algorithm>
+#include <execution>
+#include <type_traits>
+#include <utility>
+
+#include <dr/concepts/concepts.hpp>
+#include <dr/details/logger.hpp>
+#include <dr/details/onedpl_direct_iterator.hpp>
+#include <dr/details/ranges_shim.hpp>
+
 namespace mhp {
 
 //
@@ -66,7 +78,10 @@ void for_each(ExecutionPolicy &&policy, lib::distributed_range auto &&dr,
                                device_policy>) {
     lib::drlog.debug("for_each: dpl execution\n");
     for (const auto &s : local_segments(dr)) {
-      std::for_each(policy.dpl_policy, &*rng::begin(s), &*rng::end(s), op);
+
+      std::for_each(policy.dpl_policy,
+                    lib::__detail::direct_iterator(rng::begin(s)),
+                    lib::__detail::direct_iterator(rng::end(s)), op);
     }
   } else {
     lib::drlog.debug("for_each: parallel cpu execution\n");
@@ -77,8 +92,8 @@ void for_each(ExecutionPolicy &&policy, lib::distributed_range auto &&dr,
   barrier();
 }
 
-void for_each(lib::distributed_range auto &&dr, auto op) {
-  for_each(std::execution::par_unseq, dr, op);
+template <lib::distributed_range DR> void for_each(DR &&dr, auto op) {
+  for_each(std::execution::par_unseq, std::forward<DR>(dr), op);
 }
 
 /// Collective for_each on iterator/sentinel for a distributed range
