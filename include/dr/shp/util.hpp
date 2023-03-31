@@ -69,6 +69,16 @@ template <typename Selector> void list_devices(Selector &&selector) {
   printf("--------------------------------\n");
 }
 
+inline std::vector<sycl::device>
+trim_devices(const std::vector<sycl::device> &devices, std::size_t n_devices) {
+  std::vector<sycl::device> trimmed_devices = devices;
+
+  if (n_devices < devices.size()) {
+    trimmed_devices.resize(n_devices);
+  }
+  return trimmed_devices;
+}
+
 template <typename Selector>
 std::vector<sycl::device> get_numa_devices_impl_(Selector &&selector) {
   std::vector<sycl::device> devices;
