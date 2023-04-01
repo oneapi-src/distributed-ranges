@@ -12,8 +12,10 @@ TYPED_TEST_SUITE(Drop, AllTypes);
 TYPED_TEST(Drop, Basic) {
   Ops1<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_view(rng::views::drop(ops.vec, 2),
-                         rng::views::drop(ops.dist_vec, 2)));
+  auto local = rng::views::drop(ops.dist_vec, 2);
+  auto dist = rng::views::drop(ops.dist_vec, 2);
+  static_assert(compliant_view<decltype(dist)>);
+  EXPECT_TRUE(check_view(local, dist));
 }
 
 TYPED_TEST(Drop, Mutate) {

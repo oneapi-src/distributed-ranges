@@ -12,15 +12,20 @@ TYPED_TEST_SUITE(Zip, AllTypes);
 TYPED_TEST(Zip, Basic) {
   Ops2<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_view(rng::views::zip(ops.vec0, ops.vec1),
-                         xhp::views::zip(ops.dist_vec0, ops.dist_vec1)));
+  auto local = rng::views::zip(ops.vec0, ops.vec1);
+  auto dist = xhp::views::zip(ops.dist_vec0, ops.dist_vec1);
+  static_assert(compliant_view<decltype(dist)>);
+  EXPECT_TRUE(check_view(local, dist));
 }
 
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_view(rng::views::zip(rng::views::iota(100), ops.vec),
-                         xhp::views::zip(rng::views::iota(100), ops.dist_vec)));
+  auto local = rng::views::zip(rng::views::iota(100), ops.vec);
+  auto dist = xhp::views::zip(rng::views::iota(100), ops.dist_vec);
+  // Broken in mhp
+  // static_assert(compliant_view<decltype(dist)>);
+  EXPECT_TRUE(check_view(local, dist));
 }
 
 TYPED_TEST(Zip, Iota2nd) {

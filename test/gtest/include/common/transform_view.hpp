@@ -13,8 +13,11 @@ TYPED_TEST(TransformView, Basic) {
   Ops1<TypeParam> ops(10);
 
   auto negate = [](auto v) { return -v; };
-  EXPECT_TRUE(check_view(rng::views::transform(ops.vec, negate),
-                         lib::views::transform(ops.dist_vec, negate)));
+  auto local = rng::views::transform(ops.vec, negate);
+  auto dist = lib::views::transform(ops.dist_vec, negate);
+  // broken in MHP
+  // static_assert(compliant_view<decltype(dist)>);
+  EXPECT_TRUE(check_view(local, dist));
 }
 
 TYPED_TEST(TransformView, All) {
