@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+#include <dr/detail/segments_tools.hpp>
+
 namespace lib {
 
 template <rng::viewable_range V>

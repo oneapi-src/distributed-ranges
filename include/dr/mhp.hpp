@@ -35,8 +35,7 @@ namespace fmt {}
 #include <mkl.h>
 #include <mpi.h>
 
-#include <range/v3/all.hpp>
-namespace rng = ranges;
+#include <dr/detail/ranges_shim.hpp>
 
 // clang-format off
 #include <dr/concepts/concepts.hpp>
