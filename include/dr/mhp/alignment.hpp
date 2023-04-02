@@ -10,14 +10,15 @@
 
 namespace mhp {
 
-auto aligned(auto &&r) { return !lib::ranges::segments(r).empty(); }
+auto aligned(lib::distributed_range auto &&r) {
+  return !lib::ranges::segments(r).empty();
+}
 
 // iter1 is aligned with iter2, and iter2 is aligned with the rest
-bool aligned(lib::distributed_iterator auto iter1,
-             lib::distributed_iterator auto iter2,
-             lib::distributed_iterator auto... iters) {
-  for (auto seg : rng::views::zip(lib::ranges::segments(iter1),
-                                  lib::ranges::segments(iter2))) {
+bool aligned(lib::distributed_range auto &&r1, lib::distributed_range auto &&r2,
+             lib::distributed_range auto &&...rest) {
+  for (auto seg :
+       rng::views::zip(lib::ranges::segments(r1), lib::ranges::segments(r2))) {
     if (lib::ranges::rank(seg.first) != lib::ranges::rank(seg.second)) {
       return false;
     }
@@ -26,21 +27,21 @@ bool aligned(lib::distributed_iterator auto iter1,
     }
   }
 
-  return aligned(iter2, iters...);
+  return aligned(r2, rest...);
 }
 
 template <typename T>
-concept local_iterator = !lib::distributed_iterator<T>;
+concept local_range = !lib::distributed_range<T>;
 
 // Skip local iterators
-bool aligned(local_iterator auto iter1, lib::distributed_iterator auto iter2,
-             lib::distributed_iterator auto... iters) {
-  return aligned(iter2, iters...);
+bool aligned(local_range auto &&r1, lib::distributed_range auto &&r2,
+             lib::distributed_range auto... rest) {
+  return aligned(r2, rest...);
 }
 
-bool aligned(lib::distributed_iterator auto iter1, local_iterator auto iter2,
-             lib::distributed_iterator auto... iters) {
-  return aligned(iter1, iters...);
+bool aligned(lib::distributed_range auto &&r1, local_range auto &&r2,
+             lib::distributed_range auto &&...rest) {
+  return aligned(r1, rest...);
 }
 
 } // namespace mhp

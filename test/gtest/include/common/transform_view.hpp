@@ -15,8 +15,7 @@ TYPED_TEST(TransformView, Basic) {
   auto negate = [](auto v) { return -v; };
   auto local = rng::views::transform(ops.vec, negate);
   auto dist = lib::views::transform(ops.dist_vec, negate);
-  // broken in MHP
-  // static_assert(compliant_view<decltype(dist)>);
+  static_assert(compliant_view<decltype(dist)>);
   EXPECT_TRUE(check_view(local, dist));
 }
 
@@ -48,4 +47,27 @@ TYPED_TEST(TransformView, L_Value) {
   auto dist_l_value = rng::views::all(ops.dist_vec);
   EXPECT_TRUE(check_view(rng::views::transform(l_value, negate),
                          lib::views::transform(dist_l_value, negate)));
+}
+
+TYPED_TEST(TransformView, ForEach) {
+  Ops1<TypeParam> ops(10);
+
+  auto null_transform = [](auto &&v) { return v; };
+  auto local = rng::views::transform(ops.vec, null_transform);
+  auto dist = lib::views::transform(ops.dist_vec, null_transform);
+
+  auto null_for_each = [](auto v) {};
+  rng::for_each(local, null_for_each);
+  xhp::for_each(default_policy(ops.dist_vec), dist, null_for_each);
+  EXPECT_EQ(ops.vec, ops.dist_vec);
+}
+
+TYPED_TEST(TransformView, Reduce) {
+  Ops1<TypeParam> ops(10);
+
+  auto negate = [](auto &&v) { return -v; };
+  auto local = rng::views::transform(ops.vec, negate);
+  auto dist = lib::views::transform(ops.dist_vec, negate);
+  EXPECT_EQ(std::reduce(local.begin(), local.end(), 3, std::plus{}),
+            xhp::reduce(default_policy(ops.dist_vec), dist, 3, std::plus{}));
 }

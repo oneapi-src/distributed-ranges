@@ -14,18 +14,19 @@ TEST(MhpTests, IteratorConformance) {
   V v1(10);
 
   // 2 distributed vectors
-  EXPECT_TRUE(aligned(dv1.begin(), dv2.begin()));
-  EXPECT_TRUE(aligned(dv1.begin(), dv2.begin(), dv1.begin()));
+  EXPECT_TRUE(aligned(dv1, dv2));
+  EXPECT_TRUE(aligned(dv1, dv2, dv1));
   ;
   // misaligned distributed vector
-  EXPECT_FALSE(aligned(dv1.begin() + 1, dv2.begin()));
-  EXPECT_FALSE(aligned(dv1.begin() + 1, dv2.begin(), dv2.begin()));
-  EXPECT_FALSE(aligned(dv2.begin(), dv1.begin() + 1, dv2.begin()));
+  auto udv1 = rng::views::drop(dv1, 1);
+  EXPECT_FALSE(aligned(udv1, dv2));
+  EXPECT_FALSE(aligned(udv1, dv2, dv2));
+  EXPECT_FALSE(aligned(dv2, udv1, dv2));
 
   auto aligned_z = mhp::views::zip(dv1, dv2);
   auto misaligned_z = mhp::views::zip(dv1, dv2 | rng::views::drop(1));
-  EXPECT_TRUE(mhp::aligned(aligned_z.begin()));
-  EXPECT_FALSE(mhp::aligned(misaligned_z.begin()));
+  EXPECT_TRUE(mhp::aligned(aligned_z));
+  EXPECT_FALSE(mhp::aligned(misaligned_z));
 
   // iota aligned with anything
   // EXPECT_TRUE(aligned(dv1.begin(), rng::views::iota(1)).first);

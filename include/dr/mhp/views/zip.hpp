@@ -100,7 +100,7 @@ public:
 
       auto z = rng::views::zip(this->base_segments(base)...) |
                rng::views::transform(zip_segment);
-      if (aligned(rng::begin(base)...)) {
+      if (aligned(base...)) {
         return z;
       } else {
         return decltype(z){};
