@@ -46,6 +46,7 @@ void fill(DI first, DI last, auto value) {
 void copy(lib::distributed_contiguous_range auto &&in,
           lib::distributed_iterator auto out) {
   if (aligned(in, out)) {
+    lib::drlog.debug("copy: parallel execution\n");
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
       rng::copy(in_seg, rng::begin(out_seg));

@@ -28,8 +28,9 @@ auto reduce(ExecutionPolicy &&policy, DR &&dr, T init, auto &&binary_op,
       if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                    device_policy>) {
         lib::drlog.debug("  with DPL\n");
-        return std::reduce(policy.dpl_policy, &*rng::begin(r), &*rng::end(r),
-                           T(0), binary_op);
+        return std::reduce(
+            policy.dpl_policy, lib::__detail::direct_iterator(rng::begin(r)),
+            lib::__detail::direct_iterator(rng::end(r)), T(0), binary_op);
       } else {
         lib::drlog.debug("  with CPU\n");
         return std::reduce(std::execution::par_unseq, rng::begin(r),
