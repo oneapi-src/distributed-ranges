@@ -45,7 +45,8 @@ void fill(DI first, DI last, auto value) {
 /// Copy
 void copy(lib::distributed_contiguous_range auto &&in,
           lib::distributed_iterator auto out) {
-  if (aligned(rng::begin(in), out)) {
+  if (aligned(in, rng::subrange(out, decltype(out){}))) {
+    lib::drlog.debug("copy: parallel execution\n");
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
       rng::copy(in_seg, rng::begin(out_seg));
@@ -136,7 +137,7 @@ void iota(lib::distributed_contiguous_range auto &&r, auto value) {
 
 void transform(lib::distributed_range auto &&in,
                lib::distributed_iterator auto out, auto op) {
-  if (aligned(rng::begin(in), out)) {
+  if (aligned(in, rng::subrange(out, decltype(out){}))) {
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
       rng::transform(in_seg, rng::begin(out_seg), op);

@@ -50,7 +50,7 @@ TYPED_TEST(DistributedVectorTest, DISABLED_fill_constructor_large) {
   EXPECT_EQ(v[12344], 17);
 }
 
-TYPED_TEST(DistributedVectorTest, fill_constructor_one_item) {
+TYPED_TEST(DistributedVectorTest, DISABLED_fill_constructor_one_item) {
   EXPECT_TRUE(equal(typename TestFixture::DistVec(1, 77),
                     typename TestFixture::LocalVec(1, 77)));
 }

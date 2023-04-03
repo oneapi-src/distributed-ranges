@@ -8,9 +8,8 @@
 // #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
-using AllTypes = ::testing::Types<
-    mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>>;
-#include "common/zip.hpp"
+using AllTypes = ::testing::Types<mhp::distributed_vector<int>>;
+#include "common/copy.hpp"
 
 #else
 
@@ -25,6 +24,7 @@ using CPUTypes = ::testing::Types<mhp::distributed_vector<int>,
                                   mhp::distributed_vector<float>>;
 
 #include "common/all.hpp"
+#include "common/copy.hpp"
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
 #include "common/fill.hpp"
