@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Testing
+pre-commit
+
+# Documentation
+breathe
+sphinx
+sphinx-book-theme
+pydata-sphinx-theme
+
+sphinxcontrib-spelling
