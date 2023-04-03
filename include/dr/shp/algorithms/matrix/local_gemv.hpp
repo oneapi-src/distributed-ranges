@@ -6,6 +6,7 @@
 
 #include <dr/details/ranges_shim.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
+#include <dr/shp/util.hpp>
 
 #ifdef USE_MKL
 #include <oneapi/mkl.hpp>
@@ -26,11 +27,11 @@ auto local_gemv(sycl::queue q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
   oneapi::mkl::sparse::matrix_handle_t a_handle;
   oneapi::mkl::sparse::init_matrix_handle(&a_handle);
 
-  auto rowptr = a.rowptr_data().get_raw_pointer();
-  auto colind = a.colind_data().get_raw_pointer();
-  auto values = a.values_data().get_raw_pointer();
+  auto rowptr = shp::__detail::get_local(a.rowptr_data());
+  auto colind = shp::__detail::get_local(a.colind_data());
+  auto values = shp::__detail::get_local(a.values_data());
 
-  oneapi::mkl::sparse::set_csr_data(a_handle, a.shape()[0], a.shape()[1],
+  oneapi::mkl::sparse::set_csr_data(q, a_handle, a.shape()[0], a.shape()[1],
                                     oneapi::mkl::index_base::zero, rowptr,
                                     colind, values);
 

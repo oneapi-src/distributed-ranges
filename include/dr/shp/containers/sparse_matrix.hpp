@@ -123,7 +123,7 @@ template <typename Segments>
 using distributed_sparse_matrix_iterator =
     lib::iterator_adaptor<distributed_range_accessor<Segments>>;
 
-template <typename T, std::integral I = std::size_t> class sparse_matrix {
+template <typename T, std::integral I = std::int64_t> class sparse_matrix {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -337,8 +337,8 @@ private:
   }
 
   void init_random_(double density) {
-    grid_shape_ = partition_->grid_shape(shape());
-    tile_shape_ = partition_->tile_shape(shape());
+    grid_shape_ = key_type(partition_->grid_shape(shape()));
+    tile_shape_ = key_type(partition_->tile_shape(shape()));
 
     values_.reserve(grid_shape_[0] * grid_shape_[1]);
     rowptr_.reserve(grid_shape_[0] * grid_shape_[1]);
@@ -358,7 +358,7 @@ private:
         shp::device_allocator<T> alloc(shp::context(), device);
         shp::device_allocator<I> i_alloc(shp::context(), device);
 
-        auto csr = generate_random_csr<T, I>({tm, tn});
+        auto csr = generate_random_csr<T, I>(key_type(tm, tn));
         std::size_t nnz = csr.size();
 
         shp::device_vector<T, shp::device_allocator<T>> values(csr.size(),

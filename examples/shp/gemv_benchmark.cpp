@@ -206,23 +206,16 @@ int main(int argc, char **argv) {
 
     shp::__detail::destroy_csr_matrix_view(local_mat, std::allocator<T>{});
 
-    oneapi::mkl::sparse::matrix_handle_t a_handle;
-    oneapi::mkl::sparse::init_matrix_handle(&a_handle);
+    shp::csr_matrix_view a_view(values, rowptr, colind, shape, nnz, 0);
 
-    oneapi::mkl::sparse::set_csr_data(
-        a_handle, local_mat.shape()[0], local_mat.shape()[1],
-        oneapi::mkl::index_base::zero, rowptr, colind, values);
-
-    auto e = oneapi::mkl::sparse::gemv(q, oneapi::mkl::transpose::nontrans, 1.0,
-                                       a_handle, x.data().get_raw_pointer(),
-                                       0.0, y.data().get_raw_pointer());
+    auto e = shp::__detail::local_gemv(q, a_view, x.data().get_raw_pointer(),
+                                       y.data().get_raw_pointer());
     e.wait();
 
     for (std::size_t i = 0; i < n_iterations; i++) {
       auto begin = std::chrono::high_resolution_clock::now();
-      auto e = oneapi::mkl::sparse::gemv(
-          q, oneapi::mkl::transpose::nontrans, 1.0, a_handle,
-          x.data().get_raw_pointer(), 0.0, y.data().get_raw_pointer());
+      auto e = shp::__detail::local_gemv(q, a_view, x.data().get_raw_pointer(),
+                                         y.data().get_raw_pointer());
       e.wait();
       auto end = std::chrono::high_resolution_clock::now();
       double duration = std::chrono::duration<double>(end - begin).count();

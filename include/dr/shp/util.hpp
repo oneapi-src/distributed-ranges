@@ -242,10 +242,9 @@ auto get_local_segment(lib::remote_contiguous_range auto &&r) {
 }
 auto get_local_segment(rng::forward_range auto &&r) { return r; }
 
-template <class T> T *get_local_pointer(shp::device_ptr<T> r) {
-  return r.local();
-}
-template <class T> T *get_local_pointer(T *t) { return t; }
+template <class T> T *get_local(shp::device_ptr<T> r) { return r.local(); }
+
+template <std::forward_iterator Iter> Iter get_local(Iter iter) { return iter; }
 
 inline sycl::event combine_events(const std::vector<sycl::event> &events) {
   sycl::queue q;
