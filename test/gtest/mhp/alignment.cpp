@@ -28,9 +28,13 @@ TEST(Alignment, OffsetBy1) {
 
 TEST(Alignment, Subrange) {
   Ops2<DV> ops(10);
-  EXPECT_FALSE(mhp::aligned(
-      rng::subrange(ops.dist_vec0.begin() + 1, ops.dist_vec0.end() - 1),
-      rng::views::drop(ops.dist_vec1, 2)));
+  if (comm_size == 1) {
+    // If there is a single segment, then it is aligned
+    return;
+  }
+  EXPECT_FALSE( mhp::aligned(
+                             rng::subrange(ops.dist_vec0.begin() + 1, ops.dist_vec0.end() - 1),
+                             rng::views::drop(ops.dist_vec1, 2)));
 }
 
 #if 0
