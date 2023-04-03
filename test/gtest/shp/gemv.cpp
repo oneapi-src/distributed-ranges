@@ -13,7 +13,7 @@ TEST(SparseMatrix, DISABLED_Gemv) {
   std::size_t k = 100;
 
   shp::sparse_matrix<float> a(
-      shp::index(m, k), 0.1f,
+      {m, k}, 0.1f,
       shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}));
 
   shp::distributed_vector<float> b(k, 1.f);
