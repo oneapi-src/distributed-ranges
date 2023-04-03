@@ -31,7 +31,7 @@ bool aligned(lib::distributed_range auto &&r1, lib::distributed_range auto &&r2,
 }
 
 template <typename T>
-concept local_range = !lib::distributed_range<T>;
+concept local_range = rng::forward_range<T> && !lib::distributed_range<T>;
 
 // Skip local iterators
 bool aligned(local_range auto &&r1, lib::distributed_range auto &&r2,

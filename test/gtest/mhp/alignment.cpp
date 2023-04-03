@@ -21,9 +21,16 @@ TEST(Alignment, Three) {
   EXPECT_TRUE(mhp::aligned(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2));
 }
 
-TEST(Alignment, Misaligned) {
+TEST(Alignment, OffsetBy1) {
   Ops2<DV> ops(10);
   EXPECT_FALSE(mhp::aligned(rng::views::drop(ops.dist_vec0, 1), ops.dist_vec1));
+}
+
+TEST(Alignment, Subrange) {
+  Ops2<DV> ops(10);
+  EXPECT_FALSE(mhp::aligned(
+      rng::subrange(ops.dist_vec0.begin() + 1, ops.dist_vec0.end() - 1),
+      rng::views::drop(ops.dist_vec1, 2)));
 }
 
 #if 0
