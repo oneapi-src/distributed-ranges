@@ -138,8 +138,6 @@ Use ``-I`` and ``-L`` to find headers and libs during compilation::
 Developer Information
 =====================
 
-Print types at compile time: `Print Type`_
-
 Submitting a PR
 ---------------
 
@@ -147,54 +145,27 @@ Follow the standard github workflow. Fork this repo, clone your fork,
 make changes, commit to a new branch, push branch to your fork. Submit
 a PR from your fork.
 
-The CI runs some formatting checks. It is easiest to resolve errors
-with your local build before submitting the PR.
-
-Run pre-commit checks::
-
-  pre-commit run --all
-
-Do pre-commit testing as part of commit::
-
-  pre-commit install
-
-``pre-commit`` will automatically fix most issues. Do a ``git add`` to
-add the changes and run ``pre-commit`` or ``git commit`` again.
-
-To fix a problem with a missing license do::
-
-  reuse annotate --exclude-year --license BSD-3-Clause --copyright "Intel Corporation" <filename>
-
-Or copy the license from the top of a file with the same filename
-extension.
-
-Editing the Spec
-----------------
-
-Build the spec::
-
-  make -C doc/spec html
-
-Open in your browser: ``doc/spec/build/html/index.html``
-
-Doxygen html is at: ``doc/spec/build/doxygen-html/index.html``
-
-There are pre-commit checks for spelling and broken links. To run it manually::
-
-  make -C doc/spec linkcheck
-  make -C doc/spec spelling SPHINXOPTS=-q
-
-The `SPHINXOPTS` is necessary to disable warning as errors, so you can
-see all the spelling errors instead of the first one. Add spelling
-exceptions to `spelling_wordlist.txt`. Do not add variable, class,
-function, etc to the exceptions. Spellcheck ignores them if they are
-properly delimited in the source doc.
+The CI runs static checks and runs the test system. See `pre-commit`_
+for information on failing static checks.
 
 See also
 --------
 
-* `Fuzz Testing`_
+`Fuzz Testing`_
+  Fuzz testing of distributed ranges APIs
 
+`Spec Editing`_
+  Editing the API document
+
+`Print Type`_
+  Print types at compile time:
+
+`Testing`_
+  Test system maintenance
+
+.. _`Testing`: doc/developer/testing
+.. _`pre-commit`: doc/developer/testing/pre-commit.rst
+.. _`Spec Editing`: doc/spec/README.rst
 .. _`Fuzz Testing`: test/fuzz/README.rst
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
 .. _`latest spec`: https://oneapi-src.github.io/distributed-ranges/spec
