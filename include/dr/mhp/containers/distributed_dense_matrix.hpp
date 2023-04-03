@@ -64,6 +64,7 @@ private:
 template <typename T> class dm_row : public std::span<T> {
   using dmatrix = mhp::distributed_dense_matrix<T>;
   using dmsegment = mhp::dm_segment<dmatrix>;
+  using iterator = typename std::span<T>::iterator;
 
 public:
   dm_row(){};
@@ -75,6 +76,16 @@ public:
   signed long idx() { return index_; }
 
   T &operator[](int index) { return *(std::span<T>::begin() + index); }
+
+  dm_row<T> operator=(dm_row<T> other) {
+    std::cout << "operator=" << std::endl;
+    iterator i = this->begin(), oi = other.begin();
+    while (i != this->end()) {
+      std::cout << "*(oi++) = *(i++);" << std::endl;
+      *(oi++) = *(i++);
+    }
+    return *this;
+  }
 
 private:
   signed long index_ = 0;

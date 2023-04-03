@@ -49,7 +49,8 @@ public:
   using difference_type = typename DM::difference_type;
 
   dm_rows_iterator() = default;
-  dm_rows_iterator(DM *dm, std::size_t segment_index, std::size_t index) {
+  dm_rows_iterator(DM *dm, std::size_t segment_index,
+                   std::size_t index) noexcept {
     dm_ = dm;
     rank_ = segment_index;
     index_ = index;
@@ -57,7 +58,7 @@ public:
 
   // dereference
   value_type &operator*() { return dm_->dm_rows_[index_]; }
-  value_type &operator[](difference_type n) { return dm_->dm_rows_[n]; }
+  value_type operator[](difference_type n) { return dm_->dm_rows_[index_ + n]; }
 
   // value_type get() const {
   //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
