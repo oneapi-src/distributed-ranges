@@ -53,16 +53,8 @@ public:
     return iter_ - other.iter_;
   }
 
-  bool operator<(iterator other) const noexcept { return iter_ < other.iter_; }
-
-  bool operator>(iterator other) const noexcept { return iter_ > iter_; }
-
-  bool operator<=(iterator other) const noexcept {
-    return iter_ <= other.iter_;
-  }
-
-  bool operator>=(iterator other) const noexcept {
-    return iter_ >= other.iter_;
+  auto operator<=>(const iterator &other) const noexcept {
+    return iter_ <=> other.iter_;
   }
 
   iterator &operator++() noexcept {
