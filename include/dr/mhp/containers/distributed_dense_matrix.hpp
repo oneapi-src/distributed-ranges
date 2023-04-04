@@ -207,23 +207,26 @@ private:
       idx++;
     }
 
-    // prepare all rows
+    // prepare all rows, includin' halo
     dm_rows_.reserve(segment_shape_[0]);
 
-    std::size_t row_index_ = 0;
+    std::size_t row_index_ = -halo_bounds_.prev;
     for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
-      for (std::size_t s = 0; s < (*_titr).shape()[0]; s++) {
+      for (std::size_t s = 0;
+           s < (*_titr).shape()[0] + halo_bounds_.prev + halo_bounds_.next;
+           s++) {
+        std::cout << s << " ";
         T *_dataptr =
             (*_titr).is_local() ? (data_ + s * (*_titr).shape()[1]) : nullptr;
         dm_rows_.emplace_back(row_index_++, _dataptr, &(*_titr),
                               (*_titr).shape()[1]);
       }
+      std::cout << std::endl;
     };
 
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
     dm_segments_ = dm_segments<distributed_dense_matrix>(this);
-    // dm_rows_ = dm_rows<distributed_dense_matrix>(this);
     fence();
   }
 
@@ -275,7 +278,7 @@ void for_each(dm_rows<distributed_dense_matrix<T>> Rng, auto op) {
   }
 };
 
-template <typename DM> auto &halo(dm_rows<DM> &&dr) { return dr.halo(); }
+// template <typename DM> auto &halo(dm_rows<DM> &&dr) { return dr.halo(); }
 
 } // namespace mhp
 
@@ -288,3 +291,7 @@ template <typename T>
 inline constexpr bool
     rng::enable_borrowed_range<mhp::dm_rows<mhp::distributed_dense_matrix<T>>> =
         true;
+
+template <typename T>
+inline constexpr bool rng::enable_borrowed_range<
+    mhp::dm_subrange<mhp::distributed_dense_matrix<T>>> = true;

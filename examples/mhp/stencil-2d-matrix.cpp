@@ -36,8 +36,7 @@ void dump_matrix(std::string msg, mhp::distributed_dense_matrix<T> &dm) {
 }
 
 auto stencil_op =
-    [](mhp::dm_subrange_iterator<mhp::distributed_dense_matrix<T>> &p) {
-      // std::cout << "stencil_op" << std::endl;
+    [](auto &p) {
       T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
       return res;
     };
@@ -105,7 +104,7 @@ int stencil() {
   auto out = mhp::dm_subrange(b, {1, b.shape()[0] - 1}, {1, b.shape()[1] - 1});
 
   for (std::size_t s = 0; s < steps; s++) {
-    // mhp::halo(in).exchange();
+    mhp::halo(in).exchange();
     mhp::dm_transform(in, out.begin(), stencil_op);
     std::swap(in, out);
     dump_matrix("after transform a", a);
