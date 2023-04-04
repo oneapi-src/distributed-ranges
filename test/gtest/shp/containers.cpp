@@ -26,14 +26,12 @@ TYPED_TEST(DistributedVectorTest,
   EXPECT_EQ(second[0], lib::ranges::segments(second)[0][0]);
 }
 
-// https://github.com/oneapi-src/distributed-ranges/issues/125
-TYPED_TEST(DistributedVectorTest, DISABLED_fill_constructor) {
+TYPED_TEST(DistributedVectorTest, fill_constructor) {
   EXPECT_TRUE(equal(typename TestFixture::DistVec(10, 1),
                     typename TestFixture::LocalVec(10, 1)));
 }
 
-// https://github.com/oneapi-src/distributed-ranges/issues/125
-TYPED_TEST(DistributedVectorTest, DISABLED_fill_constructor_large) {
+TYPED_TEST(DistributedVectorTest, fill_constructor_large) {
   const typename TestFixture::DistVec v(12345, 17);
   EXPECT_EQ(v[0], 17);
   EXPECT_EQ(v[1111], 17);
@@ -50,7 +48,7 @@ TYPED_TEST(DistributedVectorTest, DISABLED_fill_constructor_large) {
   EXPECT_EQ(v[12344], 17);
 }
 
-TYPED_TEST(DistributedVectorTest, DISABLED_fill_constructor_one_item) {
+TYPED_TEST(DistributedVectorTest, fill_constructor_one_item) {
   EXPECT_TRUE(equal(typename TestFixture::DistVec(1, 77),
                     typename TestFixture::LocalVec(1, 77)));
 }
