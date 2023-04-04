@@ -52,8 +52,7 @@ public:
     copy(first, last, begin());
   }
 
-  vector(const vector &other)
-      : allocator_(other.get_allocator()) {
+  vector(const vector &other) : allocator_(other.get_allocator()) {
     change_capacity_impl_(other.size());
     using namespace std;
     copy(other.begin(), other.end(), begin());
