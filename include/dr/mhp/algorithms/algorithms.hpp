@@ -116,8 +116,8 @@ void for_each(DI first, DI last, auto op) {
 //
 
 /// Collective iota on iterator/sentinel for a distributed range
-template <lib::distributed_iterator DI>
-void iota(DI first, DI last, auto value) {
+template <lib::distributed_iterator DI, std::integral T = size_t>
+void iota(DI first, DI last, T value = 0) {
   if (default_comm().rank() == 0) {
     std::iota(first, last, value);
   }
@@ -125,7 +125,8 @@ void iota(DI first, DI last, auto value) {
 }
 
 /// Collective iota on distributed range
-void iota(lib::distributed_contiguous_range auto &&r, auto value) {
+template <lib::distributed_range R, std::integral T = size_t>
+void iota(R &&r, T value = 0) {
   mhp::iota(rng::begin(r), rng::end(r), value);
 }
 

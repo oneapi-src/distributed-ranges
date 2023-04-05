@@ -58,7 +58,7 @@ inline sycl::queue queue_for_rank(std::size_t rank) {
   return sycl::queue(internal::global_context(),
                      internal::global_devices()[rank]);
 }
-inline auto default_queue() { return queue_for_rank(0); }
+inline auto default_queue() { return sycl::queue(); }
 
 } // namespace __detail
 
