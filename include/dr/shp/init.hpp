@@ -53,11 +53,6 @@ inline void finalize() { delete internal::global_context_; }
 
 namespace __detail {
 
-inline sycl::queue queue_for_rank(std::size_t rank) {
-  assert(rank < internal::ngpus_);
-  return sycl::queue(internal::global_context(),
-                     internal::global_devices()[rank]);
-}
 inline auto default_queue() { return sycl::queue(); }
 
 } // namespace __detail

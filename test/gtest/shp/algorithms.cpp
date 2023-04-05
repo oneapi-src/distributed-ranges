@@ -8,10 +8,6 @@ using T = int;
 using DV = shp::distributed_vector<T, shp::device_allocator<T>>;
 using V = std::vector<T>;
 
-struct negate {
-  void operator()(auto &v) const { v = -v; }
-};
-
 // hard to reproduce fails
 TEST(ShpTests, InclusiveScan_aligned) {
   std::size_t n = 100;

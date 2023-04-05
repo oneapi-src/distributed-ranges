@@ -11,23 +11,11 @@ TYPED_TEST_SUITE(IotaTest, AllTypes);
 
 TYPED_TEST(IotaTest, Range) {
   TypeParam v(10);
-  xhp::iota(v);
-  EXPECT_EQ(v, (LocalVec<TypeParam>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
-}
-
-TYPED_TEST(IotaTest, Range_withValue) {
-  TypeParam v(10);
   xhp::iota(v, 1);
   EXPECT_EQ(v, (LocalVec<TypeParam>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
 }
 
 TYPED_TEST(IotaTest, Iter) {
-  TypeParam v(10);
-  xhp::iota(v.begin(), v.end());
-  EXPECT_EQ(v, (LocalVec<TypeParam>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
-}
-
-TYPED_TEST(IotaTest, Iter_withValue) {
   TypeParam v(10);
   xhp::iota(v.begin(), v.end(), 10);
   EXPECT_EQ(v, (LocalVec<TypeParam>{10, 11, 12, 13, 14, 15, 16, 17, 18, 19}));
@@ -35,7 +23,7 @@ TYPED_TEST(IotaTest, Iter_withValue) {
 
 TYPED_TEST(IotaTest, PartialIter) {
   TypeParam v(10, 99);
-  xhp::iota(++v.begin(), --v.end());
+  xhp::iota(++v.begin(), --v.end(), 0);
   EXPECT_EQ(v, (LocalVec<TypeParam>{99, 0, 1, 2, 3, 4, 5, 6, 7, 99}));
 }
 
@@ -55,7 +43,7 @@ TYPED_TEST(IotaTest, SlicedRight) {
 
 TYPED_TEST(IotaTest, Large) {
   TypeParam v(98765);
-  xhp::iota(v);
+  xhp::iota(v, 0);
   EXPECT_EQ(v[33000], 33000);
   EXPECT_EQ(v[66000], 66000);
   EXPECT_EQ(v[91000], 91000);
