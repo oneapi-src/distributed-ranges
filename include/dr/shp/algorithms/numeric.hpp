@@ -13,8 +13,8 @@ namespace shp {
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
-sycl::event
-    iota_async(Iter first, Iter last, const std::iter_value_t<Iter> value) {
+sycl::event iota_async(Iter first, Iter last,
+                       const std::iter_value_t<Iter> value) {
   auto ptr = std::to_address(first);
   return sycl::queue().parallel_for(sycl::range<>(last - first),
                                     [=](auto id) { ptr[id] = value + id; });
