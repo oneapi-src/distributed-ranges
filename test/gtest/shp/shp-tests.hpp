@@ -24,4 +24,10 @@ inline auto default_policy(const shp::distributed_vector<T, Alloc> &dv) {
 }
 using AllocatorTypes = ::testing::Types<shp::device_allocator<int>>;
 
+template <typename V>
+concept compliant_view = rng::forward_range<V> && requires(V &v) {
+  lib::ranges::segments(v);
+  lib::ranges::rank(lib::ranges::segments(v)[0]);
+};
+
 #include "common-tests.hpp"

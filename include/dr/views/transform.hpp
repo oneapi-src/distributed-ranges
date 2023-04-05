@@ -12,6 +12,9 @@
 
 namespace lib {
 
+template <rng::random_access_range V, std::copy_constructible F>
+class transform_view;
+
 template <std::random_access_iterator Iter, std::copy_constructible F>
 class transform_iterator {
 public:
@@ -104,6 +107,14 @@ public:
     return iter.iter_ + n;
   }
 
+  auto local() const
+    requires(lib::remote_iterator<Iter>)
+  {
+    auto local = lib::ranges::local(iter_);
+    return rng::begin(
+        transform_view(rng::subrange(local, decltype(local){}), fn_));
+  }
+
 private:
   Iter iter_;
   F fn_;
@@ -182,3 +193,8 @@ inline constexpr auto transform = transform_fn_{};
 } // namespace views
 
 } // namespace lib
+
+// Needed to satisfy rng::viewable_range
+template <rng::random_access_range V, std::copy_constructible F>
+inline constexpr bool rng::enable_borrowed_range<lib::transform_view<V, F>> =
+    true;

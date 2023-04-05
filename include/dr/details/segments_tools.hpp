@@ -107,14 +107,6 @@ auto rank_(V &&v) {
   return lib::ranges::rank(std::forward<V>(v).base());
 }
 
-template <typename R>
-concept zip_segment =
-    requires(R &segment) { lib::ranges::rank(&(std::get<0>(segment[0]))); };
-
-template <zip_segment Segment> auto rank_(Segment &&segment) {
-  return lib::ranges::rank(&(std::get<0>(segment[0])));
-}
-
 template <rng::range V>
   requires(lib::is_ref_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)

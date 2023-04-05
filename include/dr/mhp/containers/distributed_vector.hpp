@@ -122,7 +122,8 @@ public:
   auto rank() const { return segment_index_; }
   auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
   auto segments() const {
-    return lib::internal::drop_segments(dv_->segments(), index_);
+    return lib::internal::drop_segments(dv_->segments(), segment_index_,
+                                        index_);
   }
   auto &halo() const { return dv_->halo(); }
 
@@ -261,10 +262,9 @@ private:
 };
 
 template <typename DR>
-concept has_halo_method = lib::distributed_range<DR> &&
-                          requires(DR &&dr) {
-                            { rng::begin(lib::ranges::segments(dr)[0]).halo() };
-                          };
+concept has_halo_method = lib::distributed_range<DR> && requires(DR &&dr) {
+  { rng::begin(lib::ranges::segments(dr)[0]).halo() };
+};
 
 auto &halo(has_halo_method auto &&dr) {
   return rng::begin(lib::ranges::segments(dr)[0]).halo();

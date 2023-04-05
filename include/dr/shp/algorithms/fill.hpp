@@ -17,10 +17,14 @@ namespace shp {
 template <std::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
-sycl::event
-    fill_async(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
+sycl::event fill_async(Iter first, Iter last,
+                       const std::iter_value_t<Iter> &value) {
   auto q = shp::__detail::default_queue();
-  return q.fill(std::to_address(first), value, last - first);
+  std::iter_value_t<Iter> *arr = std::to_address(first);
+  return q.parallel_for(sycl::range<>(last - first),
+                        [arr, value](auto idx) { arr[idx] = value; });
+  // not using q.fill because of CMPLRLLVM-46438
+  // return q.fill(std::to_address(first), value, last - first);
 }
 
 template <std::contiguous_iterator Iter>
@@ -31,10 +35,14 @@ void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
 
 template <typename T>
   requires(!std::is_const_v<T>)
-sycl::event
-    fill_async(device_ptr<T> first, device_ptr<T> last, const T &value) {
+sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
+                       const T &value) {
   auto q = shp::__detail::default_queue();
-  return q.fill(first.get_raw_pointer(), value, last - first);
+  auto *arr = first.get_raw_pointer();
+  return q.parallel_for(sycl::range<>(last - first),
+                        [arr, value](auto idx) { arr[idx] = value; });
+  // not using q.fill because of CMPLRLLVM-46438
+  // return q.fill(first.get_raw_pointer(), value, last - first);
 }
 
 template <typename T>
@@ -46,8 +54,12 @@ void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
 template <typename T, lib::remote_contiguous_range R>
 sycl::event fill_async(R &&r, const T &value) {
   sycl::queue q(shp::context(), shp::devices()[lib::ranges::rank(r)]);
-  return q.fill(std::to_address(rng::begin(lib::ranges::local(r))), value,
-                rng::distance(r));
+  auto *arr = std::to_address(rng::begin(lib::ranges::local(r)));
+  return q.parallel_for(sycl::range<>(rng::distance(r)),
+                        [arr, value](auto idx) { arr[idx] = value; });
+  // not using q.fill because of CMPLRLLVM-46438
+  // return q.fill(std::to_address(rng::begin(lib::ranges::local(r))), value,
+  //               rng::distance(r));
 }
 
 template <typename T, lib::remote_contiguous_range R>
@@ -72,6 +84,12 @@ template <typename T, lib::distributed_contiguous_range R>
 auto fill(R &&r, const T &value) {
   fill_async(r, value).wait();
   return rng::end(r);
+}
+
+template <typename T, lib::distributed_iterator Iter>
+auto fill(Iter first, Iter last, const T &value) {
+  fill_async(rng::subrange(first, last), value).wait();
+  return last;
 }
 
 } // namespace shp

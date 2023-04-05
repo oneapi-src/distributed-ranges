@@ -8,7 +8,6 @@ add_executable(
 
   mhp-tests.cpp
 
-  algorithms.cpp
   alignment.cpp
   distributed_vector.cpp
   stencil.cpp

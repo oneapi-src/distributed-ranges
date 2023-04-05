@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <dr/details/ranges_shim.hpp>
 #include <iterator>
 
 namespace shp {
 
-template <typename T, std::random_access_iterator Iter = T *>
+template <typename T, rng::random_access_iterator Iter = T *>
 class span : public rng::view_interface<shp::span<T, Iter>> {
 public:
   static_assert(std::is_same_v<std::iter_value_t<Iter>, T>);
@@ -28,7 +29,7 @@ public:
   span(const span &) noexcept = default;
   span &operator=(const span &) noexcept = default;
 
-  std::size_t size() const noexcept { return end() - begin(); }
+  std::size_t size() const noexcept { return std::size_t(end() - begin()); }
 
   bool empty() const noexcept { return size() == 0; }
 

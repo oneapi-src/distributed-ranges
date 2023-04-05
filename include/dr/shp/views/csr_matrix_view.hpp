@@ -179,7 +179,7 @@ public:
 
   auto submatrix(key_type rows, key_type columns) const {
     return rng::views::iota(rows[0], rows[1]) |
-           rng::views::transform([=](auto &&row_index) {
+           rng::views::transform([=, *this](auto &&row_index) {
              return row(row_index) | rng::views::drop_while([=](auto &&e) {
                       auto &&[index, v] = e;
                       return index[1] < columns[0];

@@ -25,7 +25,7 @@ inline constexpr bool is_owning_view_v = is_owning_view<T>{};
 
 namespace shp {
 
-template <std::random_access_iterator... Iters> class zip_accessor {
+template <rng::random_access_iterator... Iters> class zip_accessor {
 public:
   using element_type = std::tuple<std::iter_value_t<Iters>...>;
   using value_type = element_type;
@@ -85,7 +85,7 @@ private:
   std::tuple<Iters...> iterators_;
 };
 
-template <std::random_access_iterator... Iters>
+template <rng::random_access_iterator... Iters>
 using zip_iterator = lib::iterator_adaptor<zip_accessor<Iters...>>;
 
 /// zip
@@ -97,7 +97,7 @@ public:
 
   zip_view(Rs... rs) : views_(rng::views::all(std::forward<Rs>(rs))...) {
     std::array<std::size_t, sizeof...(Rs)> sizes = {
-        std::size_t(rng::size(rs))...};
+        std::size_t(rng::distance(rs))...};
 
     // TODO: support zipped views with some ranges shorter than others
     size_ = sizes[0];
@@ -265,7 +265,7 @@ private:
     local_idx[I] += size;
 
     if (local_idx[I] >=
-        rng::size(segment_or_orig_(get_view<I>(), segment_ids[I]))) {
+        rng::distance(segment_or_orig_(get_view<I>(), segment_ids[I]))) {
       local_idx[I] = 0;
       segment_ids[I]++;
     }
@@ -308,9 +308,9 @@ private:
   template <std::size_t... Is>
   std::size_t get_next_segment_size_impl_(auto &&segment_ids, auto &&local_idx,
                                           std::index_sequence<Is...>) const {
-    return min_many_impl_(
-        rng::size(segment_or_orig_(get_view<Is>(), segment_ids[Is])) -
-        local_idx[Is]...);
+    return min_many_impl_(std::size_t(rng::distance(segment_or_orig_(
+                              get_view<Is>(), segment_ids[Is]))) -
+                          local_idx[Is]...);
   }
 
   std::size_t get_next_segment_size(auto &&segment_ids,

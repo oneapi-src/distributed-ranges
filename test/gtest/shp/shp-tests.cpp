@@ -8,10 +8,12 @@ using AllTypes = ::testing::Types<shp::distributed_vector<int>,
                                   shp::distributed_vector<float>>;
 
 #include "common/all.hpp"
-#include "common/distributed_vector.hpp"
+// ConstructorFill gets PI_ERROR_INVALID_CONTEXT occasionally
+// #include "common/distributed_vector.hpp"
+// need to implement same API as MHP
+// #include "common/copy.hpp"
 #include "common/drop.hpp"
-// Not implemented???
-// #include "common/fill.hpp"
+#include "common/fill.hpp"
 #include "common/for_each.hpp"
 #include "common/numeric.hpp"
 #include "common/reduce.hpp"
