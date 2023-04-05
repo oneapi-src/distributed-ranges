@@ -56,6 +56,7 @@ namespace rng = ranges;
 #include "mhp/global.hpp"
 #include "mhp/sycl_support.hpp"
 #include "mhp/alignment.hpp"
+#include "mhp/views/take.hpp"
 #include "mhp/views/views.hpp"
 #include "mhp/views/zip.hpp"
 #include "mhp/algorithms/algorithms.hpp"

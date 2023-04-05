@@ -14,8 +14,6 @@ namespace shp {
 
 namespace views {
 
-inline constexpr auto take = rng::views::take;
-
 template <lib::distributed_range R>
 auto slice(R &&r, shp::index<> slice_indices) {
   return shp::distributed_span(lib::ranges::segments(std::forward<R>(r)))
