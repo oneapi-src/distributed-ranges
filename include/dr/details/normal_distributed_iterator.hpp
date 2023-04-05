@@ -82,13 +82,11 @@ public:
     return difference_type(get_global_idx()) - other.get_global_idx();
   }
 
-  constexpr bool operator<(const iterator_accessor &other) const noexcept {
-    if (segment_id_ < other.segment_id_) {
-      return true;
-    } else if (segment_id_ == other.segment_id_) {
-      return idx_ < other.idx_;
+  constexpr auto operator<=>(const iterator_accessor &other) const noexcept {
+    if (segment_id_ == other.segment_id_) {
+      return idx_ <=> other.idx_;
     } else {
-      return false;
+      return segment_id_ <=> other.segment_id_;
     }
   }
 

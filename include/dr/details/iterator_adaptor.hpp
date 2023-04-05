@@ -63,30 +63,10 @@ public:
     return accessor_ == other.accessor_;
   }
 
-  bool operator!=(const_iterator other) const { return !(*this == other); }
-
-  bool operator<(const_iterator other) const
+  auto operator<=>(const iterator &other) const
     requires(std::is_same_v<iterator_category, std::random_access_iterator_tag>)
   {
-    return accessor_ < other.accessor_;
-  }
-
-  bool operator<=(const_iterator other) const
-    requires(std::is_same_v<iterator_category, std::random_access_iterator_tag>)
-  {
-    return *this < other || *this == other;
-  }
-
-  bool operator>(const_iterator other) const
-    requires(std::is_same_v<iterator_category, std::random_access_iterator_tag>)
-  {
-    return !(*this <= other);
-  }
-
-  bool operator>=(const_iterator other) const
-    requires(std::is_same_v<iterator_category, std::random_access_iterator_tag>)
-  {
-    return !(*this < other);
+    return accessor_ <=> other.accessor_;
   }
 
   reference operator*() const { return *accessor_; }
