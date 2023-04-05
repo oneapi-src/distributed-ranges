@@ -71,3 +71,30 @@ TYPED_TEST(TransformView, Reduce) {
   EXPECT_EQ(std::reduce(local.begin(), local.end(), 3, std::plus{}),
             xhp::reduce(default_policy(ops.dist_vec), dist, 3, std::plus{}));
 }
+
+TYPED_TEST(TransformView, IteratorRelational) {
+  Ops1<TypeParam> ops(10);
+
+  auto negate = [](auto &&v) { return -v; };
+  auto it = lib::views::transform(ops.dist_vec, negate).begin();
+
+  EXPECT_TRUE(it == it);
+  EXPECT_FALSE(it == it + 1);
+
+  EXPECT_TRUE(it != it + 1);
+  EXPECT_FALSE(it != it);
+
+  EXPECT_TRUE(it < it + 1);
+  EXPECT_FALSE(it < it);
+
+  EXPECT_TRUE(it <= it + 1);
+  EXPECT_TRUE(it <= it);
+  EXPECT_FALSE(it + 1 <= it);
+
+  EXPECT_TRUE(it + 1 > it);
+  EXPECT_FALSE(it > it);
+
+  EXPECT_TRUE(it + 1 >= it);
+  EXPECT_TRUE(it >= it);
+  EXPECT_FALSE(it >= it + 1);
+}
