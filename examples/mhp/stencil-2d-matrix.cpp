@@ -17,89 +17,38 @@ int comm_size;
 
 cxxopts::ParseResult options;
 
-std::size_t m = 10;
-std::size_t n = 10;
+std::size_t m = 0;
+std::size_t n = 0;
 std::size_t steps = 0;
 
-void dump_matrix(std::string msg, mhp::distributed_dense_matrix<T> &dm) {
-  std::stringstream s;
-  s << comm_rank << ": " << msg << " :\n";
-  for (auto r : dm.rows()) {
-    if (r.segment()->is_local()) {
-      s << comm_rank << ": row " << r.idx() << " : ";
-      for (auto _i = r.begin(); _i != r.end(); ++_i)
-        s << *_i << " ";
-      s << std::endl;
-    }
-  }
-  std::cout << s.str();
+auto stencil_op = [](auto &p) {
+  T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
+  return res;
+};
+
+auto stencil_op_v (std::vector<std::vector<T>> & va, std::vector<std::vector<T>> & vb) {
+
+  for (std::size_t i = 1; i < va.size() - 1; i++)
+    for (std::size_t j = 1; j < va[i].size() - 1; j++)
+      vb[i][j] = va[i-1][j] + va[i][j] + va[i+1][j] + va[i][j-1] + va[i][j+1];
+
 }
-
-auto stencil_op =
-    [](auto &p) {
-      T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
-      return res;
-    };
-/*
-auto format_matrix(auto &&m) {
-  std::string str;
-  for (auto &&row : m) {
-    str += fmt::format("  {}\n", Row(row));
-  }
-  return str;
-}
-
-auto equal(auto &&a, auto &&b) {
-  for (std::size_t i = 0; i < a.size(); i++) {
-    if (Row(a[i]) != Row(b[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-
-auto compare(auto &&ref, auto &&actual) {
-  if (equal(ref, actual)) {
-    return 0;
-  }
-
-  fmt::print("Mismatch\n");
-  if (rows <= 10 && cols <= 10) {
-    fmt::print("ref:\n{}\nactual:\n{}\n", format_matrix(ref),
-               format_matrix(actual));
-  }
-
-  return 1;
-}
-
-int check(auto &&actual) {
-  // Serial stencil
-  std::vector<Row> a(rows), b(rows);
-  rng::for_each(a, [](auto &row) { rng::iota(row, 100); });
-  rng::for_each(b, [](auto &row) { rng::fill(row, 0); });
-
-  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
-  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
-  for (std::size_t s = 0; s < steps; s++) {
-    rng::for_each(rng::views::zip(in, out), stencil_op);
-    std::swap(in, out);
-  }
-
-  // Check the result
-  return compare(steps % 2 ? b : a, actual);
-}
- */
 
 int stencil() {
   lib::halo_bounds hb(1); // 1 row
-  mhp::distributed_dense_matrix<T> a(n, m, hb), b(n, m, hb);
+  mhp::distributed_dense_matrix<T> a(n, m, -1, hb), b(n, m, -1, hb);
 
-  mhp::for_each(a.rows(),
-                [](auto &row) { std::iota(row.begin(), row.end(), 100); });
+  // different operation on every row - user must be aware of rows distribution
+  for (auto r = a.rows().begin(); r != a.rows().end(); r++) {
+    if (r.is_local())
+      std::iota((*r).begin(), (*r).end(), (*r).idx() * 10);
+  }
+
+  // the same operation on each row
   mhp::for_each(b.rows(),
-                [](auto &row) { std::iota(row.begin(), row.end(), 100); });
-  dump_matrix("", a);
-  dump_matrix("", b);
+                [](auto &row) { std::fill(row.begin(), row.end(), 0); });
+
+
   auto in = mhp::dm_subrange(a, {1, a.shape()[0] - 1}, {1, a.shape()[1] - 1});
   auto out = mhp::dm_subrange(b, {1, b.shape()[0] - 1}, {1, b.shape()[1] - 1});
 
@@ -107,10 +56,15 @@ int stencil() {
     mhp::halo(in).exchange();
     mhp::dm_transform(in, out.begin(), stencil_op);
     std::swap(in, out);
-    dump_matrix("after transform a", a);
-    dump_matrix("after transform b", b);
   }
-  /* if (comm_rank == 0) { return check(in, n, steps); } */
+
+  // if (comm_rank == 0) {
+  //   return check(in);
+  // }
+
+  a.dump_matrix("final a");
+  b.dump_matrix("final b");
+
   return 0;
 }
 
@@ -125,9 +79,9 @@ int main(int argc, char *argv[]) {
   // clang-format off
   options_spec.add_options()
     ("log", "Enable logging")
-    ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10"))
+    ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("20"))
     ("cols", "Number of columns", cxxopts::value<std::size_t>()->default_value("10"))
-    ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
+    ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("3"))
     ("help", "Print help");
   // clang-format on
 

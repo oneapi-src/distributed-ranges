@@ -9,50 +9,19 @@ namespace mhp {
 template <typename T, typename Allocator = std::allocator<T>>
 class distributed_dense_matrix;
 
-template <typename DM> class dm_rows_iterator;
 template <typename DM> class dm_segment;
 template <typename DM> class dm_segment_iterator;
 template <typename T> class dm_row;
 
-/* template <typename DM> class dm_row_reference {
-  using iterator = dm_rows_iterator<DM>;
-
-public:
-  using value_type = dm_row<typename DM::value_type>;
-
-  dm_row_reference(const iterator it) : iterator_(it) {}
-
-  operator value_type() const { return iterator_.get(); }
-  auto operator=(const value_type &value) const {
-    iterator_.put(value);
-    return *this;
-  }
-  auto operator=(const dm_row_reference &other) const {
-    *this = value_type(other);
-    return *this;
-  }
-  auto operator&() const { return *iterator_; }
-
-  dm_segment<DM> &segment() { return (*iterator_).segment(); }
-
-private:
-  const iterator iterator_;
-}; // dm_row_reference */
-
-template <typename DM>
-// class dm_rows_iterator : public lib::normal_distributed_iterator<dm_rows<DM>>
-// {
-class dm_rows_iterator {
+template <typename DM> class dm_rows_iterator {
 public:
   using value_type = typename mhp::dm_row<typename DM::value_type>;
   using size_type = typename mhp::dm_row<typename DM::value_type>;
   using difference_type = typename DM::difference_type;
 
   dm_rows_iterator() = default;
-  dm_rows_iterator(DM *dm, std::size_t segment_index,
-                   std::size_t index) noexcept {
+  dm_rows_iterator(DM *dm, std::size_t index) noexcept {
     dm_ = dm;
-    rank_ = segment_index;
     index_ = index;
   }
 
@@ -133,11 +102,13 @@ public:
   }
 
   auto rank() const { return rank_; }
-  // auto local() const { return dm_->data_ + index_ + dm_->halo_bounds_.prev; }
   auto segments() const {
-    return lib::internal::drop_segments(dm_->segments(), index_);
+    // return lib::internal::drop_segments(dm_->segments(), index_);
+    return dm_->segments();
   }
   auto &halo() const { return dm_->halo(); }
+
+  bool is_local() { return dm_->is_local_row(index_); }
 
 private:
   DM *dm_ = nullptr;

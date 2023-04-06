@@ -6,9 +6,7 @@
 
 namespace mhp {
 
-template <typename DM>
-class dm_subrange_iterator
-{
+template <typename DM> class dm_subrange_iterator {
 public:
   using value_type = typename DM::value_type;
   using difference_type = typename DM::difference_type;
@@ -23,16 +21,48 @@ public:
     col_rng_ = col_rng;
     index_ = index;
   }
-  
-  value_type &operator*() const { return *(dm_->data() + find_dm_offset(index_)); }
+
+  value_type &operator*() const {
+
+    int offset = dm_->halo_bounds().prev * dm_->shape()[0] +
+                 find_dm_offset(index_) -
+                 default_comm().rank() * dm_->segment_size();
+
+    if ((offset >= (int)dm_->data_size()) || (offset < 0)) {
+      fmt::print("{}: index {} offset {} hb {} dm_off {} \n",
+                 default_comm().rank(), index_, offset,
+                 dm_->halo_bounds().prev * dm_->shape()[1],
+                 find_dm_offset(index_));
+    }
+    assert(offset > 0);
+    assert(offset < (int)dm_->data_size());
+    return *(dm_->data() + offset);
+  }
 
   value_type &operator[](int n) {
-    return *(dm_->data() + find_dm_offset(index_ + n));
+    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
+                 find_dm_offset(index_ + n) -
+                 default_comm().rank() * dm_->segment_size();
+
+    assert(offset > 0);
+    assert(offset < (int)dm_->data_size());
+    return *(dm_->data() + offset);
   }
 
   value_type &operator[](std::pair<int, int> p) {
-    return *(dm_->data() + find_dm_offset(index_) + dm_->shape()[0] * p.second +
-             p.first);
+    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
+                 find_dm_offset(index_) -
+                 default_comm().rank() * dm_->segment_size() +
+                 dm_->shape()[1] * p.second + p.first;
+    if ((offset >= (int)dm_->data_size()) || (offset < 0)) {
+      fmt::print("{}: index {} offset {} hb {} dm_off {} p=< {}, {} > \n",
+                 default_comm().rank(), index_, offset,
+                 dm_->halo_bounds().prev * dm_->shape()[1],
+                 find_dm_offset(index_), p.first, p.second);
+    }
+    assert(offset > 0);
+    assert(offset < (int)dm_->data_size());
+    return *(dm_->data() + offset);
   }
 
   // friend operators fulfill rng::detail::weakly_equality_comparable_with_
@@ -106,44 +136,39 @@ public:
   auto &halo() { return dm_->halo(); }
   auto segments() { return dm_->segments(); }
 
-private:
+  bool is_local() { return dm_->is_local_cell(find_dm_offset(index_)); }
+
+  // for debug purposes
+  std::size_t find_dm_offset() const { return find_dm_offset(index_); }
+
+// private:
   /*
    * converts index within subrange (viewed as linear contiguous space)
    * into index within physical segment in dm
    */
   std::size_t find_dm_offset(int index) const {
     int ind_rows, ind_cols;
-    int offset;
+    int offset = 0;
 
     ind_rows = index / (col_rng_.second - col_rng_.first);
     ind_cols = index % (col_rng_.second - col_rng_.first);
 
-    offset = row_rng_.first * dm_->shape()[0] + col_rng_.first;
-    offset += ind_rows * dm_->shape()[0] + ind_cols;
+    // offset = dm_->halo_bounds().prev * dm_->shape()[1];
+    offset += row_rng_.first * dm_->shape()[1] + col_rng_.first;
+    offset += ind_rows * dm_->shape()[1] + ind_cols;
 
     return offset;
   };
 
-private:
+// private:
   DM *dm_ = nullptr;
   std::pair<int, int> row_rng_ = std::pair<int, int>(0, 0);
   std::pair<int, int> col_rng_ = std::pair<int, int>(0, 0);
 
   std::size_t index_ = 0;
-};
+}; // class dm_subrange_iterator
 
 template <typename DM> class dm_subrange {
-
-  CPP_assert(rng::sentinel_for<dm_subrange_iterator<DM>, dm_subrange_iterator<DM>>);
-
-  // // CPP_assert(indirectly_readable<dm_subrange_iterator<DM>>);
-  CPP_assert(rng::same_as<rng::iter_reference_t<dm_subrange_iterator<DM> const>, rng::iter_reference_t<dm_subrange_iterator<DM>>>);
-  CPP_assert(rng::same_as<rng::iter_rvalue_reference_t<dm_subrange_iterator<DM> const>, rng::iter_rvalue_reference_t<dm_subrange_iterator<DM>>>);
-  CPP_assert(rng::common_reference_with<rng::iter_reference_t<dm_subrange_iterator<DM>> &&, rng::iter_value_t<dm_subrange_iterator<DM>> &>);
-  CPP_assert(rng::common_reference_with<rng::iter_reference_t<dm_subrange_iterator<DM>>, rng::iter_rvalue_reference_t<dm_subrange_iterator<DM>> &&>);
-  CPP_assert(rng::common_reference_with<rng::iter_rvalue_reference_t<dm_subrange_iterator<DM>> &&, rng::iter_value_t<dm_subrange_iterator<DM>> const &>);
-
-
 public:
   using iterator = dm_subrange_iterator<DM>;
   using value_type = typename DM::value_type;
@@ -178,9 +203,20 @@ private:
 template <typename DM>
 void dm_transform(mhp::dm_subrange<DM> &in, mhp::dm_subrange_iterator<DM> out,
                   auto op) {
+  std::stringstream s;
+  int _i = 0;
+  s << default_comm().rank() << ": dm_transform ";
   for (mhp::dm_subrange_iterator<DM> i = in.begin(); i != in.end(); i++) {
-    *(out++) = op(i);
+
+    if (i.is_local()) {
+      *(out) = op(i);
+      s << _i << "(" << i.find_dm_offset() << ")" << *i << "->" << *(out) << "(" << out.index_ << "/" << out.find_dm_offset() << ")" << " \n";
+    }
+    ++out;
+    _i++;
   }
+  s << std::endl;
+  std::cout << s.str();
 }
 
 } // namespace mhp

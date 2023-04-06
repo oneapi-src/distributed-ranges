@@ -107,12 +107,13 @@ public:
 
   iterator begin() const {
     assert(dm_ != nullptr);
-    return dm_rows_iterator(dm_, 0, 0);
+    return dm_rows_iterator(dm_, 0);
   }
   iterator end() const {
     assert(dm_ != nullptr);
-    return dm_rows_iterator(dm_, 0, dm_->shape()[1]);
+    return dm_rows_iterator(dm_, this->size());
   }
+  DM *dm() { return dm_; }
 
 private:
   DM *dm_ = nullptr;
@@ -137,20 +138,30 @@ public:
                                  allocator){};
 
   distributed_dense_matrix(
+      std::size_t rows, std::size_t cols, T fillval,
+      lib::halo_bounds hb = lib::halo_bounds(),
+      distributed_matrix_partition *partition = new by_row(),
+      Allocator allocator = Allocator())
+      : distributed_dense_matrix(key_type(rows, cols), hb, partition,
+                                 allocator) {
+
+    for (std::size_t _i = 0; _i < data_size_; _i++)
+      data_[_i] = fillval;
+  };
+
+  distributed_dense_matrix(
       key_type shape, lib::halo_bounds hb = lib::halo_bounds(),
       distributed_matrix_partition *partition = new by_row(),
       Allocator allocator = Allocator())
-      : shape_(shape), // partition_(new mhp::block_cyclic()),
-        segment_shape_((shape_[0] + default_comm().size() - 1) /
-                           default_comm().size(),
-                       shape_[1]),
+      : shape_(shape), segment_shape_((shape_[0] + default_comm().size() - 1) /
+                                          default_comm().size(),
+                                      shape_[1]),
         segment_size_(std::max({segment_shape_[0] * segment_shape_[1],
                                 hb.prev * segment_shape_[1],
                                 hb.next * segment_shape_[1]})),
         data_size_(segment_size_ + hb.prev * segment_shape_[1] +
                    hb.next * segment_shape_[1]),
         dm_rows_(this) {
-
     init_(hb, allocator);
   }
   ~distributed_dense_matrix() {
@@ -173,10 +184,66 @@ public:
   key_type shape() noexcept { return shape_; }
   size_type size() noexcept { return shape()[0] * shape()[1]; }
   auto segments() { return dm_segments_; }
-  size_type segsize() { return segment_size_; }
+  size_type segment_size() { return segment_size_; }
 
   auto &halo() { return *halo_; }
   lib::halo_bounds &halo_bounds() { return halo_bounds_; }
+
+  bool is_local_row(int index) {
+    if (index >= local_rows_indices.first && index <= local_rows_indices.second)
+      return true;
+    return false;
+  }
+  // index of cell on linear view
+  bool is_local_cell(int index) {
+    if (index >= local_rows_indices.first * (int)shape_[1] &&
+        index < (local_rows_indices.second + 1) * (int)shape_[1]) {
+      return true;
+    }
+    return false;
+  }
+
+  // for debug only
+  void dump_matrix(std::string msg) {
+    std::stringstream s;
+    s << default_comm().rank() << ": " << msg << " :\n";
+    s << default_comm().rank() << ": shape [" << shape_[0] << ", " << shape_[1]
+      << " ] seg_size " << segment_size_ << " data_size " << data_size_ << "\n";
+    s << default_comm().rank() << ": halo_bounds.prev ";
+    for (T *ptr = data_; ptr < data_ + halo_bounds_.prev * shape_[1]; ptr++)
+      s << *ptr << " ";
+    s << std::endl;
+    for (auto r : dm_rows_) {
+      if (r.segment()->is_local()) {
+        s << default_comm().rank() << ": row " << r.idx() << " : ";
+        for (auto _i = r.begin(); _i != r.end(); ++_i)
+          s << *_i << " ";
+        s << std::endl;
+      }
+    }
+    s << default_comm().rank() << ": halo_bounds.next ";
+    T *_hptr = data_ + halo_bounds_.prev * shape_[1] + segment_size_;
+    for (T *ptr = _hptr; ptr < _hptr + halo_bounds_.next * shape_[1]; ptr++)
+      s << *ptr << " ";
+    s << std::endl << std::endl;
+    std::cout << s.str();
+  }
+
+  void raw_dump_matrix(std::string msg) {
+    std::stringstream s;
+    s << default_comm().rank() << ": " << msg << " :\n";
+    for (std::size_t i = 0;
+         i < segment_shape_[0] + halo_bounds_.prev + halo_bounds_.next; i++) {
+      for (std::size_t j = 0; j < segment_shape_[1]; j++) {
+        s << data_[i * segment_shape_[1] + j] << " ";
+      }
+      s << std::endl;
+    }
+    s << std::endl;
+    std::cout << s.str();
+  }
+
+  auto data_size() { return data_size_; }
 
 private:
   void init_(lib::halo_bounds hb, auto allocator) {
@@ -186,8 +253,8 @@ private:
 
     grid_size_ = default_comm().size();
 
-    hb.prev *= shape_[0];
-    hb.next *= shape_[0];
+    hb.prev *= shape_[1];
+    hb.next *= shape_[1];
     halo_ = new lib::span_halo<T>(default_comm(), data_, data_size_, hb);
 
     // prepare segments
@@ -207,21 +274,36 @@ private:
       idx++;
     }
 
-    // prepare all rows, includin' halo
     dm_rows_.reserve(segment_shape_[0]);
 
-    std::size_t row_index_ = -halo_bounds_.prev;
+    int row_start_index_ = 0;
     for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
-      for (std::size_t s = 0;
-           s < (*_titr).shape()[0] + halo_bounds_.prev + halo_bounds_.next;
-           s++) {
-        std::cout << s << " ";
-        T *_dataptr =
-            (*_titr).is_local() ? (data_ + s * (*_titr).shape()[1]) : nullptr;
-        dm_rows_.emplace_back(row_index_++, _dataptr, &(*_titr),
-                              (*_titr).shape()[1]);
+      for (int _ind = row_start_index_;
+           _ind < row_start_index_ + (int)(*_titr).shape()[0]; _ind++) {
+        T *_dataptr = nullptr;
+        if ((*_titr).is_local()) {
+          if (local_rows_indices.first == -1)
+            local_rows_indices.first = _ind;
+          local_rows_indices.second = _ind;
+
+          int _dataoff =
+              halo_bounds_.prev * (*_titr).shape()[1]; // start of data
+          _dataoff += (_ind - default_comm().rank() * (*_titr).shape()[0]) *
+                      (*_titr).shape()[1];
+
+          if (!(_dataoff >= 0) || !(_dataoff < (int)data_size_)) {
+            fmt::print("{}: ERR _dataoff {} init {} _ind {} corr {} \n",
+                       default_comm().rank(), _dataoff,
+                       halo_bounds_.prev * (*_titr).shape()[1], _ind,
+                       default_comm().rank() * (*_titr).shape()[0]);
+          }
+          assert(_dataoff >= 0);
+          assert(_dataoff < (int)data_size_);
+          _dataptr = data_ + _dataoff;
+        }
+        dm_rows_.emplace_back(_ind, _dataptr, &(*_titr), (*_titr).shape()[1]);
       }
-      std::cout << std::endl;
+      row_start_index_ += (*_titr).shape()[0];
     };
 
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
@@ -251,22 +333,13 @@ private:
 
   dm_segments<distributed_dense_matrix> dm_segments_;
   dm_rows<distributed_dense_matrix<T>> dm_rows_;
+  std::pair<int, int> local_rows_indices = std::pair(-1, -1);
 
   std::vector<dm_segment<distributed_dense_matrix>> segments_;
 
   lib::rma_window win_;
   Allocator allocator_;
 }; // class distributed_dense_matrix
-
-// template <typename T>
-// void for_each(dm_rows<distributed_dense_matrix<T>>::iterator First,
-//               dm_rows<distributed_dense_matrix<T>>::iterator Last, auto op) {
-//   for (auto itr = First; itr != Last; itr++) {
-//     if ((*itr).segment().is_local()) {
-//       op(*itr);
-//     }
-//   }
-// };
 
 template <typename T>
 void for_each(dm_rows<distributed_dense_matrix<T>> Rng, auto op) {
@@ -277,8 +350,6 @@ void for_each(dm_rows<distributed_dense_matrix<T>> Rng, auto op) {
     }
   }
 };
-
-// template <typename DM> auto &halo(dm_rows<DM> &&dr) { return dr.halo(); }
 
 } // namespace mhp
 
