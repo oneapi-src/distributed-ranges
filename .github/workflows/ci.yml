@@ -35,9 +35,9 @@ jobs:
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
-          impi
-          mkl
-          tbb
+          impi@2021.8.0
+          mkl@2023.0.0
+          tbb@2021.8.0
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -66,9 +66,9 @@ jobs:
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
-          impi
-          mkl
-          tbb
+          impi@2021.8.0
+          mkl@2023.0.0
+          tbb@2021.8.0
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -89,9 +89,9 @@ jobs:
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
-          icx
-          impi
-          mkl
+          impi@2021.8.0
+          mkl@2023.0.0
+          icx@2023.0.0
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
