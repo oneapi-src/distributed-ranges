@@ -11,6 +11,12 @@ on:
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
 
+vars:
+  IMPI: impi@2021.8.0
+  MKL:  mkl@2023.0.0
+  TBB:  tbb@2021.8.0
+  ICX:  icx@2023.0.0
+
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -35,9 +41,9 @@ jobs:
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
-          impi@2021.8.0
-          mkl@2023.0.0
-          tbb@2021.8.0
+          ${{ vars.IMPI }}
+          ${{ vars.MKL }}
+          ${{ vars.TBB }}
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -66,9 +72,9 @@ jobs:
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
-          impi@2021.8.0
-          mkl@2023.0.0
-          tbb@2021.8.0
+          ${{ vars.IMPI }}
+          ${{ vars.MKL }}
+          ${{ vars.TBB }}
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -89,9 +95,9 @@ jobs:
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
-          impi@2021.8.0
-          mkl@2023.0.0
-          icx@2023.0.0
+          ${{ vars.IMPI }}
+          ${{ vars.MKL }}
+          ${{ vars.ICX }}
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
