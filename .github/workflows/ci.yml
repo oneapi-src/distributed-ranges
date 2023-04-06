@@ -10,8 +10,6 @@ on:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
-
-vars:
   IMPI: impi@2021.8.0
   MKL:  mkl@2023.0.0
   TBB:  tbb@2021.8.0
