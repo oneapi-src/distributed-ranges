@@ -148,7 +148,9 @@ public:
 
   void put(const void *src, std::size_t size, std::size_t rank,
            std::size_t disp) const {
-    MPI_Put(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_);
+    MPI_Request request;
+    MPI_Rput(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
   void fence() const {
