@@ -19,9 +19,11 @@ inline sycl::context *global_context_;
 
 inline std::vector<sycl::device> devices_;
 
+inline std::vector<sycl::queue> queues_;
+
 inline std::size_t ngpus_;
 
-inline sycl::context global_context() { return *global_context_; }
+inline sycl::context &global_context() { return *global_context_; }
 
 inline std::size_t ngpus() { return ngpus_; }
 
@@ -29,7 +31,7 @@ inline std::span<sycl::device> global_devices() { return devices_; }
 
 } // namespace internal
 
-inline sycl::context context() { return internal::global_context(); }
+inline sycl::context &context() { return internal::global_context(); }
 
 inline std::span<sycl::device> devices() { return internal::global_devices(); }
 
@@ -46,14 +48,25 @@ inline void init(R &&devices)
   internal::global_context_ = new sycl::context(internal::devices_);
   internal::ngpus_ = rng::size(internal::devices_);
 
+  for (auto &&device : internal::devices_) {
+    sycl::queue q(*internal::global_context_, device);
+    internal::queues_.push_back(q);
+  }
+
   par_unseq = device_policy(internal::devices_);
 }
 
-inline void finalize() { delete internal::global_context_; }
+inline void finalize() {
+  internal::queues_.clear();
+  internal::devices_.clear();
+  delete internal::global_context_;
+}
 
 namespace __detail {
 
 inline auto default_queue() { return sycl::queue(); }
+
+inline sycl::queue &queue(std::size_t rank) { return internal::queues_[rank]; }
 
 } // namespace __detail
 

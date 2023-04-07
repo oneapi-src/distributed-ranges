@@ -130,9 +130,7 @@ public:
 
   friend pointer operator+(difference_type n, pointer iter) { return iter + n; }
 
-  T *local() { return pointer_; }
-
-  const T *local() const { return pointer_; }
+  T *local() const noexcept { return pointer_; }
 
   friend const_pointer;
   friend nonconst_pointer;

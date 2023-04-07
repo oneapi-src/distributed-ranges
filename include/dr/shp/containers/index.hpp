@@ -65,6 +65,12 @@ public:
   constexpr index(Tuple tuple)
       : first(std::get<0>(tuple)), second(std::get<1>(tuple)) {}
 
+  template <std::integral U> constexpr index(std::initializer_list<U> tuple) {
+    assert(tuple.size() == 2);
+    first = *tuple.begin();
+    second = *(tuple.begin() + 1);
+  }
+
   constexpr bool operator==(const index &) const noexcept = default;
 
   template <std::size_t Index>

@@ -50,10 +50,9 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto b_iter = lib::ranges::local(local_b[i].begin());
     auto c_iter = lib::ranges::local(c.segments()[i].begin());
 
-    auto device = devices[a_tile.rank()];
-    sycl::queue q(shp::context(), device);
+    auto &&q = __detail::queue(a_tile.rank());
 
-    auto event = q.submit([=](auto &&h) {
+    auto event = q.submit([&](auto &&h) {
       h.depends_on(copy_events[a_tile.rank()]);
       h.parallel_for(a_tile.size(), [=](auto idx) {
         auto &&[index, a_v] = *(a_iter + idx);
@@ -108,8 +107,7 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto b_iter = lib::ranges::local(local_b[i].begin());
     auto c_iter = lib::ranges::local(c.segments()[i].begin());
 
-    auto device = devices[a_tile.rank()];
-    sycl::queue q(shp::context(), device);
+    auto &&q = __detail::queue(a_tile.rank());
 
     auto event = __detail::local_gemv(q, a_tile, b_iter, c_iter,
                                       {copy_events[a_tile.rank()]});
@@ -127,8 +125,6 @@ void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   assert(a.grid_shape()[0] == c.segments().size());
   assert(a.grid_shape()[1] == b.segments().size());
 
-  auto &&devices = shp::devices();
-
   std::vector<sycl::event> events;
 
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
@@ -142,10 +138,59 @@ void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
       auto b_iter = lib::ranges::local(b_segment.begin());
       auto c_iter = lib::ranges::local(c_segment.begin());
 
-      auto device = devices[a_tile.rank()];
-      sycl::queue q(shp::context(), device);
+      auto &&q = __detail::queue(a_tile.rank());
 
-      auto event = __detail::local_gemv(q, a_tile, b_iter, c_iter);
+      auto event = __detail::custom_gemv(q, a_tile, b_iter, c_iter);
+      events.push_back(event);
+    }
+  }
+
+  __detail::wait(events);
+}
+
+template <lib::distributed_range C, typename T, typename I,
+          lib::distributed_range B>
+void gemv_square_copy(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
+  assert(a.shape()[0] == c.size());
+  assert(a.shape()[1] == b.size());
+  assert(a.grid_shape()[0] == c.segments().size());
+  assert(a.grid_shape()[1] == b.segments().size());
+
+  auto &&devices = shp::devices();
+
+  using b_scalar_type = rng::range_value_t<B>;
+
+  using local_vector_type =
+      shp::device_vector<b_scalar_type, shp::device_allocator<b_scalar_type>>;
+
+  std::vector<local_vector_type> local_b;
+  std::vector<sycl::event> events;
+
+  local_b.reserve(a.grid_shape()[0]);
+
+  for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
+    shp::device_allocator<T> allocator(
+        shp::context(), devices[a.tile(shp::index<I>(i, 0)).rank()]);
+    local_b.emplace_back(b.size(), allocator,
+                         a.tile(shp::index<I>(i, 0)).rank());
+  }
+
+  for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
+    std::size_t k_offset = i;
+    for (std::size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
+      std::size_t k = (k_ + k_offset) % a.grid_shape()[1];
+      auto a_tile = a.tile({i, k});
+      auto b_iter = local_b[i].begin() + (k * a.tile_shape()[1]);
+      auto c_iter = c.segments()[i].begin();
+
+      auto &&b_segment = b.segments()[k];
+      auto &&q = __detail::queue(a_tile.rank());
+
+      auto ce = shp::copy_async(q, b_segment.begin(), b_segment.end(), b_iter);
+
+      auto event = __detail::custom_gemv(q, a_tile, b_iter.local(),
+                                         c_iter.local(), {ce});
+
       events.push_back(event);
     }
   }
