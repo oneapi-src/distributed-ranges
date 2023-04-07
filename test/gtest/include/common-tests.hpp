@@ -74,8 +74,7 @@ template <typename T> struct Ops3 {
   LocalVec<T> vec0, vec1, vec2;
 };
 
-template <rng::range R1, rng::range R2>
-bool is_equal(const R1 &r1, const R2 &r2) {
+template <rng::range R1, rng::range R2> bool is_equal(R1 &&r1, R2 &&r2) {
   if (rng::distance(rng::begin(r1), rng::end(r1)) !=
       rng::distance(rng::begin(r2), rng::end(r2))) {
     return false;
@@ -90,7 +89,7 @@ bool is_equal(const R1 &r1, const R2 &r2) {
   return true;
 }
 
-bool is_equal(std::forward_iterator auto it, rng::range auto &&r) {
+bool is_equal(std::forward_iterator auto it, const rng::range auto &r) {
   for (auto e : r) {
     if (*it++ != e) {
       return false;
@@ -99,7 +98,7 @@ bool is_equal(std::forward_iterator auto it, rng::range auto &&r) {
   return true;
 }
 
-auto equal_message(rng::range auto &&ref, rng::range auto &&actual,
+auto equal_message(const rng::range auto &ref, const rng::range auto &actual,
                    std::string title = " ") {
   if (is_equal(ref, actual)) {
     return fmt::format("");
@@ -111,8 +110,10 @@ auto equal_message(rng::range auto &&ref, rng::range auto &&actual,
                      rng::views::all(ref), rng::views::all(actual));
 }
 
-std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
-                                rng::range auto &&tst, std::string title = "") {
+std::string unary_check_message(const rng::range auto &in,
+                                const rng::range auto &ref,
+                                const rng::range auto &tst,
+                                std::string title = "") {
   if (is_equal(ref, tst)) {
     return "";
   } else {
@@ -126,7 +127,7 @@ std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
 
 std::string check_segments_message(rng::range auto &&r) {
   auto &&segments = lib::ranges::segments(r);
-  auto &&flat = rng::join_view(segments);
+  auto &&flat = rng::views::join(segments);
   if (is_equal(r, flat)) {
     return "";
   }
@@ -142,8 +143,8 @@ auto check_view_message(rng::range auto &&ref, rng::range auto &&actual) {
          equal_message(ref, actual, "view mismatch");
 }
 
-auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
-                               rng::range auto &&actual) {
+auto check_mutate_view_message(auto &ops, const rng::range auto &ref,
+                               const rng::range auto &actual) {
   // Check view
   auto message = check_view_message(ref, actual);
 
@@ -175,18 +176,19 @@ auto gtest_result(const auto &message) {
   }
 }
 
-auto equal(rng::range auto &&ref, rng::range auto &&actual,
+auto equal(rng::range auto &&ref, const rng::range auto &actual,
            std::string title = " ") {
   return gtest_result(equal_message(ref, actual, title));
 }
 
-auto check_unary_op(rng::range auto &&in, rng::range auto &&ref,
-                    rng::range auto &&tst, std::string title = "") {
+auto check_unary_op(const rng::range auto &in, const rng::range auto &ref,
+                    const rng::range auto &tst, std::string title = "") {
   return gtest_result(unary_check_message(in, ref, tst, title));
 }
 
-auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
-                           rng::range auto &&ref, rng::range auto &&actual) {
+auto check_binary_check_op(const rng::range auto &a, const rng::range auto &b,
+                           const rng::range auto &ref,
+                           const rng::range auto &actual) {
   if (is_equal(ref, actual)) {
     return testing::AssertionSuccess();
   } else {
@@ -198,8 +200,8 @@ auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
 }
 
 auto check_segments(std::forward_iterator auto di) {
-  auto &&segments = lib::ranges::segments(di);
-  auto &&flat = rng::join_view(segments);
+  const auto &segments = lib::ranges::segments(di);
+  const auto &flat = rng::join_view(segments);
   if (is_equal(di, flat)) {
     return testing::AssertionSuccess();
   }
@@ -207,7 +209,7 @@ auto check_segments(std::forward_iterator auto di) {
          << fmt::format("\n    segments: {}\n  ", segments);
 }
 
-auto check_segments(rng::range auto &&dr) {
+auto check_segments(const rng::range auto &dr) {
   return gtest_result(check_segments_message(dr));
 }
 
@@ -215,8 +217,8 @@ auto check_view(rng::range auto &&ref, rng::range auto &&actual) {
   return gtest_result(check_view_message(ref, actual));
 }
 
-auto check_mutate_view(auto &op, rng::range auto &&ref,
-                       rng::range auto &&actual) {
+auto check_mutate_view(auto &op, const rng::range auto &ref,
+                       const rng::range auto &actual) {
   return gtest_result(check_mutate_view_message(op, ref, actual));
 }
 
