@@ -358,7 +358,9 @@ private:
         shp::device_allocator<T> alloc(shp::context(), device);
         shp::device_allocator<I> i_alloc(shp::context(), device);
 
-        auto csr = generate_random_csr<T, I>(key_type(tm, tn));
+        auto seed = i * grid_shape_[1] + j;
+
+        auto csr = generate_random_csr<T, I>(key_type(tm, tn), density, seed);
         std::size_t nnz = csr.size();
 
         shp::device_vector<T, shp::device_allocator<T>> values(csr.size(),
