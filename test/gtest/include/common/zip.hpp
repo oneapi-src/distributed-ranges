@@ -30,6 +30,22 @@ TYPED_TEST(Zip, Local3) {
             xhp::views::zip(ops.vec0, ops.vec1, ops.vec2));
 }
 
+TYPED_TEST(Zip, Local2Mutate) {
+  Ops2<TypeParam> rops(10);
+  Ops2<TypeParam> xops(10);
+
+  auto r = rng::views::zip(rops.vec0, rops.vec1);
+  auto x = rng::views::zip(xops.vec0, xops.vec1);
+  auto n2 = [](auto v) {
+    std::get<0>(v) += 1;
+    std::get<1>(v) = -std::get<1>(v);
+  };
+  rng::for_each(r, n2);
+  rng::for_each(x, n2);
+  EXPECT_EQ(rops.vec0, xops.vec0);
+  EXPECT_EQ(rops.vec1, xops.vec1);
+}
+
 #if 0
 
 TYPED_TEST(Zip, Dist1) {
