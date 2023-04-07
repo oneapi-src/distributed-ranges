@@ -227,16 +227,6 @@ void range_details(R &&r, std::size_t width = 80) {
 
 namespace __detail {
 
-inline void wait(sycl::event &event) { event.wait(); }
-
-inline void wait(sycl::event &&event) { event.wait(); }
-
-inline void wait(const std::vector<sycl::event> &events) {
-  sycl::queue q;
-  auto e = q.submit([&](auto &&h) { h.depends_on(events); });
-  e.wait();
-}
-
 auto get_local_segment(lib::remote_contiguous_range auto &&r) {
   return lib::ranges::local(r);
 }
@@ -248,9 +238,20 @@ template <std::forward_iterator Iter> Iter get_local(Iter iter) { return iter; }
 
 inline sycl::event combine_events(const std::vector<sycl::event> &events) {
   sycl::queue q;
-  auto e = q.submit([=](auto &&h) { h.depends_on(events); });
+  auto e = q.submit([&](auto &&h) {
+    h.depends_on(events);
+    h.host_task([] {});
+  });
 
   return e;
+}
+
+inline void wait(sycl::event &event) { event.wait(); }
+
+inline void wait(sycl::event &&event) { event.wait(); }
+
+inline void wait(const std::vector<sycl::event> &events) {
+  sycl::event::wait(events);
 }
 
 } // namespace __detail

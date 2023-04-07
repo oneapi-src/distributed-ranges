@@ -79,7 +79,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto src_iter = lib::ranges::local(out_segment).data();
       rng::advance(src_iter, dist - 1);
 
-      auto e = q.submit([=](auto &&h) {
+      auto e = q.submit([&](auto &&h) {
         h.depends_on(event);
         h.single_task([=]() {
           rng::range_value_t<O> value = *src_iter;

@@ -231,7 +231,7 @@ public:
 
     sycl::queue q;
 
-    auto e = q.submit([=](auto &&h) {
+    auto e = q.submit([&](auto &&h) {
       h.depends_on(v_e);
       h.depends_on(c_e);
       h.depends_on(r_e);
