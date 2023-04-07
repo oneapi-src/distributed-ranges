@@ -125,8 +125,6 @@ void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   assert(a.grid_shape()[0] == c.segments().size());
   assert(a.grid_shape()[1] == b.segments().size());
 
-  auto &&devices = shp::devices();
-
   std::vector<sycl::event> events;
 
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
