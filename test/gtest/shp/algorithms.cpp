@@ -8,16 +8,6 @@ using T = int;
 using DV = shp::distributed_vector<T, shp::device_allocator<T>>;
 using V = std::vector<T>;
 
-TEST(ShpTests, Iota) {
-  const int n = 10;
-  V a(n);
-  DV dv_a(n);
-
-  std::iota(a.begin(), a.end(), 20);
-  std::iota(dv_a.begin(), dv_a.end(), 20);
-  EXPECT_TRUE(equal(a, dv_a));
-}
-
 // hard to reproduce fails
 TEST(ShpTests, InclusiveScan_aligned) {
   std::size_t n = 100;
