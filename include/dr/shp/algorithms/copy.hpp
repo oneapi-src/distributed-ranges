@@ -85,6 +85,15 @@ sycl::event copy_async(device_ptr<std::add_const_t<T>> first,
 
 template <typename T>
   requires(!std::is_const_v<T> && std::is_trivially_copyable_v<T>)
+sycl::event copy_async(sycl::queue &q, device_ptr<std::add_const_t<T>> first,
+                       device_ptr<std::add_const_t<T>> last,
+                       device_ptr<T> d_first) {
+  return q.memcpy(d_first.get_raw_pointer(), first.get_raw_pointer(),
+                  sizeof(T) * (last - first));
+}
+
+template <typename T>
+  requires(!std::is_const_v<T> && std::is_trivially_copyable_v<T>)
 device_ptr<T> copy(device_ptr<std::add_const_t<T>> first,
                    device_ptr<std::add_const_t<T>> last,
                    device_ptr<T> d_first) {

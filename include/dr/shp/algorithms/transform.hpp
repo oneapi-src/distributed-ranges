@@ -53,8 +53,7 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
 
       sycl::event compute_event = q.parallel_for(
           seg_size, [=](auto idx) { buffer[idx] = fn(local_in_seg[idx]); });
-      events.emplace_back(q.copy(buffer,
-                                 __detail::get_local_pointer(out_seg.begin()),
+      events.emplace_back(q.copy(buffer, __detail::get_local(out_seg.begin()),
                                  seg_size, compute_event));
     }
   }

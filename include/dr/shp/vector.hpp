@@ -52,10 +52,7 @@ public:
     copy(first, last, begin());
   }
 
-  vector(const vector &other)
-      : allocator_(
-            std::allocator_traits<allocator_type>::
-                select_on_container_copy_construction(other.get_allocator())) {
+  vector(const vector &other) : allocator_(other.get_allocator()) {
     change_capacity_impl_(other.size());
     using namespace std;
     copy(other.begin(), other.end(), begin());
@@ -69,7 +66,7 @@ public:
 
   vector(vector &&other) noexcept
     requires(std::is_trivially_move_constructible_v<T>)
-      : allocator_(std::move(other.get_allocator())) {
+      : allocator_(other.get_allocator()) {
     data_ = other.data_;
     other.data_ = nullptr;
     size_ = other.size_;
