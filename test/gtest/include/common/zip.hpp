@@ -31,6 +31,7 @@ TYPED_TEST(Zip, Local3) {
 }
 
 #if 0
+
 TYPED_TEST(Zip, Dist1) {
   Ops1<TypeParam> ops(10);
 

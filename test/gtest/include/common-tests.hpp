@@ -74,7 +74,8 @@ template <typename T> struct Ops3 {
   LocalVec<T> vec0, vec1, vec2;
 };
 
-template <rng::range R1, rng::range R2> bool is_equal(R1 &&r1, R2 &&r2) {
+template <rng::range R1, rng::range R2>
+bool is_equal(const R1 &r1, const R2 &r2) {
   if (rng::distance(rng::begin(r1), rng::end(r1)) !=
       rng::distance(rng::begin(r2), rng::end(r2))) {
     return false;
@@ -307,6 +308,13 @@ template <rng::forward_range R1, rng::forward_range R2>
 bool operator==(const R1 &r1, const R2 &r2) {
   return is_equal(r1, r2);
 }
+
+#if 0
+template <rng::forward_range R1, typename... Ts>
+bool operator==(const R1 &r1, const mhp::zip_view<Ts...> &r2) {
+  return is_equal(r1, r2);
+}
+#endif
 
 template <typename... Ts>
 inline std::ostream &operator<<(std::ostream &os,
