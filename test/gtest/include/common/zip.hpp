@@ -46,16 +46,22 @@ TYPED_TEST(Zip, Local2Mutate) {
   EXPECT_EQ(rops.vec1, xops.vec1);
 }
 
-#if 0
-
 TYPED_TEST(Zip, Dist1) {
   Ops1<TypeParam> ops(10);
 
   auto local = rng::views::zip(ops.vec);
   auto dist = xhp::views::zip(ops.dist_vec);
-  static_assert(compliant_view<decltype(dist)>);
-  EXPECT_TRUE(check_view(local, dist));
+  EXPECT_EQ(local, dist);
+  fmt::print("Segments: {}\n", dist.segments());
+  for (auto seg : dist.segments()) {
+    fmt::print("  rank: {}: {}\n", lib::ranges::rank(seg), seg);
+  }
+
+  // static_assert(compliant_view<decltype(dist)>);
+  // EXPECT_TRUE(check_view(local, dist));
 }
+
+#if 0
 
 TYPED_TEST(Zip, Dist2) {
   Ops2<TypeParam> ops(10);

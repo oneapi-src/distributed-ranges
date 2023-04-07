@@ -16,6 +16,24 @@
 
 namespace mhp {
 
+template <typename T>
+concept has_rank = requires(T &t) { lib::ranges::rank(t); };
+
+template <typename T>
+concept tuple_has_rank = []<std::size_t... N>(std::index_sequence<N...>) {
+  return (has_rank<typename std::tuple_element<N, T>::type> || ...);
+}(std::make_index_sequence<std::tuple_size_v<T>>());
+
+template <rng::viewable_range... R> class zip_view;
+
+namespace views {
+
+template <rng::viewable_range... R> auto zip(R &&...r) {
+  return zip_view(std::forward<R>(r)...);
+}
+
+} // namespace views
+
 template <rng::viewable_range... R> class zip_view {
   using rng_zip = rng::zip_view<R...>;
   using rng_zip_iterator = decltype(rng::begin(std::declval<rng_zip>()));
@@ -64,24 +82,60 @@ public:
   };
 
   template <rng::viewable_range... V>
-  zip_view(V &&...v) : rng_zip_(rng::views::all(std::forward<V>(v))...) {}
+  zip_view(V &&...v)
+      : rng_zip_(rng::views::all(v)...), base_(rng::views::all(v)...) {}
   auto begin() const { return zip_iterator(rng::begin(rng_zip_)); }
   auto end() const { return zip_iterator(rng::end(rng_zip_)); }
 
+  //
+  // Support for distributed ranges
+  //
+  auto segments() const {
+    // requires at least one distributed range in base
+    auto zip_segments = [this](auto &&...base) {
+      auto zip_segment = [](auto &&v) {
+        auto zip_ranges = [](auto &&...refs) { return views::zip(refs...); };
+        return std::apply(zip_ranges, v);
+      };
+
+      auto z = rng::views::zip(this->base_segments(base)...) |
+               rng::views::transform(zip_segment);
+      if (aligned(base...)) {
+        return z;
+      } else {
+        return decltype(z){};
+      }
+    };
+
+    return std::apply(zip_segments, base_);
+  }
+
+  auto rank() const
+    requires(tuple_has_rank<std::tuple<R...>>)
+  {
+    auto select = [](auto &&...v) { return select_rank(v...); };
+    return std::apply(select, base_);
+  }
+
 private:
+  static auto select_rank(auto &&v, auto &&...rest) {
+    if constexpr (has_rank<decltype(v)>) {
+      return lib::ranges::rank(v);
+    } else {
+      return select_rank(rest...);
+    }
+  }
+
+  template <rng::range V> static auto base_segments(V &&base) {
+    return lib::ranges::segments(base);
+  }
+
   rng_zip rng_zip_;
+  std::tuple<R...> base_;
 };
 
 template <rng::viewable_range... R>
 zip_view(R &&...r) -> zip_view<rng::views::all_t<R>...>;
-
-namespace views {
-
-template <rng::viewable_range... R> auto zip(R &&...r) {
-  return zip_view(std::forward<R>(r)...);
-}
-
-} // namespace views
 
 } // namespace mhp
 
