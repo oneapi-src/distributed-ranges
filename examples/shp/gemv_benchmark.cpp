@@ -251,13 +251,13 @@ int main(int argc, char **argv) {
     shp::csr_matrix_view a_view(values, rowptr, colind, shape, nnz, 0);
 
     auto e = shp::__detail::local_gemv(q, a_view, x.data().get_raw_pointer(),
-                                     y.data().get_raw_pointer());
+                                       y.data().get_raw_pointer());
     e.wait();
 
     for (std::size_t i = 0; i < n_iterations; i++) {
       auto begin = std::chrono::high_resolution_clock::now();
       auto e = shp::__detail::local_gemv(q, a_view, x.data().get_raw_pointer(),
-                                       y.data().get_raw_pointer());
+                                         y.data().get_raw_pointer());
       e.wait();
       auto end = std::chrono::high_resolution_clock::now();
       double duration = std::chrono::duration<double>(end - begin).count();
