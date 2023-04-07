@@ -32,9 +32,7 @@ auto custom_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
 
       auto row = a.row(row_index);
 
-      using ID = decltype(local_id);
-
-      for (ID idx = local_id; idx < row.size(); idx += group_size) {
+      for (std::size_t idx = local_id; idx < row.size(); idx += group_size) {
         auto &&[index, a_v] = row[idx];
         auto &&[i, k] = index;
 
