@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+#include <dr/shp/detail.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/util.hpp>
 

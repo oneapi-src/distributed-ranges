@@ -169,17 +169,17 @@ namespace __detail {
 
 template <typename T>
 concept has_local = requires(T &t) {
-  { lib::ranges::local(t) } -> std::any;
+  { lib::ranges::local(t) } -> std::convertible_to<std::any>;
 };
 
 struct local_fn_ {
   template <typename T>
     requires(has_local<T>)
-  auto operator()(T &&t) {
+  auto operator()(T &&t) const {
     return lib::ranges::local(t);
   }
 
-  template <typename T> auto operator()(T &&t) { return t; }
+  template <typename T> auto operator()(T &&t) const { return t; }
 };
 
 inline constexpr auto local = local_fn_{};
