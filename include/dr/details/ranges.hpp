@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ranges_shim.hpp"
+#include <any>
 #include <iterator>
 #include <type_traits>
 
@@ -163,6 +164,27 @@ struct local_fn_ {
 } // namespace
 
 inline constexpr auto local = local_fn_{};
+
+namespace __detail {
+
+template <typename T>
+concept has_local = requires(T &t) {
+  { lib::ranges::local(t) } -> std::any;
+};
+
+struct local_fn_ {
+  template <typename T>
+    requires(has_local<T>)
+  auto operator()(T &&t) {
+    return lib::ranges::local(t);
+  }
+
+  template <typename T> auto operator()(T &&t) { return t; }
+};
+
+inline constexpr auto local = local_fn_{};
+
+} // namespace __detail
 
 } // namespace ranges
 

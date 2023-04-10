@@ -39,10 +39,10 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
     sycl::queue q(shp::context(), in_device);
     const std::size_t seg_size = rng::size(in_seg);
     assert(seg_size == rng::size(out_seg));
-    auto local_in_seg = __detail::get_local_segment(in_seg);
+    auto local_in_seg = __detail::local(in_seg);
 
     if (in_seg.rank() == out_seg.rank()) {
-      auto local_out_seg = __detail::get_local_segment(out_seg);
+      auto local_out_seg = __detail::local(out_seg);
       events.emplace_back(q.parallel_for(seg_size, [=](auto idx) {
         local_out_seg[idx] = fn(local_in_seg[idx]);
       }));
@@ -53,7 +53,7 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
 
       sycl::event compute_event = q.parallel_for(
           seg_size, [=](auto idx) { buffer[idx] = fn(local_in_seg[idx]); });
-      events.emplace_back(q.copy(buffer, __detail::get_local(out_seg.begin()),
+      events.emplace_back(q.copy(buffer, __detail::local(out_seg.begin()),
                                  seg_size, compute_event));
     }
   }

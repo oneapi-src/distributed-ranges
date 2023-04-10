@@ -26,7 +26,7 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
     assert(rng::distance(segment) > 0);
 
-    auto local_segment = __detail::get_local_segment(segment);
+    auto local_segment = __detail::local(segment);
 
     auto first = rng::begin(local_segment);
 
