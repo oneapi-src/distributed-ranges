@@ -26,6 +26,14 @@ long time, you can skip all checks as part of commit with ``-n``::
 ``pre-commit`` will automatically fix most issues. Do a ``git add`` to
 add the changes and run ``pre-commit`` or ``git commit`` again.
 
+To skip the sphinx tests::
+
+  SKIP=sphinx pre-commit run --all
+
+This may be convenient if you are not changing the documentation. The
+Sphinx tests require installing some prerequisites, a working internet
+connection, and take longer to run.
+
 Reuse
 =====
 
