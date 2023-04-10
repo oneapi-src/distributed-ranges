@@ -36,7 +36,7 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
   for (auto &&[in_seg, out_seg] :
        views::zip(in, rng::subrange(out, out_end)).zipped_segments()) {
     auto in_device = policy.get_devices()[in_seg.rank()];
-    sycl::queue q(shp::context(), in_device);
+    auto &&q = __detail::queue(lib::ranges::rank(in_seg));
     const std::size_t seg_size = rng::size(in_seg);
     assert(seg_size == rng::size(out_seg));
     auto local_in_seg = __detail::get_local_segment(in_seg);
