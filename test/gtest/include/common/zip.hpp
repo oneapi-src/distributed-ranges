@@ -51,17 +51,9 @@ TYPED_TEST(Zip, Dist1) {
 
   auto local = rng::views::zip(ops.vec);
   auto dist = xhp::views::zip(ops.dist_vec);
-  EXPECT_EQ(local, dist);
-  fmt::print("Segments: {}\n", dist.segments());
-  for (auto seg : dist.segments()) {
-    fmt::print("  rank: {}: {}\n", lib::ranges::rank(seg), seg);
-  }
-
-  // static_assert(compliant_view<decltype(dist)>);
-  // EXPECT_TRUE(check_view(local, dist));
+  static_assert(compliant_view<decltype(dist)>);
+  EXPECT_TRUE(check_view(local, dist));
 }
-
-#if 0
 
 TYPED_TEST(Zip, Dist2) {
   Ops2<TypeParam> ops(10);
@@ -80,6 +72,8 @@ TYPED_TEST(Zip, Dist3) {
                  xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
 }
 
+#if 0
+
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
@@ -96,6 +90,8 @@ TYPED_TEST(Zip, Iota2nd) {
   EXPECT_TRUE(check_view(rng::views::zip(ops.vec, rng::views::iota(100)),
                          xhp::views::zip(ops.dist_vec, rng::views::iota(100))));
 }
+
+#endif
 
 TYPED_TEST(Zip, All) {
   Ops2<TypeParam> ops(10);
@@ -138,4 +134,3 @@ TYPED_TEST(Zip, ForEach) {
   EXPECT_EQ(ops.vec0, ops.dist_vec0);
   EXPECT_EQ(ops.vec1, ops.dist_vec1);
 }
-#endif
