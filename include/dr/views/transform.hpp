@@ -12,9 +12,6 @@
 
 namespace lib {
 
-template <rng::random_access_range V, std::copy_constructible F>
-class transform_view;
-
 template <std::random_access_iterator Iter, std::copy_constructible F>
 class transform_iterator {
 public:
@@ -108,11 +105,12 @@ public:
   }
 
   auto local() const
-    requires(lib::remote_iterator<Iter>)
+    requires(lib::remote_iterator<Iter> &&
+             lib::ranges::__detail::has_local<Iter>)
   {
-    auto local = lib::ranges::local(iter_);
-    return rng::begin(
-        transform_view(rng::subrange(local, decltype(local){}), fn_));
+    auto iter = lib::ranges::__detail::local(iter_);
+    return transform_iterator<decltype(iter), F>(
+        lib::ranges::__detail::local(iter), fn_);
   }
 
 private:
