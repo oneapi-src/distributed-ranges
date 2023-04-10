@@ -9,7 +9,7 @@
 #ifdef MINIMAL_TEST
 
 using AllTypes = ::testing::Types<mhp::distributed_vector<int>>;
-#include "common/copy.hpp"
+#include "common/zip.hpp"
 
 #else
 

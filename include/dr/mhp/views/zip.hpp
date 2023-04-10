@@ -16,86 +16,172 @@
 
 namespace mhp {
 
-inline std::size_t select_rank_from_iter(auto iter, auto... rest) {
-  if constexpr (lib::distributed_iterator<decltype(iter)>) {
-    return lib::ranges::rank(iter);
-  } else {
-    return select_rank_from_iter(rest...);
-  }
-}
-
-inline std::size_t zip_segment_rank(auto &&segment) {
-  auto select_rank_from_ref = [](auto &&...refs) {
-    return select_rank_from_iter((&refs)...);
-  };
-  return std::apply(select_rank_from_ref, segment[0]);
-}
+template <typename T>
+concept has_rank = requires(T &t) { lib::ranges::rank(t); };
 
 template <typename T>
-concept distributed_reference = requires(T &t) { lib::ranges::rank(&t); };
+concept tuple_has_rank = []<std::size_t... N>(std::index_sequence<N...>) {
+  return (has_rank<typename std::tuple_element<N, T>::type> || ...);
+}(std::make_index_sequence<std::tuple_size_v<T>>());
 
 template <typename T>
-concept tuple_like = requires(T &t) { std::get<0>(t); };
-
-template <typename T>
-concept tuple_has_distributed_reference =
+concept tuple_has_distributed_range =
     []<std::size_t... N>(std::index_sequence<N...>) {
-      return (distributed_reference<typename std::tuple_element<N, T>::type> ||
+      return (lib::distributed_range<typename std::tuple_element<N, T>::type> ||
               ...);
     }(std::make_index_sequence<std::tuple_size_v<T>>());
 
-template <typename ZR>
-concept zip_segment =
-    rng::forward_range<ZR>
-    // value is a tuple
-    && tuple_like<rng::range_reference_t<ZR>>
-    // at least 1 member of the tuple is a distributed reference
-    && tuple_has_distributed_reference<rng::range_reference_t<ZR>>;
+template <rng::viewable_range... R> class zip_view;
 
-inline auto select_dist_range(auto &&v, auto &&...rest) {
-  if constexpr (lib::distributed_range<decltype(v)>) {
-    return rng::views::all(v);
-  } else {
-    return select_dist_range(rest...);
-  }
+namespace views {
+
+template <rng::viewable_range... R> auto zip(R &&...r) {
+  return zip_view(std::forward<R>(r)...);
 }
 
-template <typename I>
-concept is_zip_iterator =
-    std::forward_iterator<I> && requires(I &iter) { std::get<0>(*iter); };
+} // namespace views
 
-template <rng::viewable_range... R>
-class zip_view : public rng::view_interface<zip_view<R...>> {
+template <rng::viewable_range... R> class zip_view {
+private:
+  using rng_zip = rng::zip_view<R...>;
+  using rng_zip_iterator = rng::iterator_t<rng_zip>;
+  using base_type = std::tuple<R...>;
+  using iterator_base_type = std::tuple<rng::iterator_t<R>...>;
+
 public:
-  zip_view(const zip_view &z) : base_(z.base_) {}
-  zip_view(zip_view &&z) : base_(std::move(z.base_)) {}
+  // Wrap the iterator for rng::zip
+  class zip_iterator {
+  public:
+    using value_type = std::iter_value_t<rng_zip_iterator>;
+    using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
-  template <typename... V> zip_view(V &&...v) : base_(rng::views::all(v)...) {
-    auto segments = lib::ranges::segments(select_dist_range(v...));
-    segment_descriptor descriptor{0, 0};
-    for (auto segment : segments) {
-      descriptor.size = rng::distance(segment);
-      segment_descriptors_.emplace_back(descriptor);
-      descriptor.offset += descriptor.size;
+    zip_iterator() {}
+    zip_iterator(const zip_view *parent, difference_type offset)
+        : parent_(parent), offset_(offset) {}
+
+    auto operator+(difference_type n) {
+      return zip_iterator(parent_, offset_ + n);
     }
+    friend auto operator+(difference_type n, const zip_iterator &other) {
+      return other + n;
+    }
+    auto operator-(difference_type n) {
+      return zip_iterator(parent_, offset_ - n);
+    }
+
+    auto &operator+=(difference_type n) {
+      offset_ += n;
+      return *this;
+    }
+    auto &operator-=(difference_type n) {
+      offset_ -= n;
+      return *this;
+    }
+    auto &operator++() {
+      offset_++;
+      return *this;
+    }
+    auto operator++(int) {
+      auto old = *this;
+      offset_++;
+      return old;
+    }
+    auto &operator--() {
+      offset_--;
+      return *this;
+    }
+    auto operator--(int) {
+      auto old = *this;
+      offset_--;
+      return old;
+    }
+
+    auto operator==(zip_iterator other) const {
+      assert(parent_ == other.parent_);
+      return offset_ == other.offset_;
+    }
+    auto operator<=>(zip_iterator other) const {
+      assert(parent_ == other.parent_);
+      return offset_ <=> other.offset_;
+    }
+
+    // Underlying iterator does not return a reference
+    auto operator*() const {
+      return *(rng::begin(parent_->rng_zip_) + offset_);
+    }
+    auto operator[](difference_type n) { return *(*this + n); }
+
+    //
+    // Support for distributed ranges
+    //
+    // distributed iterator provides segments
+    // remote iterator provides local
+    //
+    auto segments()
+      requires(tuple_has_distributed_range<base_type>)
+    {
+      return lib::internal::drop_segments(parent_->segments(), offset_);
+    }
+    auto local() {
+      auto remainder = rng::distance(*parent_) - offset_;
+      auto offset = offset_;
+      auto localize = [remainder, offset](auto... base_iters) {
+        // for each base iter, construct a range that covers the rest
+        // of the segment, and then zip the ranges together. Return
+        // the begin iterator of the zip.
+        //
+        // The types of this zip_view is different from the containing
+        // zip_view, so use rng::zip_view to force template argument
+        // type deduction.
+        return rng::begin(rng::zip_view(rng::views::counted(
+            base_local(base_iters) + offset, remainder)...));
+      };
+      return std::apply(localize, rng::begin(*parent_).base());
+    }
+
+  private:
+    // return a tuple of iterators for the components
+    auto base() {
+      auto advance = [this](auto &&...base_ranges) {
+        return std::tuple((rng::begin(base_ranges) + this->offset_)...);
+      };
+      return std::apply(advance, parent_->base_);
+    }
+
+    // If it is not a remote iterator, assume it is a local iterator
+    auto static base_local(auto iter) { return iter; }
+
+    auto static base_local(lib::remote_iterator auto iter) {
+      return lib::ranges::local(iter);
+    }
+
+    const zip_view *parent_;
+    difference_type offset_;
+  };
+
+  template <rng::viewable_range... V>
+  zip_view(V &&...v)
+      : rng_zip_(rng::views::all(v)...), base_(rng::views::all(v)...) {
+    compute_segment_descriptors(std::forward<V>(v)...);
   }
 
-  auto begin() const {
-    return lib::normal_distributed_iterator<decltype(segments())>(
-        segments(), std::size_t(0), 0);
-  }
+  auto begin() const { return zip_iterator(this, 0); }
+  auto end() const { return zip_iterator(this, rng::distance(rng_zip_)); }
 
-  auto end() const {
-    auto segs = segments();
-    return lib::normal_distributed_iterator<decltype(segments())>(
-        std::move(segs), std::size_t(rng::distance(segs)), 0);
-  }
-
-  auto segments() const {
+  //
+  // Support for distributed ranges
+  //
+  // distributed range provides segments
+  // remote range provides rank
+  //
+  auto segments() const
+    requires(tuple_has_distributed_range<base_type>)
+  {
+    // requires at least one distributed range in base
     auto zip_segments = [this](auto &&...base) {
       auto zip_segment = [](auto &&v) {
-        auto zip = [](auto &&...refs) { return rng::views::zip(refs...); };
-        return std::apply(zip, v);
+        auto zip_ranges = [](auto &&...refs) { return views::zip(refs...); };
+        return std::apply(zip_ranges, v);
       };
 
       auto z = rng::views::zip(this->base_segments(base)...) |
@@ -110,59 +196,81 @@ public:
     return std::apply(zip_segments, base_);
   }
 
-  auto base() const { return base_; }
+  auto rank() const
+    requires(tuple_has_rank<base_type>)
+  {
+    auto select = [](auto &&...v) { return select_rank(v...); };
+    return std::apply(select, base_);
+  }
 
 private:
+  //
+  // Support for distributed ranges
+  //
   struct segment_descriptor {
     std::size_t offset, size;
   };
 
-  template <rng::range V>
-    requires(lib::is_iota_view_v<std::remove_cvref_t<V>>)
-  auto base_segments(V &&base) const {
-    auto make_iota_segment = [base](const segment_descriptor &d) {
+  template <typename... V> void compute_segment_descriptors(V &&...v) {}
+
+  template <typename... V>
+  void compute_segment_descriptors(V &&...v)
+    requires(lib::distributed_range<V> || ...)
+  {
+    auto segments = lib::ranges::segments(select_dist_range(v...));
+    segment_descriptor descriptor{0, 0};
+    for (auto segment : segments) {
+      descriptor.size = rng::distance(segment);
+      segment_descriptors_.emplace_back(descriptor);
+      descriptor.offset += descriptor.size;
+    }
+  }
+
+  static auto select_rank(auto &&v, auto &&...rest) {
+    if constexpr (has_rank<decltype(v)>) {
+      return lib::ranges::rank(v);
+    } else {
+      return select_rank(rest...);
+    }
+  }
+
+  static auto select_dist_range(auto &&v, auto &&...rest) {
+    if constexpr (lib::distributed_range<decltype(v)>) {
+      return rng::views::all(v);
+    } else {
+      return select_dist_range(rest...);
+    }
+  }
+
+  template <lib::distributed_range V> auto base_segments(V &&base) const {
+    return lib::ranges::segments(base);
+  }
+
+  // If this is not a distributed range, then assume it is local and
+  // segment according to segment_descriptors
+  template <rng::range V> auto base_segments(V &&base) const {
+    auto make_segment = [base](const segment_descriptor &d) {
       return rng::subrange(rng::begin(base) + d.offset,
                            rng::begin(base) + d.offset + d.size);
     };
 
-    return segment_descriptors_ | rng::views::transform(make_iota_segment);
+    return segment_descriptors_ | rng::views::transform(make_segment);
   }
 
-  template <rng::range V> auto base_segments(V &&base) const {
-    return lib::ranges::segments(base);
-    ;
-  }
-
-  std::tuple<R...> base_;
-  // For large number of segments, this will be expensive to copy
+  // Expensive to copy if there are many segments
   std::vector<segment_descriptor> segment_descriptors_;
+
+  rng_zip rng_zip_;
+  base_type base_;
 };
 
 template <rng::viewable_range... R>
 zip_view(R &&...r) -> zip_view<rng::views::all_t<R>...>;
 
-namespace views {
-
-template <rng::viewable_range... R> auto zip(R &&...r) {
-  return zip_view(std::forward<R>(r)...);
-}
-
-} // namespace views
-
 } // namespace mhp
 
-namespace DR_RANGES_NAMESPACE {
+namespace DR_RANGES_NAMESPACE {} // namespace DR_RANGES_NAMESPACE
 
-template <mhp::is_zip_iterator ZI> auto local_(ZI zi) {
-  auto refs_to_local_zip_iterator = [](auto &&...refs) {
-    // Convert the first segment of each component to local and then
-    // zip them together, returning the begin() of the zip view
-    return rng::begin(rng::zip_view(
-        (lib::ranges::local(lib::ranges::segments(&refs)[0]))...));
-  };
-  return std::apply(refs_to_local_zip_iterator, *zi);
-}
-
-template <mhp::zip_segment V> auto rank_(V &&v) { return zip_segment_rank(v); }
-
-} // namespace DR_RANGES_NAMESPACE
+// Needed to satisfy rng::viewable_range
+template <rng::random_access_range... V>
+inline constexpr bool rng::enable_borrowed_range<mhp::zip_view<V...>> = true;
