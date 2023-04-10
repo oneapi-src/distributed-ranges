@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/detail.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/util.hpp>
 #include <dr/shp/zip_view.hpp>
@@ -24,7 +25,7 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
     assert(rng::distance(segment) > 0);
 
-    auto local_segment = __detail::get_local_segment(segment);
+    auto local_segment = __detail::local(segment);
 
     auto first = rng::begin(local_segment);
 

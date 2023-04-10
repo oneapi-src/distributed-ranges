@@ -227,15 +227,6 @@ void range_details(R &&r, std::size_t width = 80) {
 
 namespace __detail {
 
-auto get_local_segment(lib::remote_contiguous_range auto &&r) {
-  return lib::ranges::local(r);
-}
-auto get_local_segment(rng::forward_range auto &&r) { return r; }
-
-template <class T> T *get_local(shp::device_ptr<T> r) { return r.local(); }
-
-template <std::forward_iterator Iter> Iter get_local(Iter iter) { return iter; }
-
 inline sycl::event combine_events(const std::vector<sycl::event> &events) {
   sycl::queue q;
   auto e = q.submit([&](auto &&h) {

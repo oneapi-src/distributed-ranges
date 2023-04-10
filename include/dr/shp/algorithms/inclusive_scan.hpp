@@ -18,6 +18,7 @@
 
 #include <dr/concepts/concepts.hpp>
 #include <dr/details/onedpl_direct_iterator.hpp>
+#include <dr/shp/detail.hpp>
 
 namespace shp {
 
