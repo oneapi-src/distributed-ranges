@@ -53,7 +53,7 @@ void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
 
 template <typename T, lib::remote_contiguous_range R>
 sycl::event fill_async(R &&r, const T &value) {
-  sycl::queue q(shp::context(), shp::devices()[lib::ranges::rank(r)]);
+  auto &&q = __detail::queue(lib::ranges::rank(r));
   auto *arr = std::to_address(rng::begin(lib::ranges::local(r)));
   return q.parallel_for(sycl::range<>(rng::distance(r)),
                         [arr, value](auto idx) { arr[idx] = value; });

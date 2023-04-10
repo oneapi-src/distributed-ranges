@@ -20,9 +20,7 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   std::vector<sycl::event> events;
 
   for (auto &&segment : lib::ranges::segments(r)) {
-    auto device = shp::devices()[lib::ranges::rank(segment)];
-
-    sycl::queue q(shp::context(), device);
+    auto &&q = __detail::queue(lib::ranges::rank(segment));
 
     assert(rng::distance(segment) > 0);
 
