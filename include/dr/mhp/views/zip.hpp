@@ -149,9 +149,9 @@ public:
     }
 
     // If it is not a remote iterator, assume it is a local iterator
-    template <typename Iter> auto static base_local(Iter iter) { return iter; }
+    auto static base_local(auto iter) { return iter; }
 
-    template <lib::remote_iterator Iter> auto static base_local(Iter iter) {
+    auto static base_local(lib::remote_iterator auto iter) {
       return lib::ranges::local(iter);
     }
 

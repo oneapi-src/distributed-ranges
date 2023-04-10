@@ -89,7 +89,7 @@ template <rng::range R1, rng::range R2> bool is_equal(R1 &&r1, R2 &&r2) {
   return true;
 }
 
-bool is_equal(std::forward_iterator auto it, const rng::range auto &r) {
+bool is_equal(std::forward_iterator auto it, rng::range auto &&r) {
   for (auto e : r) {
     if (*it++ != e) {
       return false;
@@ -98,7 +98,7 @@ bool is_equal(std::forward_iterator auto it, const rng::range auto &r) {
   return true;
 }
 
-auto equal_message(const rng::range auto &ref, const rng::range auto &actual,
+auto equal_message(rng::range auto &&ref, rng::range auto &&actual,
                    std::string title = " ") {
   if (is_equal(ref, actual)) {
     return fmt::format("");
@@ -110,10 +110,8 @@ auto equal_message(const rng::range auto &ref, const rng::range auto &actual,
                      rng::views::all(ref), rng::views::all(actual));
 }
 
-std::string unary_check_message(const rng::range auto &in,
-                                const rng::range auto &ref,
-                                const rng::range auto &tst,
-                                std::string title = "") {
+std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
+                                rng::range auto &&tst, std::string title = "") {
   if (is_equal(ref, tst)) {
     return "";
   } else {
@@ -143,8 +141,8 @@ auto check_view_message(rng::range auto &&ref, rng::range auto &&actual) {
          equal_message(ref, actual, "view mismatch");
 }
 
-auto check_mutate_view_message(auto &ops, const rng::range auto &ref,
-                               const rng::range auto &actual) {
+auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
+                               rng::range auto &&actual) {
   // Check view
   auto message = check_view_message(ref, actual);
 
@@ -176,19 +174,18 @@ auto gtest_result(const auto &message) {
   }
 }
 
-auto equal(rng::range auto &&ref, const rng::range auto &actual,
+auto equal(rng::range auto &&ref, rng::range auto &&actual,
            std::string title = " ") {
   return gtest_result(equal_message(ref, actual, title));
 }
 
-auto check_unary_op(const rng::range auto &in, const rng::range auto &ref,
-                    const rng::range auto &tst, std::string title = "") {
+auto check_unary_op(rng::range auto &&in, rng::range auto &&ref,
+                    rng::range auto &&tst, std::string title = "") {
   return gtest_result(unary_check_message(in, ref, tst, title));
 }
 
-auto check_binary_check_op(const rng::range auto &a, const rng::range auto &b,
-                           const rng::range auto &ref,
-                           const rng::range auto &actual) {
+auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
+                           rng::range auto &&ref, rng::range auto &&actual) {
   if (is_equal(ref, actual)) {
     return testing::AssertionSuccess();
   } else {
@@ -209,7 +206,7 @@ auto check_segments(std::forward_iterator auto di) {
          << fmt::format("\n    segments: {}\n  ", segments);
 }
 
-auto check_segments(const rng::range auto &dr) {
+auto check_segments(rng::range auto &&dr) {
   return gtest_result(check_segments_message(dr));
 }
 
@@ -217,8 +214,8 @@ auto check_view(rng::range auto &&ref, rng::range auto &&actual) {
   return gtest_result(check_view_message(ref, actual));
 }
 
-auto check_mutate_view(auto &op, const rng::range auto &ref,
-                       const rng::range auto &actual) {
+auto check_mutate_view(auto &op, rng::range auto &&ref,
+                       rng::range auto &&actual) {
   return gtest_result(check_mutate_view_message(op, ref, actual));
 }
 
@@ -307,16 +304,9 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
 namespace DR_RANGES_NAMESPACE {
 
 template <rng::forward_range R1, rng::forward_range R2>
-bool operator==(const R1 &r1, const R2 &r2) {
+bool operator==(R1 &&r1, R2 &&r2) {
   return is_equal(r1, r2);
 }
-
-#if 0
-template <rng::forward_range R1, typename... Ts>
-bool operator==(const R1 &r1, const mhp::zip_view<Ts...> &r2) {
-  return is_equal(r1, r2);
-}
-#endif
 
 template <typename... Ts>
 inline std::ostream &operator<<(std::ostream &os,
