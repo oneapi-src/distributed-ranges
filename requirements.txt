@@ -21,7 +21,7 @@ MarkupSafe==2.1.2
 nodeenv==1.7.0
 packaging==23.0
 platformdirs==3.2.0
-pre-commit==3.2.1
+pre-commit==3.2.2
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
 Pygments==2.14.0
