@@ -167,9 +167,8 @@ auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
   return message;
 }
 
-
 auto check_mutate_enumerateview_message(auto &ops, rng::range auto &&ref,
-                               rng::range auto &&actual) {
+                                        rng::range auto &&actual) {
   // Check view
   auto message = check_view_message(ref, actual);
 
@@ -181,27 +180,26 @@ auto check_mutate_enumerateview_message(auto &ops, rng::range auto &&ref,
   auto input_vector = ops.vec;
   std::vector input_view(ref.begin(), ref.end());
 
-  for (auto&& [index, elem] : actual) {
-      act_idx[index] = index;
-      elem = -elem;
-    }
-  
-  for (auto&& [index, elem] : ref) {
+  for (auto &&[index, elem] : actual) {
+    act_idx[index] = index;
+    elem = -elem;
+  }
+
+  for (auto &&[index, elem] : ref) {
     ref_idx[index] = index;
     elem = -elem;
   }
 
   // Check mutated view
-  message +=
-      unary_check_message(input_view, actual, ref, "mutated value view mismatch");
+  message += unary_check_message(input_view, actual, ref,
+                                 "mutated value view mismatch");
 
   // Check underlying dv
   message += unary_check_message(input_vector, ops.vec, ops.dist_vec,
                                  "mutated distributed value range mismatch");
 
-
-  message +=
-      equal_message(rng::views::all(ref_idx), rng::views::all(act_idx), "index view mismatch");
+  message += equal_message(rng::views::all(ref_idx), rng::views::all(act_idx),
+                           "index view mismatch");
 
   return message;
 }
@@ -260,7 +258,7 @@ auto check_mutate_view(auto &op, rng::range auto &&ref,
 }
 
 auto check_mutate_enumerateview(auto &op, rng::range auto &&ref,
-                       rng::range auto &&actual) {
+                                rng::range auto &&actual) {
   return gtest_result(check_mutate_enumerateview_message(op, ref, actual));
 }
 
