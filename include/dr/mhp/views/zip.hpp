@@ -31,13 +31,6 @@ concept tuple_has_distributed_range =
               ...);
     }(std::make_index_sequence<std::tuple_size_v<T>>());
 
-template <typename T>
-concept tuple_has_distributed_iterator = []<std::size_t... N>(
-                                             std::index_sequence<N...>) {
-  return (lib::distributed_iterator<typename std::tuple_element<N, T>::type> ||
-          ...);
-}(std::make_index_sequence<std::tuple_size_v<T>>());
-
 template <rng::viewable_range... R> class zip_view;
 
 namespace views {
@@ -141,7 +134,7 @@ public:
         // zip_view, so use rng::zip_view to force template argument
         // type deduction.
         return rng::begin(rng::zip_view(rng::views::counted(
-            lib::ranges::local(base_iters) + offset, remainder)...));
+            base_local(base_iters) + offset, remainder)...));
       };
       return std::apply(localize, rng::begin(*parent_).base());
     }
@@ -155,13 +148,23 @@ public:
       return std::apply(advance, parent_->base_);
     }
 
+    // If it is not a remote iterator, assume it is a local iterator
+    template <typename Iter> auto static base_local(Iter iter) { return iter; }
+
+    template <lib::remote_iterator Iter> auto static base_local(Iter iter) {
+      return lib::ranges::local(iter);
+    }
+
     const zip_view *parent_;
     difference_type offset_;
   };
 
   template <rng::viewable_range... V>
   zip_view(V &&...v)
-      : rng_zip_(rng::views::all(v)...), base_(rng::views::all(v)...) {}
+      : rng_zip_(rng::views::all(v)...), base_(rng::views::all(v)...) {
+    compute_segment_descriptors(std::forward<V>(v)...);
+  }
+
   auto begin() const { return zip_iterator(this, 0); }
   auto end() const { return zip_iterator(this, rng::distance(rng_zip_)); }
 
@@ -201,6 +204,28 @@ public:
   }
 
 private:
+  //
+  // Support for distributed ranges
+  //
+  struct segment_descriptor {
+    std::size_t offset, size;
+  };
+
+  template <typename... V> void compute_segment_descriptors(V &&...v) {}
+
+  template <typename... V>
+  void compute_segment_descriptors(V &&...v)
+    requires(lib::distributed_range<V> || ...)
+  {
+    auto segments = lib::ranges::segments(select_dist_range(v...));
+    segment_descriptor descriptor{0, 0};
+    for (auto segment : segments) {
+      descriptor.size = rng::distance(segment);
+      segment_descriptors_.emplace_back(descriptor);
+      descriptor.offset += descriptor.size;
+    }
+  }
+
   static auto select_rank(auto &&v, auto &&...rest) {
     if constexpr (has_rank<decltype(v)>) {
       return lib::ranges::rank(v);
@@ -209,9 +234,31 @@ private:
     }
   }
 
-  template <rng::range V> static auto base_segments(V &&base) {
+  static auto select_dist_range(auto &&v, auto &&...rest) {
+    if constexpr (lib::distributed_range<decltype(v)>) {
+      return rng::views::all(v);
+    } else {
+      return select_dist_range(rest...);
+    }
+  }
+
+  template <lib::distributed_range V> auto base_segments(V &&base) const {
     return lib::ranges::segments(base);
   }
+
+  // If this is not a distributed range, then assume it is local and
+  // segment according to segment_descriptors
+  template <rng::range V> auto base_segments(V &&base) const {
+    auto make_segment = [base](const segment_descriptor &d) {
+      return rng::subrange(rng::begin(base) + d.offset,
+                           rng::begin(base) + d.offset + d.size);
+    };
+
+    return segment_descriptors_ | rng::views::transform(make_segment);
+  }
+
+  // Expensive to copy if there are many segments
+  std::vector<segment_descriptor> segment_descriptors_;
 
   rng_zip rng_zip_;
   base_type base_;
