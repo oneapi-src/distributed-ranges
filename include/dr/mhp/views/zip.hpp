@@ -46,7 +46,6 @@ private:
   using rng_zip = rng::zip_view<R...>;
   using rng_zip_iterator = rng::iterator_t<rng_zip>;
   using base_type = std::tuple<R...>;
-  using iterator_base_type = std::tuple<rng::iterator_t<R>...>;
 
 public:
   // Wrap the iterator for rng::zip
