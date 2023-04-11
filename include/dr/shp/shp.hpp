@@ -22,5 +22,3 @@
 #include <dr/shp/util.hpp>
 #include <dr/shp/util/matrix_io.hpp>
 #include <dr/views/views.hpp>
-#include <dr/shp/detail.hpp>
-
