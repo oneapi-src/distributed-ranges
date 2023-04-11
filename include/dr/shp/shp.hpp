@@ -9,7 +9,7 @@
 #include "../details/segments_tools.hpp"
 #include "../details/iterator_adaptor.hpp"
 #include "../details/normal_distributed_iterator.hpp"
-#include "../views/transform.hpp"
+#include "views/views.hpp"
 #include "algorithms/algorithms.hpp"
 #include "containers/dense_matrix.hpp"
 #include "containers/sparse_matrix.hpp"

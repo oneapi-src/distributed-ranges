@@ -2,6 +2,11 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
+#include <dr/concepts/concepts.hpp>
+#include <dr/views/transform.hpp>
+
 namespace lib {
 
 // returns range: [(rank, element) ...]
