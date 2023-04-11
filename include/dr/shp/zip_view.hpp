@@ -6,10 +6,10 @@
 
 #include <oneapi/dpl/iterator>
 
-#include <dr/details/iterator_adaptor.hpp>
-#include <dr/details/owning_view.hpp>
-#include <dr/details/ranges_shim.hpp>
-#include <dr/details/view_detectors.hpp>
+#include <dr/detail/iterator_adaptor.hpp>
+#include <dr/detail/owning_view.hpp>
+#include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/view_detectors.hpp>
 #include <dr/shp/device_span.hpp>
 
 namespace lib {
@@ -163,7 +163,7 @@ public:
       increment_local_idx(segment_ids, local_idx, size);
     }
 
-    return lib::internal::owning_view(std::move(segment_views));
+    return lib::__detail::owning_view(std::move(segment_views));
   }
 
   // Return a range corresponding to each segment in `segments()`,
@@ -199,7 +199,7 @@ public:
       increment_local_idx(segment_ids, local_idx, size);
     }
 
-    return lib::internal::owning_view(std::move(segment_views));
+    return lib::__detail::owning_view(std::move(segment_views));
   }
 
   // If:

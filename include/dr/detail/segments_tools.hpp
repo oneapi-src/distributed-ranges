@@ -5,14 +5,14 @@
 #pragma once
 
 #include <dr/concepts/concepts.hpp>
-#include <dr/details/enumerate.hpp>
-#include <dr/details/ranges_shim.hpp>
-#include <dr/details/remote_subrange.hpp>
-#include <dr/details/view_detectors.hpp>
+#include <dr/detail/enumerate.hpp>
+#include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/remote_subrange.hpp>
+#include <dr/detail/view_detectors.hpp>
 
 namespace lib {
 
-namespace internal {
+namespace __detail {
 
 // count the number of segments necessary to cover n elements,
 // returning the index of the last segment and its remainder
@@ -93,7 +93,7 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
   return drop_segments(std::forward<R>(segments), last_seg, remainder);
 }
 
-} // namespace internal
+} // namespace __detail
 
 } // namespace lib
 
@@ -118,7 +118,7 @@ template <rng::range V>
   requires(lib::is_take_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return lib::internal::take_segments(lib::ranges::segments(v.base()),
+  return lib::__detail::take_segments(lib::ranges::segments(v.base()),
                                       v.size());
 }
 
@@ -126,7 +126,7 @@ template <rng::range V>
   requires(lib::is_drop_view_v<std::remove_cvref_t<V>> &&
            lib::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return lib::internal::drop_segments(lib::ranges::segments(v.base()),
+  return lib::__detail::drop_segments(lib::ranges::segments(v.base()),
                                       v.base().size() - v.size());
 }
 
@@ -139,7 +139,7 @@ auto segments_(V &&v) {
 
   auto size = rng::distance(first, last);
 
-  return lib::internal::take_segments(lib::ranges::segments(first), size);
+  return lib::__detail::take_segments(lib::ranges::segments(first), size);
 }
 
 } // namespace DR_RANGES_NAMESPACE

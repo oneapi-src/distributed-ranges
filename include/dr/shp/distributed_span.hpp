@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include "device_span.hpp"
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/iterator_adaptor.hpp>
-#include <dr/details/ranges.hpp>
-#include <dr/details/segments_tools.hpp>
 #include <vector>
+
+#include <dr/concepts/concepts.hpp>
+#include <dr/detail/iterator_adaptor.hpp>
+#include <dr/detail/ranges.hpp>
+#include <dr/detail/segments_tools.hpp>
+#include <dr/shp/device_span.hpp>
 
 namespace shp {
 
@@ -101,7 +102,7 @@ public:
   }
 
   auto segments() const noexcept {
-    return lib::internal::drop_segments(segments_, segment_id_, idx_);
+    return lib::__detail::drop_segments(segments_, segment_id_, idx_);
   }
 
 private:

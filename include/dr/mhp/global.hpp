@@ -4,7 +4,7 @@
 
 namespace mhp {
 
-namespace _details {
+namespace __detail {
 
 struct global_context {
   lib::communicator comm_;
@@ -22,39 +22,39 @@ inline auto gcontext() {
   return global_context_;
 }
 
-} // namespace _details
+} // namespace __detail
 
 inline void init() {
-  assert(_details::global_context_ == nullptr &&
+  assert(__detail::global_context_ == nullptr &&
          "Do not call mhp::init() more than once");
-  _details::global_context_ = new _details::global_context;
+  __detail::global_context_ = new __detail::global_context;
 }
 
 inline void final() {
-  delete _details::global_context_;
-  _details::global_context_ = nullptr;
+  delete __detail::global_context_;
+  __detail::global_context_ = nullptr;
 }
 
-inline lib::communicator &default_comm() { return _details::gcontext()->comm_; }
+inline lib::communicator &default_comm() { return __detail::gcontext()->comm_; }
 
-inline std::set<MPI_Win> &active_wins() { return _details::gcontext()->wins_; }
+inline std::set<MPI_Win> &active_wins() { return __detail::gcontext()->wins_; }
 
-inline void barrier() { _details::gcontext()->comm_.barrier(); }
+inline void barrier() { __detail::gcontext()->comm_.barrier(); }
 
 inline void fence() {
   lib::drlog.debug("fence\n");
-  for (auto win : _details::gcontext()->wins_) {
+  for (auto win : __detail::gcontext()->wins_) {
     lib::drlog.debug("  win: {}\n", win);
     MPI_Win_fence(0, win);
   }
 }
 
 #ifdef SYCL_LANGUAGE_VERSION
-inline auto sycl_queue() { return _details::gcontext()->sycl_queue_; }
+inline auto sycl_queue() { return __detail::gcontext()->sycl_queue_; }
 
 inline void init(sycl::queue q) {
   init();
-  _details::gcontext()->sycl_queue_ = q;
+  __detail::gcontext()->sycl_queue_ = q;
 }
 #endif
 

@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/alignment.hpp>
 
 namespace mhp {
@@ -120,7 +120,7 @@ public:
     auto segments()
       requires(tuple_has_distributed_range<base_type>)
     {
-      return lib::internal::drop_segments(parent_->segments(), offset_);
+      return lib::__detail::drop_segments(parent_->segments(), offset_);
     }
     auto local() {
       auto remainder = rng::distance(*parent_) - offset_;
