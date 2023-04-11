@@ -86,8 +86,6 @@ int stencil() {
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
 
-  int _i = lib::ranges::segments(in);
-
   for (std::size_t s = 0; s < steps; s++) {
     mhp::halo(in).exchange();
     mhp::for_each(rng::views::zip(in, out), stencil_op);
