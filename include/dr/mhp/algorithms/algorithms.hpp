@@ -10,9 +10,9 @@
 #include <utility>
 
 #include <dr/concepts/concepts.hpp>
-#include <dr/details/logger.hpp>
-#include <dr/details/onedpl_direct_iterator.hpp>
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/logger.hpp>
+#include <dr/detail/onedpl_direct_iterator.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
 namespace mhp {
 

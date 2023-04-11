@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <dr/shp/containers/index.hpp>
-#include <dr/shp/containers/matrix_entry.hpp>
 #include <iterator>
 
-#include "dense_column_view.hpp"
-#include "dense_row_view.hpp"
+#include <dr/shp/containers/index.hpp>
+#include <dr/shp/containers/matrix_entry.hpp>
+#include <dr/shp/views/dense_column_view.hpp>
+#include <dr/shp/views/dense_row_view.hpp>
 
 namespace shp {
 

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../details/ranges.hpp"
+#include <dr/detail/ranges.hpp>
 
 namespace lib {
 

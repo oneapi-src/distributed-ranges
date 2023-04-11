@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/ranges_shim.hpp>
 #include <iterator>
+
+#include <dr/concepts/concepts.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
 namespace lib {
 

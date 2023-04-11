@@ -6,7 +6,7 @@
 
 #include <iterator>
 
-#include <dr/details/iterator_adaptor.hpp>
+#include <dr/detail/iterator_adaptor.hpp>
 
 namespace lib {
 

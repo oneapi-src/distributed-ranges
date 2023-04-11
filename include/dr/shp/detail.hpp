@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <dr/details/ranges.hpp>
+#include <dr/detail/ranges.hpp>
 
 namespace shp {
 
