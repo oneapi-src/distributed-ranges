@@ -64,9 +64,10 @@ private:
 template <typename T> class dm_row : public std::span<T> {
   using dmatrix = mhp::distributed_dense_matrix<T>;
   using dmsegment = mhp::dm_segment<dmatrix>;
+  
+public:
   using iterator = typename std::span<T>::iterator;
 
-public:
   dm_row(){};
   dm_row(signed long idx, T *ptr, dmsegment *segment, std::size_t size)
       : std::span<T>({ptr, size}), index_(idx), data_(ptr), segment_(segment),
@@ -185,6 +186,7 @@ public:
   size_type size() noexcept { return shape()[0] * shape()[1]; }
   auto segments() { return dm_segments_; }
   size_type segment_size() { return segment_size_; }
+  key_type segment_shape() { return segment_shape_; }
 
   auto &halo() { return *halo_; }
   lib::halo_bounds &halo_bounds() { return halo_bounds_; }

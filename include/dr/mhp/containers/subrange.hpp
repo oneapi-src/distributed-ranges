@@ -24,29 +24,36 @@ public:
 
   value_type &operator*() const {
 
-    int offset = dm_->halo_bounds().prev * dm_->shape()[0] +
+    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
                  find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size();
 
-    if ((offset >= (int)dm_->data_size()) || (offset < 0)) {
-      fmt::print("{}: index {} offset {} hb {} dm_off {} \n",
-                 default_comm().rank(), index_, offset,
-                 dm_->halo_bounds().prev * dm_->shape()[1],
-                 find_dm_offset(index_));
-    }
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
     return *(dm_->data() + offset);
   }
 
-  value_type &operator[](int n) {
+  dm_row<value_type> operator[](int n) {
+    std::size_t rowsize = col_rng_.second - col_rng_.first;
     int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
-                 find_dm_offset(index_ + n) -
+                 find_dm_offset(index_ + n * rowsize) -
                  default_comm().rank() * dm_->segment_size();
 
+
+    // if ((offset >= (int)dm_->data_size()) || (offset < 0)) 
+      // fmt::print("{}: index {} offset {} hb {} dm_off {} n {} rowsize {} \n",
+      //            default_comm().rank(), index_, offset,
+      //            dm_->halo_bounds().prev * dm_->shape()[1],
+      //            find_dm_offset(index_ + n * rowsize), n, rowsize);
+    
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
-    return *(dm_->data() + offset);
+
+    signed long idx = default_comm().rank() * dm_->segment_shape()[0]; 
+    value_type * ptr = dm_->data() + offset;
+    dm_segment<DM> *segment = &(dm_->segments()[0]);
+
+    return dm_row<value_type>( idx, ptr, segment, rowsize);
   }
 
   value_type &operator[](std::pair<int, int> p) {
@@ -54,12 +61,12 @@ public:
                  find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size() +
                  dm_->shape()[1] * p.second + p.first;
-    if ((offset >= (int)dm_->data_size()) || (offset < 0)) {
-      fmt::print("{}: index {} offset {} hb {} dm_off {} p=< {}, {} > \n",
-                 default_comm().rank(), index_, offset,
-                 dm_->halo_bounds().prev * dm_->shape()[1],
-                 find_dm_offset(index_), p.first, p.second);
-    }
+    // if ((offset >= (int)dm_->data_size()) || (offset < 0)) {
+    //   fmt::print("{}: index {} offset {} hb {} dm_off {} p=< {}, {} > \n",
+    //              default_comm().rank(), index_, offset,
+    //              dm_->halo_bounds().prev * dm_->shape()[1],
+    //              find_dm_offset(index_), p.first, p.second);
+    // }
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
     return *(dm_->data() + offset);
