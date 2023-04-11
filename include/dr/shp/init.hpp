@@ -70,9 +70,9 @@ inline void finalize() {
 
 namespace __detail {
 
-inline auto default_queue() { return sycl::queue(); }
-
 inline sycl::queue &queue(std::size_t rank) { return queues_[rank]; }
+
+inline sycl::queue &default_queue() { return queue(0); }
 
 inline auto &dpl_policy(std::size_t rank) {
   return __detail::dpl_policies_[rank];
