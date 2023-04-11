@@ -204,4 +204,49 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
   return d_last;
 }
 
+// Execution policy-less versions
+
+template <lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O>
+void inclusive_scan(R &&r, O &&o) {
+  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o));
+}
+
+template <lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O, typename BinaryOp>
+void inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op) {
+  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
+                 std::forward<BinaryOp>(binary_op));
+}
+
+template <lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O, typename BinaryOp, typename T>
+void inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op, T init) {
+  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
+                 std::forward<BinaryOp>(binary_op), init);
+}
+
+// Distributed iterator versions
+
+template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter>
+OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first) {
+  return inclusive_scan(shp::par_unseq, first, last, d_first);
+}
+
+template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter,
+          typename BinaryOp>
+OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first,
+                          BinaryOp &&binary_op) {
+  return inclusive_scan(shp::par_unseq, first, last, d_first,
+                        std::forward<BinaryOp>(binary_op));
+}
+
+template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter,
+          typename BinaryOp, typename T>
+OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first,
+                          BinaryOp &&binary_op, T init) {
+  return inclusive_scan(shp::par_unseq, first, last, d_first,
+                        std::forward<BinaryOp>(binary_op), init);
+}
+
 } // namespace shp
