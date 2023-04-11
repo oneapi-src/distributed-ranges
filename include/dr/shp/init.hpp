@@ -55,7 +55,7 @@ inline void init(R &&devices)
     sycl::queue q(*__detail::global_context_, device);
     __detail::queues_.push_back(q);
 
-    __detail::dpl_policies_.emplace_back(internal::queues_.back());
+    __detail::dpl_policies_.emplace_back(__detail::queues_.back());
   }
 
   par_unseq = device_policy(__detail::devices_);
@@ -75,7 +75,7 @@ inline auto default_queue() { return sycl::queue(); }
 inline sycl::queue &queue(std::size_t rank) { return queues_[rank]; }
 
 inline auto &dpl_policy(std::size_t rank) {
-  return internal::dpl_policies_[rank];
+  return __detail::dpl_policies_[rank];
 }
 
 } // namespace __detail
