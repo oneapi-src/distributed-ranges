@@ -4,21 +4,16 @@
 
 #pragma once
 
-#include <sycl/sycl.hpp>
-
-#include <dr/detail/onedpl_direct_iterator.hpp>
-
-#include <dr/shp/algorithms/execution_policy.hpp>
-
-#include <dr/shp/init.hpp>
+#include <oneapi/dpl/execution>
+#include <oneapi/dpl/numeric>
 
 #include <oneapi/dpl/async>
 
-#include <oneapi/dpl/execution>
-
-#include <oneapi/dpl/numeric>
-
 #include <dr/concepts/concepts.hpp>
+#include <dr/detail/onedpl_direct_iterator.hpp>
+#include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/init.hpp>
+#include <sycl/sycl.hpp>
 
 namespace {
 
