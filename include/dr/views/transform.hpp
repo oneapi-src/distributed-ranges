@@ -129,6 +129,12 @@ public:
 
   auto end() const { return transform_iterator(rng::end(base_), fn_); }
 
+  auto size() const
+    requires(rng::sized_range<V>)
+  {
+    return rng::size(base_);
+  }
+
   auto segments() const
     requires(lib::distributed_range<V>)
   {
