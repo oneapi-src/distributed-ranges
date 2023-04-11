@@ -10,6 +10,7 @@
 #include <type_traits>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
+#include <oneapi/dpl/execution>
 
 namespace shp {
 
@@ -20,6 +21,8 @@ inline sycl::context *global_context_;
 inline std::vector<sycl::device> devices_;
 
 inline std::vector<sycl::queue> queues_;
+
+inline std::vector<oneapi::dpl::execution::device_policy<>> dpl_policies_;
 
 inline std::size_t ngpus_;
 
@@ -51,12 +54,15 @@ inline void init(R &&devices)
   for (auto &&device : internal::devices_) {
     sycl::queue q(*internal::global_context_, device);
     internal::queues_.push_back(q);
+
+    internal::dpl_policies_.emplace_back(internal::queues_.back());
   }
 
   par_unseq = device_policy(internal::devices_);
 }
 
 inline void finalize() {
+  internal::dpl_policies_.clear();
   internal::queues_.clear();
   internal::devices_.clear();
   delete internal::global_context_;
@@ -67,6 +73,10 @@ namespace __detail {
 inline auto default_queue() { return sycl::queue(); }
 
 inline sycl::queue &queue(std::size_t rank) { return internal::queues_[rank]; }
+
+inline auto &dpl_policy(std::size_t rank) {
+  return internal::dpl_policies_[rank];
+}
 
 } // namespace __detail
 

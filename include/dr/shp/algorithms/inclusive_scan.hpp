@@ -50,7 +50,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto &&[in_segment, out_segment] = segs;
 
       auto &&q = __detail::queue(lib::ranges::rank(in_segment));
-      oneapi::dpl::execution::device_policy local_policy(q);
+      auto &&local_policy = __detail::dpl_policy(lib::ranges::rank(in_segment));
 
       auto dist = rng::distance(in_segment);
       assert(dist > 0);
@@ -94,8 +94,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     __detail::wait(events);
     events.clear();
 
-    sycl::queue q(shp::context(), root);
-    oneapi::dpl::execution::device_policy local_policy(q);
+    auto &&local_policy = __detail::dpl_policy(0);
 
     auto first = lib::ranges::local(partial_sums).data();
     auto last = first + partial_sums.size();
@@ -108,8 +107,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
 
-      auto &&q = __detail::queue(lib::ranges::rank(out_segment));
-      oneapi::dpl::execution::device_policy local_policy(q);
+      auto &&local_policy =
+          __detail::dpl_policy(lib::ranges::rank(out_segment));
 
       if (idx > 0) {
         T sum = partial_sums[idx - 1];
