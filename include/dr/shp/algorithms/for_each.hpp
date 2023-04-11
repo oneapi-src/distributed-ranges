@@ -42,4 +42,13 @@ void for_each(ExecutionPolicy &&policy, Iter begin, Iter end, Fn &&fn) {
            std::forward<Fn>(fn));
 }
 
+template <lib::distributed_range R, typename Fn> void for_each(R &&r, Fn &&fn) {
+  for_each(shp::par_unseq, std::forward<R>(r), std::forward<Fn>(fn));
+}
+
+template <lib::distributed_iterator Iter, typename Fn>
+void for_each(Iter begin, Iter end, Fn &&fn) {
+  for_each(shp::par_unseq, begin, end, std::forward<Fn>(fn));
+}
+
 } // namespace shp
