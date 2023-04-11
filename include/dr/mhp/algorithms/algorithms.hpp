@@ -16,6 +16,8 @@
 
 namespace mhp {
 
+inline std::execution::parallel_unsequenced_policy par_unseq;
+
 //
 //
 // fill
@@ -111,28 +113,6 @@ void for_each(DI first, DI last, auto op) {
 
 //
 //
-// iota
-//
-//
-
-template <lib::distributed_range R, std::integral T> void iota(R &&r, T value) {
-  auto iota_view = rng::views::iota(value, T(value + rng::distance(r)));
-
-  for_each(std::execution::par_unseq, views::zip(iota_view, r),
-           [](auto &&elem) {
-             auto &&[idx, v] = elem;
-             v = idx;
-           });
-}
-
-template <lib::distributed_iterator Iter, std::integral T>
-void iota(Iter begin, Iter end, T value) {
-  auto r = rng::subrange(begin, end);
-  iota(r, value);
-}
-
-//
-//
 // transform
 //
 //
@@ -157,5 +137,7 @@ void transform(DI_IN &&first, DI_IN &&last,
                lib::distributed_iterator auto &&out, auto op) {
   mhp::transform(rng::subrange(first, last), out, op);
 }
+
+#include "../../details/algorithms.hpp"
 
 } // namespace mhp

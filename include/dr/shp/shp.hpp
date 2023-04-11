@@ -13,8 +13,6 @@
 #include "algorithms/algorithms.hpp"
 #include "containers/dense_matrix.hpp"
 #include "containers/sparse_matrix.hpp"
-#include "algorithms/copy.hpp"
-#include "algorithms/iota.hpp"
 #include "distributed_span.hpp"
 #include "distributed_vector.hpp"
 #include "init.hpp"
