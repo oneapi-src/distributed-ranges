@@ -64,7 +64,7 @@ private:
 template <typename T> class dm_row : public std::span<T> {
   using dmatrix = mhp::distributed_dense_matrix<T>;
   using dmsegment = mhp::dm_segment<dmatrix>;
-  
+
 public:
   using iterator = typename std::span<T>::iterator;
 
@@ -367,4 +367,4 @@ inline constexpr bool
 
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<
-    mhp::dm_subrange<mhp::distributed_dense_matrix<T>>> = true;
+    mhp::subrange<mhp::distributed_dense_matrix<T>>> = true;

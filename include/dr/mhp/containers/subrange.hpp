@@ -6,16 +6,16 @@
 
 namespace mhp {
 
-template <typename DM> class dm_subrange_iterator {
+template <typename DM> class subrange_iterator {
 public:
   using value_type = typename DM::value_type;
   using difference_type = typename DM::difference_type;
 
-  dm_subrange_iterator(){};
+  subrange_iterator(){};
 
-  dm_subrange_iterator(DM *dm, std::pair<std::size_t, std::size_t> row_rng,
-                       std::pair<std::size_t, std::size_t> col_rng,
-                       difference_type index = 0) noexcept {
+  subrange_iterator(DM *dm, std::pair<std::size_t, std::size_t> row_rng,
+                    std::pair<std::size_t, std::size_t> col_rng,
+                    difference_type index = 0) noexcept {
     dm_ = dm;
     row_rng_ = row_rng;
     col_rng_ = col_rng;
@@ -39,21 +39,20 @@ public:
                  find_dm_offset(index_ + n * rowsize) -
                  default_comm().rank() * dm_->segment_size();
 
+    // if ((offset >= (int)dm_->data_size()) || (offset < 0))
+    // fmt::print("{}: index {} offset {} hb {} dm_off {} n {} rowsize {} \n",
+    //            default_comm().rank(), index_, offset,
+    //            dm_->halo_bounds().prev * dm_->shape()[1],
+    //            find_dm_offset(index_ + n * rowsize), n, rowsize);
 
-    // if ((offset >= (int)dm_->data_size()) || (offset < 0)) 
-      // fmt::print("{}: index {} offset {} hb {} dm_off {} n {} rowsize {} \n",
-      //            default_comm().rank(), index_, offset,
-      //            dm_->halo_bounds().prev * dm_->shape()[1],
-      //            find_dm_offset(index_ + n * rowsize), n, rowsize);
-    
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
 
-    signed long idx = default_comm().rank() * dm_->segment_shape()[0]; 
-    value_type * ptr = dm_->data() + offset;
+    signed long idx = default_comm().rank() * dm_->segment_shape()[0];
+    value_type *ptr = dm_->data() + offset;
     dm_segment<DM> *segment = &(dm_->segments()[0]);
 
-    return dm_row<value_type>( idx, ptr, segment, rowsize);
+    return dm_row<value_type>(idx, ptr, segment, rowsize);
   }
 
   value_type &operator[](std::pair<int, int> p) {
@@ -73,23 +72,19 @@ public:
   }
 
   // friend operators fulfill rng::detail::weakly_equality_comparable_with_
-  friend bool operator==(dm_subrange_iterator &first,
-                         dm_subrange_iterator &second) {
+  friend bool operator==(subrange_iterator &first, subrange_iterator &second) {
     return first.index_ == second.index_;
   }
-  friend bool operator!=(dm_subrange_iterator &first,
-                         dm_subrange_iterator &second) {
+  friend bool operator!=(subrange_iterator &first, subrange_iterator &second) {
     return first.index_ != second.index_;
   }
-  friend bool operator==(dm_subrange_iterator first,
-                         dm_subrange_iterator second) {
+  friend bool operator==(subrange_iterator first, subrange_iterator second) {
     return first.index_ == second.index_;
   }
-  friend bool operator!=(dm_subrange_iterator first,
-                         dm_subrange_iterator second) {
+  friend bool operator!=(subrange_iterator first, subrange_iterator second) {
     return first.index_ != second.index_;
   }
-  auto operator<=>(const dm_subrange_iterator &other) const noexcept {
+  auto operator<=>(const subrange_iterator &other) const noexcept {
     return this->index_ <=> other.index_;
   }
 
@@ -103,7 +98,7 @@ public:
     return *this;
   }
 
-  difference_type operator-(const dm_subrange_iterator &other) const noexcept {
+  difference_type operator-(const subrange_iterator &other) const noexcept {
     return index_ - other.index_;
   }
   // prefix
@@ -129,14 +124,14 @@ public:
   }
 
   auto operator+(difference_type n) const {
-    return dm_subrange_iterator(dm_, row_rng_, col_rng_, index_ + n);
+    return subrange_iterator(dm_, row_rng_, col_rng_, index_ + n);
   }
   auto operator-(difference_type n) const {
-    return dm_subrange_iterator(dm_, row_rng_, col_rng_, index_ - n);
+    return subrange_iterator(dm_, row_rng_, col_rng_, index_ - n);
   }
 
   // When *this is not first in the expression
-  friend auto operator+(difference_type n, const dm_subrange_iterator &other) {
+  friend auto operator+(difference_type n, const subrange_iterator &other) {
     return other + n;
   }
 
@@ -148,7 +143,7 @@ public:
   // for debug purposes
   std::size_t find_dm_offset() const { return find_dm_offset(index_); }
 
-// private:
+private:
   /*
    * converts index within subrange (viewed as linear contiguous space)
    * into index within physical segment in dm
@@ -160,28 +155,27 @@ public:
     ind_rows = index / (col_rng_.second - col_rng_.first);
     ind_cols = index % (col_rng_.second - col_rng_.first);
 
-    // offset = dm_->halo_bounds().prev * dm_->shape()[1];
     offset += row_rng_.first * dm_->shape()[1] + col_rng_.first;
     offset += ind_rows * dm_->shape()[1] + ind_cols;
 
     return offset;
   };
 
-// private:
+private:
   DM *dm_ = nullptr;
   std::pair<int, int> row_rng_ = std::pair<int, int>(0, 0);
   std::pair<int, int> col_rng_ = std::pair<int, int>(0, 0);
 
   std::size_t index_ = 0;
-}; // class dm_subrange_iterator
+}; // class subrange_iterator
 
-template <typename DM> class dm_subrange {
+template <typename DM> class subrange {
 public:
-  using iterator = dm_subrange_iterator<DM>;
+  using iterator = subrange_iterator<DM>;
   using value_type = typename DM::value_type;
 
-  dm_subrange(DM &dm, std::pair<std::size_t, std::size_t> row_rng,
-              std::pair<std::size_t, std::size_t> col_rng) {
+  subrange(DM &dm, std::pair<std::size_t, std::size_t> row_rng,
+           std::pair<std::size_t, std::size_t> col_rng) {
     dm_ = &dm;
     row_rng_ = row_rng;
     col_rng_ = col_rng;
@@ -208,16 +202,29 @@ private:
 }; // class subrange
 
 template <typename DM>
-void dm_transform(mhp::dm_subrange<DM> &in, mhp::dm_subrange_iterator<DM> out,
+void transform(mhp::subrange<DM> &in, mhp::subrange_iterator<DM> out, auto op) {
+  for (mhp::subrange_iterator<DM> i = in.begin(); i != in.end(); i++) {
+    if (i.is_local()) {
+      *(out) = op(i);
+    }
+    ++out;
+  }
+}
+
+/* debug version
+
+template <typename DM>
+void transform(mhp::subrange<DM> &in, mhp::subrange_iterator<DM> out,
                   auto op) {
   std::stringstream s;
   int _i = 0;
   s << default_comm().rank() << ": dm_transform ";
-  for (mhp::dm_subrange_iterator<DM> i = in.begin(); i != in.end(); i++) {
+  for (mhp::subrange_iterator<DM> i = in.begin(); i != in.end(); i++) {
 
     if (i.is_local()) {
       *(out) = op(i);
-      s << _i << "(" << i.find_dm_offset() << ")" << *i << "->" << *(out) << "(" << out.index_ << "/" << out.find_dm_offset() << ")" << " \n";
+      s << _i << "(" << i.find_dm_offset() << ")" << *i << "->" << *(out) << "("
+<< out.index_ << "/" << out.find_dm_offset() << ")" << " \n";
     }
     ++out;
     _i++;
@@ -225,5 +232,7 @@ void dm_transform(mhp::dm_subrange<DM> &in, mhp::dm_subrange_iterator<DM> out,
   s << std::endl;
   std::cout << s.str();
 }
+
+ */
 
 } // namespace mhp
