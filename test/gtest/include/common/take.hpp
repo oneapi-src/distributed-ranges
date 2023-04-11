@@ -86,3 +86,8 @@ TYPED_TEST(Take, large) {
   auto dist = xhp::views::take(ops.dist_vec, 1000);
   EXPECT_TRUE(check_view(local, dist));
 }
+
+TYPED_TEST(Take, takeOfOneElementHasOneSegmentAndSameRank) {}
+TYPED_TEST(Take, takeOfFirstSegementHasOneSegmentAndSameRank) {}
+TYPED_TEST(Take, takeOfAllButOneSizeHasAllSegmentsWithSameRanks) {} //(use large input here, e.g. 1000 elements)
+TYPED_TEST(Take, takeOfMoreSizeHasSameNumberOfSegmentsAndSameRanks) {}
