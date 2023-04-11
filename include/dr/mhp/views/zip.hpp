@@ -47,11 +47,13 @@ private:
   using rng_zip_iterator = rng::iterator_t<rng_zip>;
   using base_type = std::tuple<R...>;
   using iterator_base_type = std::tuple<rng::iterator_t<R>...>;
+  using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
 public:
   // Wrap the iterator for rng::zip
   class zip_iterator {
   public:
+    using iterator_category = std::random_access_iterator_tag;
     using value_type = std::iter_value_t<rng_zip_iterator>;
     using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
@@ -59,14 +61,18 @@ public:
     zip_iterator(const zip_view *parent, difference_type offset)
         : parent_(parent), offset_(offset) {}
 
-    auto operator+(difference_type n) {
+    auto operator+(difference_type n) const {
       return zip_iterator(parent_, offset_ + n);
     }
     friend auto operator+(difference_type n, const zip_iterator &other) {
       return other + n;
     }
-    auto operator-(difference_type n) {
+    auto operator-(difference_type n) const {
       return zip_iterator(parent_, offset_ - n);
+    }
+
+    auto operator-(zip_iterator other) const {
+      return offset_ - other.offset_;
     }
 
     auto &operator+=(difference_type n) {
@@ -109,7 +115,7 @@ public:
     auto operator*() const {
       return *(rng::begin(parent_->rng_zip_) + offset_);
     }
-    auto operator[](difference_type n) { return *(*this + n); }
+    auto operator[](difference_type n) const { return *(*this + n); }
 
     //
     // Support for distributed ranges
@@ -137,6 +143,12 @@ public:
             base_local(base_iters) + offset, remainder)...));
       };
       return std::apply(localize, rng::begin(*parent_).base());
+    }
+    auto rank() const
+      requires(tuple_has_rank<base_type>)
+    {
+      auto select = [](auto &&...v) { return select_rank(v...); };
+      return std::apply(select, parent_->base_);
     }
 
   private:
@@ -167,6 +179,8 @@ public:
 
   auto begin() const { return zip_iterator(this, 0); }
   auto end() const { return zip_iterator(this, rng::distance(rng_zip_)); }
+  auto size() { return rng_zip_.size(); }
+  auto operator[](difference_type n) const { return begin()[n]; }
 
   //
   // Support for distributed ranges

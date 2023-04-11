@@ -30,6 +30,13 @@ TYPED_TEST(Zip, Local3) {
             xhp::views::zip(ops.vec0, ops.vec1, ops.vec2));
 }
 
+TYPED_TEST(Zip, Local3Distance) {
+  Ops3<TypeParam> ops(10);
+
+  EXPECT_EQ(rng::distance(rng::views::zip(ops.vec0, ops.vec1, ops.vec2)),
+            rng::distance(xhp::views::zip(ops.vec0, ops.vec1, ops.vec2)));
+}
+
 TYPED_TEST(Zip, Local2Mutate) {
   Ops2<TypeParam> rops(10);
   Ops2<TypeParam> xops(10);
@@ -70,6 +77,13 @@ TYPED_TEST(Zip, Dist3) {
   EXPECT_TRUE(
       check_view(rng::views::zip(ops.vec0, ops.vec1, ops.vec2),
                  xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
+}
+
+TYPED_TEST(Zip, Dist3Distance) {
+  Ops3<TypeParam> ops(10);
+
+  EXPECT_EQ(rng::distance(rng::views::zip(ops.vec0, ops.vec1, ops.vec2)),
+            rng::distance(xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
 }
 
 TYPED_TEST(Zip, Iota) {
@@ -140,4 +154,16 @@ TYPED_TEST(Zip, ForEachIota) {
 
   EXPECT_EQ(ops.vec, ops.dist_vec);
   EXPECT_EQ(ops.vec, ops.dist_vec);
+}
+
+TEST(Zip, ToTransform) {
+  Ops2<xhp::distributed_vector<int>> ops(10);
+
+  auto mul = [](auto v) {
+    return std::get<0>(v) * std::get<1>(v);
+  };
+  auto local = rng::views::transform(rng::views::zip(ops.vec0, ops.vec1), mul);
+  auto dist = lib::views::transform(mhp::views::zip(ops.dist_vec0, ops.dist_vec1), mul);
+  static_assert(compliant_view<decltype(dist)>);
+  EXPECT_EQ(local, dist);
 }

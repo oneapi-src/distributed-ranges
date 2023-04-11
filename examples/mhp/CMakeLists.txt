@@ -20,6 +20,16 @@ target_link_libraries(
   DR::mpi)
 add_mpi_test(stencil-1d-array stencil-1d-array 2)
 
+if (ENABLE_SYCL)
+  add_executable(mhp_dot_product_benchmark dot_product_benchmark.cpp)
+  target_compile_options(mhp_dot_product_benchmark PRIVATE -fsycl)
+  target_link_libraries(
+    mhp_dot_product_benchmark
+    cxxopts
+    DR::mpi)
+  add_mpi_test(mhp_dot_product_benchmark mhp_dot_product_benchmark 2)
+endif()
+
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)
   target_link_libraries(vector-add-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX fmt::fmt)
