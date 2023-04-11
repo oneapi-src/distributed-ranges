@@ -61,7 +61,7 @@ namespace __detail {
 
 inline auto default_queue() { return sycl::queue(); }
 
-inline sycl::queue &queue(std::size_t rank) { return internal::queues_[rank]; }
+inline sycl::queue &queue(std::size_t rank) { return queues_[rank]; }
 
 } // namespace __detail
 

@@ -16,14 +16,11 @@
 #include <dr/detail/onedpl_direct_iterator.hpp>
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/allocators.hpp>
+#include <dr/shp/detail.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/vector.hpp>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/onedpl_direct_iterator.hpp>
-#include <dr/shp/detail.hpp>
-
 
 namespace shp {
 

@@ -13,6 +13,7 @@
 #include <dr/shp/algorithms/iota.hpp>
 #include <dr/shp/containers/dense_matrix.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
+#include <dr/shp/detail.hpp>
 #include <dr/shp/distributed_span.hpp>
 #include <dr/shp/distributed_vector.hpp>
 #include <dr/shp/init.hpp>
@@ -22,3 +23,4 @@
 #include <dr/shp/util/matrix_io.hpp>
 #include <dr/views/views.hpp>
 #include <dr/shp/detail.hpp>
+
