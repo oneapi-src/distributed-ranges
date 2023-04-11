@@ -71,9 +71,7 @@ public:
       return zip_iterator(parent_, offset_ - n);
     }
 
-    auto operator-(zip_iterator other) const {
-      return offset_ - other.offset_;
-    }
+    auto operator-(zip_iterator other) const { return offset_ - other.offset_; }
 
     auto &operator+=(difference_type n) {
       offset_ += n;
@@ -179,7 +177,7 @@ public:
 
   auto begin() const { return zip_iterator(this, 0); }
   auto end() const { return zip_iterator(this, rng::distance(rng_zip_)); }
-  auto size() { return rng_zip_.size(); }
+  auto size() { return rng::distance(rng_zip_); }
   auto operator[](difference_type n) const { return begin()[n]; }
 
   //
