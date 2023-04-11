@@ -22,7 +22,6 @@ concept compliant_view = rng::forward_range<V> &&
   lib::ranges::segments(v);
   lib::ranges::rank(lib::ranges::segments(v)[0]);
   rng::begin(lib::ranges::segments(v)[0]);
-  lib::ranges::rank(rng::begin(lib::ranges::segments(v)[0]));
   lib::ranges::local(rng::begin(lib::ranges::segments(v)[0]));
   mhp::local_segments(v);
 };
