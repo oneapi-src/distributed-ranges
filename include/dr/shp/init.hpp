@@ -48,6 +48,11 @@ inline void init(R &&devices)
   __detail::global_context_ = new sycl::context(__detail::devices_);
   __detail::ngpus_ = rng::size(__detail::devices_);
 
+  for (auto &&device : __detail::devices_) {
+    sycl::queue q(*__detail::global_context_, device);
+    __detail::queues_.push_back(q);
+  }
+
   par_unseq = device_policy(__detail::devices_);
 }
 
