@@ -109,8 +109,7 @@ public:
              lib::ranges::__detail::has_local<Iter>)
   {
     auto iter = lib::ranges::__detail::local(iter_);
-    return transform_iterator<decltype(iter), F>(
-        lib::ranges::__detail::local(iter), fn_);
+    return transform_iterator<decltype(iter), F>(iter, fn_);
   }
 
 private:
