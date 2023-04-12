@@ -36,6 +36,14 @@ all_rules = [
         'use // namespace dr',
     ),
     (
+        r'namespace mhp {',
+        'use namespace dr::mhp {',
+    ),
+    (
+        r'// namespace mhp',
+        'use // namespace dr::mhp',
+    ),
+    (
         r'[( ]size_t ',
         'use std::size_t',
     ),

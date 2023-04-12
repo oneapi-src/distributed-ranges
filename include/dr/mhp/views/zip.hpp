@@ -14,7 +14,7 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/alignment.hpp>
 
-namespace mhp {
+namespace dr::mhp {
 
 template <typename T>
 concept has_rank = requires(T &t) { dr::ranges::rank(t); };
@@ -267,10 +267,11 @@ private:
 template <rng::viewable_range... R>
 zip_view(R &&...r) -> zip_view<rng::views::all_t<R>...>;
 
-} // namespace mhp
+} // namespace dr::mhp
 
 namespace DR_RANGES_NAMESPACE {} // namespace DR_RANGES_NAMESPACE
 
 // Needed to satisfy rng::viewable_range
 template <rng::random_access_range... V>
-inline constexpr bool rng::enable_borrowed_range<mhp::zip_view<V...>> = true;
+inline constexpr bool rng::enable_borrowed_range<dr::mhp::zip_view<V...>> =
+    true;

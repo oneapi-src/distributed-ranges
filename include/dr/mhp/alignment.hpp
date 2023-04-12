@@ -8,7 +8,7 @@
 #include <dr/detail/ranges.hpp>
 #include <dr/detail/ranges_shim.hpp>
 
-namespace mhp {
+namespace dr::mhp {
 
 auto aligned(dr::distributed_range auto &&r) {
   return !dr::ranges::segments(r).empty();
@@ -44,4 +44,4 @@ bool aligned(dr::distributed_range auto &&r1, local_range auto &&r2,
   return aligned(r1, rest...);
 }
 
-} // namespace mhp
+} // namespace dr::mhp

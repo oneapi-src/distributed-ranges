@@ -46,15 +46,15 @@ int check(auto dv, auto n, auto steps) {
 
 int stencil(auto n, auto steps) {
   dr::halo_bounds hb(1);
-  mhp::distributed_vector<int> a(n, hb), b(n, hb);
-  mhp::iota(a, 100);
-  mhp::fill(b, 0);
+  dr::mhp::distributed_vector<int> a(n, hb), b(n, hb);
+  dr::mhp::iota(a, 100);
+  dr::mhp::fill(b, 0);
 
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
   for (std::size_t s = 0; s < steps; s++) {
-    mhp::halo(in).exchange();
-    mhp::transform(in, out.begin(), stencil_op);
+    dr::mhp::halo(in).exchange();
+    dr::mhp::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
   }
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   comm = MPI_COMM_WORLD;
   MPI_Comm_rank(comm, &comm_rank);
   MPI_Comm_size(comm, &comm_size);
-  mhp::init();
+  dr::mhp::init();
 
   cxxopts::Options options_spec(argv[0], "stencil 1d");
   // clang-format off

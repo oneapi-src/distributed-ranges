@@ -14,8 +14,8 @@ const std::size_t root = 0;
 TYPED_TEST(ReduceMHP, RootRange) {
   Ops1<TypeParam> ops(10);
 
-  auto result = mhp::reduce(default_policy(ops.dist_vec), ops.dist_vec, 0,
-                            std::plus{}, root);
+  auto result = dr::mhp::reduce(default_policy(ops.dist_vec), ops.dist_vec, 0,
+                                std::plus{}, root);
 
   if (comm_rank == root) {
     EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end(), 0, std::plus{}),
@@ -27,8 +27,8 @@ TYPED_TEST(ReduceMHP, RootIterators) {
   Ops1<TypeParam> ops(10);
 
   auto result =
-      mhp::reduce(default_policy(ops.dist_vec), ops.dist_vec.begin() + 1,
-                  ops.dist_vec.end() - 1, 0, std::plus{}, root);
+      dr::mhp::reduce(default_policy(ops.dist_vec), ops.dist_vec.begin() + 1,
+                      ops.dist_vec.end() - 1, 0, std::plus{}, root);
 
   if (comm_rank == root) {
     EXPECT_EQ(

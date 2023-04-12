@@ -6,7 +6,7 @@
 
 #include <dr/mhp/views/zip.hpp>
 
-namespace mhp {
+namespace dr::mhp {
 
 namespace views {
 
@@ -53,4 +53,4 @@ inline constexpr auto enumerate = enumerate_fn_{};
 
 } // namespace views
 
-} // namespace mhp
+} // namespace dr::mhp
