@@ -21,7 +21,7 @@ template <std::contiguous_iterator Iter>
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
 sycl::event fill_async(Iter first, Iter last,
                        const std::iter_value_t<Iter> &value) {
-  auto q = shp::__detail::default_queue();
+  auto &&q = shp::__detail::default_queue();
   std::iter_value_t<Iter> *arr = std::to_address(first);
   return q.parallel_for(sycl::range<>(last - first),
                         [arr, value](auto idx) { arr[idx] = value; });
@@ -39,7 +39,7 @@ template <typename T>
   requires(!std::is_const_v<T>)
 sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
                        const T &value) {
-  auto q = shp::__detail::default_queue();
+  auto &&q = shp::__detail::default_queue();
   auto *arr = first.get_raw_pointer();
   return q.parallel_for(sycl::range<>(last - first),
                         [arr, value](auto idx) { arr[idx] = value; });

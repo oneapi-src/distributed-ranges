@@ -70,9 +70,7 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
     std::vector<future_t> futures;
 
     for (auto &&segment : lib::ranges::segments(r)) {
-      auto &&q = __detail::queue(lib::ranges::rank(segment));
-
-      oneapi::dpl::execution::device_policy local_policy(q);
+      auto &&local_policy = __detail::dpl_policy(lib::ranges::rank(segment));
 
       auto dist = rng::distance(segment);
       if (dist <= 0) {

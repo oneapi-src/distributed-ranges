@@ -229,14 +229,7 @@ public:
     tiles_ = generate_tiles_();
     segments_ = generate_segments_();
 
-    sycl::queue q;
-
-    auto e = q.submit([&](auto &&h) {
-      h.depends_on(v_e);
-      h.depends_on(c_e);
-      h.depends_on(r_e);
-    });
-    return e;
+    return __detail::combine_events({v_e, c_e, r_e});
   }
 
   template <typename... Args>

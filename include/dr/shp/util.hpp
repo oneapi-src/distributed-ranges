@@ -228,7 +228,7 @@ void range_details(R &&r, std::size_t width = 80) {
 namespace __detail {
 
 inline sycl::event combine_events(const std::vector<sycl::event> &events) {
-  sycl::queue q;
+  auto &&q = __detail::queue(0);
   auto e = q.submit([&](auto &&h) {
     h.depends_on(events);
     h.host_task([] {});
