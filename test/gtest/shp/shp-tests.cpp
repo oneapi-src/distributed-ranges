@@ -4,6 +4,15 @@
 
 #include "shp-tests.hpp"
 
+// Use this for shorter build time
+#define MINIMAL_TEST 1
+#ifdef MINIMAL_TEST
+
+using AllTypes = ::testing::Types<shp::distributed_vector<int>>;
+#include "common/enumerate.hpp"
+
+#else
+
 using AllTypes = ::testing::Types<shp::distributed_vector<int>,
                                   shp::distributed_vector<float>>;
 
@@ -24,6 +33,8 @@ using AllTypes = ::testing::Types<shp::distributed_vector<int>,
 #include "common/transform_view.hpp"
 // Issue with 2 element zips
 // #include "common/zip.hpp"
+
+#endif
 
 // To share tests with MHP
 std::size_t comm_rank = 0;
