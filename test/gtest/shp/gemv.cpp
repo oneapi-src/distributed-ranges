@@ -7,8 +7,7 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-// hard to reproduce fails
-TEST(SparseMatrix, DISABLED_Gemv) {
+TEST(SparseMatrix, Gemv) {
   std::size_t m = 100;
   std::size_t k = 100;
 
