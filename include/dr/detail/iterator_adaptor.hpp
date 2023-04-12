@@ -9,7 +9,7 @@
 
 #include <dr/detail/ranges_shim.hpp>
 
-namespace lib {
+namespace dr {
 
 namespace {
 
@@ -197,4 +197,4 @@ private:
   accessor_type accessor_;
 };
 
-} // namespace lib
+} // namespace dr

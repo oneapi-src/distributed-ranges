@@ -23,7 +23,7 @@ TYPED_TEST(DistributedVectorTest,
   std::iota(dv.begin(), dv.end(), 20);
 
   auto second = dv.begin() + 2;
-  EXPECT_EQ(second[0], lib::ranges::segments(second)[0][0]);
+  EXPECT_EQ(second[0], dr::ranges::segments(second)[0][0]);
 }
 
 TYPED_TEST(DistributedVectorTest, fill_constructor) {
@@ -86,11 +86,11 @@ TYPED_TEST(DistributedVectorTest, Iterator) {
 
 template <typename AllocT> class DeviceVectorTest : public testing::Test {
 public:
-  using DeviceVec = shp::device_vector<typename AllocT::value_type, AllocT>;
+  using DeviceVec = dr::shp::device_vector<typename AllocT::value_type, AllocT>;
 };
 
 TYPED_TEST_SUITE(DeviceVectorTest, AllocatorTypes);
 
 TYPED_TEST(DeviceVectorTest, is_remote_contiguous_range) {
-  static_assert(lib::remote_contiguous_range<typename TestFixture::DeviceVec>);
+  static_assert(dr::remote_contiguous_range<typename TestFixture::DeviceVec>);
 }

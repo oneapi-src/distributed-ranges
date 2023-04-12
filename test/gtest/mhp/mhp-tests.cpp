@@ -8,20 +8,20 @@
 // #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
-using AllTypes = ::testing::Types<mhp::distributed_vector<int>>;
+using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
 #include "common/enumerate.hpp"
 
 #else
 
 using AllTypes = ::testing::Types<
 #ifdef SYCL_LANGUAGE_VERSION
-    mhp::distributed_vector<int, mhp::sycl_shared_allocator<int>>,
-    mhp::distributed_vector<float, mhp::sycl_shared_allocator<float>>,
+    dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
+    dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>,
 #endif
-    mhp::distributed_vector<int>, mhp::distributed_vector<float>>;
+    dr::mhp::distributed_vector<int>, dr::mhp::distributed_vector<float>>;
 
-using CPUTypes = ::testing::Types<mhp::distributed_vector<int>,
-                                  mhp::distributed_vector<float>>;
+using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
+                                  dr::mhp::distributed_vector<float>>;
 
 #include "common/all.hpp"
 #include "common/copy.hpp"
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(comm, &size);
   comm_rank = rank;
   comm_size = size;
-  mhp::init();
+  dr::mhp::init();
 
   ::testing::InitGoogleTest(&argc, argv);
 
@@ -82,9 +82,9 @@ int main(int argc, char *argv[]) {
   std::ofstream *logfile = nullptr;
   if (options.count("log")) {
     logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
-    lib::drlog.set_file(*logfile);
+    dr::drlog.set_file(*logfile);
   }
-  lib::drlog.debug("Rank: {}\n", comm_rank);
+  dr::drlog.debug("Rank: {}\n", comm_rank);
 
   auto res = RUN_ALL_TESTS();
 

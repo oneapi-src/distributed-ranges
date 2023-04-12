@@ -7,11 +7,11 @@
 #include <dr/shp/views/standard_views.hpp>
 #include <dr/views/views.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 namespace views {
 
-inline constexpr auto transform = lib::views::transform;
+inline constexpr auto transform = dr::views::transform;
 
 inline constexpr auto take = rng::views::take;
 
@@ -19,4 +19,4 @@ inline constexpr auto drop = rng::views::drop;
 
 } // namespace views
 
-} // namespace shp
+} // namespace dr::shp

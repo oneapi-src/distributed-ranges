@@ -6,12 +6,12 @@
 
 #include <dr/detail/ranges.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 namespace __detail {
 
-inline constexpr auto local = lib::ranges::__detail::local;
+inline constexpr auto local = dr::ranges::__detail::local;
 
 } // namespace __detail
 
-} // namespace shp
+} // namespace dr::shp

@@ -5,9 +5,9 @@
 #include "mhp-tests.hpp"
 
 using T = int;
-using DV = mhp::distributed_vector<T>;
+using DV = dr::mhp::distributed_vector<T>;
 using A = std::allocator<T>;
-using DVA = mhp::distributed_vector<T, A>;
+using DVA = dr::mhp::distributed_vector<T, A>;
 using DVI = typename DV::iterator;
 
 TEST(MhpTests, DistributedVectorQuery) {
@@ -26,7 +26,7 @@ TEST(MhpTests, DistributedVectorIndex) {
       dv[i] = i + 10;
     }
   }
-  mhp::fence();
+  dr::mhp::fence();
 
   for (std::size_t i = 0; i < n; i++) {
     EXPECT_EQ(dv[i], i + 10);
@@ -38,7 +38,7 @@ TEST(MhpTests, DistributedVectorIndex) {
     dv2[3] = 1000;
     dv2[3] = dv[3];
   }
-  mhp::fence();
+  dr::mhp::fence();
   EXPECT_EQ(dv2[3], dv[3]);
 }
 
@@ -87,7 +87,7 @@ TEST(MhpTests, DistributedVectorReference) {
   if (comm_rank == 0) {
     rng::iota(dv, 100);
   }
-  mhp::fence();
+  dr::mhp::fence();
 
   const DV &cdv = dv;
   if (comm_rank == 0) {
@@ -99,15 +99,15 @@ TEST(MhpTests, DistributedVectorReference) {
   if (comm_rank == 0) {
     dv[2] = 2;
   }
-  mhp::fence();
+  dr::mhp::fence();
   EXPECT_EQ(dv[2], 2);
 }
 
 #if 0
 TEST(MhpTests, DistributedVectorAllocator) {
   std::size_t n = 10;
-  DVA dv(n, lib::halo_bounds(0), std::allocator<T>{});
-  mhp::fill(dv, 22);
+  DVA dv(n, dr::halo_bounds(0), std::allocator<T>{});
+  dr::mhp::fill(dv, 22);
   if (comm_rank == 0) {
     std::vector<T> v(n);
     rng::fill(v, 22);

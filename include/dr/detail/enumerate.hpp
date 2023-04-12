@@ -6,7 +6,7 @@
 
 #include <dr/detail/ranges_shim.hpp>
 
-namespace lib {
+namespace dr {
 
 namespace __detail {
 
@@ -59,4 +59,4 @@ inline constexpr auto enumerate = enumerate_fn_{};
 
 } // namespace __detail
 
-} // namespace lib
+} // namespace dr

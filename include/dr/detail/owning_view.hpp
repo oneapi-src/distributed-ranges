@@ -6,7 +6,7 @@
 
 #include <dr/detail/ranges_shim.hpp>
 
-namespace lib {
+namespace dr {
 
 namespace __detail {
 
@@ -66,4 +66,4 @@ private:
 
 } // namespace __detail
 
-} // namespace lib
+} // namespace dr

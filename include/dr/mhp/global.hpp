@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+namespace dr::mhp {
 
 namespace __detail {
 
 struct global_context {
-  lib::communicator comm_;
+  dr::communicator comm_;
   // container owns the window, we just track MPI handle
   std::set<MPI_Win> wins_;
 #ifdef SYCL_LANGUAGE_VERSION
@@ -35,16 +35,16 @@ inline void final() {
   __detail::global_context_ = nullptr;
 }
 
-inline lib::communicator &default_comm() { return __detail::gcontext()->comm_; }
+inline dr::communicator &default_comm() { return __detail::gcontext()->comm_; }
 
 inline std::set<MPI_Win> &active_wins() { return __detail::gcontext()->wins_; }
 
 inline void barrier() { __detail::gcontext()->comm_.barrier(); }
 
 inline void fence() {
-  lib::drlog.debug("fence\n");
+  dr::drlog.debug("fence\n");
   for (auto win : __detail::gcontext()->wins_) {
-    lib::drlog.debug("  win: {}\n", win);
+    dr::drlog.debug("  win: {}\n", win);
     MPI_Win_fence(0, win);
   }
 }
@@ -58,4 +58,4 @@ inline void init(sycl::queue q) {
 }
 #endif
 
-} // namespace mhp
+} // namespace dr::mhp
