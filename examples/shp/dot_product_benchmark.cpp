@@ -50,23 +50,43 @@ auto dot_product_sequential(X &&x, Y &&y) {
 }
 
 int main(int argc, char **argv) {
-  auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
-  // auto devices = dr::shp::trim_devices(devices_, 8);
+
+  std::size_t size = 0; // size of problem
+  std::size_t ndev = 0; // size of problem
+
+  if (argc != 3) { 
+    fmt::print("Usage: {} dev size\n", argv[0]);
+    return 1;
+  }
+
+  ndev = std::atoi(argv[1]); 
+  size = std::atoi(argv[2]); 
+
+  if (size == 0 || ndev == 0) {
+    fmt::print("Usage: {} dev size\n", argv[0]);
+    return 1;
+  }
+
+  double /*seq_median = 0,*/ shp_median = 0, dpl_median = 0 /*, mkl_median = 0 */ ;
+
+  auto devices_ = shp::get_numa_devices(sycl::default_selector_v);
+  // auto devices = shp::trim_devices(devices_, ndev);
   auto devices = devices_;
-  dr::shp::init(devices);
+  shp::init(devices);
 
   // Note that parallel results will not match sequential
   // results for large sizes due to floating point addition
   // non-determinism.
   // This does not indicate the benchmark is failing.
-  std::size_t n = 32ull * 1000 * 1000ull;
+
+  std::size_t n = size * 1000 * 1000ull;
 
   using T = float;
 
   std::vector<T> x_local(n, 1);
   std::vector<T> y_local(n, 1);
 
-  auto v_serial = dot_product_sequential(x_local, y_local);
+  /* auto v_serial = */ dot_product_sequential(x_local, y_local);
 
   dr::shp::distributed_vector<T> x(n, 1);
   dr::shp::distributed_vector<T> y(n, 1);
@@ -76,33 +96,54 @@ int main(int argc, char **argv) {
   std::vector<double> durations;
   durations.reserve(n_iterations);
 
-  // Execute on all devices with SHP:
+  // Execute seqential :
   T sum = 0;
+  /*
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
-    auto v = dot_product_distributed(x, y);
+    auto v = dot_product_sequential(x_local, y_local);
     auto end = std::chrono::high_resolution_clock::now();
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
-    if (v != v_serial) {
-      fmt::print("{} != {}\n", v, v_serial);
-    }
-    // assert(v == v_serial);
     sum += v;
   }
 
-  fmt::print("SHP executing on {} devices:\n", devices.size());
+  fmt::print("Sequential executing on {} devices: ", devices.size());
   fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
                                   return x * 1000;
                                 }));
 
   std::sort(durations.begin(), durations.end());
 
-  double median_duration = durations[durations.size() / 2];
+  seq_median = durations[durations.size() / 2] * 1000;
 
-  fmt::print("Median duration: {} ms\n", median_duration * 1000);
+  fmt::print("Result: {}, Median duration: {} ms\n", sum, seq_median);
 
-  fmt::print("Result: {}\n", sum);
+  durations.clear();
+  durations.reserve(n_iterations);
+  
+  // Execute on all devices with SHP:
+  sum = 0;
+  */
+  for (std::size_t i = 0; i < n_iterations; i++) {
+    auto begin = std::chrono::high_resolution_clock::now();
+    auto v = dot_product_distributed(x, y);
+    auto end = std::chrono::high_resolution_clock::now();
+    double duration = std::chrono::duration<double>(end - begin).count();
+    durations.push_back(duration);
+    sum += v;
+  }
+
+  fmt::print("SHP executing on {} devices: ", devices.size());
+  fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
+                                  return x * 1000;
+                                }));
+
+  std::sort(durations.begin(), durations.end());
+
+  shp_median = durations[durations.size() / 2] * 1000;
+
+  fmt::print("Result: {}, Median duration: {} ms\n", sum, shp_median );
 
   // Execute on one device:
   durations.clear();
@@ -125,27 +166,20 @@ int main(int argc, char **argv) {
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
 
-    if (v != v_serial) {
-      fmt::print("{} != {}\n", v, v_serial);
-    }
-    // See note above about large problem sizes.
-    // assert(v == v_serial);
     sum += v;
   }
 
-  fmt::print("oneDPL executing on one device:\n");
+  fmt::print("oneDPL executing on one device: ");
   fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
                                   return x * 1000;
                                 }));
 
   std::sort(durations.begin(), durations.end());
 
-  median_duration = durations[durations.size() / 2];
+  dpl_median = durations[durations.size() / 2] * 1000;
 
-  fmt::print("Median duration: {} ms\n", median_duration * 1000);
-
-  fmt::print("Result: {}\n", sum);
-
+  fmt::print("Result: {}, Median duration: {} ms\n", sum, dpl_median );
+  
 #ifdef USE_MKL
 
   T *d_result = sycl::malloc_device<T>(1, q);
@@ -160,26 +194,28 @@ int main(int argc, char **argv) {
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
 
-    if (v != v_serial) {
-      fmt::print("{} != {}\n", v, v_serial);
-    }
-    // assert(v == v_serial);
     sum += v;
   }
 
-  fmt::print("oneMKL executing on one device:\n");
+  fmt::print("oneMKL executing on one device: ");
   fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
                                   return x * 1000;
                                 }));
 
   std::sort(durations.begin(), durations.end());
 
-  median_duration = durations[durations.size() / 2];
+  mkl_median = durations[durations.size() / 2] * 1000;
 
-  fmt::print("Median duration: {} ms\n", median_duration * 1000);
+  fmt::print("Result: {}, Median duration: {} ms\n", sum, mkl_median);
 
-  fmt::print("Result: {}\n", sum);
 #endif
 
+//  fmt::print("----------------------------------------------------------\n");
+//  fmt::print("devices, size, seq_time, shp_time, dpl_time, mkl_time\n");
+//  fmt::print("{}, {}, {}, {}, {}, {}\n", devices.size(), size, seq_median, shp_median, dpl_median, mkl_median);
+
+  fmt::print("----------------------------------------------------------\n");
+  fmt::print("devices, size, shp_time, dpl_time\n");
+  fmt::print("{}, {}, {}, {}\n", devices.size(), size, shp_median, dpl_median);
   return 0;
 }
