@@ -365,3 +365,21 @@ inline std::ostream &operator<<(std::ostream &os,
 }
 
 } // namespace DR_RANGES_NAMESPACE
+
+namespace std {
+
+template <typename... Ts>
+inline std::ostream &operator<<(std::ostream &os,
+                                const std::tuple<Ts...> &obj) {
+  os << fmt::format("{}", obj);
+  return os;
+}
+
+template <typename T1, typename T2>
+inline std::ostream &operator<<(std::ostream &os,
+                                const std::pair<T1, T2> &obj) {
+  os << fmt::format("{}", obj);
+  return os;
+}
+
+} // namespace std
