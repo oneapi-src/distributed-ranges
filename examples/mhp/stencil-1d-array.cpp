@@ -88,7 +88,7 @@ int stencil() {
 
   for (std::size_t s = 0; s < steps; s++) {
     mhp::halo(in).exchange();
-    mhp::for_each(rng::views::zip(in, out), stencil_op);
+    mhp::for_each(mhp::views::zip(in, out), stencil_op);
     std::swap(in, out);
   }
 

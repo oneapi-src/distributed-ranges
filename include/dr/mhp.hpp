@@ -29,34 +29,34 @@
 // Workaround for doxygen warning about internal inconsistency
 namespace fmt {}
 
-#include "vendor/source_location/source_location.hpp"
+#include <vendor/source_location/source_location.hpp>
 
 // MPI should be optional
-#include "mkl.h"
-#include "mpi.h"
+#include <mkl.h>
+#include <mpi.h>
 
-#include "range/v3/all.hpp"
-namespace rng = ranges;
+#include <dr/detail/ranges_shim.hpp>
 
 // clang-format off
-#include "concepts/concepts.hpp"
+#include <dr/concepts/concepts.hpp>
 
-#include "details/logger.hpp"
-#include "details/view_detectors.hpp"
-#include "details/segments_tools.hpp"
-#include "details/iterator_adaptor.hpp"
-#include "details/normal_distributed_iterator.hpp"
-#include "details/memory.hpp"
-#include "details/communicator.hpp"
-#include "details/halo.hpp"
+#include <dr/detail/logger.hpp>
+#include <dr/detail/view_detectors.hpp>
+#include <dr/detail/segments_tools.hpp>
+#include <dr/detail/iterator_adaptor.hpp>
+#include <dr/detail/normal_distributed_iterator.hpp>
+#include <dr/detail/memory.hpp>
+#include <dr/detail/communicator.hpp>
+#include <dr/detail/halo.hpp>
 
-#include "views/views.hpp"
-#include "views/transform.hpp"
+#include <dr/views/views.hpp>
+#include <dr/views/transform.hpp>
 
-#include "mhp/global.hpp"
-#include "mhp/sycl_support.hpp"
-#include "mhp/alignment.hpp"
-#include "mhp/views.hpp"
-#include "mhp/algorithms/algorithms.hpp"
-#include "mhp/algorithms/reduce.hpp"
-#include "mhp/containers/distributed_vector.hpp"
+#include <dr/mhp/global.hpp>
+#include <dr/mhp/sycl_support.hpp>
+#include <dr/mhp/alignment.hpp>
+#include <dr/mhp/views/views.hpp>
+#include <dr/mhp/views/zip.hpp>
+#include <dr/mhp/algorithms/algorithms.hpp>
+#include <dr/mhp/algorithms/reduce.hpp>
+#include <dr/mhp/containers/distributed_vector.hpp>

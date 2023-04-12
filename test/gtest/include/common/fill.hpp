@@ -28,3 +28,17 @@ TYPED_TEST(Fill, Iterators) {
   rng::fill(ops.vec.begin() + 1, ops.vec.end() - 1, 33);
   EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
 }
+
+TYPED_TEST(Fill, Iterators_large) {
+  TypeParam large_dist_vec(80000);
+  xhp::fill(large_dist_vec.begin() + 71000, large_dist_vec.end(), 33);
+  EXPECT_EQ(large_dist_vec[77777], 33);
+}
+
+TYPED_TEST(Fill, Iterators_large_segment) {
+  TypeParam large_dist_vec(80000);
+  auto last_segment = large_dist_vec.segments().back();
+  xhp::fill(last_segment.begin(), last_segment.end(),
+            static_cast<typename TypeParam::value_type>(33));
+  EXPECT_EQ(large_dist_vec[79999], 33);
+}

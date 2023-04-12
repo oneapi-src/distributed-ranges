@@ -71,15 +71,31 @@ all_rules_compiled = []
 
 include_rules = [
     (
-        r'\.begin()',
+        r'#include "',
+        'use #include <>',
+    ),
+    (
+        r'namespace {',
+        'use namespace __detail {',
+    ),
+    (
+        r'namespace internal {',
+        'use namespace __detail {',
+    ),
+    (
+        r'\.begin\(\)',
         'use rng::begin()',
     ),
     (
-        r'\.end()',
+        r'\.end\(\)',
         'use rng::end()',
     ),
     (
-        r'\.size()',
+        r'rng::size\(',
+        'use rng::distance()',
+    ),
+    (
+        r'\.size\(\)',
         'use rng::distance()',
     ),
     (

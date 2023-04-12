@@ -4,9 +4,11 @@
 
 #pragma once
 
-#include "device_ref.hpp"
-#include <sycl/sycl.hpp>
 #include <type_traits>
+
+#include <sycl/sycl.hpp>
+
+#include <dr/shp/device_ref.hpp>
 
 namespace shp {
 
@@ -15,7 +17,6 @@ template <typename T>
 class device_ptr {
 public:
   using value_type = T;
-  using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
   using pointer = device_ptr<T>;
   using const_pointer = device_ptr<std::add_const_t<T>>;
@@ -123,7 +124,7 @@ public:
 
   reference operator*() const noexcept { return reference(pointer_); }
 
-  reference operator[](size_type offset) const noexcept {
+  reference operator[](difference_type offset) const noexcept {
     return reference(*(*this + offset));
   }
 
@@ -131,9 +132,7 @@ public:
 
   friend pointer operator+(difference_type n, pointer iter) { return iter + n; }
 
-  T *local() { return pointer_; }
-
-  const T *local() const { return pointer_; }
+  T *local() const noexcept { return pointer_; }
 
   friend const_pointer;
   friend nonconst_pointer;

@@ -12,15 +12,16 @@ TYPED_TEST_SUITE(Subrange, AllTypes);
 TYPED_TEST(Subrange, Basic) {
   Ops1<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_view(
-      rng::subrange(ops.vec.begin() + 1, ops.vec.end() - 1),
-      rng::subrange(ops.dist_vec.begin() + 1, ops.dist_vec.end() - 1)));
+  auto local = rng::subrange(ops.vec.begin() + 1, ops.vec.end() - 1);
+  auto dist = rng::subrange(ops.dist_vec.begin() + 1, ops.dist_vec.end() - 1);
+  static_assert(compliant_view<decltype(dist)>);
+  EXPECT_TRUE(check_view(local, dist));
 }
 
 TYPED_TEST(Subrange, Mutate) {
   Ops1<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_mutable_view(
+  EXPECT_TRUE(check_mutate_view(
       ops, rng::subrange(ops.vec.begin() + 1, ops.vec.end() - 1),
       rng::subrange(ops.dist_vec.begin() + 1, ops.dist_vec.end() - 1)));
 }

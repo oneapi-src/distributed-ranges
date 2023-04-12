@@ -13,18 +13,20 @@ int main(int argc, char **argv) {
               << "\n";
   }
 
-  shp::distributed_vector<int, shp::device_allocator<int>> b(100);
+  using T = float;
+
+  shp::distributed_vector<T, shp::device_allocator<T>> b(100);
 
   shp::for_each(shp::par_unseq, shp::enumerate(b), [](auto &&tuple) {
     auto &&[idx, value] = tuple;
     value = 1;
   });
 
-  shp::distributed_vector<int, shp::device_allocator<int>> c(100);
+  shp::distributed_vector<T, shp::device_allocator<T>> c(100);
 
   shp::for_each(shp::par_unseq, c, [](auto &&v) { v = 0; });
 
-  shp::sparse_matrix<int> a(
+  shp::sparse_matrix<T> a(
       {100, 100}, 0.01,
       shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}));
 

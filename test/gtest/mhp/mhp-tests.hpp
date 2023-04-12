@@ -12,8 +12,17 @@ extern MPI_Comm comm;
 extern std::size_t comm_rank;
 extern std::size_t comm_size;
 
-namespace zhp = rng;
 namespace xhp = mhp;
+
+template <typename V>
+concept compliant_view = rng::forward_range<V> && requires(V &v) {
+  // test one at a time so error is apparent
+  lib::ranges::segments(v);
+  lib::ranges::rank(lib::ranges::segments(v)[0]);
+  rng::begin(lib::ranges::segments(v)[0]);
+  lib::ranges::local(rng::begin(lib::ranges::segments(v)[0]));
+  mhp::local_segments(v);
+};
 
 inline void barrier() { mhp::barrier(); }
 inline void fence() { mhp::fence(); }

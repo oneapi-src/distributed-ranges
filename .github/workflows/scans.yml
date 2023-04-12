@@ -19,7 +19,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        make -j -C build/examples/cpu all test
+        make -j -C build/examples/mhp all test
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
@@ -27,7 +27,7 @@ jobs:
       run: python3 -m pip install -i https://${{ secrets.BDBA_HOST }}/artifactory/api/pypi/dtt-pypi-igk-local/simple bdba
     - name: Scan
       run: |
-        tar -cvzf build/dr-bdba.tgz --exclude="*.o" build/examples/cpu
+        tar -cvzf build/dr-bdba.tgz --exclude="*.o" build/examples/mhp
         bdba upload --scan-name ${SCAN_NAME}} --products-json-path build/bdba.json --path build/dr-bdba.tgz --key ${{ secrets.BDBA_KEY }}
         bdba override --products-json-path build/bdba.json -c test/bdba/bdba.yaml --key ${{ secrets.BDBA_KEY }}
         bdba pdf-report --products-json-path build/bdba.json --key ${{ secrets.BDBA_KEY }}
@@ -77,10 +77,10 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        make -j -C build/examples/cpu all test
+        make -j -C build/examples/mhp all test
     - name: Scan
       run: |
-         uvscan --RPTOBJECTS --RECURSIVE --UNZIP --HTML=build/scan-report.html --LOUD --SUMMARY --ANALYZE --PANALYZE build/examples/cpu
+         uvscan --RPTOBJECTS --RECURSIVE --UNZIP --HTML=build/scan-report.html --LOUD --SUMMARY --ANALYZE --PANALYZE build/examples/mhp
     - uses: actions/upload-artifact@v3
       with:
         name: malware

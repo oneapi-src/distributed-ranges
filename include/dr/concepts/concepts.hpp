@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../details/ranges.hpp"
+#include <dr/detail/ranges.hpp>
 
 namespace lib {
 
@@ -23,21 +23,18 @@ concept distributed_range =
 template <typename I>
 concept remote_contiguous_iterator =
     std::random_access_iterator<I> && requires(I &iter) {
-                                        lib::ranges::rank(iter);
-                                        {
-                                          lib::ranges::local(iter)
-                                          } -> std::contiguous_iterator;
-                                      };
+      lib::ranges::rank(iter);
+      { lib::ranges::local(iter) } -> std::contiguous_iterator;
+    };
 
 template <typename I>
-concept distributed_iterator =
-    std::forward_iterator<I> &&
-    requires(I &iter) { lib::ranges::segments(iter); };
+concept distributed_iterator = std::forward_iterator<I> && requires(I &iter) {
+  lib::ranges::segments(iter);
+};
 
 template <typename R>
 concept remote_contiguous_range =
-    remote_range<R> && rng::random_access_range<R> &&
-    requires(R &r) {
+    remote_range<R> && rng::random_access_range<R> && requires(R &r) {
       { lib::ranges::local(r) } -> rng::contiguous_range;
     };
 

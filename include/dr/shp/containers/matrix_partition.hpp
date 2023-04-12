@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "detail.hpp"
-#include "index.hpp"
+#include <dr/shp/containers/detail.hpp>
+#include <dr/shp/containers/index.hpp>
 #include <dr/shp/init.hpp>
 
 namespace shp {
@@ -51,7 +51,10 @@ public:
   }
 
   shp::index<> grid_shape(shp::index<> matrix_shape) const {
-    return grid_shape_;
+    auto ts = this->tile_shape(matrix_shape);
+
+    return shp::index<>((matrix_shape[0] + ts[0] - 1) / ts[0],
+                        (matrix_shape[1] + ts[1] - 1) / ts[1]);
   }
 
   shp::index<> tile_shape(shp::index<> matrix_shape) const {

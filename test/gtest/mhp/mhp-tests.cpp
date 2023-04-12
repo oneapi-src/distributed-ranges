@@ -24,10 +24,12 @@ using CPUTypes = ::testing::Types<mhp::distributed_vector<int>,
                                   mhp::distributed_vector<float>>;
 
 #include "common/all.hpp"
+#include "common/copy.hpp"
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
 #include "common/fill.hpp"
 #include "common/for_each.hpp"
+#include "common/iota.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
 // Fails with everyting but g++12

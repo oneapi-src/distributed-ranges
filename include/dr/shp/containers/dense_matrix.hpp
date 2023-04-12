@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include "index.hpp"
-#include "matrix_entry.hpp"
-#include "matrix_partition.hpp"
+#include <memory>
+
+#include <dr/shp/containers/index.hpp>
+#include <dr/shp/containers/matrix_entry.hpp>
+#include <dr/shp/containers/matrix_partition.hpp>
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/views/dense_matrix_view.hpp>
-#include <memory>
 
 namespace shp {
 

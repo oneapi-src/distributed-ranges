@@ -14,6 +14,12 @@ struct is_ref_view<rng::ref_view<R>> : std::true_type {};
 
 template <typename T> inline constexpr bool is_ref_view_v = is_ref_view<T>{};
 
+template <typename T> struct is_iota_view : std::false_type {};
+template <std::weakly_incrementable W>
+struct is_iota_view<rng::iota_view<W>> : std::true_type {};
+
+template <typename T> inline constexpr bool is_iota_view_v = is_iota_view<T>{};
+
 template <typename T> struct is_take_view : std::false_type {};
 template <typename T>
 struct is_take_view<rng::take_view<T>> : std::true_type {};

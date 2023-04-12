@@ -4,13 +4,14 @@
 
 #pragma once
 
-#include <dr/shp/device_ptr.hpp>
-#include <dr/shp/device_vector.hpp>
-#include <sycl/sycl.hpp>
 #include <vector>
 
-#include <dr/details/segments_tools.hpp>
+#include <sycl/sycl.hpp>
+
+#include <dr/detail/segments_tools.hpp>
 #include <dr/shp/allocators.hpp>
+#include <dr/shp/device_ptr.hpp>
+#include <dr/shp/device_vector.hpp>
 #include <dr/shp/vector.hpp>
 
 namespace shp {
@@ -91,7 +92,7 @@ public:
   }
 
   auto segments() const noexcept {
-    return lib::internal::drop_segments(segments_, segment_id_, idx_);
+    return lib::__detail::drop_segments(segments_, segment_id_, idx_);
   }
 
 private:
@@ -171,10 +172,10 @@ public:
 
   size_type size() const noexcept { return size_; }
 
-  auto segments() { return lib::internal::take_segments(segments_, size()); }
+  auto segments() { return lib::__detail::take_segments(segments_, size()); }
 
   auto segments() const {
-    return lib::internal::take_segments(segments_, size());
+    return lib::__detail::take_segments(segments_, size());
   }
 
   iterator begin() { return iterator(segments_, 0, 0, segment_size_); }

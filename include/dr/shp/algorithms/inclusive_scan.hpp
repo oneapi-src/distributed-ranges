@@ -4,19 +4,22 @@
 
 #pragma once
 
+#include <optional>
+
 #include <sycl/sycl.hpp>
 
 #include <oneapi/dpl/execution>
-#include <optional>
-
-#include <dr/shp/algorithms/execution_policy.hpp>
-#include <dr/shp/allocators.hpp>
-#include <dr/shp/init.hpp>
-#include <dr/shp/vector.hpp>
-#include <oneapi/dpl/async>
 #include <oneapi/dpl/numeric>
 
+#include <oneapi/dpl/async>
+
 #include <dr/concepts/concepts.hpp>
+#include <dr/detail/onedpl_direct_iterator.hpp>
+#include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/allocators.hpp>
+#include <dr/shp/detail.hpp>
+#include <dr/shp/init.hpp>
+#include <dr/shp/vector.hpp>
 
 namespace shp {
 
@@ -47,10 +50,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
 
-      auto device = shp::devices()[lib::ranges::rank(in_segment)];
-
-      sycl::queue q(shp::context(), device);
-      oneapi::dpl::execution::device_policy local_policy(q);
+      auto &&q = __detail::queue(lib::ranges::rank(in_segment));
+      auto &&local_policy = __detail::dpl_policy(lib::ranges::rank(in_segment));
 
       auto dist = rng::distance(in_segment);
       assert(dist > 0);
@@ -59,24 +60,18 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto last = rng::end(in_segment);
       auto d_first = rng::begin(out_segment);
 
-      // NOTE: some very odd runtime behavior is happening here.
-      // `inclusive_scan_async`
-      //       is failing with raw pointers and *succeeding with iterators*,
-      //       while everything else (`dpl::for_each`, `single_task`,
-      //       `parallel_for`) works with raw pointers but *fails with
-      //       iterators*.
-      //
-      // More investigation (and some bug reports) are likely necessary, but
-      // this works for now.
-
       sycl::event event;
 
       if (segment_id == 0 && init.has_value()) {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, first, last, d_first, binary_op, init.value());
+            local_policy, lib::__detail::direct_iterator(first),
+            lib::__detail::direct_iterator(last),
+            lib::__detail::direct_iterator(d_first), binary_op, init.value());
       } else {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, first, last, d_first, binary_op);
+            local_policy, lib::__detail::direct_iterator(first),
+            lib::__detail::direct_iterator(last),
+            lib::__detail::direct_iterator(d_first), binary_op);
       }
 
       auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
@@ -84,7 +79,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto src_iter = lib::ranges::local(out_segment).data();
       rng::advance(src_iter, dist - 1);
 
-      auto e = q.submit([=](auto &&h) {
+      auto e = q.submit([&](auto &&h) {
         h.depends_on(event);
         h.single_task([=]() {
           rng::range_value_t<O> value = *src_iter;
@@ -100,8 +95,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     __detail::wait(events);
     events.clear();
 
-    sycl::queue q(shp::context(), root);
-    oneapi::dpl::execution::device_policy local_policy(q);
+    auto &&local_policy = __detail::dpl_policy(0);
 
     auto first = lib::ranges::local(partial_sums).data();
     auto last = first + partial_sums.size();
@@ -113,10 +107,9 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     std::size_t idx = 0;
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
-      auto device = shp::devices()[lib::ranges::rank(out_segment)];
 
-      sycl::queue q(shp::context(), device);
-      oneapi::dpl::execution::device_policy local_policy(q);
+      auto &&local_policy =
+          __detail::dpl_policy(lib::ranges::rank(out_segment));
 
       if (idx > 0) {
         T sum = partial_sums[idx - 1];
@@ -125,7 +118,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
         auto last = rng::end(out_segment);
 
         sycl::event e = oneapi::dpl::experimental::for_each_async(
-            local_policy, first, last,
+            local_policy, lib::__detail::direct_iterator(first),
+            lib::__detail::direct_iterator(last),
             [=](auto &&x) { x = binary_op(x, sum); });
 
         events.push_back(e);
@@ -208,6 +202,51 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                  rng::subrange(first, last), rng::subrange(d_first, d_last));
 
   return d_last;
+}
+
+// Execution policy-less versions
+
+template <lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O>
+void inclusive_scan(R &&r, O &&o) {
+  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o));
+}
+
+template <lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O, typename BinaryOp>
+void inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op) {
+  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
+                 std::forward<BinaryOp>(binary_op));
+}
+
+template <lib::distributed_contiguous_range R,
+          lib::distributed_contiguous_range O, typename BinaryOp, typename T>
+void inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op, T init) {
+  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
+                 std::forward<BinaryOp>(binary_op), init);
+}
+
+// Distributed iterator versions
+
+template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter>
+OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first) {
+  return inclusive_scan(shp::par_unseq, first, last, d_first);
+}
+
+template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter,
+          typename BinaryOp>
+OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first,
+                          BinaryOp &&binary_op) {
+  return inclusive_scan(shp::par_unseq, first, last, d_first,
+                        std::forward<BinaryOp>(binary_op));
+}
+
+template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter,
+          typename BinaryOp, typename T>
+OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first,
+                          BinaryOp &&binary_op, T init) {
+  return inclusive_scan(shp::par_unseq, first, last, d_first,
+                        std::forward<BinaryOp>(binary_op), init);
 }
 
 } // namespace shp

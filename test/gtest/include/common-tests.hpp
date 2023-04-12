@@ -79,10 +79,9 @@ template <rng::range R1, rng::range R2> bool is_equal(R1 &&r1, R2 &&r2) {
       rng::distance(rng::begin(r2), rng::end(r2))) {
     return false;
   }
-  for (auto e : rng::zip_view(r1, r2)) {
-    auto v1 = e.first;
-    auto v2 = e.second;
-    if (v1 != v2) {
+  auto r2i = r2.begin();
+  for (const auto &v1 : r1) {
+    if (v1 != *r2i++) {
       return false;
     }
   }
@@ -126,7 +125,7 @@ std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
 
 std::string check_segments_message(rng::range auto &&r) {
   auto &&segments = lib::ranges::segments(r);
-  auto &&flat = rng::join_view(segments);
+  auto &&flat = rng::views::join(segments);
   if (is_equal(r, flat)) {
     return "";
   }
@@ -142,8 +141,8 @@ auto check_view_message(rng::range auto &&ref, rng::range auto &&actual) {
          equal_message(ref, actual, "view mismatch");
 }
 
-auto check_mutable_view_message(auto &ops, rng::range auto &&ref,
-                                rng::range auto &&actual) {
+auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
+                               rng::range auto &&actual) {
   // Check view
   auto message = check_view_message(ref, actual);
 
@@ -163,6 +162,43 @@ auto check_mutable_view_message(auto &ops, rng::range auto &&ref,
   // Check underlying dv
   message += unary_check_message(input_vector, ops.vec, ops.dist_vec,
                                  "mutated distributed range mismatch");
+
+  return message;
+}
+
+auto check_mutate_enumerateview_message(auto &ops, rng::range auto &&ref,
+                                        rng::range auto &&actual) {
+  // Check view
+  auto message = check_view_message(ref, actual);
+
+  barrier();
+
+  std::vector<int> ref_idx(ref.size());
+  std::vector<int> act_idx(actual.size());
+
+  auto input_vector = ops.vec;
+  std::vector input_view(ref.begin(), ref.end());
+
+  for (auto &&[index, elem] : actual) {
+    act_idx[index] = index;
+    elem = -elem;
+  }
+
+  for (auto &&[index, elem] : ref) {
+    ref_idx[index] = index;
+    elem = -elem;
+  }
+
+  // Check mutated view
+  message += unary_check_message(input_view, actual, ref,
+                                 "mutated value view mismatch");
+
+  // Check underlying dv
+  message += unary_check_message(input_vector, ops.vec, ops.dist_vec,
+                                 "mutated distributed value range mismatch");
+
+  message += equal_message(rng::views::all(ref_idx), rng::views::all(act_idx),
+                           "index view mismatch");
 
   return message;
 }
@@ -198,8 +234,8 @@ auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
 }
 
 auto check_segments(std::forward_iterator auto di) {
-  auto &&segments = lib::ranges::segments(di);
-  auto &&flat = rng::join_view(segments);
+  const auto &segments = lib::ranges::segments(di);
+  const auto &flat = rng::join_view(segments);
   if (is_equal(di, flat)) {
     return testing::AssertionSuccess();
   }
@@ -215,9 +251,14 @@ auto check_view(rng::range auto &&ref, rng::range auto &&actual) {
   return gtest_result(check_view_message(ref, actual));
 }
 
-auto check_mutable_view(auto &op, rng::range auto &&ref,
-                        rng::range auto &&actual) {
-  return gtest_result(check_mutable_view_message(op, ref, actual));
+auto check_mutate_view(auto &op, rng::range auto &&ref,
+                       rng::range auto &&actual) {
+  return gtest_result(check_mutate_view_message(op, ref, actual));
+}
+
+auto check_mutate_enumerateview(auto &op, rng::range auto &&ref,
+                                rng::range auto &&actual) {
+  return gtest_result(check_mutate_enumerateview_message(op, ref, actual));
 }
 
 template <typename T>
@@ -235,8 +276,8 @@ std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
 
 template <typename T>
 concept streamable = requires(std::ostream &os, T value) {
-                       { os << value } -> std::convertible_to<std::ostream &>;
-                     };
+  { os << value } -> std::convertible_to<std::ostream &>;
+};
 
 namespace mhp {
 
@@ -301,3 +342,26 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
 }
 
 } // namespace shp
+
+namespace DR_RANGES_NAMESPACE {
+
+template <rng::forward_range R1, rng::forward_range R2>
+bool operator==(R1 &&r1, R2 &&r2) {
+  return is_equal(r1, r2);
+}
+
+template <typename... Ts>
+inline std::ostream &operator<<(std::ostream &os,
+                                const rng::common_tuple<Ts...> &obj) {
+  os << fmt::format("{}", obj);
+  return os;
+}
+
+template <typename T1, typename T2>
+inline std::ostream &operator<<(std::ostream &os,
+                                const rng::common_pair<T1, T2> &obj) {
+  os << fmt::format("{}", obj);
+  return os;
+}
+
+} // namespace DR_RANGES_NAMESPACE

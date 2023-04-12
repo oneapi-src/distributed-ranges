@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+#include <dr/detail/segments_tools.hpp>
+
 namespace lib {
 
 template <rng::viewable_range V>
@@ -97,7 +99,7 @@ public:
   }
 
   auto segments() const noexcept {
-    return lib::internal::drop_segments(segments_, segment_id_, idx_);
+    return lib::__detail::drop_segments(segments_, segment_id_, idx_);
   }
 
 private:

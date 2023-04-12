@@ -69,6 +69,16 @@ template <typename Selector> void list_devices(Selector &&selector) {
   printf("--------------------------------\n");
 }
 
+inline std::vector<sycl::device>
+trim_devices(const std::vector<sycl::device> &devices, std::size_t n_devices) {
+  std::vector<sycl::device> trimmed_devices = devices;
+
+  if (n_devices < devices.size()) {
+    trimmed_devices.resize(n_devices);
+  }
+  return trimmed_devices;
+}
+
 template <typename Selector>
 std::vector<sycl::device> get_numa_devices_impl_(Selector &&selector) {
   std::vector<sycl::device> devices;
@@ -195,7 +205,7 @@ void range_details(R &&r, std::size_t width = 80) {
   std::size_t size = rng::size(r);
 
   for (auto &&[idx, segment] :
-       lib::internal::enumerate(lib::ranges::segments(r))) {
+       lib::__detail::enumerate(lib::ranges::segments(r))) {
     std::size_t local_size = rng::size(segment);
 
     double percent = double(local_size) / size;
@@ -217,31 +227,22 @@ void range_details(R &&r, std::size_t width = 80) {
 
 namespace __detail {
 
+inline sycl::event combine_events(const std::vector<sycl::event> &events) {
+  auto &&q = __detail::queue(0);
+  auto e = q.submit([&](auto &&h) {
+    h.depends_on(events);
+    h.host_task([] {});
+  });
+
+  return e;
+}
+
 inline void wait(sycl::event &event) { event.wait(); }
 
 inline void wait(sycl::event &&event) { event.wait(); }
 
 inline void wait(const std::vector<sycl::event> &events) {
-  sycl::queue q;
-  auto e = q.submit([&](auto &&h) { h.depends_on(events); });
-  e.wait();
-}
-
-auto get_local_segment(lib::remote_contiguous_range auto &&r) {
-  return lib::ranges::local(r);
-}
-auto get_local_segment(rng::forward_range auto &&r) { return r; }
-
-template <class T> T *get_local_pointer(shp::device_ptr<T> r) {
-  return r.local();
-}
-template <class T> T *get_local_pointer(T *t) { return t; }
-
-inline sycl::event combine_events(const std::vector<sycl::event> &events) {
-  sycl::queue q;
-  auto e = q.submit([=](auto &&h) { h.depends_on(events); });
-
-  return e;
+  sycl::event::wait(events);
 }
 
 } // namespace __detail
