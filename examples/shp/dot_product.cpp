@@ -8,12 +8,12 @@
 
 template <dr::distributed_range X, dr::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {
-  auto z = shp::views::zip(x, y) | dr::views::transform([](auto &&elem) {
+  auto z = dr::shp::views::zip(x, y) | dr::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
 
-  return shp::reduce(shp::par_unseq, z, 0, std::plus());
+  return dr::shp::reduce(dr::shp::par_unseq, z, 0, std::plus());
 }
 
 template <rng::forward_range X, rng::forward_range Y>
@@ -27,13 +27,13 @@ auto dot_product_sequential(X &&x, Y &&y) {
 }
 
 int main(int argc, char **argv) {
-  auto devices = shp::get_numa_devices(sycl::default_selector_v);
-  shp::init(devices);
+  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
+  dr::shp::init(devices);
 
   std::size_t n = 100;
 
-  shp::distributed_vector<int> x(n);
-  shp::distributed_vector<int> y(n);
+  dr::shp::distributed_vector<int> x(n);
+  dr::shp::distributed_vector<int> y(n);
 
   std::iota(x.begin(), x.end(), 0);
   std::iota(y.begin(), y.end(), 0);

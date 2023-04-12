@@ -11,7 +11,7 @@
 #include <dr/shp/zip_view.hpp>
 #include <sycl/sycl.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <typename ExecutionPolicy, dr::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
@@ -43,12 +43,12 @@ void for_each(ExecutionPolicy &&policy, Iter begin, Iter end, Fn &&fn) {
 }
 
 template <dr::distributed_range R, typename Fn> void for_each(R &&r, Fn &&fn) {
-  for_each(shp::par_unseq, std::forward<R>(r), std::forward<Fn>(fn));
+  for_each(dr::shp::par_unseq, std::forward<R>(r), std::forward<Fn>(fn));
 }
 
 template <dr::distributed_iterator Iter, typename Fn>
 void for_each(Iter begin, Iter end, Fn &&fn) {
-  for_each(shp::par_unseq, begin, end, std::forward<Fn>(fn));
+  for_each(dr::shp::par_unseq, begin, end, std::forward<Fn>(fn));
 }
 
-} // namespace shp
+} // namespace dr::shp

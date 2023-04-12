@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sycl/sycl.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <typename Selector> sycl::device select_device(Selector &&selector) {
   sycl::device d;
@@ -247,4 +247,4 @@ inline void wait(const std::vector<sycl::event> &events) {
 
 } // namespace __detail
 
-} // namespace shp
+} // namespace dr::shp

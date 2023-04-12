@@ -23,7 +23,7 @@ inline constexpr bool is_owning_view_v = is_owning_view<T>{};
 
 }; // namespace dr
 
-namespace shp {
+namespace dr::shp {
 
 template <rng::random_access_iterator... Iters> class zip_accessor {
 public:
@@ -232,9 +232,9 @@ private:
 
   template <typename T> auto create_view_impl_(T &&t) const {
     if constexpr (dr::remote_range<T>) {
-      return shp::device_span(std::forward<T>(t));
+      return dr::shp::device_span(std::forward<T>(t));
     } else {
-      return shp::span(std::forward<T>(t));
+      return dr::shp::span(std::forward<T>(t));
     }
   }
 
@@ -329,9 +329,9 @@ namespace views {
 
 /// Zip
 template <rng::random_access_range... Rs> auto zip(Rs &&...rs) {
-  return shp::zip_view(std::forward<Rs>(rs)...);
+  return dr::shp::zip_view(std::forward<Rs>(rs)...);
 }
 
 } // namespace views
 
-} // namespace shp
+} // namespace dr::shp

@@ -51,8 +51,8 @@ bool is_equal(A &&a, B &&b) {
 }
 
 int main(int argc, char **argv) {
-  auto devices = shp::get_numa_devices(sycl::default_selector_v);
-  shp::init(devices);
+  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
+  dr::shp::init(devices);
 
   if (argc != 2) {
     fmt::print("usage: ./gemv_benchmark [matrix market file]\n");
@@ -65,12 +65,13 @@ int main(int argc, char **argv) {
   using I = int;
 
   fmt::print("Reading in matrix file {}\n", fname);
-  auto a = shp::mmread<T, I>(fname);
+  auto a = dr::shp::mmread<T, I>(fname);
 
-  auto square_block = shp::block_cyclic(
-      {shp::tile::div, (a.shape()[1] + shp::nprocs() - 1) / shp::nprocs()},
-      {shp::nprocs(), 1});
-  auto a_square = shp::mmread<T, I>(fname, square_block);
+  auto square_block = dr::shp::block_cyclic(
+      {dr::shp::tile::div,
+       (a.shape()[1] + dr::shp::nprocs() - 1) / dr::shp::nprocs()},
+      {dr::shp::nprocs(), 1});
+  auto a_square = dr::shp::mmread<T, I>(fname, square_block);
   fmt::print("Square {} x {}\n", a_square.grid_shape()[0],
              a_square.grid_shape()[1]);
 
@@ -80,11 +81,11 @@ int main(int argc, char **argv) {
   std::size_t k = a.shape()[1];
 
   fmt::print("Initializing distributed data structures...\n");
-  shp::distributed_vector<T, shp::device_allocator<T>> b(k);
-  shp::distributed_vector<T, shp::device_allocator<T>> c(m);
+  dr::shp::distributed_vector<T, dr::shp::device_allocator<T>> b(k);
+  dr::shp::distributed_vector<T, dr::shp::device_allocator<T>> c(m);
 
-  shp::for_each(shp::par_unseq, b, [](auto &&v) { v = 1; });
-  shp::for_each(shp::par_unseq, c, [](auto &&v) { v = 0; });
+  dr::shp::for_each(dr::shp::par_unseq, b, [](auto &&v) { v = 1; });
+  dr::shp::for_each(dr::shp::par_unseq, c, [](auto &&v) { v = 0; });
 
   std::size_t n_iterations = 10;
 
@@ -95,10 +96,10 @@ int main(int argc, char **argv) {
   fmt::print("Verification:\n");
 
   fmt::print("Computing GEMV...\n");
-  shp::gemv(c, a, b);
+  dr::shp::gemv(c, a, b);
   fmt::print("Copying...\n");
   std::vector<T> l(c.size());
-  shp::copy(c.begin(), c.end(), l.begin());
+  dr::shp::copy(c.begin(), c.end(), l.begin());
   fmt::print("Verifying...\n");
   for (std::size_t i = 0; i < l.size(); i++) {
     if (!is_equal(l[i], c_local[i])) {
@@ -110,7 +111,7 @@ int main(int argc, char **argv) {
   fmt::print("Benchmarking...\n");
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
-    shp::gemv(c, a, b);
+    dr::shp::gemv(c, a, b);
     auto end = std::chrono::high_resolution_clock::now();
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
@@ -137,7 +138,7 @@ int main(int argc, char **argv) {
 
   // Square GEMV
   {
-    shp::for_each(shp::par_unseq, c, [](auto &&v) { v = 0; });
+    dr::shp::for_each(shp::par_unseq, c, [](auto &&v) { v = 0; });
     shp::gemv_square(c, a_square, b);
     std::vector<T> l(c.size());
     shp::copy(c.begin(), c.end(), l.begin());

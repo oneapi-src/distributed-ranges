@@ -8,7 +8,7 @@
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <iterator>
 
-namespace shp {
+namespace dr::shp {
 template <typename T, typename Iter> class dense_matrix_row_accessor {
 public:
   using size_type = std::size_t;
@@ -17,9 +17,9 @@ public:
   using scalar_value_type = std::iter_value_t<Iter>;
   using scalar_reference = std::iter_reference_t<Iter>;
 
-  using value_type = shp::matrix_entry<scalar_value_type, std::size_t>;
+  using value_type = dr::shp::matrix_entry<scalar_value_type, std::size_t>;
 
-  using reference = shp::matrix_ref<T, std::size_t, scalar_reference>;
+  using reference = dr::shp::matrix_ref<T, std::size_t, scalar_reference>;
 
   using iterator_category = std::random_access_iterator_tag;
 
@@ -27,7 +27,7 @@ public:
   using const_iterator_accessor = iterator_accessor;
   using nonconst_iterator_accessor = iterator_accessor;
 
-  using key_type = shp::index<>;
+  using key_type = dr::shp::index<>;
 
   constexpr dense_matrix_row_accessor() noexcept = default;
   constexpr ~dense_matrix_row_accessor() noexcept = default;
@@ -80,7 +80,7 @@ public:
 
   using scalar_reference = std::iter_reference_t<Iter>;
 
-  using key_type = shp::index<>;
+  using key_type = dr::shp::index<>;
   using map_type = T;
 
   using iterator = dense_matrix_row_iterator<T, Iter>;
@@ -105,4 +105,4 @@ template <std::random_access_iterator Iter>
 dense_matrix_row_view(Iter, std::size_t, std::size_t)
     -> dense_matrix_row_view<std::iter_value_t<Iter>, Iter>;
 
-} // namespace shp
+} // namespace dr::shp
