@@ -2,6 +2,10 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
+#include <dr/detail/ranges_shim.hpp>
+
 namespace dr::mhp {
 
 // Select segments local to this rank and convert the iterators in the
@@ -20,3 +24,12 @@ template <typename R> auto local_segments(R &&dr) {
 }
 
 } // namespace dr::mhp
+
+namespace dr::mhp::views {
+
+inline constexpr auto all = rng::views::all;
+inline constexpr auto drop = rng::views::drop;
+inline constexpr auto take = rng::views::take;
+inline constexpr auto transform = dr::views::transform;
+
+} // namespace dr::mhp::views
