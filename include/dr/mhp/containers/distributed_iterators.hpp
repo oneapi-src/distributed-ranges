@@ -231,7 +231,7 @@ public:
   auto rank() const { return rank_; }
   auto local() const { return dm_->data() + index_ + dm_->halo_bounds().prev; }
   auto segments() const {
-    return lib::internal::drop_segments(dm_->segments(), index_);
+    return lib::__detail::drop_segments(dm_->segments(), index_);
   }
   auto &halo() const { return dm_->halo(); }
 
@@ -239,7 +239,7 @@ private:
   DM *dm_ = nullptr;
   std::size_t rank_;
   std::size_t index_;
-}; // dm_segment_iterator
+}; // class dm_segment_iterator
 
 template <typename T> class dm_row_iterator : public std::span<T>::iterator {
 public:
@@ -251,6 +251,6 @@ public:
 
 private:
   mhp::distributed_dense_matrix<T> *dm_;
-};
+}; // class dm_row_iterator
 
 } // namespace mhp
