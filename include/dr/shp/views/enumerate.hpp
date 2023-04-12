@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <dr/shp/views/zip.hpp>
+#include <dr/shp/zip_view.hpp>
 
 namespace shp {
 
