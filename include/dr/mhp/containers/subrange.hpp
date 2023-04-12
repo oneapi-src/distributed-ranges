@@ -203,7 +203,7 @@ private:
 
 template <typename DM>
 void transform(mhp::subrange<DM> &in, mhp::subrange_iterator<DM> out, auto op) {
-  for (mhp::subrange_iterator<DM> i = in.begin(); i != in.end(); i++) {
+  for (mhp::subrange_iterator<DM> i = rng::begin(in); i != rng::end(in); i++) {
     if (i.is_local()) {
       *(out) = op(i);
     }
@@ -219,7 +219,7 @@ void transform(mhp::subrange<DM> &in, mhp::subrange_iterator<DM> out,
   std::stringstream s;
   int _i = 0;
   s << default_comm().rank() << ": dm_transform ";
-  for (mhp::subrange_iterator<DM> i = in.begin(); i != in.end(); i++) {
+  for (mhp::subrange_iterator<DM> i = rng::begin(in); i != in.end(); i++) {
 
     if (i.is_local()) {
       *(out) = op(i);

@@ -39,8 +39,9 @@ auto stencil_op = [](auto &p) {
   T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
 
   // the version below is intended to work, too, still a bug is present when
-  // refering to negative index reaching halo area T res = p[-1][0] + p[0][0] +
-  // p[+1][0] + p[0][-1] + p[0][+1];
+  // refering to negative index reaching halo area 
+
+  /* T res = p[-1][0] + p[0][0] + p[+1][0] + p[0][-1] + p[0][+1]; */
 
   return res;
 };
@@ -55,14 +56,15 @@ auto stencil_op_v(std::vector<std::vector<T>> &va,
 }
 
 int rowcmp(mhp::dm_row<T>::iterator r, std::vector<T> &v, std::size_t size) {
+  int res = 0;
   for (std::size_t _i = 0; _i < size; _i++) {
     if (r[_i] != v[_i]) {
       fmt::print("{}: Fail (r[{}] = {}, v[{}] = {})\n", comm_rank, _i, r[_i],
                  _i, v[_i]);
-      // return -1;
+      res = -1;
     }
   }
-  return 0;
+  return res;
 }
 
 int local_compare(mhp::distributed_dense_matrix<T> &dm,
@@ -71,7 +73,7 @@ int local_compare(mhp::distributed_dense_matrix<T> &dm,
   for (auto r = dm.rows().begin(); r != dm.rows().end(); r++) {
     if (r.is_local())
       if (-1 == rowcmp((*r).begin(), vv[(*r).idx()], (*r).size())) {
-        fmt::print("{}: Fail (idx = {})", comm_rank, (*r).idx());
+        fmt::print("{}: Fail (idx = {})\n", comm_rank, (*r).idx());
         return -1;
       }
   }
@@ -126,7 +128,8 @@ int stencil() {
   // a.dump_matrix("final a");
   // b.dump_matrix("final b");
 
-  check(a, b);
+  if (0 == check(a, b))
+    fmt::print("{}: Check OK!\n", comm_rank);
 
   return 0;
 }

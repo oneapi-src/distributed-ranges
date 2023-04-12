@@ -80,7 +80,7 @@ public:
 
   dm_row<T> operator=(dm_row<T> other) {
     std::cout << "operator=" << std::endl;
-    iterator i = this->begin(), oi = other.begin();
+    iterator i = rng::begin(*this), oi = rng::begin(other);
     while (i != this->end()) {
       std::cout << "*(oi++) = *(i++);" << std::endl;
       *(oi++) = *(i++);
@@ -218,7 +218,7 @@ public:
     for (auto r : dm_rows_) {
       if (r.segment()->is_local()) {
         s << default_comm().rank() << ": row " << r.idx() << " : ";
-        for (auto _i = r.begin(); _i != r.end(); ++_i)
+        for (auto _i = rng::begin(r); _i != rng::end(r); ++_i)
           s << *_i << " ";
         s << std::endl;
       }
@@ -279,7 +279,7 @@ private:
     dm_rows_.reserve(segment_shape_[0]);
 
     int row_start_index_ = 0;
-    for (auto _titr = segments_.begin(); _titr != segments_.end(); ++_titr) {
+    for (auto _titr = rng::begin(segments_); _titr != rng::end(segments_); ++_titr) {
       for (int _ind = row_start_index_;
            _ind < row_start_index_ + (int)(*_titr).shape()[0]; _ind++) {
         T *_dataptr = nullptr;
@@ -289,16 +289,16 @@ private:
           local_rows_indices.second = _ind;
 
           int _dataoff =
-              halo_bounds_.prev * (*_titr).shape()[1]; // start of data
-          _dataoff += (_ind - default_comm().rank() * (*_titr).shape()[0]) *
-                      (*_titr).shape()[1];
+              halo_bounds_.prev * segment_shape_[1]; // start of data
+          _dataoff += (_ind - default_comm().rank() * segment_shape_[0]) *
+                      segment_shape_[1];
 
-          if (!(_dataoff >= 0) || !(_dataoff < (int)data_size_)) {
-            fmt::print("{}: ERR _dataoff {} init {} _ind {} corr {} \n",
-                       default_comm().rank(), _dataoff,
-                       halo_bounds_.prev * (*_titr).shape()[1], _ind,
-                       default_comm().rank() * (*_titr).shape()[0]);
-          }
+          // if ((_dataoff < 0) || (_dataoff >= (int)data_size_)) {
+          //   fmt::print("{}: ERR _dataoff {} data_size {} init {} _ind {} corr {} \n",
+          //              default_comm().rank(), _dataoff, data_size_,
+          //              halo_bounds_.prev * (*_titr).shape()[1], _ind,
+          //              default_comm().rank() * (*_titr).shape()[0]);
+          // }
           assert(_dataoff >= 0);
           assert(_dataoff < (int)data_size_);
           _dataptr = data_ + _dataoff;
@@ -344,8 +344,8 @@ private:
 }; // class distributed_dense_matrix
 
 template <typename T>
-void for_each(dm_rows<distributed_dense_matrix<T>> Rng, auto op) {
-  for (auto itr = Rng.begin(); itr != Rng.end(); itr++) {
+void for_each(dm_rows<distributed_dense_matrix<T>> rows, auto op) {
+  for (auto itr = rng::begin(rows); itr != rng::end(rows); itr++) {
     dm_row<T> &r = *itr;
     if (r.segment()->is_local()) {
       op(*itr);
