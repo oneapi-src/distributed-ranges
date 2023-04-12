@@ -16,12 +16,13 @@
 
 template <dr::distributed_range X, dr::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {
-  auto z = shp::views::zip(x, y) | dr::views::transform([](auto &&elem) {
+  auto z = dr::shp::views::zip(x, y) | dr::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
 
-  return shp::reduce(shp::par_unseq, z, rng::range_value_t<X>(0), std::plus());
+  return dr::shp::reduce(dr::shp::par_unseq, z, rng::range_value_t<X>(0),
+                         std::plus());
 }
 
 template <rng::forward_range X, rng::forward_range Y>
@@ -40,7 +41,7 @@ auto dot_product_onedpl(sycl::queue q, X &&x, Y &&y) {
 
 template <rng::forward_range X, rng::forward_range Y>
 auto dot_product_sequential(X &&x, Y &&y) {
-  auto z = shp::views::zip(x, y) | rng::views::transform([](auto &&elem) {
+  auto z = dr::shp::views::zip(x, y) | rng::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
@@ -49,10 +50,10 @@ auto dot_product_sequential(X &&x, Y &&y) {
 }
 
 int main(int argc, char **argv) {
-  auto devices_ = shp::get_numa_devices(sycl::default_selector_v);
-  // auto devices = shp::trim_devices(devices_, 8);
+  auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
+  // auto devices = dr::shp::trim_devices(devices_, 8);
   auto devices = devices_;
-  shp::init(devices);
+  dr::shp::init(devices);
 
   // Note that parallel results will not match sequential
   // results for large sizes due to floating point addition
@@ -67,8 +68,8 @@ int main(int argc, char **argv) {
 
   auto v_serial = dot_product_sequential(x_local, y_local);
 
-  shp::distributed_vector<T> x(n, 1);
-  shp::distributed_vector<T> y(n, 1);
+  dr::shp::distributed_vector<T> x(n, 1);
+  dr::shp::distributed_vector<T> y(n, 1);
 
   std::size_t n_iterations = 10;
 
@@ -107,7 +108,7 @@ int main(int argc, char **argv) {
   durations.clear();
   durations.reserve(n_iterations);
 
-  sycl::queue q(shp::context(), shp::devices()[0]);
+  sycl::queue q(dr::shp::context(), dr::shp::devices()[0]);
 
   T *x_d = sycl::malloc_device<T>(n, q);
   T *y_d = sycl::malloc_device<T>(n, q);

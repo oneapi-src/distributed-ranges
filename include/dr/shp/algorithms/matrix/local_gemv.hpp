@@ -12,7 +12,7 @@
 #include <oneapi/mkl.hpp>
 #endif
 
-namespace shp {
+namespace dr::shp {
 
 namespace __detail {
 
@@ -61,9 +61,9 @@ auto mkl_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
   oneapi::mkl::sparse::matrix_handle_t a_handle;
   oneapi::mkl::sparse::init_matrix_handle(&a_handle);
 
-  auto rowptr = shp::__detail::local(a.rowptr_data());
-  auto colind = shp::__detail::local(a.colind_data());
-  auto values = shp::__detail::local(a.values_data());
+  auto rowptr = dr::shp::__detail::local(a.rowptr_data());
+  auto colind = dr::shp::__detail::local(a.colind_data());
+  auto values = dr::shp::__detail::local(a.values_data());
 
   oneapi::mkl::sparse::set_csr_data(a_handle, a.shape()[0], a.shape()[1],
                                     oneapi::mkl::index_base::zero, rowptr,
@@ -97,4 +97,4 @@ auto local_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
 
 } // namespace __detail
 
-} // namespace shp
+} // namespace dr::shp

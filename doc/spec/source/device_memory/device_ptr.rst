@@ -11,7 +11,7 @@
 Interface
 =========
 
-.. doxygenclass:: shp::device_ptr
+.. doxygenclass:: dr::shp::device_ptr
    :members:
 
 Description

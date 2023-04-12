@@ -12,7 +12,7 @@
 #include <dr/detail/segments_tools.hpp>
 #include <dr/shp/device_span.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <typename T, typename L> class distributed_span_accessor {
 public:
@@ -129,7 +129,7 @@ public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
 
-  using segment_type = shp::device_span<T, L>;
+  using segment_type = dr::shp::device_span<T, L>;
 
   using size_type = rng::range_size_t<segment_type>;
   using difference_type = rng::range_difference_t<segment_type>;
@@ -254,4 +254,4 @@ distributed_span(R &&r) -> distributed_span<
     rng::range_value_t<R>,
     rng::iterator_t<rng::range_value_t<decltype(dr::ranges::segments(r))>>>;
 
-} // namespace shp
+} // namespace dr::shp

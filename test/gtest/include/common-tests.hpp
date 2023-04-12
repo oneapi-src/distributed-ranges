@@ -269,7 +269,7 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
 
 } // namespace dr::mhp
 
-namespace shp {
+namespace dr::shp {
 
 // gtest relies on ADL to find the printer
 template <typename T, typename Alloc>
@@ -299,7 +299,7 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
   return is_equal(dist_vec, local_vec);
 }
 
-} // namespace shp
+} // namespace dr::shp
 
 namespace DR_RANGES_NAMESPACE {
 

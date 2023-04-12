@@ -7,7 +7,7 @@
 #include <dr/concepts/concepts.hpp>
 #include <dr/shp/distributed_span.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <int dimensions = 1> class id {
 public:
@@ -142,11 +142,11 @@ template <rng::forward_range R> auto distributed_iota_view(R &&r) {
       global_offset += segment.size();
       segment_id++;
     }
-    return shp::distributed_span(iota_segments);
+    return dr::shp::distributed_span(iota_segments);
   } else {
     return segment_range(0, rng::size(r), 0);
   }
 }
 */
 
-} // namespace shp
+} // namespace dr::shp

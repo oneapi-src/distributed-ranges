@@ -11,7 +11,7 @@
 Interface
 =========
 
-.. doxygenclass:: shp::device_ref
+.. doxygenclass:: dr::shp::device_ref
    :members:
 
 Description

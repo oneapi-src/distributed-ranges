@@ -7,15 +7,16 @@
 #include <dr/concepts/concepts.hpp>
 #include <dr/shp/algorithms/for_each.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <dr::distributed_range R, std::integral T> void iota(R &&r, T value) {
   auto iota_view = rng::views::iota(value, T(value + rng::distance(r)));
 
-  shp::for_each(shp::par_unseq, shp::views::zip(iota_view, r), [](auto &&elem) {
-    auto &&[idx, v] = elem;
-    v = idx;
-  });
+  dr::shp::for_each(dr::shp::par_unseq, dr::shp::views::zip(iota_view, r),
+                    [](auto &&elem) {
+                      auto &&[idx, v] = elem;
+                      v = idx;
+                    });
 }
 
 template <dr::distributed_iterator Iter, std::integral T>
@@ -24,4 +25,4 @@ void iota(Iter begin, Iter end, T value) {
   iota(r, value);
 }
 
-} // namespace shp
+} // namespace dr::shp

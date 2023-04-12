@@ -7,12 +7,12 @@
 #include <dr/shp/init.hpp>
 #include <dr/shp/util.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 /**
  * Applies the given function to a range and stores the result in another range,
  * beginning at out.
- * \param policy use `shp::par_unseq` here only
+ * \param policy use `dr::shp::par_unseq` here only
  * \param in the range of elements to transform
  * \param out the beginning of the destination range, may be equal to the
  * beginning of `in` range \param fn operation to apply to input elements
@@ -49,7 +49,7 @@ auto transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in,
       }));
     } else {
       OutT *buffer =
-          sycl::malloc_device<OutT>(seg_size, in_device, shp::context());
+          sycl::malloc_device<OutT>(seg_size, in_device, dr::shp::context());
       buffers.push_back(buffer);
 
       sycl::event compute_event = q.parallel_for(
@@ -61,10 +61,10 @@ auto transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in,
   __detail::wait(events);
 
   for (auto *b : buffers)
-    sycl::free(b, shp::context());
+    sycl::free(b, dr::shp::context());
 
   return rng::unary_transform_result<decltype(rng::end(in)), decltype(out_end)>{
       rng::end(in), out_end};
 }
 
-} // namespace shp
+} // namespace dr::shp

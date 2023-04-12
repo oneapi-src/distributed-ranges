@@ -51,7 +51,7 @@ auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
 
 } // namespace
 
-namespace shp {
+namespace dr::shp {
 
 template <typename ExecutionPolicy, dr::distributed_range R, typename T,
           typename BinaryOp>
@@ -136,33 +136,33 @@ T reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init,
 // Execution policy-less algorithms
 
 template <dr::distributed_range R> rng::range_value_t<R> reduce(R &&r) {
-  return reduce(shp::par_unseq, std::forward<R>(r));
+  return reduce(dr::shp::par_unseq, std::forward<R>(r));
 }
 
 template <dr::distributed_range R, typename T> T reduce(R &&r, T init) {
-  return reduce(shp::par_unseq, std::forward<R>(r), init);
+  return reduce(dr::shp::par_unseq, std::forward<R>(r), init);
 }
 
 template <dr::distributed_range R, typename T, typename BinaryOp>
 T reduce(R &&r, T init, BinaryOp &&binary_op) {
-  return reduce(shp::par_unseq, std::forward<R>(r), init,
+  return reduce(dr::shp::par_unseq, std::forward<R>(r), init,
                 std::forward<BinaryOp>(binary_op));
 }
 
 template <dr::distributed_iterator Iter>
 std::iter_value_t<Iter> reduce(Iter first, Iter last) {
-  return reduce(shp::par_unseq, first, last);
+  return reduce(dr::shp::par_unseq, first, last);
 }
 
 template <dr::distributed_iterator Iter, typename T>
 T reduce(Iter first, Iter last, T init) {
-  return reduce(shp::par_unseq, first, last, init);
+  return reduce(dr::shp::par_unseq, first, last, init);
 }
 
 template <dr::distributed_iterator Iter, typename T, typename BinaryOp>
 T reduce(Iter first, Iter last, T init, BinaryOp &&binary_op) {
-  return reduce(shp::par_unseq, first, last, init,
+  return reduce(dr::shp::par_unseq, first, last, init,
                 std::forward<BinaryOp>(binary_op));
 }
 
-} // namespace shp
+} // namespace dr::shp

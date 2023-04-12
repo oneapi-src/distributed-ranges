@@ -4,8 +4,8 @@
 
 #include "shp-tests.hpp"
 
-using AllTypes = ::testing::Types<shp::distributed_vector<int>,
-                                  shp::distributed_vector<float>>;
+using AllTypes = ::testing::Types<dr::shp::distributed_vector<int>,
+                                  dr::shp::distributed_vector<float>>;
 
 #include "common/all.hpp"
 // Issue with 2 element zips
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   }
 
   const unsigned int dev_num = options["devicesCount"].as<unsigned int>();
-  auto devices = shp::get_numa_devices(sycl::default_selector_v);
+  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
 
   if (dev_num > 0) {
     unsigned int i = 0;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     devices.resize(dev_num); // if too many devices
   }
 
-  shp::init(devices);
+  dr::shp::init(devices);
 
   for (auto &device : devices) {
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
