@@ -4,7 +4,7 @@
 
 #include <cstring>
 
-namespace lib {
+namespace dr {
 
 template <typename T> struct default_memory {
   using value_type = T;
@@ -99,4 +99,4 @@ template <typename T> struct sycl_memory {
 };
 #endif
 
-} // namespace lib
+} // namespace dr

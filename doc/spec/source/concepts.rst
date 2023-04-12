@@ -8,10 +8,10 @@
 Concepts
 ========
 
-lib::remote_contiguous_iterator
+dr::remote_contiguous_iterator
 ===============================
 
-.. doxygenconcept:: lib::remote_contiguous_iterator
+.. doxygenconcept:: dr::remote_contiguous_iterator
 
 A remote contiguous iterator acts as a pointer to some contiguous piece
 of remote memory.
@@ -46,10 +46,10 @@ Instantiations of `remote_ptr`, `device_ptr`, and `BCL::GlobalPtr` should all
 fulfill ``remote_contiguous_iterator``.
 
 
-lib::remote_contiguous_range
+dr::remote_contiguous_range
 ============================
 
-.. doxygenconcept:: lib::remote_contiguous_range
+.. doxygenconcept:: dr::remote_contiguous_range
 
 A remote contiguous range is a range located in a contiguous piece of remote
 memory.
@@ -83,10 +83,10 @@ with the same rank, and ``[begin().local(), end().local())`` should form a
 contiguous range referencing the same memory, but locally. Not quite sure how
 to express that concisely.
 
-lib::distributed_contiguous_range
+dr::distributed_contiguous_range
 =================================
 
-.. doxygenconcept:: lib::distributed_contiguous_range
+.. doxygenconcept:: dr::distributed_contiguous_range
 
 A distributed contiguous range is a range consisting of multiple segments
 distributed over multiple processes, where each each segment is a

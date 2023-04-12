@@ -10,7 +10,7 @@
 #include <dr/detail/remote_subrange.hpp>
 #include <dr/detail/view_detectors.hpp>
 
-namespace lib {
+namespace dr {
 
 namespace __detail {
 
@@ -45,9 +45,9 @@ auto take_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
       auto first = rng::begin(segment);
       auto last = rng::begin(segment);
       rng::advance(last, remainder);
-      return lib::remote_subrange(first, last, lib::ranges::rank(segment));
+      return dr::remote_subrange(first, last, dr::ranges::rank(segment));
     } else {
-      return lib::remote_subrange(segment);
+      return dr::remote_subrange(segment);
     }
   };
 
@@ -75,9 +75,9 @@ auto drop_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
       auto first = rng::begin(segment);
       rng::advance(first, remainder);
       auto last = rng::end(segment);
-      return lib::remote_subrange(first, last, lib::ranges::rank(segment));
+      return dr::remote_subrange(first, last, dr::ranges::rank(segment));
     } else {
-      return lib::remote_subrange(segment);
+      return dr::remote_subrange(segment);
     }
   };
 
@@ -95,51 +95,50 @@ template <typename R> auto drop_segments(R &&segments, std::size_t n) {
 
 } // namespace __detail
 
-} // namespace lib
+} // namespace dr
 
 namespace DR_RANGES_NAMESPACE {
 
 // A standard library range adaptor does not change the rank of a
 // remote range, so we can simply return the rank of the base view.
 template <rng::range V>
-  requires(lib::remote_range<decltype(std::declval<V>().base())>)
+  requires(dr::remote_range<decltype(std::declval<V>().base())>)
 auto rank_(V &&v) {
-  return lib::ranges::rank(std::forward<V>(v).base());
+  return dr::ranges::rank(std::forward<V>(v).base());
 }
 
 template <rng::range V>
-  requires(lib::is_ref_view_v<std::remove_cvref_t<V>> &&
-           lib::distributed_range<decltype(std::declval<V>().base())>)
+  requires(dr::is_ref_view_v<std::remove_cvref_t<V>> &&
+           dr::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return lib::ranges::segments(v.base());
+  return dr::ranges::segments(v.base());
 }
 
 template <rng::range V>
-  requires(lib::is_take_view_v<std::remove_cvref_t<V>> &&
-           lib::distributed_range<decltype(std::declval<V>().base())>)
+  requires(dr::is_take_view_v<std::remove_cvref_t<V>> &&
+           dr::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return lib::__detail::take_segments(lib::ranges::segments(v.base()),
-                                      v.size());
+  return dr::__detail::take_segments(dr::ranges::segments(v.base()), v.size());
 }
 
 template <rng::range V>
-  requires(lib::is_drop_view_v<std::remove_cvref_t<V>> &&
-           lib::distributed_range<decltype(std::declval<V>().base())>)
+  requires(dr::is_drop_view_v<std::remove_cvref_t<V>> &&
+           dr::distributed_range<decltype(std::declval<V>().base())>)
 auto segments_(V &&v) {
-  return lib::__detail::drop_segments(lib::ranges::segments(v.base()),
-                                      v.base().size() - v.size());
+  return dr::__detail::drop_segments(dr::ranges::segments(v.base()),
+                                     v.base().size() - v.size());
 }
 
 template <rng::range V>
-  requires(lib::is_subrange_view_v<std::remove_cvref_t<V>> &&
-           lib::distributed_iterator<decltype(std::declval<V>().begin())>)
+  requires(dr::is_subrange_view_v<std::remove_cvref_t<V>> &&
+           dr::distributed_iterator<decltype(std::declval<V>().begin())>)
 auto segments_(V &&v) {
   auto first = rng::begin(v);
   auto last = rng::end(v);
 
   auto size = rng::distance(first, last);
 
-  return lib::__detail::take_segments(lib::ranges::segments(first), size);
+  return dr::__detail::take_segments(dr::ranges::segments(first), size);
 }
 
 } // namespace DR_RANGES_NAMESPACE

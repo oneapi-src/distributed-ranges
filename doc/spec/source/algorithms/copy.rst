@@ -16,9 +16,9 @@ Synopsis
 MHP
 ---
 
-.. doxygenfunction:: mhp::copy(lib::distributed_contiguous_range auto &&in, lib::distributed_iterator auto out)
+.. doxygenfunction:: mhp::copy(dr::distributed_contiguous_range auto &&in, dr::distributed_iterator auto out)
    :outline:
-.. doxygenfunction:: mhp::copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out)
+.. doxygenfunction:: mhp::copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out)
    :outline:
 
 SHP

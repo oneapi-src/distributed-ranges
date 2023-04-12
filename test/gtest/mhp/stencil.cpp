@@ -13,8 +13,8 @@ std::size_t radius = 4;
 std::size_t n = 10;
 
 TEST(MhpTests, Stencil) {
-  DV dv_in(n, lib::halo_bounds(radius));
-  DV dv_out(n, lib::halo_bounds(radius));
+  DV dv_in(n, dr::halo_bounds(radius));
+  DV dv_out(n, dr::halo_bounds(radius));
   V v_in(n);
 
   mhp::iota(dv_in, 10);

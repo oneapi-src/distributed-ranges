@@ -78,7 +78,7 @@ int check(auto &&actual) {
 }
 
 int stencil() {
-  lib::halo_bounds hb(1);
+  dr::halo_bounds hb(1);
   mhp::distributed_vector<Row> a(rows, hb), b(rows, hb);
   mhp::for_each(a, [](auto &row) { rng::iota(row, 100); });
   mhp::for_each(b, [](auto &row) { rng::fill(row, 0); });
@@ -134,9 +134,9 @@ int main(int argc, char *argv[]) {
   std::ofstream *logfile = nullptr;
   if (options.count("log")) {
     logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
-    lib::drlog.set_file(*logfile);
+    dr::drlog.set_file(*logfile);
   }
-  lib::drlog.debug("Rank: {}\n", comm_rank);
+  dr::drlog.debug("Rank: {}\n", comm_rank);
 
   auto error = stencil();
   MPI_Finalize();

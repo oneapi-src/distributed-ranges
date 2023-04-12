@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-template <lib::distributed_iterator Iter> void iter(Iter) {}
+template <dr::distributed_iterator Iter> void iter(Iter) {}
 
 int main(int argc, char **argv) {
   printf("Creating NUMA devices...\n");

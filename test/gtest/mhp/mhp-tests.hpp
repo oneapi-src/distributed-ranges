@@ -17,10 +17,10 @@ namespace xhp = mhp;
 template <typename V>
 concept compliant_view = rng::forward_range<V> && requires(V &v) {
   // test one at a time so error is apparent
-  lib::ranges::segments(v);
-  lib::ranges::rank(lib::ranges::segments(v)[0]);
-  rng::begin(lib::ranges::segments(v)[0]);
-  lib::ranges::local(rng::begin(lib::ranges::segments(v)[0]));
+  dr::ranges::segments(v);
+  dr::ranges::rank(dr::ranges::segments(v)[0]);
+  rng::begin(dr::ranges::segments(v)[0]);
+  dr::ranges::local(rng::begin(dr::ranges::segments(v)[0]));
   mhp::local_segments(v);
 };
 

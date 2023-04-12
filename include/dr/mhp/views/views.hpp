@@ -8,14 +8,14 @@ namespace mhp {
 // segment to local
 template <typename R> auto local_segments(R &&dr) {
   auto is_local = [](const auto &segment) {
-    return lib::ranges::rank(segment) == default_comm().rank();
+    return dr::ranges::rank(segment) == default_comm().rank();
   };
   // Convert from remote iter to local iter
   auto local_iter = [](const auto &segment) {
-    auto b = lib::ranges::local(rng::begin(segment));
+    auto b = dr::ranges::local(rng::begin(segment));
     return rng::subrange(b, b + rng::distance(segment));
   };
-  return lib::ranges::segments(std::forward<R>(dr)) |
+  return dr::ranges::segments(std::forward<R>(dr)) |
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 

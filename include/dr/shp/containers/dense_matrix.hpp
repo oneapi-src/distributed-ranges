@@ -128,8 +128,7 @@ private:
 };
 
 template <typename T, typename L>
-using dense_matrix_iterator =
-    lib::iterator_adaptor<dense_matrix_accessor<T, L>>;
+using dense_matrix_iterator = dr::iterator_adaptor<dense_matrix_accessor<T, L>>;
 
 template <typename T> class dense_matrix {
 public:

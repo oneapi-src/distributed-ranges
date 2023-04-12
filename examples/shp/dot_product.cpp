@@ -6,9 +6,9 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-template <lib::distributed_range X, lib::distributed_range Y>
+template <dr::distributed_range X, dr::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {
-  auto z = shp::views::zip(x, y) | lib::views::transform([](auto &&elem) {
+  auto z = shp::views::zip(x, y) | dr::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });

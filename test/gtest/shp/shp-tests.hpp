@@ -26,8 +26,8 @@ using AllocatorTypes = ::testing::Types<shp::device_allocator<int>>;
 
 template <typename V>
 concept compliant_view = rng::forward_range<V> && requires(V &v) {
-  lib::ranges::segments(v);
-  lib::ranges::rank(lib::ranges::segments(v)[0]);
+  dr::ranges::segments(v);
+  dr::ranges::rank(dr::ranges::segments(v)[0]);
 };
 
 #include "common-tests.hpp"

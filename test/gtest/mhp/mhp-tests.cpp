@@ -82,9 +82,9 @@ int main(int argc, char *argv[]) {
   std::ofstream *logfile = nullptr;
   if (options.count("log")) {
     logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
-    lib::drlog.set_file(*logfile);
+    dr::drlog.set_file(*logfile);
   }
-  lib::drlog.debug("Rank: {}\n", comm_rank);
+  dr::drlog.debug("Rank: {}\n", comm_rank);
 
   auto res = RUN_ALL_TESTS();
 

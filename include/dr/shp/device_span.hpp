@@ -51,10 +51,10 @@ public:
   using reference = std::iter_reference_t<Iter>;
 
   template <rng::random_access_range R>
-    requires(lib::remote_range<R>)
+    requires(dr::remote_range<R>)
   device_span(R &&r)
       : shp::span<T, Iter>(rng::begin(r), rng::size(r)),
-        rank_(lib::ranges::rank(r)) {}
+        rank_(dr::ranges::rank(r)) {}
 
   template <rng::random_access_range R>
   device_span(R &&r, std::size_t rank)

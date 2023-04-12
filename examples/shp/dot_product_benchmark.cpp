@@ -14,9 +14,9 @@
 #include <oneapi/mkl.hpp>
 #endif
 
-template <lib::distributed_range X, lib::distributed_range Y>
+template <dr::distributed_range X, dr::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {
-  auto z = shp::views::zip(x, y) | lib::views::transform([](auto &&elem) {
+  auto z = shp::views::zip(x, y) | dr::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
@@ -26,13 +26,13 @@ auto dot_product_distributed(X &&x, Y &&y) {
 
 template <rng::forward_range X, rng::forward_range Y>
 auto dot_product_onedpl(sycl::queue q, X &&x, Y &&y) {
-  auto z = rng::views::zip(x, y) | lib::views::transform([](auto &&elem) {
+  auto z = rng::views::zip(x, y) | dr::views::transform([](auto &&elem) {
              auto &&[a, b] = elem;
              return a * b;
            });
   oneapi::dpl::execution::device_policy policy(q);
-  lib::__detail::direct_iterator d_first(z.begin());
-  lib::__detail::direct_iterator d_last(z.end());
+  dr::__detail::direct_iterator d_first(z.begin());
+  dr::__detail::direct_iterator d_last(z.end());
   return oneapi::dpl::experimental::reduce_async(
              policy, d_first, d_last, rng::range_value_t<X>(0), std::plus())
       .get();
