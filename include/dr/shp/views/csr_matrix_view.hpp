@@ -119,7 +119,7 @@ private:
 
 template <typename T, typename I, typename TIter, typename IIter>
 using csr_matrix_view_iterator =
-    lib::iterator_adaptor<csr_matrix_view_accessor<T, I, TIter, IIter>>;
+    dr::iterator_adaptor<csr_matrix_view_accessor<T, I, TIter, IIter>>;
 
 template <typename T, typename I, typename TIter = T *, typename IIter = I *>
 class csr_matrix_view {

@@ -24,6 +24,18 @@ exclude_rule = re.compile('dr-style ignore')
 
 all_rules = [
     (
+        r'lib::',
+        'use dr::',
+    ),
+    (
+        r'namespace lib {',
+        'use namespace dr {',
+    ),
+    (
+        r'// namespace lib',
+        'use // namespace dr',
+    ),
+    (
         r'[( ]size_t ',
         'use std::size_t',
     ),

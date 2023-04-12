@@ -24,8 +24,8 @@ void transpose() {
   const std::size_t m = m_segment * comm_size;
   const std::size_t n = n_segment * comm_size;
 
-  lib::distributed_vector<T, lib::block_cyclic> dv_a(n), dv_b(n);
-  lib::distributed_mdspan<T, std::dextents<2>> dm_aT(dv_b.data(), m, n);
+  dr::distributed_vector<T, dr::block_cyclic> dv_a(n), dv_b(n);
+  dr::distributed_mdspan<T, std::dextents<2>> dm_aT(dv_b.data(), m, n);
 
   // root initializes dv_a
   transpose_serial<T> ref_transpose;
@@ -45,7 +45,7 @@ void transpose() {
   for (int r = 0; r < comm_size; r++) {
     // Create a view for the remote target block
     // We have block (src_rank, target_rank), store at (target_rank, src_rank)
-    auto target_block = lib::distributed_submdspan(
+    auto target_block = dr::distributed_submdspan(
         dm, std::vector({std::pair(r * m_segment, (r + 1) * m_segment),
                          std::pair(comm_rank * n_segment,
                                    (comm_rank + 1) * n_segment)}));

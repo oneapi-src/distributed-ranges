@@ -45,7 +45,7 @@ int check(auto dv, auto n, auto steps) {
 }
 
 int stencil(auto n, auto steps) {
-  lib::halo_bounds hb(1);
+  dr::halo_bounds hb(1);
   mhp::distributed_vector<int> a(n, hb), b(n, hb);
   mhp::iota(a, 100);
   mhp::fill(b, 0);

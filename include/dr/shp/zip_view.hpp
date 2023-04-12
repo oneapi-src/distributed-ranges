@@ -12,7 +12,7 @@
 #include <dr/detail/view_detectors.hpp>
 #include <dr/shp/device_span.hpp>
 
-namespace lib {
+namespace dr {
 
 template <typename T> struct is_owning_view : std::false_type {};
 // template <rng::range R>
@@ -21,7 +21,7 @@ template <typename T> struct is_owning_view : std::false_type {};
 template <typename T>
 inline constexpr bool is_owning_view_v = is_owning_view<T>{};
 
-}; // namespace lib
+}; // namespace dr
 
 namespace shp {
 
@@ -86,7 +86,7 @@ private:
 };
 
 template <rng::random_access_iterator... Iters>
-using zip_iterator = lib::iterator_adaptor<zip_accessor<Iters...>>;
+using zip_iterator = dr::iterator_adaptor<zip_accessor<Iters...>>;
 
 /// zip
 template <rng::random_access_range... Rs>
@@ -122,8 +122,8 @@ public:
   template <std::size_t I> decltype(auto) get_view() const {
     auto &&view = std::get<I>(views_);
 
-    if constexpr (lib::is_ref_view_v<std::remove_cvref_t<decltype(view)>> ||
-                  lib::is_owning_view_v<std::remove_cvref_t<decltype(view)>>) {
+    if constexpr (dr::is_ref_view_v<std::remove_cvref_t<decltype(view)>> ||
+                  dr::is_owning_view_v<std::remove_cvref_t<decltype(view)>>) {
       return view.base();
     } else {
       return view;
@@ -133,7 +133,7 @@ public:
   // If there is at least one distributed range, expose segments
   // of overlapping remote ranges.
   auto segments() const
-    requires(lib::distributed_range<Rs> || ...)
+    requires(dr::distributed_range<Rs> || ...)
   {
     std::array<std::size_t, sizeof...(Rs)> segment_ids;
     std::array<std::size_t, sizeof...(Rs)> local_idx;
@@ -163,14 +163,14 @@ public:
       increment_local_idx(segment_ids, local_idx, size);
     }
 
-    return lib::__detail::owning_view(std::move(segment_views));
+    return dr::__detail::owning_view(std::move(segment_views));
   }
 
   // Return a range corresponding to each segment in `segments()`,
   // but with a tuple of the constituent ranges instead of a
   // `zip_view` of the ranges.
   auto zipped_segments() const
-    requires(lib::distributed_range<Rs> || ...)
+    requires(dr::distributed_range<Rs> || ...)
   {
     std::array<std::size_t, sizeof...(Rs)> segment_ids;
     std::array<std::size_t, sizeof...(Rs)> local_idx;
@@ -199,7 +199,7 @@ public:
       increment_local_idx(segment_ids, local_idx, size);
     }
 
-    return lib::__detail::owning_view(std::move(segment_views));
+    return dr::__detail::owning_view(std::move(segment_views));
   }
 
   // If:
@@ -207,8 +207,8 @@ public:
   //   - There are no distributed ranges in the zip
   // Expose a rank.
   std::size_t rank() const
-    requires((lib::remote_range<Rs> || ...) &&
-             !(lib::distributed_range<Rs> || ...))
+    requires((dr::remote_range<Rs> || ...) &&
+             !(dr::distributed_range<Rs> || ...))
   {
     return get_rank_impl_<0, Rs...>();
   }
@@ -216,22 +216,22 @@ public:
 private:
   template <std::size_t I, typename R> std::size_t get_rank_impl_() const {
     static_assert(I < sizeof...(Rs));
-    return lib::ranges::rank(get_view<I>());
+    return dr::ranges::rank(get_view<I>());
   }
 
   template <std::size_t I, typename R, typename... Rs_>
     requires(sizeof...(Rs_) > 0)
   std::size_t get_rank_impl_() const {
     static_assert(I < sizeof...(Rs));
-    if constexpr (lib::remote_range<R>) {
-      return lib::ranges::rank(get_view<I>());
+    if constexpr (dr::remote_range<R>) {
+      return dr::ranges::rank(get_view<I>());
     } else {
       return get_rank_impl_<I + 1, Rs_...>();
     }
   }
 
   template <typename T> auto create_view_impl_(T &&t) const {
-    if constexpr (lib::remote_range<T>) {
+    if constexpr (dr::remote_range<T>) {
       return shp::device_span(std::forward<T>(t));
     } else {
       return shp::span(std::forward<T>(t));
@@ -295,9 +295,9 @@ private:
     return min_many_impl_(local_min, ts...);
   }
 
-  template <lib::distributed_range T>
+  template <dr::distributed_range T>
   decltype(auto) segment_or_orig_(T &&t, std::size_t idx) const {
-    return lib::ranges::segments(t)[idx];
+    return dr::ranges::segments(t)[idx];
   }
 
   template <typename T>

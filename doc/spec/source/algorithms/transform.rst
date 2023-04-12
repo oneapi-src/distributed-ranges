@@ -16,7 +16,7 @@ Interface
 SHP
 ---
 
-.. doxygenfunction:: transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in, lib::distributed_iterator auto out, auto &&fn)
+.. doxygenfunction:: transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in, dr::distributed_iterator auto out, auto &&fn)
 
 
 Description

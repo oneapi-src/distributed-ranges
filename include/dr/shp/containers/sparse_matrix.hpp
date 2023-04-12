@@ -121,7 +121,7 @@ private:
 
 template <typename Segments>
 using distributed_sparse_matrix_iterator =
-    lib::iterator_adaptor<distributed_range_accessor<Segments>>;
+    dr::iterator_adaptor<distributed_range_accessor<Segments>>;
 
 template <typename T, std::integral I = std::int64_t> class sparse_matrix {
 public:

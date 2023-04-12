@@ -11,7 +11,7 @@ namespace shp {
 
 namespace views {
 
-inline constexpr auto transform = lib::views::transform;
+inline constexpr auto transform = dr::views::transform;
 
 inline constexpr auto take = rng::views::take;
 

@@ -104,11 +104,11 @@ device_ptr<T> copy(device_ptr<std::add_const_t<T>> first,
 }
 
 // Copy from local range to distributed range
-template <std::forward_iterator InputIt, lib::distributed_iterator OutputIt>
+template <std::forward_iterator InputIt, dr::distributed_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
-  auto &&segments = lib::ranges::segments(d_first);
+  auto &&segments = dr::ranges::segments(d_first);
   auto segment_iter = rng::begin(segments);
 
   std::vector<sycl::event> events;
@@ -132,7 +132,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   return shp::__detail::combine_events(events);
 }
 
-template <std::contiguous_iterator InputIt, lib::distributed_iterator OutputIt>
+template <std::contiguous_iterator InputIt, dr::distributed_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
@@ -141,13 +141,13 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 }
 
 // Copy from distributed range to local range
-template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
+template <dr::distributed_iterator InputIt, std::forward_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   auto dist = rng::distance(first, last);
   auto segments =
-      lib::__detail::take_segments(lib::ranges::segments(first), dist);
+      dr::__detail::take_segments(dr::ranges::segments(first), dist);
 
   std::vector<sycl::event> events;
 
@@ -163,7 +163,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   return shp::__detail::combine_events(events);
 }
 
-template <lib::distributed_iterator InputIt, std::forward_iterator OutputIt>
+template <dr::distributed_iterator InputIt, std::forward_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {

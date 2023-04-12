@@ -10,7 +10,7 @@
 
 #include <dr/detail/ranges_shim.hpp>
 
-namespace lib {
+namespace dr {
 
 namespace ranges {
 
@@ -77,7 +77,7 @@ namespace {
 
 template <typename R>
 concept remote_range_shadow_impl_ =
-    rng::forward_range<R> && requires(R &r) { lib::ranges::rank(r); };
+    rng::forward_range<R> && requires(R &r) { dr::ranges::rank(r); };
 
 template <typename R>
 concept segments_range =
@@ -170,14 +170,14 @@ namespace __detail {
 
 template <typename T>
 concept has_local = requires(T &t) {
-  { lib::ranges::local(t) } -> std::convertible_to<std::any>;
+  { dr::ranges::local(t) } -> std::convertible_to<std::any>;
 };
 
 struct local_fn_ {
   template <typename T>
     requires(has_local<T>)
   auto operator()(T &&t) const {
-    return lib::ranges::local(t);
+    return dr::ranges::local(t);
   }
 
   template <typename T> auto operator()(T &&t) const { return t; }
@@ -189,4 +189,4 @@ inline constexpr auto local = local_fn_{};
 
 } // namespace ranges
 
-} // namespace lib
+} // namespace dr

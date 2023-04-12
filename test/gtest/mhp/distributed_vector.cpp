@@ -106,7 +106,7 @@ TEST(MhpTests, DistributedVectorReference) {
 #if 0
 TEST(MhpTests, DistributedVectorAllocator) {
   std::size_t n = 10;
-  DVA dv(n, lib::halo_bounds(0), std::allocator<T>{});
+  DVA dv(n, dr::halo_bounds(0), std::allocator<T>{});
   mhp::fill(dv, 22);
   if (comm_rank == 0) {
     std::vector<T> v(n);

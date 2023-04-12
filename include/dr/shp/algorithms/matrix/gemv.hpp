@@ -13,8 +13,8 @@
 
 namespace shp {
 
-template <lib::distributed_range C, typename T, typename I,
-          lib::distributed_range B>
+template <dr::distributed_range C, typename T, typename I,
+          dr::distributed_range B>
 void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   assert(c.size() == b.size());
   assert(a.shape()[1] == b.size());
@@ -39,7 +39,7 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
 
   for (auto &&l_b : local_b) {
     auto event =
-        shp::copy_async(b.begin(), b.end(), lib::ranges::local(l_b.begin()));
+        shp::copy_async(b.begin(), b.end(), dr::ranges::local(l_b.begin()));
     copy_events.push_back(event);
   }
 
@@ -47,8 +47,8 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
     auto a_tile = a.tile(shp::index<I>(i, 0));
 
     auto a_iter = a_tile.begin();
-    auto b_iter = lib::ranges::local(local_b[i].begin());
-    auto c_iter = lib::ranges::local(c.segments()[i].begin());
+    auto b_iter = dr::ranges::local(local_b[i].begin());
+    auto c_iter = dr::ranges::local(c.segments()[i].begin());
 
     auto &&q = __detail::queue(a_tile.rank());
 
@@ -71,8 +71,8 @@ void flat_gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   __detail::wait(comp_events);
 }
 
-template <lib::distributed_range C, typename T, typename I,
-          lib::distributed_range B>
+template <dr::distributed_range C, typename T, typename I,
+          dr::distributed_range B>
 void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   assert(c.size() == b.size());
   assert(a.shape()[1] == b.size());
@@ -97,15 +97,15 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
 
   for (auto &&l_b : local_b) {
     auto event =
-        shp::copy_async(b.begin(), b.end(), lib::ranges::local(l_b.begin()));
+        shp::copy_async(b.begin(), b.end(), dr::ranges::local(l_b.begin()));
     copy_events.push_back(event);
   }
 
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
     auto a_tile = a.tile(shp::index<I>(i, 0));
 
-    auto b_iter = lib::ranges::local(local_b[i].begin());
-    auto c_iter = lib::ranges::local(c.segments()[i].begin());
+    auto b_iter = dr::ranges::local(local_b[i].begin());
+    auto c_iter = dr::ranges::local(c.segments()[i].begin());
 
     auto &&q = __detail::queue(a_tile.rank());
 
@@ -117,8 +117,8 @@ void gemv(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   __detail::wait(comp_events);
 }
 
-template <lib::distributed_range C, typename T, typename I,
-          lib::distributed_range B>
+template <dr::distributed_range C, typename T, typename I,
+          dr::distributed_range B>
 void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   assert(a.shape()[0] == c.size());
   assert(a.shape()[1] == b.size());
@@ -135,8 +135,8 @@ void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
       auto b_segment = b.segments()[k];
       auto c_segment = c.segments()[i];
 
-      auto b_iter = lib::ranges::local(b_segment.begin());
-      auto c_iter = lib::ranges::local(c_segment.begin());
+      auto b_iter = dr::ranges::local(b_segment.begin());
+      auto c_iter = dr::ranges::local(c_segment.begin());
 
       auto &&q = __detail::queue(a_tile.rank());
 
@@ -148,8 +148,8 @@ void gemv_square(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   __detail::wait(events);
 }
 
-template <lib::distributed_range C, typename T, typename I,
-          lib::distributed_range B>
+template <dr::distributed_range C, typename T, typename I,
+          dr::distributed_range B>
 void gemv_square_copy(C &&c, shp::sparse_matrix<T, I> &a, B &&b) {
   assert(a.shape()[0] == c.size());
   assert(a.shape()[1] == b.size());

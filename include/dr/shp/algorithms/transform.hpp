@@ -23,8 +23,8 @@ namespace shp {
  */
 
 template <class ExecutionPolicy>
-auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
-               lib::distributed_iterator auto out, auto &&fn) {
+auto transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in,
+               dr::distributed_iterator auto out, auto &&fn) {
 
   static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
@@ -37,7 +37,7 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
   for (auto &&[in_seg, out_seg] :
        views::zip(in, rng::subrange(out, out_end)).zipped_segments()) {
     auto in_device = policy.get_devices()[in_seg.rank()];
-    auto &&q = __detail::queue(lib::ranges::rank(in_seg));
+    auto &&q = __detail::queue(dr::ranges::rank(in_seg));
     const std::size_t seg_size = rng::size(in_seg);
     assert(seg_size == rng::size(out_seg));
     auto local_in_seg = __detail::local(in_seg);

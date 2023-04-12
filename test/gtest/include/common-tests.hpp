@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-template <lib::distributed_range DR>
+template <dr::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
 struct AOS_Struct {
@@ -124,7 +124,7 @@ std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
 }
 
 std::string check_segments_message(rng::range auto &&r) {
-  auto &&segments = lib::ranges::segments(r);
+  auto &&segments = dr::ranges::segments(r);
   auto &&flat = rng::views::join(segments);
   if (is_equal(r, flat)) {
     return "";
@@ -197,7 +197,7 @@ auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
 }
 
 auto check_segments(std::forward_iterator auto di) {
-  const auto &segments = lib::ranges::segments(di);
+  const auto &segments = dr::ranges::segments(di);
   const auto &flat = rng::join_view(segments);
   if (is_equal(di, flat)) {
     return testing::AssertionSuccess();

@@ -71,7 +71,7 @@ private:
 
 template <typename T, typename Iter>
 using dense_matrix_row_iterator =
-    lib::iterator_adaptor<dense_matrix_row_accessor<T, Iter>>;
+    dr::iterator_adaptor<dense_matrix_row_accessor<T, Iter>>;
 
 template <typename T, typename Iter> class dense_matrix_row_view {
 public:

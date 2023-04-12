@@ -103,7 +103,7 @@ private:
 
 template <typename T, typename Iter>
 using dense_matrix_view_iterator =
-    lib::iterator_adaptor<dense_matrix_view_accessor<T, Iter>>;
+    dr::iterator_adaptor<dense_matrix_view_accessor<T, Iter>>;
 
 template <typename T, typename Iter = T *> class dense_matrix_view {
 public:

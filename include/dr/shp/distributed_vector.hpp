@@ -92,7 +92,7 @@ public:
   }
 
   auto segments() const noexcept {
-    return lib::__detail::drop_segments(segments_, segment_id_, idx_);
+    return dr::__detail::drop_segments(segments_, segment_id_, idx_);
   }
 
 private:
@@ -108,7 +108,7 @@ private:
 
 template <typename T, typename L>
 using distributed_vector_iterator =
-    lib::iterator_adaptor<distributed_vector_accessor<T, L>>;
+    dr::iterator_adaptor<distributed_vector_accessor<T, L>>;
 
 // TODO: support teams, distributions
 
@@ -172,10 +172,10 @@ public:
 
   size_type size() const noexcept { return size_; }
 
-  auto segments() { return lib::__detail::take_segments(segments_, size()); }
+  auto segments() { return dr::__detail::take_segments(segments_, size()); }
 
   auto segments() const {
-    return lib::__detail::take_segments(segments_, size());
+    return dr::__detail::take_segments(segments_, size());
   }
 
   iterator begin() { return iterator(segments_, 0, 0, segment_size_); }
