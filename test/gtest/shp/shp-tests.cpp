@@ -8,13 +8,13 @@
 #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
-using AllTypes = ::testing::Types<shp::distributed_vector<int>>;
+using AllTypes = ::testing::Types<xhp::distributed_vector<int>>;
 #include "common/enumerate.hpp"
 
 #else
 
-using AllTypes = ::testing::Types<shp::distributed_vector<int>,
-                                  shp::distributed_vector<float>>;
+using AllTypes = ::testing::Types<xhp::distributed_vector<int>,
+                                  xhp::distributed_vector<float>>;
 
 #include "common/all.hpp"
 // Issue with 2 element zips
