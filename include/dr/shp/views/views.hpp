@@ -7,16 +7,14 @@
 #include <dr/shp/views/standard_views.hpp>
 #include <dr/views/views.hpp>
 
-namespace dr::shp {
+namespace dr::shp::views {
 
-namespace views {
-
-inline constexpr auto transform = dr::views::transform;
-
-inline constexpr auto take = rng::views::take;
+inline constexpr auto all = rng::views::all;
 
 inline constexpr auto drop = rng::views::drop;
 
-} // namespace views
+inline constexpr auto take = rng::views::take;
 
-} // namespace dr::shp
+inline constexpr auto transform = dr::views::transform;
+
+} // namespace dr::shp::views
