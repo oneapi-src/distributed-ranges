@@ -25,13 +25,28 @@ inline constexpr bool is_owning_view_v = is_owning_view<T>{};
 
 namespace shp {
 
+namespace __detail {
+
+template <typename... Args> struct tuple_or_pair {
+  using type = std::tuple<Args...>;
+};
+
+template <typename T, typename U> struct tuple_or_pair<T, U> {
+  using type = std::pair<T, U>;
+};
+
+template <typename... Args>
+using tuple_or_pair_t = typename tuple_or_pair<Args...>::type;
+
+}; // namespace __detail
+
 template <rng::random_access_iterator... Iters> class zip_accessor {
 public:
-  using element_type = std::tuple<std::iter_value_t<Iters>...>;
+  using element_type = __detail::tuple_or_pair_t<std::iter_value_t<Iters>...>;
   using value_type = element_type;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = std::tuple<std::iter_reference_t<Iters>...>;
+  using reference = __detail::tuple_or_pair_t<std::iter_reference_t<Iters>...>;
 
   using iterator_category = std::random_access_iterator_tag;
 
