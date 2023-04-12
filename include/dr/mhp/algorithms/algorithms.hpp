@@ -14,7 +14,7 @@
 #include <dr/detail/onedpl_direct_iterator.hpp>
 #include <dr/detail/ranges_shim.hpp>
 
-namespace mhp {
+namespace dr::mhp {
 
 //
 //
@@ -156,4 +156,4 @@ void transform(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out,
   mhp::transform(rng::subrange(first, last), out, op);
 }
 
-} // namespace mhp
+} // namespace dr::mhp

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+namespace dr::mhp {
 
 namespace __detail {
 
@@ -58,4 +58,4 @@ inline void init(sycl::queue q) {
 }
 #endif
 
-} // namespace mhp
+} // namespace dr::mhp

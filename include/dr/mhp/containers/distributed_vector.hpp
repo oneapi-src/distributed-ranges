@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+namespace dr::mhp {
 
 template <typename DV> class dv_segment_iterator;
 
@@ -269,12 +269,13 @@ auto &halo(has_halo_method auto &&dr) {
   return rng::begin(dr::ranges::segments(dr)[0]).halo();
 }
 
-} // namespace mhp
+} // namespace dr::mhp
 
 #if !defined(DR_SPEC)
 
 // Needed to satisfy rng::viewable_range
 template <typename T>
-inline constexpr bool rng::enable_borrowed_range<mhp::dv_segments<T>> = true;
+inline constexpr bool rng::enable_borrowed_range<dr::mhp::dv_segments<T>> =
+    true;
 
 #endif

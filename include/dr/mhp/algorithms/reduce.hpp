@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+namespace dr::mhp {
 
 //
 //
@@ -115,4 +115,4 @@ auto reduce(ExecutionPolicy &&policy, DI begin, DI end) {
                 std::plus<>{});
 }
 
-} // namespace mhp
+} // namespace dr::mhp

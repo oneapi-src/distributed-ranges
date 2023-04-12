@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+namespace dr::mhp {
 
 // Select segments local to this rank and convert the iterators in the
 // segment to local
@@ -19,4 +19,4 @@ template <typename R> auto local_segments(R &&dr) {
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
-} // namespace mhp
+} // namespace dr::mhp
