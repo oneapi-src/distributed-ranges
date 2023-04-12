@@ -57,6 +57,7 @@ namespace fmt {}
 #include <dr/mhp/alignment.hpp>
 #include <dr/mhp/views/views.hpp>
 #include <dr/mhp/views/zip.hpp>
+#include <dr/mhp/views/enumerate.hpp>
 #include <dr/mhp/algorithms/algorithms.hpp>
 #include <dr/mhp/algorithms/reduce.hpp>
 #include <dr/mhp/containers/distributed_vector.hpp>

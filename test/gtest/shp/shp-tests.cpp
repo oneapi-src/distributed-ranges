@@ -8,7 +8,8 @@ using AllTypes = ::testing::Types<shp::distributed_vector<int>,
                                   shp::distributed_vector<float>>;
 
 #include "common/all.hpp"
-#include "common/enumerate.hpp"
+// Issue with 2 element zips
+// #include "common/enumerate.hpp"
 // ConstructorFill gets PI_ERROR_INVALID_CONTEXT occasionally
 // #include "common/distributed_vector.hpp"
 // need to implement same API as MHP
