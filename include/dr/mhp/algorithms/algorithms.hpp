@@ -13,6 +13,7 @@
 #include <dr/detail/logger.hpp>
 #include <dr/detail/onedpl_direct_iterator.hpp>
 #include <dr/detail/ranges_shim.hpp>
+#include <dr/mhp/global.hpp>
 
 namespace dr::mhp {
 
@@ -72,41 +73,31 @@ void copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out) {
 //
 
 /// Collective for_each on distributed range
-template <typename ExecutionPolicy>
-void for_each(ExecutionPolicy &&policy, dr::distributed_range auto &&dr,
-              auto op) {
-  if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
-                               device_policy>) {
+void for_each(dr::distributed_range auto &&dr, auto op) {
+#if SYCL_LANGUAGE_VERSION
+  if (mhp::use_sycl()) {
     dr::drlog.debug("for_each: dpl execution\n");
     for (const auto &s : local_segments(dr)) {
 
-      std::for_each(policy.dpl_policy,
-                    dr::__detail::direct_iterator(rng::begin(s)),
+      std::for_each(dpl_policy(), dr::__detail::direct_iterator(rng::begin(s)),
                     dr::__detail::direct_iterator(rng::end(s)), op);
     }
-  } else {
-    dr::drlog.debug("for_each: parallel cpu execution\n");
-    for (const auto &s : local_segments(dr)) {
-      rng::for_each(s, op);
-    }
+    barrier();
+    return;
+  }
+#endif
+
+  dr::drlog.debug("for_each: parallel cpu execution\n");
+  for (const auto &s : local_segments(dr)) {
+    rng::for_each(s, op);
   }
   barrier();
 }
 
-template <dr::distributed_range DR> void for_each(DR &&dr, auto op) {
-  for_each(std::execution::par_unseq, std::forward<DR>(dr), op);
-}
-
 /// Collective for_each on iterator/sentinel for a distributed range
-template <typename ExecutionPolicy, dr::distributed_iterator DI>
-void for_each(ExecutionPolicy &&policy, DI first, DI last, auto op) {
-  mhp::for_each(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(first, last), op);
-}
-
 template <dr::distributed_iterator DI>
 void for_each(DI first, DI last, auto op) {
-  mhp::for_each(std::execution::par_unseq, rng::subrange(first, last), op);
+  mhp::for_each(rng::subrange(first, last), op);
 }
 
 //

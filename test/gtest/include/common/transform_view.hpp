@@ -58,7 +58,7 @@ TYPED_TEST(TransformView, ForEach) {
 
   auto null_for_each = [](auto v) {};
   rng::for_each(local, null_for_each);
-  xhp::for_each(default_policy(ops.dist_vec), dist, null_for_each);
+  xhp::for_each(dist, null_for_each);
   EXPECT_EQ(ops.vec, ops.dist_vec);
 }
 
@@ -69,5 +69,5 @@ TYPED_TEST(TransformView, Reduce) {
   auto local = rng::views::transform(ops.vec, negate);
   auto dist = dr::views::transform(ops.dist_vec, negate);
   EXPECT_EQ(std::reduce(local.begin(), local.end(), 3, std::plus{}),
-            xhp::reduce(default_policy(ops.dist_vec), dist, 3, std::plus{}));
+            xhp::reduce(dist, 3, std::plus{}));
 }
