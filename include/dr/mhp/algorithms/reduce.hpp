@@ -15,8 +15,8 @@ namespace dr::mhp {
 //
 
 /// Collective reduction on a distributed range
-template <typename ExecutionPolicy, typename T, dr::distributed_range DR>
-auto reduce(ExecutionPolicy &&policy, DR &&dr, T init, auto &&binary_op,
+template <typename T, dr::distributed_range DR>
+auto reduce(DR &&dr, T init, auto &&binary_op,
             std::optional<std::size_t> root = std::optional<std::size_t>()) {
   T result = 0;
   auto comm = default_comm();
@@ -25,17 +25,17 @@ auto reduce(ExecutionPolicy &&policy, DR &&dr, T init, auto &&binary_op,
     dr::drlog.debug("Parallel reduce\n");
 
     auto reduce = [=](auto &&r) {
-      if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
-                                   device_policy>) {
+#if SYCL_LANGUAGE_VERSION
+      if (mhp::use_sycl()) {
         dr::drlog.debug("  with DPL\n");
         return std::reduce(
-            policy.dpl_policy, dr::__detail::direct_iterator(rng::begin(r)),
+            dpl_policy(), dr::__detail::direct_iterator(rng::begin(r)),
             dr::__detail::direct_iterator(rng::end(r)), T(0), binary_op);
-      } else {
-        dr::drlog.debug("  with CPU\n");
-        return std::reduce(std::execution::par_unseq, rng::begin(r),
-                           rng::end(r), T(0), binary_op);
       }
+#endif
+      dr::drlog.debug("  with CPU\n");
+      return std::reduce(std::execution::par_unseq, rng::begin(r), rng::end(r),
+                         T(0), binary_op);
     };
     auto locals = rng::views::transform(local_segments(dr), reduce);
     auto local = std::reduce(std::execution::par_unseq, rng::begin(locals),
@@ -70,17 +70,13 @@ auto reduce(ExecutionPolicy &&policy, DR &&dr, T init, auto &&binary_op,
 }
 
 /// Collective reduction on a distributed range
-template <typename ExecutionPolicy, dr::distributed_range DR>
-auto reduce(ExecutionPolicy &&policy, DR &dr, auto init) {
-  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<DR>(dr),
-                init, std::plus<>{});
+template <dr::distributed_range DR> auto reduce(DR &dr, auto init) {
+  return reduce(std::forward<DR>(dr), init, std::plus<>{});
 }
 
 /// Collective reduction on a distributed range
-template <typename ExecutionPolicy, dr::distributed_range DR>
-auto reduce(ExecutionPolicy &&policy, DR &dr) {
-  return reduce(std::forward<ExecutionPolicy>(policy), std::forward<DR>(dr),
-                typename DR::value_type{}, std::plus<>{});
+template <dr::distributed_range DR> auto reduce(DR &dr) {
+  return reduce(std::forward<DR>(dr), typename DR::value_type{}, std::plus<>{});
 }
 
 //
@@ -88,30 +84,23 @@ auto reduce(ExecutionPolicy &&policy, DR &dr) {
 //
 
 /// Collective reduction on a distributed range
-template <typename ExecutionPolicy, dr::distributed_iterator DI,
-          typename BinaryOp>
-auto reduce(ExecutionPolicy &&policy, DI begin, DI end,
-            auto init = typename DI::value_type{},
+template <dr::distributed_iterator DI, typename BinaryOp>
+auto reduce(DI begin, DI end, auto init = typename DI::value_type{},
             BinaryOp &&binary_op = std::plus<>(),
             std::optional<std::size_t> root = std::optional<std::size_t>()) {
-  return reduce(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(begin, end), init,
+  return reduce(rng::subrange(begin, end), init,
                 std::forward<BinaryOp>(binary_op), root);
 }
 
 /// Collective reduction on a distributed range
-template <typename ExecutionPolicy, dr::distributed_iterator DI>
-auto reduce(ExecutionPolicy &&policy, DI begin, DI end,
-            auto init = typename DI::value_type{}) {
-  return reduce(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(begin, end), init, std::plus<>{});
+template <dr::distributed_iterator DI>
+auto reduce(DI begin, DI end, auto init = typename DI::value_type{}) {
+  return reduce(rng::subrange(begin, end), init, std::plus<>{});
 }
 
 /// Collective reduction on a distributed range
-template <typename ExecutionPolicy, dr::distributed_iterator DI>
-auto reduce(ExecutionPolicy &&policy, DI begin, DI end) {
-  return reduce(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(begin, end), typename DI::value_type{},
+template <dr::distributed_iterator DI> auto reduce(DI begin, DI end) {
+  return reduce(rng::subrange(begin, end), typename DI::value_type{},
                 std::plus<>{});
 }
 

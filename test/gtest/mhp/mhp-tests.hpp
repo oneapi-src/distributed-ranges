@@ -27,19 +27,4 @@ concept compliant_view = rng::forward_range<V> && requires(V &v) {
 inline void barrier() { dr::mhp::barrier(); }
 inline void fence() { dr::mhp::fence(); }
 
-#ifdef SYCL_LANGUAGE_VERSION
-template <typename T>
-inline auto default_policy(
-    const dr::mhp::distributed_vector<T, dr::mhp::sycl_shared_allocator<T>>
-        &dv) {
-  return dr::mhp::device_policy();
-}
-#endif
-
-template <typename T>
-inline auto
-default_policy(const dr::mhp::distributed_vector<T, std::allocator<T>> &dv) {
-  return std::execution::par_unseq;
-}
-
 #include "common-tests.hpp"

@@ -18,8 +18,11 @@ using AllTypes = ::testing::Types<xhp::distributed_vector<int>,
 
 #include "common/all.hpp"
 #include "common/distributed_vector.hpp"
+// Issue with 2 element zips
+// #include "common/enumerate.hpp"
 // need to implement same API as MHP
 // #include "common/copy.hpp"
+#include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
 #include "common/enumerate.hpp"
 #include "common/fill.hpp"

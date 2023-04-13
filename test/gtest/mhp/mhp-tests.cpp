@@ -4,6 +4,9 @@
 
 #include "mhp-tests.hpp"
 
+using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
+                                  dr::mhp::distributed_vector<float>>;
+
 // Use this for shorter build time
 // #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
@@ -13,20 +16,19 @@ using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
 
 #else
 
+#ifdef TEST_MHP_SYCL
 using AllTypes = ::testing::Types<
-#ifdef SYCL_LANGUAGE_VERSION
     dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
-    dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>,
+    dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>>;
+#else
+using AllTypes = CPUTypes;
 #endif
-    dr::mhp::distributed_vector<int>, dr::mhp::distributed_vector<float>>;
-
-using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
-                                  dr::mhp::distributed_vector<float>>;
 
 #include "common/all.hpp"
 #include "common/copy.hpp"
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
+#include "common/enumerate.hpp"
 #include "common/fill.hpp"
 #include "common/for_each.hpp"
 #include "common/iota.hpp"
@@ -55,8 +57,11 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(comm, &size);
   comm_rank = rank;
   comm_size = size;
+#ifdef TEST_MHP_SYCL
+  dr::mhp::init(sycl::queue());
+#else
   dr::mhp::init();
-
+#endif
   ::testing::InitGoogleTest(&argc, argv);
 
   cxxopts::Options options_spec(argv[0], "DR MHP tests");

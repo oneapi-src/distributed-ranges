@@ -18,10 +18,6 @@ namespace xhp = dr::shp;
 inline void barrier() {}
 inline void fence() {}
 
-template <typename T, typename Alloc>
-inline auto default_policy(const dr::shp::distributed_vector<T, Alloc> &dv) {
-  return dr::shp::par_unseq;
-}
 using AllocatorTypes = ::testing::Types<dr::shp::device_allocator<int>>;
 
 template <typename V>
