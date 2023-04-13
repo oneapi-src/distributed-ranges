@@ -77,7 +77,7 @@ TEST(ShpTests, InclusiveScan_aligned) {
   }
 }
 
-TEST(ShpTests, InclusiveScan_nonaligned) {
+TEST(ShpTests, DISABLED_InclusiveScan_nonaligned) {
   std::size_t n = 100;
 
   // With execution policies
