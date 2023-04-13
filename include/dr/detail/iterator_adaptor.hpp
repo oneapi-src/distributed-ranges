@@ -4,6 +4,11 @@
 
 #pragma once
 
+#include <iterator>
+#include <type_traits>
+
+#include <dr/detail/ranges_shim.hpp>
+
 namespace lib {
 
 namespace {

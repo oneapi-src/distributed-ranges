@@ -19,4 +19,6 @@ template <typename R> auto local_segments(R &&dr) {
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
+inline constexpr auto take = rng::views::take;
+
 } // namespace mhp

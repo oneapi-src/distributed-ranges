@@ -122,7 +122,7 @@ public:
   auto rank() const { return segment_index_; }
   auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
   auto segments() const {
-    return lib::internal::drop_segments(dv_->segments(), segment_index_,
+    return lib::__detail::drop_segments(dv_->segments(), segment_index_,
                                         index_);
   }
   auto &halo() const { return dv_->halo(); }

@@ -71,6 +71,18 @@ all_rules_compiled = []
 
 include_rules = [
     (
+        r'#include "',
+        'use #include <>',
+    ),
+    (
+        r'namespace {',
+        'use namespace __detail {',
+    ),
+    (
+        r'namespace internal {',
+        'use namespace __detail {',
+    ),
+    (
         r'\.begin\(\)',
         'use rng::begin()',
     ),

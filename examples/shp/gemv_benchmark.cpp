@@ -10,10 +10,6 @@
 
 #include <concepts>
 
-#ifdef USE_MKL
-#include <oneapi/mkl.hpp>
-#endif
-
 template <grb::MatrixRange M> auto local_gemv(M &&a) {
   using T = grb::matrix_scalar_t<M>;
   std::vector<T> b(a.shape()[1], 1);
@@ -58,7 +54,12 @@ int main(int argc, char **argv) {
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
-  std::string fname = "/nfs/site/home/bbrock/data/com-Orkut.mtx";
+  if (argc != 2) {
+    fmt::print("usage: ./gemv_benchmark [matrix market file]\n");
+    return 1;
+  }
+
+  std::string fname(argv[1]);
 
   using T = float;
   using I = int;
@@ -90,13 +91,15 @@ int main(int argc, char **argv) {
   std::vector<double> durations;
   durations.reserve(n_iterations);
 
-  fmt::print("Benchmarking...\n");
-
   // GEMV
+  fmt::print("Verification:\n");
 
+  fmt::print("Computing GEMV...\n");
   shp::gemv(c, a, b);
+  fmt::print("Copying...\n");
   std::vector<T> l(c.size());
   shp::copy(c.begin(), c.end(), l.begin());
+  fmt::print("Verifying...\n");
   for (std::size_t i = 0; i < l.size(); i++) {
     if (!is_equal(l[i], c_local[i])) {
       fmt::print("{} != {}\n", l[i], c_local[i]);
@@ -104,6 +107,7 @@ int main(int argc, char **argv) {
   }
   assert(is_equal(c_local, l));
 
+  fmt::print("Benchmarking...\n");
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
     shp::gemv(c, a, b);
@@ -120,8 +124,7 @@ int main(int argc, char **argv) {
 
   double median_duration = durations[durations.size() / 2];
 
-  std::cout << "Row-based iteration: " << median_duration * 1000 << " ms"
-            << std::endl;
+  std::cout << "GEMV Row: " << median_duration * 1000 << " ms" << std::endl;
 
   std::size_t n_bytes = sizeof(T) * a.size() +
                         sizeof(I) * (a.size() + a.shape()[0] + 1) // size of A
@@ -134,14 +137,13 @@ int main(int argc, char **argv) {
 
   // Square GEMV
   {
-
     shp::for_each(shp::par_unseq, c, [](auto &&v) { v = 0; });
     shp::gemv_square(c, a_square, b);
     std::vector<T> l(c.size());
     shp::copy(c.begin(), c.end(), l.begin());
     for (std::size_t i = 0; i < l.size(); i++) {
       if (!is_equal(l[i], c_local[i])) {
-        fmt::print("{} != {}\n", l[i], c_local[i]);
+        // fmt::print("{} != {}\n", l[i], c_local[i]);
       }
     }
     assert(is_equal(c_local, l));
@@ -162,8 +164,8 @@ int main(int argc, char **argv) {
 
     double median_duration = durations[durations.size() / 2];
 
-    std::cout << "Square Row-based iteration: " << median_duration * 1000
-              << " ms" << std::endl;
+    std::cout << "GEMV Square: " << median_duration * 1000 << " ms"
+              << std::endl;
 
     std::size_t n_bytes = sizeof(T) * a.size() +
                           sizeof(I) * (a.size() + a.shape()[0] + 1) // size of A
@@ -175,7 +177,47 @@ int main(int argc, char **argv) {
     durations.clear();
   }
 
-#ifdef USE_MKL
+  // Square GEMV Copy
+  {
+    shp::for_each(shp::par_unseq, c, [](auto &&v) { v = 0; });
+    shp::gemv_square_copy(c, a_square, b);
+    std::vector<T> l(c.size());
+    shp::copy(c.begin(), c.end(), l.begin());
+    for (std::size_t i = 0; i < l.size(); i++) {
+      if (!is_equal(l[i], c_local[i])) {
+        fmt::print("{} != {}\n", l[i], c_local[i]);
+      }
+    }
+    assert(is_equal(c_local, l));
+
+    for (std::size_t i = 0; i < n_iterations; i++) {
+      auto begin = std::chrono::high_resolution_clock::now();
+      shp::gemv_square_copy(c, a_square, b);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+      durations.push_back(duration);
+    }
+
+    fmt::print("Durations: {}\n",
+               durations |
+                   rng::views::transform([](auto &&x) { return x * 1000; }));
+
+    std::sort(durations.begin(), durations.end());
+
+    double median_duration = durations[durations.size() / 2];
+
+    std::cout << "GEMV Square Copy: " << median_duration * 1000 << " ms"
+              << std::endl;
+
+    std::size_t n_bytes = sizeof(T) * a.size() +
+                          sizeof(I) * (a.size() + a.shape()[0] + 1) // size of A
+                          + sizeof(T) * b.size()                    // size of B
+                          + sizeof(T) * c.size();                   // size of C
+    double n_gbytes = n_bytes * 1e-9;
+    fmt::print("{} GB/s\n", n_gbytes / median_duration);
+
+    durations.clear();
+  }
 
   {
     auto m = shp::__detail::mmread<T, I>(fname);
@@ -206,23 +248,16 @@ int main(int argc, char **argv) {
 
     shp::__detail::destroy_csr_matrix_view(local_mat, std::allocator<T>{});
 
-    oneapi::mkl::sparse::matrix_handle_t a_handle;
-    oneapi::mkl::sparse::init_matrix_handle(&a_handle);
+    shp::csr_matrix_view a_view(values, rowptr, colind, shape, nnz, 0);
 
-    oneapi::mkl::sparse::set_csr_data(
-        a_handle, local_mat.shape()[0], local_mat.shape()[1],
-        oneapi::mkl::index_base::zero, rowptr, colind, values);
-
-    auto e = oneapi::mkl::sparse::gemv(q, oneapi::mkl::transpose::nontrans, 1.0,
-                                       a_handle, x.data().get_raw_pointer(),
-                                       0.0, y.data().get_raw_pointer());
+    auto e = shp::__detail::local_gemv(q, a_view, x.data().get_raw_pointer(),
+                                       y.data().get_raw_pointer());
     e.wait();
 
     for (std::size_t i = 0; i < n_iterations; i++) {
       auto begin = std::chrono::high_resolution_clock::now();
-      auto e = oneapi::mkl::sparse::gemv(
-          q, oneapi::mkl::transpose::nontrans, 1.0, a_handle,
-          x.data().get_raw_pointer(), 0.0, y.data().get_raw_pointer());
+      auto e = shp::__detail::local_gemv(q, a_view, x.data().get_raw_pointer(),
+                                         y.data().get_raw_pointer());
       e.wait();
       auto end = std::chrono::high_resolution_clock::now();
       double duration = std::chrono::duration<double>(end - begin).count();
@@ -248,8 +283,6 @@ int main(int argc, char **argv) {
 
     durations.clear();
   }
-
-#endif
 
   shp::finalize();
   return 0;

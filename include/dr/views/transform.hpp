@@ -5,15 +5,13 @@
 #pragma once
 
 #include <concepts>
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/ranges_shim.hpp>
 #include <iterator>
 #include <type_traits>
 
-namespace lib {
+#include <dr/concepts/concepts.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
-template <rng::random_access_range V, std::copy_constructible F>
-class transform_view;
+namespace lib {
 
 template <std::random_access_iterator Iter, std::copy_constructible F>
 class transform_iterator {
@@ -108,11 +106,11 @@ public:
   }
 
   auto local() const
-    requires(lib::remote_iterator<Iter>)
+    requires(lib::remote_iterator<Iter> &&
+             lib::ranges::__detail::has_local<Iter>)
   {
-    auto local = lib::ranges::local(iter_);
-    return rng::begin(
-        transform_view(rng::subrange(local, decltype(local){}), fn_));
+    auto iter = lib::ranges::__detail::local(iter_);
+    return transform_iterator<decltype(iter), F>(iter, fn_);
   }
 
 private:
@@ -130,6 +128,12 @@ public:
   auto begin() const { return transform_iterator(rng::begin(base_), fn_); }
 
   auto end() const { return transform_iterator(rng::end(base_), fn_); }
+
+  auto size() const
+    requires(rng::sized_range<V>)
+  {
+    return rng::size(base_);
+  }
 
   auto segments() const
     requires(lib::distributed_range<V>)

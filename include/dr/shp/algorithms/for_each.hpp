@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/detail.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/util.hpp>
 #include <dr/shp/zip_view.hpp>
@@ -20,13 +21,11 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   std::vector<sycl::event> events;
 
   for (auto &&segment : lib::ranges::segments(r)) {
-    auto device = shp::devices()[lib::ranges::rank(segment)];
-
-    sycl::queue q(shp::context(), device);
+    auto &&q = __detail::queue(lib::ranges::rank(segment));
 
     assert(rng::distance(segment) > 0);
 
-    auto local_segment = __detail::get_local_segment(segment);
+    auto local_segment = __detail::local(segment);
 
     auto first = rng::begin(local_segment);
 
@@ -41,6 +40,15 @@ template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename Fn>
 void for_each(ExecutionPolicy &&policy, Iter begin, Iter end, Fn &&fn) {
   for_each(std::forward<ExecutionPolicy>(policy), rng::subrange(begin, end),
            std::forward<Fn>(fn));
+}
+
+template <lib::distributed_range R, typename Fn> void for_each(R &&r, Fn &&fn) {
+  for_each(shp::par_unseq, std::forward<R>(r), std::forward<Fn>(fn));
+}
+
+template <lib::distributed_iterator Iter, typename Fn>
+void for_each(Iter begin, Iter end, Fn &&fn) {
+  for_each(shp::par_unseq, begin, end, std::forward<Fn>(fn));
 }
 
 } // namespace shp

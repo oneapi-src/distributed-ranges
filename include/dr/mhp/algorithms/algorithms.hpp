@@ -10,9 +10,9 @@
 #include <utility>
 
 #include <dr/concepts/concepts.hpp>
-#include <dr/details/logger.hpp>
-#include <dr/details/onedpl_direct_iterator.hpp>
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/logger.hpp>
+#include <dr/detail/onedpl_direct_iterator.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
 namespace mhp {
 
@@ -116,8 +116,8 @@ void for_each(DI first, DI last, auto op) {
 //
 
 /// Collective iota on iterator/sentinel for a distributed range
-template <lib::distributed_iterator DI>
-void iota(DI first, DI last, auto value) {
+template <lib::distributed_iterator DI, std::integral T>
+void iota(DI first, DI last, T value) {
   if (default_comm().rank() == 0) {
     std::iota(first, last, value);
   }
@@ -125,7 +125,7 @@ void iota(DI first, DI last, auto value) {
 }
 
 /// Collective iota on distributed range
-void iota(lib::distributed_contiguous_range auto &&r, auto value) {
+void iota(lib::distributed_range auto &&r, std::integral auto value) {
   mhp::iota(rng::begin(r), rng::end(r), value);
 }
 

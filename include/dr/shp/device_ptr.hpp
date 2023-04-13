@@ -4,9 +4,11 @@
 
 #pragma once
 
-#include "device_ref.hpp"
-#include <sycl/sycl.hpp>
 #include <type_traits>
+
+#include <sycl/sycl.hpp>
+
+#include <dr/shp/device_ref.hpp>
 
 namespace shp {
 
@@ -130,9 +132,7 @@ public:
 
   friend pointer operator+(difference_type n, pointer iter) { return iter + n; }
 
-  T *local() { return pointer_; }
-
-  const T *local() const { return pointer_; }
+  T *local() const noexcept { return pointer_; }
 
   friend const_pointer;
   friend nonconst_pointer;

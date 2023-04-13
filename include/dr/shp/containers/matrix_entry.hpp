@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include "index.hpp"
 #include <concepts>
 #include <limits>
 #include <type_traits>
+
+#include <dr/shp/containers/index.hpp>
 
 namespace shp {
 

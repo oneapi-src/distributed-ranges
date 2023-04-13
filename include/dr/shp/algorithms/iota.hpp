@@ -10,7 +10,7 @@
 namespace shp {
 
 template <lib::distributed_range R, std::integral T> void iota(R &&r, T value) {
-  auto iota_view = rng::views::iota(T(value), T(value + rng::distance(r)));
+  auto iota_view = rng::views::iota(value, T(value + rng::distance(r)));
 
   shp::for_each(shp::par_unseq, shp::views::zip(iota_view, r), [](auto &&elem) {
     auto &&[idx, v] = elem;

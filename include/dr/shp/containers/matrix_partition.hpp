@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "detail.hpp"
-#include "index.hpp"
+#include <dr/shp/containers/detail.hpp>
+#include <dr/shp/containers/index.hpp>
 #include <dr/shp/init.hpp>
 
 namespace shp {

@@ -9,7 +9,7 @@
 #ifdef MINIMAL_TEST
 
 using AllTypes = ::testing::Types<mhp::distributed_vector<int>>;
-#include "common/copy.hpp"
+#include "common/enumerate.hpp"
 
 #else
 
@@ -29,6 +29,7 @@ using CPUTypes = ::testing::Types<mhp::distributed_vector<int>,
 #include "common/drop.hpp"
 #include "common/fill.hpp"
 #include "common/for_each.hpp"
+#include "common/iota.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
 // Fails with everyting but g++12
