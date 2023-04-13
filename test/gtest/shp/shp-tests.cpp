@@ -10,10 +10,9 @@ using AllTypes = ::testing::Types<dr::shp::distributed_vector<int>,
 #include "common/all.hpp"
 // Issue with 2 element zips
 // #include "common/enumerate.hpp"
-// ConstructorFill gets PI_ERROR_INVALID_CONTEXT occasionally
-// #include "common/distributed_vector.hpp"
 // need to implement same API as MHP
 // #include "common/copy.hpp"
+#include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
 #include "common/fill.hpp"
 #include "common/for_each.hpp"
