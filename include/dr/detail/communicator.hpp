@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace lib {
+namespace dr {
 
 class communicator {
 public:
@@ -118,7 +118,7 @@ public:
   }
 
   void free() {
-    lib::drlog.debug("freeing {}\n", win_);
+    dr::drlog.debug("freeing {}\n", win_);
     MPI_Win_free(&win_);
   }
 
@@ -154,7 +154,7 @@ public:
   }
 
   void fence() const {
-    lib::drlog.debug("fence {}\n", win_);
+    dr::drlog.debug("fence {}\n", win_);
     MPI_Win_fence(0, win_);
   }
 
@@ -169,4 +169,4 @@ private:
   MPI_Win win_ = MPI_WIN_NULL;
 };
 
-} // namespace lib
+} // namespace dr

@@ -99,7 +99,7 @@ Logging
 Add this to your main to enable logging::
 
   std::ofstream logfile(fmt::format("dr.{}.log", comm_rank));
-  lib::drlog.set_file(logfile);
+  dr::drlog.set_file(logfile);
 
 Adding DR to a project
 ======================

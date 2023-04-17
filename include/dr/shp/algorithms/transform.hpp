@@ -7,12 +7,12 @@
 #include <dr/shp/init.hpp>
 #include <dr/shp/util.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 /**
  * Applies the given function to a range and stores the result in another range,
  * beginning at out.
- * \param policy use `shp::par_unseq` here only
+ * \param policy use `dr::shp::par_unseq` here only
  * \param in the range of elements to transform
  * \param out the beginning of the destination range, may be equal to the
  * beginning of `in` range \param fn operation to apply to input elements
@@ -23,8 +23,8 @@ namespace shp {
  */
 
 template <class ExecutionPolicy>
-auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
-               lib::distributed_iterator auto out, auto &&fn) {
+auto transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in,
+               dr::distributed_iterator auto out, auto &&fn) {
 
   static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
@@ -37,7 +37,7 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
   for (auto &&[in_seg, out_seg] :
        views::zip(in, rng::subrange(out, out_end)).zipped_segments()) {
     auto in_device = policy.get_devices()[in_seg.rank()];
-    auto &&q = __detail::queue(lib::ranges::rank(in_seg));
+    auto &&q = __detail::queue(dr::ranges::rank(in_seg));
     const std::size_t seg_size = rng::size(in_seg);
     assert(seg_size == rng::size(out_seg));
     auto local_in_seg = __detail::local(in_seg);
@@ -49,7 +49,7 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
       }));
     } else {
       OutT *buffer =
-          sycl::malloc_device<OutT>(seg_size, in_device, shp::context());
+          sycl::malloc_device<OutT>(seg_size, in_device, dr::shp::context());
       buffers.push_back(buffer);
 
       sycl::event compute_event = q.parallel_for(
@@ -61,10 +61,10 @@ auto transform(ExecutionPolicy &&policy, lib::distributed_range auto &&in,
   __detail::wait(events);
 
   for (auto *b : buffers)
-    sycl::free(b, shp::context());
+    sycl::free(b, dr::shp::context());
 
   return rng::unary_transform_result<decltype(rng::end(in)), decltype(out_end)>{
       rng::end(in), out_end};
 }
 
-} // namespace shp
+} // namespace dr::shp

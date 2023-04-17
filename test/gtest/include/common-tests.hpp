@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-template <lib::distributed_range DR>
+template <dr::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
 struct AOS_Struct {
@@ -124,7 +124,7 @@ std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
 }
 
 std::string check_segments_message(rng::range auto &&r) {
-  auto &&segments = lib::ranges::segments(r);
+  auto &&segments = dr::ranges::segments(r);
   auto &&flat = rng::views::join(segments);
   if (is_equal(r, flat)) {
     return "";
@@ -152,7 +152,7 @@ auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
   auto negate = [](auto &&val) { val = -val; };
   auto input_vector = ops.vec;
   std::vector input_view(ref.begin(), ref.end());
-  xhp::for_each(default_policy(ops.dist_vec), actual, negate);
+  xhp::for_each(actual, negate);
   rng::for_each(ref, negate);
 
   // Check mutated view
@@ -162,43 +162,6 @@ auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
   // Check underlying dv
   message += unary_check_message(input_vector, ops.vec, ops.dist_vec,
                                  "mutated distributed range mismatch");
-
-  return message;
-}
-
-auto check_mutate_enumerateview_message(auto &ops, rng::range auto &&ref,
-                                        rng::range auto &&actual) {
-  // Check view
-  auto message = check_view_message(ref, actual);
-
-  barrier();
-
-  std::vector<int> ref_idx(ref.size());
-  std::vector<int> act_idx(actual.size());
-
-  auto input_vector = ops.vec;
-  std::vector input_view(ref.begin(), ref.end());
-
-  for (auto &&[index, elem] : actual) {
-    act_idx[index] = index;
-    elem = -elem;
-  }
-
-  for (auto &&[index, elem] : ref) {
-    ref_idx[index] = index;
-    elem = -elem;
-  }
-
-  // Check mutated view
-  message += unary_check_message(input_view, actual, ref,
-                                 "mutated value view mismatch");
-
-  // Check underlying dv
-  message += unary_check_message(input_vector, ops.vec, ops.dist_vec,
-                                 "mutated distributed value range mismatch");
-
-  message += equal_message(rng::views::all(ref_idx), rng::views::all(act_idx),
-                           "index view mismatch");
 
   return message;
 }
@@ -234,7 +197,7 @@ auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
 }
 
 auto check_segments(std::forward_iterator auto di) {
-  const auto &segments = lib::ranges::segments(di);
+  const auto &segments = dr::ranges::segments(di);
   const auto &flat = rng::join_view(segments);
   if (is_equal(di, flat)) {
     return testing::AssertionSuccess();
@@ -256,11 +219,6 @@ auto check_mutate_view(auto &op, rng::range auto &&ref,
   return gtest_result(check_mutate_view_message(op, ref, actual));
 }
 
-auto check_mutate_enumerateview(auto &op, rng::range auto &&ref,
-                                rng::range auto &&actual) {
-  return gtest_result(check_mutate_enumerateview_message(op, ref, actual));
-}
-
 template <typename T>
 std::vector<T> generate_random(std::size_t n, std::size_t bound = 25) {
   std::vector<T> v;
@@ -279,7 +237,7 @@ concept streamable = requires(std::ostream &os, T value) {
   { os << value } -> std::convertible_to<std::ostream &>;
 };
 
-namespace mhp {
+namespace dr::mhp {
 
 // gtest relies on ADL to find the printer
 template <typename T, typename Alloc>
@@ -309,9 +267,9 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
   return is_equal(local_vec, dist_vec);
 }
 
-} // namespace mhp
+} // namespace dr::mhp
 
-namespace shp {
+namespace dr::shp {
 
 // gtest relies on ADL to find the printer
 template <typename T, typename Alloc>
@@ -341,7 +299,7 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
   return is_equal(dist_vec, local_vec);
 }
 
-} // namespace shp
+} // namespace dr::shp
 
 namespace DR_RANGES_NAMESPACE {
 

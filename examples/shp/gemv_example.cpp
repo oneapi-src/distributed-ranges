@@ -5,8 +5,8 @@
 #include <dr/shp/shp.hpp>
 
 int main(int argc, char **argv) {
-  auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
-  shp::init(devices);
+  auto devices = dr::shp::get_numa_devices(sycl::gpu_selector_v);
+  dr::shp::init(devices);
 
   for (auto &device : devices) {
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
@@ -15,30 +15,32 @@ int main(int argc, char **argv) {
 
   using T = float;
 
-  shp::distributed_vector<T, shp::device_allocator<T>> b(100);
+  dr::shp::distributed_vector<T, dr::shp::device_allocator<T>> b(100);
 
-  shp::for_each(shp::par_unseq, shp::enumerate(b), [](auto &&tuple) {
-    auto &&[idx, value] = tuple;
-    value = 1;
-  });
+  dr::shp::for_each(dr::shp::par_unseq, dr::shp::enumerate(b),
+                    [](auto &&tuple) {
+                      auto &&[idx, value] = tuple;
+                      value = 1;
+                    });
 
-  shp::distributed_vector<T, shp::device_allocator<T>> c(100);
+  dr::shp::distributed_vector<T, dr::shp::device_allocator<T>> c(100);
 
-  shp::for_each(shp::par_unseq, c, [](auto &&v) { v = 0; });
+  dr::shp::for_each(dr::shp::par_unseq, c, [](auto &&v) { v = 0; });
 
-  shp::sparse_matrix<T> a(
+  dr::shp::sparse_matrix<T> a(
       {100, 100}, 0.01,
-      shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}));
+      dr::shp::block_cyclic({dr::shp::tile::div, dr::shp::tile::div},
+                            {dr::shp::nprocs(), 1}));
 
   printf("a tiles: %lu x %lu\n", a.grid_shape()[0], a.grid_shape()[1]);
 
-  shp::print_range(b, "b");
+  dr::shp::print_range(b, "b");
 
-  shp::print_matrix(a, "a");
+  dr::shp::print_matrix(a, "a");
 
-  shp::gemv(c, a, b);
+  dr::shp::gemv(c, a, b);
 
-  shp::print_range(c, "c");
+  dr::shp::print_range(c, "c");
 
   return 0;
 }

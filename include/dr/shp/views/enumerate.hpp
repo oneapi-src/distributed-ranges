@@ -6,7 +6,7 @@
 
 #include <dr/shp/zip_view.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 namespace views {
 
@@ -30,8 +30,8 @@ public:
     requires(rng::sized_range<R>)
   auto operator()(R &&r) const {
     using W = std::uint32_t;
-    return shp::zip_view(rng::views::iota(W(0), W(rng::size(r))),
-                         std::forward<R>(r));
+    return dr::shp::zip_view(rng::views::iota(W(0), W(rng::size(r))),
+                             std::forward<R>(r));
   }
 
   template <rng::viewable_range R>
@@ -53,4 +53,4 @@ inline constexpr auto enumerate = enumerate_fn_{};
 
 } // namespace views
 
-} // namespace shp
+} // namespace dr::shp

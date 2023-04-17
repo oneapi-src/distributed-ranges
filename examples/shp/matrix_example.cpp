@@ -5,11 +5,11 @@
 #include <dr/shp/shp.hpp>
 
 int main(int argc, char **argv) {
-  auto devices = shp::get_numa_devices(sycl::gpu_selector_v);
-  shp::init(devices);
+  auto devices = dr::shp::get_numa_devices(sycl::gpu_selector_v);
+  dr::shp::init(devices);
 
-  auto partition = shp::block_cyclic();
-  shp::dense_matrix<float> x({10, 10}, partition);
+  auto partition = dr::shp::block_cyclic();
+  dr::shp::dense_matrix<float> x({10, 10}, partition);
 
   x[{2, 3}] = 12;
   x[{5, 7}] = 42;
@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
   // the indices are not stored explicitly.)
   //
   // Here, we add `12` to each scalar value.
-  shp::for_each(shp::par_unseq, x, [](auto &&entry) {
+  dr::shp::for_each(dr::shp::par_unseq, x, [](auto &&entry) {
     auto &&[idx, v] = entry;
     v = v + 12;
   });

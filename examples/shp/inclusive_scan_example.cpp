@@ -12,26 +12,26 @@
 
 int main(int argc, char **argv) {
   printf("Creating NUMA devices...\n");
-  auto devices = shp::get_numa_devices(sycl::default_selector_v);
-  shp::init(devices);
+  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
+  dr::shp::init(devices);
 
   for (auto &device : devices) {
     std::cout << "  Device: " << device.get_info<sycl::info::device::name>()
               << "\n";
   }
 
-  shp::distributed_vector<int, shp::device_allocator<int>> v(100);
+  dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> v(100);
 
   std::vector<int> lv(100);
 
   std::iota(lv.begin(), lv.end(), 0);
-  shp::copy(lv.begin(), lv.end(), v.begin());
+  dr::shp::copy(lv.begin(), lv.end(), v.begin());
 
   fmt::print(" v: {}\n", v);
   fmt::print("lv: {}\n", lv);
 
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin());
-  shp::inclusive_scan(shp::par_unseq, v, v);
+  dr::shp::inclusive_scan(dr::shp::par_unseq, v, v);
 
   fmt::print(" (after)  v: {}\n", v);
   fmt::print(" (after) lv: {}\n", lv);
@@ -45,12 +45,13 @@ int main(int argc, char **argv) {
   }
 
   std::iota(lv.begin(), lv.end(), 0);
-  shp::copy(lv.begin(), lv.end(), v.begin());
+  dr::shp::copy(lv.begin(), lv.end(), v.begin());
 
-  shp::distributed_vector<int, shp::device_allocator<int>> o(v.size() + 100);
+  dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> o(v.size() +
+                                                                     100);
 
   std::inclusive_scan(lv.begin(), lv.end(), lv.begin(), std::plus<>(), 12);
-  shp::inclusive_scan(shp::par_unseq, v, o, std::plus<>(), 12);
+  dr::shp::inclusive_scan(dr::shp::par_unseq, v, o, std::plus<>(), 12);
 
   fmt::print(" (after)  v: {}\n",
              rng::subrange(o.begin(), o.begin() + v.size()));

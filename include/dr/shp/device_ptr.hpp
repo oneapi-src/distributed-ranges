@@ -10,7 +10,7 @@
 
 #include <dr/shp/device_ref.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <typename T>
   requires(std::is_trivially_copyable_v<T> || std::is_void_v<T>)
@@ -141,4 +141,4 @@ private:
   T *pointer_;
 };
 
-} // namespace shp
+} // namespace dr::shp

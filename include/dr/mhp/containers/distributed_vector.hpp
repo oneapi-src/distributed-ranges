@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+namespace dr::mhp {
 
 template <typename DM> class dm_rows;
 
@@ -111,21 +111,20 @@ public:
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
     auto value =
         dv_->win_.template get<value_type>(segment_index_, segment_offset);
-    lib::drlog.debug("get ({}:{})\n", segment_index_, segment_offset);
+    dr::drlog.debug("get ({}:{})\n", segment_index_, segment_offset);
     return value;
   }
 
   void put(const value_type &value) const {
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
-    lib::drlog.debug("put ({}:{})\n", segment_index_, segment_offset);
+    dr::drlog.debug("put ({}:{})\n", segment_index_, segment_offset);
     dv_->win_.put(value, segment_index_, segment_offset);
   }
 
   auto rank() const { return segment_index_; }
   auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
   auto segments() const {
-    return lib::__detail::drop_segments(dv_->segments(), segment_index_,
-                                        index_);
+    return dr::__detail::drop_segments(dv_->segments(), segment_index_, index_);
   }
   auto &halo() const { return dv_->halo(); }
 
@@ -180,7 +179,7 @@ public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
   using iterator =
-      lib::normal_distributed_iterator<dv_segments<distributed_vector>>;
+      dr::normal_distributed_iterator<dv_segments<distributed_vector>>;
   using reference = std::iter_reference_t<iterator>;
   using allocator_type = Allocator;
 
@@ -192,13 +191,13 @@ public:
 
   /// Constructor
   distributed_vector(std::size_t size = 0,
-                     lib::halo_bounds hb = lib::halo_bounds()) {
+                     dr::halo_bounds hb = dr::halo_bounds()) {
     init(size, hb, Allocator());
   }
 
   /// Constructor
   distributed_vector(std::size_t size, value_type fill_value,
-                     lib::halo_bounds hb = lib::halo_bounds()) {
+                     dr::halo_bounds hb = dr::halo_bounds()) {
     init(size, hb, Allocator());
     mhp::fill(*this, fill_value);
   }
@@ -234,7 +233,7 @@ private:
         std::max({(size + comm_size - 1) / comm_size, hb.prev, hb.next});
     data_size_ = segment_size_ + hb.prev + hb.next;
     data_ = allocator.allocate(data_size_);
-    halo_ = new lib::span_halo<T>(default_comm(), data_, data_size_, hb);
+    halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
@@ -253,31 +252,32 @@ private:
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
   T *data_ = nullptr;
-  lib::span_halo<T> *halo_;
+  dr::span_halo<T> *halo_;
 
-  lib::halo_bounds halo_bounds_;
+  dr::halo_bounds halo_bounds_;
   std::size_t size_;
   std::vector<dv_segment<distributed_vector>> segments_;
   dv_segments<distributed_vector> dv_segments_;
-  lib::rma_window win_;
+  dr::rma_window win_;
   Allocator allocator_;
 };
 
 template <typename DR>
-concept has_halo_method = lib::distributed_range<DR> && requires(DR &&dr) {
-  { rng::begin(lib::ranges::segments(dr)[0]).halo() };
+concept has_halo_method = dr::distributed_range<DR> && requires(DR &&dr) {
+  { rng::begin(dr::ranges::segments(dr)[0]).halo() };
 };
 
 auto &halo(has_halo_method auto &&dr) {
-  return rng::begin(lib::ranges::segments(dr)[0]).halo();
+  return rng::begin(dr::ranges::segments(dr)[0]).halo();
 }
 
-} // namespace mhp
+} // namespace dr::mhp
 
 #if !defined(DR_SPEC)
 
 // Needed to satisfy rng::viewable_range
 template <typename T>
-inline constexpr bool rng::enable_borrowed_range<mhp::dv_segments<T>> = true;
+inline constexpr bool rng::enable_borrowed_range<dr::mhp::dv_segments<T>> =
+    true;
 
 #endif

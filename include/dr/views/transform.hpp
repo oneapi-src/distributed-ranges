@@ -11,7 +11,7 @@
 #include <dr/concepts/concepts.hpp>
 #include <dr/detail/ranges_shim.hpp>
 
-namespace lib {
+namespace dr {
 
 template <std::random_access_iterator Iter, std::copy_constructible F>
 class transform_iterator {
@@ -106,10 +106,9 @@ public:
   }
 
   auto local() const
-    requires(lib::remote_iterator<Iter> &&
-             lib::ranges::__detail::has_local<Iter>)
+    requires(dr::remote_iterator<Iter> && dr::ranges::__detail::has_local<Iter>)
   {
-    auto iter = lib::ranges::__detail::local(iter_);
+    auto iter = dr::ranges::__detail::local(iter_);
     return transform_iterator<decltype(iter), F>(iter, fn_);
   }
 
@@ -136,10 +135,10 @@ public:
   }
 
   auto segments() const
-    requires(lib::distributed_range<V>)
+    requires(dr::distributed_range<V>)
   {
     auto fn = fn_;
-    return lib::ranges::segments(base_) |
+    return dr::ranges::segments(base_) |
            rng::views::transform([fn](auto &&segment) {
              return transform_view<rng::views::all_t<decltype(segment)>, F>(
                  segment, fn);
@@ -147,9 +146,9 @@ public:
   }
 
   auto rank() const
-    requires(lib::remote_range<V>)
+    requires(dr::remote_range<V>)
   {
-    return lib::ranges::rank(base_);
+    return dr::ranges::rank(base_);
   }
 
   V base() const { return base_; }
@@ -169,7 +168,7 @@ public:
   transform_adapter_closure(F fn) : fn_(fn) {}
 
   template <rng::viewable_range R> auto operator()(R &&r) const {
-    return lib::transform_view(std::forward<R>(r), fn_);
+    return dr::transform_view(std::forward<R>(r), fn_);
   }
 
   template <rng::viewable_range R>
@@ -196,9 +195,9 @@ public:
 inline constexpr auto transform = transform_fn_{};
 } // namespace views
 
-} // namespace lib
+} // namespace dr
 
 // Needed to satisfy rng::viewable_range
 template <rng::random_access_range V, std::copy_constructible F>
-inline constexpr bool rng::enable_borrowed_range<lib::transform_view<V, F>> =
+inline constexpr bool rng::enable_borrowed_range<dr::transform_view<V, F>> =
     true;

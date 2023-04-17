@@ -13,21 +13,17 @@ extern std::size_t comm_rank;
 extern std::size_t comm_size;
 
 // Namespace aliases and wrapper functions to make the tests uniform
-namespace xhp = shp;
+namespace xhp = dr::shp;
 
 inline void barrier() {}
 inline void fence() {}
 
-template <typename T, typename Alloc>
-inline auto default_policy(const shp::distributed_vector<T, Alloc> &dv) {
-  return shp::par_unseq;
-}
-using AllocatorTypes = ::testing::Types<shp::device_allocator<int>>;
+using AllocatorTypes = ::testing::Types<dr::shp::device_allocator<int>>;
 
 template <typename V>
 concept compliant_view = rng::forward_range<V> && requires(V &v) {
-  lib::ranges::segments(v);
-  lib::ranges::rank(lib::ranges::segments(v)[0]);
+  dr::ranges::segments(v);
+  dr::ranges::rank(dr::ranges::segments(v)[0]);
 };
 
 #include "common-tests.hpp"

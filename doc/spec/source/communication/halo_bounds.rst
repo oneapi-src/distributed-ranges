@@ -11,7 +11,7 @@
 Interface
 =========
 
-.. doxygenstruct:: lib::halo_bounds
+.. doxygenstruct:: dr::halo_bounds
    :members:
 
 Description

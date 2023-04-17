@@ -5,7 +5,8 @@
 
 template <typename AllocT> class FillTest : public testing::Test {
 public:
-  using DistVec = shp::distributed_vector<typename AllocT::value_type, AllocT>;
+  using DistVec =
+      dr::shp::distributed_vector<typename AllocT::value_type, AllocT>;
   using LocalVec = std::vector<typename AllocT::value_type>;
 };
 
@@ -17,7 +18,7 @@ TYPED_TEST(FillTest, fill_all) {
   auto segments = dist_vec.segments();
   int value = 1;
   for (auto &&segment : segments) {
-    shp::fill(segment.begin(), segment.end(), value);
+    dr::shp::fill(segment.begin(), segment.end(), value);
   }
   EXPECT_TRUE(equal(
       dist_vec, typename TestFixture::DistVec{1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));

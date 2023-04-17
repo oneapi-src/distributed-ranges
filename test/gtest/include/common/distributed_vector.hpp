@@ -17,11 +17,11 @@ TYPED_TEST(DistributedVectorAllTypes, Requirements) {
   static_assert(rng::viewable_range<decltype(dv.segments())>);
 
   static_assert(std::forward_iterator<decltype(dv.begin())>);
-  static_assert(lib::distributed_iterator<decltype(dv.begin())>);
+  static_assert(dr::distributed_iterator<decltype(dv.begin())>);
 
   static_assert(rng::forward_range<decltype(dv)>);
   static_assert(rng::random_access_range<decltype(dv)>);
-  static_assert(lib::distributed_contiguous_range<decltype(dv)>);
+  static_assert(dr::distributed_contiguous_range<decltype(dv)>);
 }
 
 // gtest support

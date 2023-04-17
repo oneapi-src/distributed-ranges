@@ -21,10 +21,10 @@
 #include <dr/shp/init.hpp>
 #include <dr/shp/vector.hpp>
 
-namespace shp {
+namespace dr::shp {
 
-template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O, typename BinaryOp,
+template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O, typename BinaryOp,
           typename U = rng::range_value_t<R>>
 void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
                           BinaryOp &&binary_op, std::optional<U> init = {}) {
@@ -33,7 +33,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
   static_assert(
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
-  auto zipped_view = shp::views::zip(r, o);
+  auto zipped_view = dr::shp::views::zip(r, o);
   auto zipped_segments = zipped_view.zipped_segments();
 
   if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
@@ -41,17 +41,17 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
     std::vector<sycl::event> events;
 
-    auto root = shp::devices()[0];
-    shp::device_allocator<T> allocator(shp::context(), root);
-    shp::vector<T, shp::device_allocator<T>> partial_sums(
+    auto root = dr::shp::devices()[0];
+    dr::shp::device_allocator<T> allocator(dr::shp::context(), root);
+    dr::shp::vector<T, dr::shp::device_allocator<T>> partial_sums(
         std::size_t(zipped_segments.size()), allocator);
 
     std::size_t segment_id = 0;
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
 
-      auto &&q = __detail::queue(lib::ranges::rank(in_segment));
-      auto &&local_policy = __detail::dpl_policy(lib::ranges::rank(in_segment));
+      auto &&q = __detail::queue(dr::ranges::rank(in_segment));
+      auto &&local_policy = __detail::dpl_policy(dr::ranges::rank(in_segment));
 
       auto dist = rng::distance(in_segment);
       assert(dist > 0);
@@ -64,19 +64,19 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
       if (segment_id == 0 && init.has_value()) {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, lib::__detail::direct_iterator(first),
-            lib::__detail::direct_iterator(last),
-            lib::__detail::direct_iterator(d_first), binary_op, init.value());
+            local_policy, dr::__detail::direct_iterator(first),
+            dr::__detail::direct_iterator(last),
+            dr::__detail::direct_iterator(d_first), binary_op, init.value());
       } else {
         event = oneapi::dpl::experimental::inclusive_scan_async(
-            local_policy, lib::__detail::direct_iterator(first),
-            lib::__detail::direct_iterator(last),
-            lib::__detail::direct_iterator(d_first), binary_op);
+            local_policy, dr::__detail::direct_iterator(first),
+            dr::__detail::direct_iterator(last),
+            dr::__detail::direct_iterator(d_first), binary_op);
       }
 
-      auto dst_iter = lib::ranges::local(partial_sums).data() + segment_id;
+      auto dst_iter = dr::ranges::local(partial_sums).data() + segment_id;
 
-      auto src_iter = lib::ranges::local(out_segment).data();
+      auto src_iter = dr::ranges::local(out_segment).data();
       rng::advance(src_iter, dist - 1);
 
       auto e = q.submit([&](auto &&h) {
@@ -97,7 +97,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
     auto &&local_policy = __detail::dpl_policy(0);
 
-    auto first = lib::ranges::local(partial_sums).data();
+    auto first = dr::ranges::local(partial_sums).data();
     auto last = first + partial_sums.size();
 
     oneapi::dpl::experimental::inclusive_scan_async(local_policy, first, last,
@@ -108,8 +108,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
 
-      auto &&local_policy =
-          __detail::dpl_policy(lib::ranges::rank(out_segment));
+      auto &&local_policy = __detail::dpl_policy(dr::ranges::rank(out_segment));
 
       if (idx > 0) {
         T sum = partial_sums[idx - 1];
@@ -118,8 +117,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
         auto last = rng::end(out_segment);
 
         sycl::event e = oneapi::dpl::experimental::for_each_async(
-            local_policy, lib::__detail::direct_iterator(first),
-            lib::__detail::direct_iterator(last),
+            local_policy, dr::__detail::direct_iterator(first),
+            dr::__detail::direct_iterator(last),
             [=](auto &&x) { x = binary_op(x, sum); });
 
         events.push_back(e);
@@ -134,8 +133,8 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
   }
 }
 
-template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O, typename BinaryOp, typename T>
+template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O, typename BinaryOp, typename T>
 void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
                     BinaryOp &&binary_op, T init) {
   inclusive_scan_impl_(std::forward<ExecutionPolicy>(policy),
@@ -143,8 +142,8 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
                        std::forward<BinaryOp>(binary_op), std::optional(init));
 }
 
-template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O, typename BinaryOp>
+template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O, typename BinaryOp>
 void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
                     BinaryOp &&binary_op) {
   inclusive_scan_impl_(std::forward<ExecutionPolicy>(policy),
@@ -152,8 +151,8 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o,
                        std::forward<BinaryOp>(binary_op));
 }
 
-template <typename ExecutionPolicy, lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O>
+template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O>
 void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
   inclusive_scan(std::forward<ExecutionPolicy>(policy), std::forward<R>(r),
                  std::forward<O>(o), std::plus<>());
@@ -161,8 +160,8 @@ void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
 
 // Distributed iterator versions
 
-template <typename ExecutionPolicy, lib::distributed_iterator Iter,
-          lib::distributed_iterator OutputIter, typename BinaryOp, typename T>
+template <typename ExecutionPolicy, dr::distributed_iterator Iter,
+          dr::distributed_iterator OutputIter, typename BinaryOp, typename T>
 OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                           OutputIter d_first, BinaryOp &&binary_op, T init) {
 
@@ -176,8 +175,8 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
   return d_last;
 }
 
-template <typename ExecutionPolicy, lib::distributed_iterator Iter,
-          lib::distributed_iterator OutputIter, typename BinaryOp>
+template <typename ExecutionPolicy, dr::distributed_iterator Iter,
+          dr::distributed_iterator OutputIter, typename BinaryOp>
 OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                           OutputIter d_first, BinaryOp &&binary_op) {
 
@@ -191,8 +190,8 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
   return d_last;
 }
 
-template <typename ExecutionPolicy, lib::distributed_iterator Iter,
-          lib::distributed_iterator OutputIter>
+template <typename ExecutionPolicy, dr::distributed_iterator Iter,
+          dr::distributed_iterator OutputIter>
 OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
                           OutputIter d_first) {
   auto dist = rng::distance(first, last);
@@ -206,47 +205,47 @@ OutputIter inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
 
 // Execution policy-less versions
 
-template <lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O>
+template <dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O>
 void inclusive_scan(R &&r, O &&o) {
-  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o));
+  inclusive_scan(dr::shp::par_unseq, std::forward<R>(r), std::forward<O>(o));
 }
 
-template <lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O, typename BinaryOp>
+template <dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O, typename BinaryOp>
 void inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op) {
-  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
+  inclusive_scan(dr::shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
                  std::forward<BinaryOp>(binary_op));
 }
 
-template <lib::distributed_contiguous_range R,
-          lib::distributed_contiguous_range O, typename BinaryOp, typename T>
+template <dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O, typename BinaryOp, typename T>
 void inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op, T init) {
-  inclusive_scan(shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
+  inclusive_scan(dr::shp::par_unseq, std::forward<R>(r), std::forward<O>(o),
                  std::forward<BinaryOp>(binary_op), init);
 }
 
 // Distributed iterator versions
 
-template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter>
+template <dr::distributed_iterator Iter, dr::distributed_iterator OutputIter>
 OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first) {
-  return inclusive_scan(shp::par_unseq, first, last, d_first);
+  return inclusive_scan(dr::shp::par_unseq, first, last, d_first);
 }
 
-template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter,
+template <dr::distributed_iterator Iter, dr::distributed_iterator OutputIter,
           typename BinaryOp>
 OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first,
                           BinaryOp &&binary_op) {
-  return inclusive_scan(shp::par_unseq, first, last, d_first,
+  return inclusive_scan(dr::shp::par_unseq, first, last, d_first,
                         std::forward<BinaryOp>(binary_op));
 }
 
-template <lib::distributed_iterator Iter, lib::distributed_iterator OutputIter,
+template <dr::distributed_iterator Iter, dr::distributed_iterator OutputIter,
           typename BinaryOp, typename T>
 OutputIter inclusive_scan(Iter first, Iter last, OutputIter d_first,
                           BinaryOp &&binary_op, T init) {
-  return inclusive_scan(shp::par_unseq, first, last, d_first,
+  return inclusive_scan(dr::shp::par_unseq, first, last, d_first,
                         std::forward<BinaryOp>(binary_op), init);
 }
 
-} // namespace shp
+} // namespace dr::shp
