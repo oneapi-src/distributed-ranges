@@ -10,6 +10,8 @@
 
 #include <concepts>
 
+namespace shp = dr::shp;
+
 template <grb::MatrixRange M> auto local_gemv(M &&a) {
   using T = grb::matrix_scalar_t<M>;
   std::vector<T> b(a.shape()[1], 1);
