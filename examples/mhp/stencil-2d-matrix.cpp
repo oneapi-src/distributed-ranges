@@ -21,33 +21,23 @@ std::size_t nc = 0;
 std::size_t nr = 0;
 std::size_t steps = 0;
 
-void dump_v(std::string msg, std::vector<std::vector<T>> &vv) {
-  std::stringstream s;
-  int idx = 0;
-  s << comm_rank << ": " << msg << std::endl;
-  for (auto r : vv) {
-    s << comm_rank << ": "
-      << "row : " << idx++;
-    for (auto el : r)
-      s << " " << el;
-    s << std::endl;
-  }
-  std::cout << s.str();
-}
+#pragma region debug and verification
+// void dump_v(std::string msg, std::vector<std::vector<T>> &vv) {
+//   std::stringstream s;
+//   int idx = 0;
+//   s << comm_rank << ": " << msg << std::endl;
+//   for (auto r : vv) {
+//     s << comm_rank << ": "
+//       << "row : " << idx++;
+//     for (auto el : r)
+//       s << " " << el;
+//     s << std::endl;
+//   }
+//   std::cout << s.str();
+// }
 
-auto stencil_op = [](auto &p) {
-  T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
-
-  // the version below is intended to work, too, still a bug is present when
-  // refering to negative index reaching halo area 
-
-  /* T res = p[-1][0] + p[0][0] + p[+1][0] + p[0][-1] + p[0][+1]; */
-
-  return res;
-};
-
-auto stencil_op_v(std::vector<std::vector<T>> &va,
-                  std::vector<std::vector<T>> &vb) {
+auto stencil_op_verify(std::vector<std::vector<T>> &va,
+                       std::vector<std::vector<T>> &vb) {
   for (std::size_t i = 1; i < va.size() - 1; i++) {
     for (std::size_t j = 1; j < va[i].size() - 1; j++)
       vb[i][j] =
@@ -69,20 +59,22 @@ int rowcmp(mhp::dm_row<T>::iterator r, std::vector<T> &v, std::size_t size) {
 
 int local_compare(mhp::distributed_dense_matrix<T> &dm,
                   std::vector<std::vector<T>> &vv) {
-
+  int res = 0;
   for (auto r = dm.rows().begin(); r != dm.rows().end(); r++) {
     if (r.is_local())
       if (-1 == rowcmp((*r).begin(), vv[(*r).idx()], (*r).size())) {
         fmt::print("{}: Fail (idx = {})\n", comm_rank, (*r).idx());
-        return -1;
+        res = -1;
       }
   }
-  return 0;
+  return res;
 }
 
 int check(mhp::distributed_dense_matrix<T> &a,
           mhp::distributed_dense_matrix<T> &b) {
+
   std::vector<std::vector<T>> va(nr), vb(nr);
+
   for (auto r = va.begin(); r != va.end(); r++) {
     r->resize(nc);
     std::iota(r->begin(), r->end(), 10);
@@ -94,15 +86,28 @@ int check(mhp::distributed_dense_matrix<T> &a,
   }
 
   for (std::size_t s = 0; s < steps; s++) {
-    stencil_op_v(va, vb);
+    stencil_op_verify(va, vb);
     std::swap(va, vb);
   }
-  // if (0 == comm_rank) dump_v("Final va", va);
-  // if (0 == comm_rank) dump_v("Final vb", vb);
-  return local_compare(a, (steps % 2) ? vb : va);
+  return local_compare(a, (steps % 2) ? vb : va) +
+         local_compare(b, (steps % 2) ? va : vb);
 }
+#pragma endregion
 
-int stencil() {
+#pragma region stencil 1
+
+auto stencil_op1 = [](auto &p) {
+  T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
+
+  // the version below is intended to work, too, still a bug is present when
+  // refering to negative index reaching halo area
+
+  /* T res = p[-1][0] + p[0][0] + p[+1][0] + p[0][-1] + p[0][+1]; */
+
+  return res;
+};
+
+int stencil1() {
   lib::halo_bounds hb(1); // 1 row
   mhp::distributed_dense_matrix<T> a(nr, nc, -1, hb), b(nr, nc, -1, hb);
 
@@ -121,7 +126,7 @@ int stencil() {
 
   for (std::size_t s = 0; s < steps; s++) {
     mhp::halo(in).exchange();
-    mhp::transform(in, out.begin(), stencil_op);
+    mhp::transform(in, out.begin(), stencil_op1);
     std::swap(in, out);
   }
 
@@ -129,10 +134,56 @@ int stencil() {
   // b.dump_matrix("final b");
 
   if (0 == check(a, b))
-    fmt::print("{}: Check OK!\n", comm_rank);
+    fmt::print("{}: stencil1 check OK!\n", comm_rank);
+  else
+    fmt::print("{}: stencil1 check failed\n", comm_rank);
 
   return 0;
 }
+
+#pragma endregion stencil 1
+
+#pragma region stencil 2
+auto stencil_op2 = [](auto &&p) {
+  mhp::dm_row<T> out_row((*p).size());
+
+  out_row[0] = p[0][0];
+  for (std::size_t i = 1; i < nc - 1; i++) {
+    out_row[i] = p[-1][i] + p[0][i - 1] + p[0][i] + p[0][i + 1] + p[1][i];
+  }
+  out_row[nc - 1] = p[0][nc - 1];
+
+  return out_row;
+};
+
+int stencil2() {
+  lib::halo_bounds hb(1); // 1 row
+  mhp::distributed_dense_matrix<T> a(nr, nc, hb), b(nr, nc, hb);
+
+  mhp::for_each(a.rows(),
+                [](auto &row) { std::iota(row.begin(), row.end(), 10); });
+  mhp::for_each(b.rows(),
+                [](auto &row) { std::iota(row.begin(), row.end(), 10); });
+
+  // all rows except 1st and last
+
+  auto in = rng::subrange(a.rows().begin() + 1, a.rows().end() - 1);
+  auto out = rng::subrange(b.rows().begin() + 1, b.rows().end() - 1);
+
+  for (std::size_t s = 0; s < steps; s++) {
+    mhp::halo(in).exchange();
+    mhp::transform(in, out.begin(), stencil_op2);
+    std::swap(in, out);
+  }
+
+  if (0 == check(a, b))
+    fmt::print("{}: stencil2 check OK!\n", comm_rank);
+  else
+    fmt::print("{}: stencil2 failed\n", comm_rank);
+
+  return 0;
+}
+#pragma endregion stencil 2
 
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
@@ -168,7 +219,8 @@ int main(int argc, char *argv[]) {
   }
   lib::drlog.debug("Rank: {}\n", comm_rank);
 
-  auto error = stencil();
+  auto error1 = stencil1();
+  auto error2 = stencil2();
   MPI_Finalize();
-  return error;
+  return error1 + error2;
 }

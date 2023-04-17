@@ -11,7 +11,7 @@ class distributed_dense_matrix;
 
 template <typename DM> class dm_segment;
 template <typename DM> class dm_segment_iterator;
-template <typename T> class dm_row;
+template <typename T, typename Allocator = std::allocator<T>> class dm_row;
 
 template <typename DM> class dm_rows_iterator {
 public:
@@ -26,8 +26,27 @@ public:
   }
 
   // dereference
-  value_type &operator*() { return dm_->dm_rows_[index_]; }
-  value_type operator[](difference_type n) { return dm_->dm_rows_[index_ + n]; }
+  value_type &operator*() const { return dm_->dm_rows_[index_]; }
+  value_type operator[](difference_type n) {
+    difference_type abs_ind = index_ + n;
+
+    if (abs_ind >= dm_->local_rows_indices_.first &&
+        abs_ind <= dm_->local_rows_indices_.second) { // regular rows
+      return dm_->dm_rows_[index_ + n];
+    }
+    if (abs_ind >= dm_->local_rows_indices_.first - dm_->halo_bounds().prev &&
+        abs_ind < dm_->local_rows_indices_.first) { // halo prev
+      return dm_->dm_halop_rows_[dm_->halo_bounds().prev -
+                                 dm_->local_rows_indices_.first + abs_ind];
+    }
+    if (abs_ind > dm_->local_rows_indices_.second &&
+        abs_ind <= dm_->local_rows_indices_.second +
+                       dm_->halo_bounds().next) { // halo next
+      return dm_->dm_halon_rows_[dm_->halo_bounds().next +
+                                 dm_->local_rows_indices_.second - abs_ind];
+    }
+    assert(0);
+  }
 
   // value_type get() const {
   //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
@@ -101,7 +120,6 @@ public:
     return other + n;
   }
 
-  auto rank() const { return rank_; }
   auto segments() const {
     // return lib::internal::drop_segments(dm_->segments(), index_);
     return dm_->segments();
@@ -112,7 +130,6 @@ public:
 
 private:
   DM *dm_ = nullptr;
-  std::size_t rank_;
   std::size_t index_ = 0;
 }; // dm_rows_iterator
 
@@ -240,17 +257,5 @@ private:
   std::size_t rank_;
   std::size_t index_;
 }; // class dm_segment_iterator
-
-template <typename T> class dm_row_iterator : public std::span<T>::iterator {
-public:
-  dm_row_iterator(distributed_dense_matrix<T> *dm)
-      : std::span<T>::iterator(), dm_(dm){};
-
-  auto segments() const { return dm_->segments(); }
-  auto &halo() const { return dm_->halo(); }
-
-private:
-  mhp::distributed_dense_matrix<T> *dm_;
-}; // class dm_row_iterator
 
 } // namespace mhp

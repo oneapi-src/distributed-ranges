@@ -61,7 +61,7 @@ private:
   DM *dm_;
 }; // dm_segments
 
-template <typename T> class dm_row : public std::span<T> {
+template <typename T, typename Allocator> class dm_row : public std::span<T> {
   using dmatrix = mhp::distributed_dense_matrix<T>;
   using dmsegment = mhp::dm_segment<dmatrix>;
 
@@ -69,9 +69,51 @@ public:
   using iterator = typename std::span<T>::iterator;
 
   dm_row(){};
-  dm_row(signed long idx, T *ptr, dmsegment *segment, std::size_t size)
+  dm_row(signed long idx, T *ptr, dmsegment *segment, std::size_t size,
+         Allocator allocator = Allocator())
       : std::span<T>({ptr, size}), index_(idx), data_(ptr), segment_(segment),
-        size_(size){};
+        size_(size), allocator_(allocator){};
+
+  // copying ctor
+  dm_row(const dm_row &other)
+      : std::span<T>({(other.index_ == INT_MIN)
+                          ? Allocator().allocate(other.size_)
+                          : other.data_,
+                      other.size_}) {
+    index_ = other.index_;
+    data_ = (other.index_ == INT_MIN) ? allocator_.allocate(other.size_)
+                                      : other.data_;
+    segment_ = other.segment_;
+    size_ = other.size_;
+    if (other.index_ == INT_MIN) {
+      iterator i = rng::begin(*this), oi = rng::begin(other);
+      while (i != this->end()) {
+        *(i++) = *(oi++);
+      }
+    }
+  }
+
+  // own memory necessary - the row ist standalone, not part of matrix - index
+  // INT_MIN indicates the situation
+  dm_row(std::size_t size)
+      : dm_row(INT_MIN, Allocator().allocate(size), nullptr, size) {
+    // fmt::print("{}: +dm_row allocated {} b at {}\n", default_comm().rank(),
+    // size * sizeof(T), (ulong)data_);
+    for (int _i = 0; _i < size_; _i++) {
+      data_[_i] = 0;
+    }
+  }
+
+  ~dm_row() {
+    if (INT_MIN == index_ && nullptr != data_) {
+      // fmt::print("{}: ~dm_row deallocate {} b at {}\n",
+      // default_comm().rank(), size_, (ulong)data_);
+      allocator_.deallocate(data_, size_);
+      data_ = nullptr;
+      size_ = 0;
+      index_ = 0;
+    }
+  }
 
   dmsegment *segment() { return segment_; }
   signed long idx() { return index_; }
@@ -79,11 +121,10 @@ public:
   T &operator[](int index) { return *(std::span<T>::begin() + index); }
 
   dm_row<T> operator=(dm_row<T> other) {
-    std::cout << "operator=" << std::endl;
+    assert(this->size_ == other.size_);
     iterator i = rng::begin(*this), oi = rng::begin(other);
     while (i != this->end()) {
-      std::cout << "*(oi++) = *(i++);" << std::endl;
-      *(oi++) = *(i++);
+      *(i++) = *(oi++);
     }
     return *this;
   }
@@ -93,6 +134,7 @@ private:
   T *data_ = nullptr;
   dmsegment *segment_ = nullptr;
   std::size_t size_ = 0;
+  Allocator allocator_;
 };
 
 template <typename DM>
@@ -162,7 +204,7 @@ public:
                                 hb.next * segment_shape_[1]})),
         data_size_(segment_size_ + hb.prev * segment_shape_[1] +
                    hb.next * segment_shape_[1]),
-        dm_rows_(this) {
+        dm_rows_(this), dm_halop_rows_(this), dm_halon_rows_(this) {
     init_(hb, allocator);
   }
   ~distributed_dense_matrix() {
@@ -192,18 +234,21 @@ public:
   lib::halo_bounds &halo_bounds() { return halo_bounds_; }
 
   bool is_local_row(int index) {
-    if (index >= local_rows_indices.first && index <= local_rows_indices.second)
+    if (index >= local_rows_indices_.first &&
+        index <= local_rows_indices_.second)
       return true;
     return false;
   }
   // index of cell on linear view
   bool is_local_cell(int index) {
-    if (index >= local_rows_indices.first * (int)shape_[1] &&
-        index < (local_rows_indices.second + 1) * (int)shape_[1]) {
+    if (index >= local_rows_indices_.first * (int)shape_[1] &&
+        index < (local_rows_indices_.second + 1) * (int)shape_[1]) {
       return true;
     }
     return false;
   }
+
+  std::pair<int, int> local_rows_indices() { return local_rows_indices_; }
 
   // for debug only
   void dump_matrix(std::string msg) {
@@ -257,6 +302,7 @@ private:
 
     hb.prev *= shape_[1];
     hb.next *= shape_[1];
+
     halo_ = new lib::span_halo<T>(default_comm(), data_, data_size_, hb);
 
     // prepare segments
@@ -276,37 +322,58 @@ private:
       idx++;
     }
 
+    // regular rows
     dm_rows_.reserve(segment_shape_[0]);
 
     int row_start_index_ = 0;
-    for (auto _titr = rng::begin(segments_); _titr != rng::end(segments_); ++_titr) {
+    for (auto _titr = rng::begin(segments_); _titr != rng::end(segments_);
+         ++_titr) {
       for (int _ind = row_start_index_;
            _ind < row_start_index_ + (int)(*_titr).shape()[0]; _ind++) {
         T *_dataptr = nullptr;
         if ((*_titr).is_local()) {
-          if (local_rows_indices.first == -1)
-            local_rows_indices.first = _ind;
-          local_rows_indices.second = _ind;
+          if (local_rows_indices_.first == -1)
+            local_rows_indices_.first = _ind;
+          local_rows_indices_.second = _ind;
 
-          int _dataoff =
-              halo_bounds_.prev * segment_shape_[1]; // start of data
+          int _dataoff = halo_bounds_.prev * segment_shape_[1]; // start of data
           _dataoff += (_ind - default_comm().rank() * segment_shape_[0]) *
                       segment_shape_[1];
 
-          // if ((_dataoff < 0) || (_dataoff >= (int)data_size_)) {
-          //   fmt::print("{}: ERR _dataoff {} data_size {} init {} _ind {} corr {} \n",
-          //              default_comm().rank(), _dataoff, data_size_,
-          //              halo_bounds_.prev * (*_titr).shape()[1], _ind,
-          //              default_comm().rank() * (*_titr).shape()[0]);
-          // }
           assert(_dataoff >= 0);
           assert(_dataoff < (int)data_size_);
           _dataptr = data_ + _dataoff;
         }
-        dm_rows_.emplace_back(_ind, _dataptr, &(*_titr), (*_titr).shape()[1]);
+        dm_rows_.emplace_back(_ind, _dataptr, &(*_titr), segment_shape_[1]);
       }
       row_start_index_ += (*_titr).shape()[0];
     };
+
+    // rows in halo.prev area
+    for (int _ind = local_rows_indices_.first - halo_bounds_.prev;
+         _ind < local_rows_indices_.first; _ind++) {
+      int _dataoff = (_ind + halo_bounds_.prev - local_rows_indices_.first) *
+                     segment_shape_[1];
+
+      assert(_dataoff >= 0);
+      assert(_dataoff < halo_bounds_.prev * segment_shape_[1]);
+      dm_halop_rows_.emplace_back(_ind, data_ + _dataoff,
+                                  &(*rng::begin(segments_)), segment_shape_[1]);
+    }
+
+    // rows in halo.next area
+    for (int _ind = local_rows_indices_.second + 1;
+         _ind < local_rows_indices_.second + 1 + halo_bounds_.next; _ind++) {
+      int _dataoff = (_ind + halo_bounds_.prev - local_rows_indices_.first) *
+                     segment_shape_[1];
+
+      assert(_dataoff >= 0);
+      assert(_dataoff < (int)data_size_);
+      dm_halon_rows_.emplace_back(
+          _ind, data_ + _dataoff,
+          &(*(rng::begin(segments_) + default_comm().rank())),
+          segment_shape_[1]);
+    }
 
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
@@ -324,34 +391,49 @@ private:
   std::size_t grid_size_; // currently (N, 1)
   key_type segment_shape_;
 
-  std::size_t segment_size_ = 0; // size of local data
-  std::size_t data_size_ = 0;    // all data with halo buffers
+  const std::size_t segment_size_ = 0; // size of local data
+  const std::size_t data_size_ = 0;    // all data with halo buffers
 
   T *data_ = nullptr; // local data ptr
 
   lib::span_halo<T> *halo_;
   lib::halo_bounds halo_bounds_;
-  std::size_t size_;
-
-  dm_segments<distributed_dense_matrix> dm_segments_;
-  dm_rows<distributed_dense_matrix<T>> dm_rows_;
-  std::pair<int, int> local_rows_indices = std::pair(-1, -1);
+  // std::size_t size_;
 
   std::vector<dm_segment<distributed_dense_matrix>> segments_;
+  dm_segments<distributed_dense_matrix>
+      dm_segments_; // lightweight view on segments_
+
+  dm_rows<distributed_dense_matrix<T>>
+      dm_rows_; // vector of "regular" rows in segment
+  dm_rows<distributed_dense_matrix<T>> dm_halop_rows_,
+      dm_halon_rows_; // rows in halo area
+  std::pair<int, int> local_rows_indices_ =
+      std::pair(-1, -1); // global indices of locally stored rows
 
   lib::rma_window win_;
   Allocator allocator_;
 }; // class distributed_dense_matrix
 
 template <typename T>
-void for_each(dm_rows<distributed_dense_matrix<T>> rows, auto op) {
+void for_each(dm_rows<distributed_dense_matrix<T>> &rows, auto op) {
   for (auto itr = rng::begin(rows); itr != rng::end(rows); itr++) {
-    dm_row<T> &r = *itr;
-    if (r.segment()->is_local()) {
+    if ((*itr).segment()->is_local()) {
       op(*itr);
     }
   }
 };
+
+template <typename DM>
+void transform(rng::subrange<mhp::dm_rows_iterator<DM>> &in,
+               mhp::dm_rows_iterator<DM> out, auto op) {
+  for (auto i = rng::begin(in); i != rng::end(in); i++) {
+    if (i.is_local()) {
+      *out = op(i);
+    }
+    ++out;
+  }
+}
 
 } // namespace mhp
 
