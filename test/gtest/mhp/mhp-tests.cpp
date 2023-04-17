@@ -8,7 +8,7 @@ using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
                                   dr::mhp::distributed_vector<float>>;
 
 // Use this for shorter build time
-#define MINIMAL_TEST 1
+// #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
