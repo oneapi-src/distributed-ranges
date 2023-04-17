@@ -159,7 +159,8 @@ private:
   std::size_t size_;
 }; // dv_segment
 
-template <typename DV> class dv_segments : public std::span<dv_segment<DV>> {
+template <typename DV>
+class dv_segments : public std::span<dv_segment<DV>>, rng::view_base {
 public:
   dv_segments() {}
   dv_segments(DV *dv) : std::span<dv_segment<DV>>(dv->segments_) { dv_ = dv; }

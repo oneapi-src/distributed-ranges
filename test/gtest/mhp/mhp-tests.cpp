@@ -32,8 +32,7 @@ using CPUTypes = ::testing::Types<mhp::distributed_vector<int>,
 #include "common/iota.hpp"
 #include "common/reduce.hpp"
 #include "common/subrange.hpp"
-// Fails with everyting but g++12
-// #include "common/take.hpp"
+#include "common/take.hpp"
 #include "common/transform_view.hpp"
 #include "common/zip.hpp"
 
