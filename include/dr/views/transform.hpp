@@ -197,7 +197,11 @@ inline constexpr auto transform = transform_fn_{};
 
 } // namespace dr
 
+#if !defined(DR_SPEC)
+
 // Needed to satisfy rng::viewable_range
 template <rng::random_access_range V, std::copy_constructible F>
 inline constexpr bool rng::enable_borrowed_range<dr::transform_view<V, F>> =
     true;
+
+#endif

@@ -271,7 +271,11 @@ zip_view(R &&...r) -> zip_view<rng::views::all_t<R>...>;
 
 namespace DR_RANGES_NAMESPACE {} // namespace DR_RANGES_NAMESPACE
 
+#if !defined(DR_SPEC)
+
 // Needed to satisfy rng::viewable_range
 template <rng::random_access_range... V>
 inline constexpr bool rng::enable_borrowed_range<dr::mhp::zip_view<V...>> =
     true;
+
+#endif
