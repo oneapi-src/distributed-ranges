@@ -271,12 +271,3 @@ auto &halo(has_halo_method auto &&dr) {
 }
 
 } // namespace dr::mhp
-
-#if !defined(DR_SPEC)
-
-// Needed to satisfy rng::viewable_range
-template <typename T>
-inline constexpr bool rng::enable_borrowed_range<dr::mhp::dv_segments<T>> =
-    true;
-
-#endif
