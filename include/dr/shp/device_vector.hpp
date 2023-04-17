@@ -7,14 +7,14 @@
 #include <dr/shp/allocators.hpp>
 #include <dr/shp/vector.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <typename T, typename Allocator>
-class device_vector : public shp::vector<T, Allocator> {
+class device_vector : public dr::shp::vector<T, Allocator> {
 public:
   constexpr device_vector() noexcept {}
 
-  using base = shp::vector<T, Allocator>;
+  using base = dr::shp::vector<T, Allocator>;
 
   using value_type = T;
   using size_type = std::size_t;
@@ -34,4 +34,4 @@ template <class Alloc>
 device_vector(std::size_t, const Alloc, std::size_t)
     -> device_vector<typename Alloc::value_type, Alloc>;
 
-} // namespace shp
+} // namespace dr::shp

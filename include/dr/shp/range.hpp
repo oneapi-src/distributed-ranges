@@ -7,7 +7,7 @@
 #include <dr/concepts/concepts.hpp>
 #include <dr/shp/distributed_span.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <int dimensions = 1> class id {
 public:
@@ -92,7 +92,7 @@ private:
   size_type idx_ = 0;
 };
 
-using segment_range_iterator = lib::iterator_adaptor<segment_range_accessor>;
+using segment_range_iterator = dr::iterator_adaptor<segment_range_accessor>;
 
 template <int dimensions = 1> class segment_range {
 public:
@@ -131,8 +131,8 @@ private:
 
 /*
 template <rng::forward_range R> auto distributed_iota_view(R &&r) {
-  static_assert(lib::distributed_contiguous_range<R>);
-  if constexpr (lib::distributed_contiguous_range<R>) {
+  static_assert(dr::distributed_contiguous_range<R>);
+  if constexpr (dr::distributed_contiguous_range<R>) {
     std::vector<segment_range<>> iota_segments;
     std::size_t global_offset = 0;
     std::size_t segment_id = 0;
@@ -142,11 +142,11 @@ template <rng::forward_range R> auto distributed_iota_view(R &&r) {
       global_offset += segment.size();
       segment_id++;
     }
-    return shp::distributed_span(iota_segments);
+    return dr::shp::distributed_span(iota_segments);
   } else {
     return segment_range(0, rng::size(r), 0);
   }
 }
 */
 
-} // namespace shp
+} // namespace dr::shp

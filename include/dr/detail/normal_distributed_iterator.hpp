@@ -5,11 +5,11 @@
 
 #include <dr/detail/segments_tools.hpp>
 
-namespace lib {
+namespace dr {
 
 template <rng::viewable_range V>
 /*
-requires(lib::remote_range<rng::range_reference_t<V>> &&
+requires(dr::remote_range<rng::range_reference_t<V>> &&
        rng::random_access_range<rng::range_reference_t<V>>)
        */
 class normal_distributed_iterator_accessor {
@@ -99,7 +99,7 @@ public:
   }
 
   auto segments() const noexcept {
-    return lib::__detail::drop_segments(segments_, segment_id_, idx_);
+    return dr::__detail::drop_segments(segments_, segment_id_, idx_);
   }
 
 private:
@@ -118,6 +118,6 @@ private:
 
 template <rng::viewable_range T>
 using normal_distributed_iterator =
-    lib::iterator_adaptor<normal_distributed_iterator_accessor<T>>;
+    dr::iterator_adaptor<normal_distributed_iterator_accessor<T>>;
 
-} // namespace lib
+} // namespace dr

@@ -8,7 +8,7 @@
 
 #include <dr/detail/iterator_adaptor.hpp>
 
-namespace lib {
+namespace dr {
 
 namespace __detail {
 
@@ -106,4 +106,4 @@ private:
 
 } // namespace __detail
 
-} // namespace lib
+} // namespace dr

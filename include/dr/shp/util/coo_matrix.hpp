@@ -8,14 +8,14 @@
 #include <memory>
 #include <vector>
 
-namespace shp {
+namespace dr::shp {
 
 namespace __detail {
 
 template <typename T, typename I, typename Allocator = std::allocator<T>>
 class coo_matrix {
 public:
-  using value_type = shp::matrix_entry<T, I>;
+  using value_type = dr::shp::matrix_entry<T, I>;
   using scalar_type = T;
   using index_type = I;
   using size_type = std::size_t;
@@ -23,7 +23,7 @@ public:
 
   using allocator_type = Allocator;
 
-  using key_type = shp::index<I>;
+  using key_type = dr::shp::index<I>;
   using map_type = T;
 
   using backend_allocator_type = typename std::allocator_traits<
@@ -33,14 +33,14 @@ public:
   using iterator = typename backend_type::iterator;
   using const_iterator = typename backend_type::const_iterator;
 
-  using reference = shp::matrix_ref<T, I>;
-  using const_reference = shp::matrix_ref<std::add_const_t<T>, I>;
+  using reference = dr::shp::matrix_ref<T, I>;
+  using const_reference = dr::shp::matrix_ref<std::add_const_t<T>, I>;
 
   using scalar_reference = T &;
 
-  coo_matrix(shp::index<I> shape) : shape_(shape) {}
+  coo_matrix(dr::shp::index<I> shape) : shape_(shape) {}
 
-  shp::index<I> shape() const noexcept { return shape_; }
+  dr::shp::index<I> shape() const noexcept { return shape_; }
 
   size_type size() const noexcept { return tuples_.size(); }
 
@@ -123,7 +123,7 @@ public:
     });
   }
 
-  void reshape(shp::index<I> shape) {
+  void reshape(dr::shp::index<I> shape) {
     bool all_inside = true;
     for (auto &&[index, v] : *this) {
       auto &&[i, j] = index;
@@ -161,10 +161,10 @@ public:
   }
 
 private:
-  shp::index<I> shape_;
+  dr::shp::index<I> shape_;
   backend_type tuples_;
 };
 
 } // namespace __detail
 
-} // namespace shp
+} // namespace dr::shp

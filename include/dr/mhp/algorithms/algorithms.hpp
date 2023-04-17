@@ -13,8 +13,9 @@
 #include <dr/detail/logger.hpp>
 #include <dr/detail/onedpl_direct_iterator.hpp>
 #include <dr/detail/ranges_shim.hpp>
+#include <dr/mhp/global.hpp>
 
-namespace mhp {
+namespace dr::mhp {
 
 //
 //
@@ -23,7 +24,7 @@ namespace mhp {
 //
 
 /// Collective fill on distributed range
-void fill(lib::distributed_contiguous_range auto &&dr, auto value) {
+void fill(dr::distributed_contiguous_range auto &&dr, auto value) {
   for (const auto &s : local_segments(dr)) {
     rng::fill(s, value);
   }
@@ -31,7 +32,7 @@ void fill(lib::distributed_contiguous_range auto &&dr, auto value) {
 }
 
 /// Collective fill on iterator/sentinel for a distributed range
-template <lib::distributed_iterator DI>
+template <dr::distributed_iterator DI>
 void fill(DI first, DI last, auto value) {
   mhp::fill(rng::subrange(first, last), value);
 }
@@ -43,25 +44,25 @@ void fill(DI first, DI last, auto value) {
 //
 
 /// Copy
-void copy(lib::distributed_contiguous_range auto &&in,
-          lib::distributed_iterator auto out) {
+void copy(dr::distributed_contiguous_range auto &&in,
+          dr::distributed_iterator auto out) {
   if (aligned(in, rng::subrange(out, decltype(out){}))) {
-    lib::drlog.debug("copy: parallel execution\n");
+    dr::drlog.debug("copy: parallel execution\n");
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
       rng::copy(in_seg, rng::begin(out_seg));
     }
     barrier();
   } else {
-    lib::drlog.debug("copy: serial execution\n");
+    dr::drlog.debug("copy: serial execution\n");
     rng::copy(in, out);
     fence();
   }
 }
 
 /// Copy
-template <lib::distributed_iterator DI_IN>
-void copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out) {
+template <dr::distributed_iterator DI_IN>
+void copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out) {
   mhp::copy(rng::subrange(first, last), out);
 }
 
@@ -72,41 +73,31 @@ void copy(DI_IN &&first, DI_IN &&last, lib::distributed_iterator auto &&out) {
 //
 
 /// Collective for_each on distributed range
-template <typename ExecutionPolicy>
-void for_each(ExecutionPolicy &&policy, lib::distributed_range auto &&dr,
-              auto op) {
-  if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
-                               device_policy>) {
-    lib::drlog.debug("for_each: dpl execution\n");
+void for_each(dr::distributed_range auto &&dr, auto op) {
+#if SYCL_LANGUAGE_VERSION
+  if (mhp::use_sycl()) {
+    dr::drlog.debug("for_each: dpl execution\n");
     for (const auto &s : local_segments(dr)) {
 
-      std::for_each(policy.dpl_policy,
-                    lib::__detail::direct_iterator(rng::begin(s)),
-                    lib::__detail::direct_iterator(rng::end(s)), op);
+      std::for_each(dpl_policy(), dr::__detail::direct_iterator(rng::begin(s)),
+                    dr::__detail::direct_iterator(rng::end(s)), op);
     }
-  } else {
-    lib::drlog.debug("for_each: parallel cpu execution\n");
-    for (const auto &s : local_segments(dr)) {
-      rng::for_each(s, op);
-    }
+    barrier();
+    return;
+  }
+#endif
+
+  dr::drlog.debug("for_each: parallel cpu execution\n");
+  for (const auto &s : local_segments(dr)) {
+    rng::for_each(s, op);
   }
   barrier();
 }
 
-template <lib::distributed_range DR> void for_each(DR &&dr, auto op) {
-  for_each(std::execution::par_unseq, std::forward<DR>(dr), op);
-}
-
 /// Collective for_each on iterator/sentinel for a distributed range
-template <typename ExecutionPolicy, lib::distributed_iterator DI>
-void for_each(ExecutionPolicy &&policy, DI first, DI last, auto op) {
-  mhp::for_each(std::forward<ExecutionPolicy>(policy),
-                rng::subrange(first, last), op);
-}
-
-template <lib::distributed_iterator DI>
+template <dr::distributed_iterator DI>
 void for_each(DI first, DI last, auto op) {
-  mhp::for_each(std::execution::par_unseq, rng::subrange(first, last), op);
+  mhp::for_each(rng::subrange(first, last), op);
 }
 
 //
@@ -116,7 +107,7 @@ void for_each(DI first, DI last, auto op) {
 //
 
 /// Collective iota on iterator/sentinel for a distributed range
-template <lib::distributed_iterator DI, std::integral T>
+template <dr::distributed_iterator DI, std::integral T>
 void iota(DI first, DI last, T value) {
   if (default_comm().rank() == 0) {
     std::iota(first, last, value);
@@ -125,7 +116,7 @@ void iota(DI first, DI last, T value) {
 }
 
 /// Collective iota on distributed range
-void iota(lib::distributed_range auto &&r, std::integral auto value) {
+void iota(dr::distributed_range auto &&r, std::integral auto value) {
   mhp::iota(rng::begin(r), rng::end(r), value);
 }
 
@@ -135,8 +126,8 @@ void iota(lib::distributed_range auto &&r, std::integral auto value) {
 //
 //
 
-void transform(lib::distributed_range auto &&in,
-               lib::distributed_iterator auto out, auto op) {
+void transform(dr::distributed_range auto &&in,
+               dr::distributed_iterator auto out, auto op) {
   if (aligned(in, rng::subrange(out, decltype(out){}))) {
     for (const auto &&[in_seg, out_seg] :
          rng::views::zip(local_segments(in), local_segments(out))) {
@@ -144,16 +135,16 @@ void transform(lib::distributed_range auto &&in,
     }
     barrier();
   } else {
-    lib::drlog.debug("transform: serial execution\n");
+    dr::drlog.debug("transform: serial execution\n");
     rng::transform(in, out, op);
     fence();
   }
 }
 
-template <lib::distributed_iterator DI_IN>
-void transform(DI_IN &&first, DI_IN &&last,
-               lib::distributed_iterator auto &&out, auto op) {
+template <dr::distributed_iterator DI_IN>
+void transform(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out,
+               auto op) {
   mhp::transform(rng::subrange(first, last), out, op);
 }
 
-} // namespace mhp
+} // namespace dr::mhp

@@ -8,10 +8,10 @@
 
 #include <dr/detail/ranges_shim.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <typename T, rng::random_access_iterator Iter = T *>
-class span : public rng::view_interface<shp::span<T, Iter>> {
+class span : public rng::view_interface<dr::shp::span<T, Iter>> {
 public:
   static_assert(std::is_same_v<std::iter_value_t<Iter>, T>);
 
@@ -55,4 +55,4 @@ private:
 template <rng::random_access_range R>
 span(R &&) -> span<rng::range_value_t<R>, rng::iterator_t<R>>;
 
-} // namespace shp
+} // namespace dr::shp

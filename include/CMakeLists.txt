@@ -18,11 +18,10 @@ find_package(MPI REQUIRED)
 find_package(MKL REQUIRED)
 find_package(TBB REQUIRED)
 target_link_libraries(dr_mpi INTERFACE MPI::MPI_CXX range-v3 std::mdspan MKL::MKL TBB::tbb)
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION STRLESS "11")
-  # gcc 10 uses TBB API that were removed
-  message(NOTICE "Disabling PSTL TBB parallel backend for gcc 10")
-  target_compile_definitions(dr_mpi INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
-endif()
+
+# gcc 10 uses TBB API that were removed
+target_compile_definitions(dr_mpi INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
+
 if (ENABLE_FORMAT)
   target_compile_definitions(dr_mpi INTERFACE DR_FORMAT)
   target_link_libraries(dr_mpi INTERFACE fmt::fmt)

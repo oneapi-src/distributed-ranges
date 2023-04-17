@@ -11,7 +11,7 @@
 Interface
 =========
 
-.. doxygenclass:: lib::unstructured_halo
+.. doxygenclass:: dr::unstructured_halo
    :members:
 
 Description

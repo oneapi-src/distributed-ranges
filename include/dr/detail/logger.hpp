@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace lib {
+namespace dr {
 
 #if DR_FORMAT
 
@@ -52,4 +52,4 @@ private:
 
 inline logger drlog;
 
-} // namespace lib
+} // namespace dr

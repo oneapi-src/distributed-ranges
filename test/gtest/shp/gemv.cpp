@@ -7,23 +7,23 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-// hard to reproduce fails
-TEST(SparseMatrix, DISABLED_Gemv) {
+TEST(SparseMatrix, Gemv) {
   std::size_t m = 100;
   std::size_t k = 100;
 
-  shp::sparse_matrix<float> a(
+  dr::shp::sparse_matrix<float> a(
       {m, k}, 0.1f,
-      shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}));
+      dr::shp::block_cyclic({dr::shp::tile::div, dr::shp::tile::div},
+                            {dr::shp::nprocs(), 1}));
 
-  shp::distributed_vector<float> b(k, 1.f);
-  shp::distributed_vector<float> c(m, 0.f);
+  dr::shp::distributed_vector<float> b(k, 1.f);
+  dr::shp::distributed_vector<float> c(m, 0.f);
 
-  shp::gemv(c, a, b);
+  dr::shp::gemv(c, a, b);
 
   std::vector<float> c_local(m);
 
-  shp::copy(c.begin(), c.end(), c_local.begin());
+  dr::shp::copy(c.begin(), c.end(), c_local.begin());
 
   std::vector<float> c_ref(m, 0.f);
 

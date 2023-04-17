@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-template <lib::distributed_range DR>
+template <dr::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
 struct AOS_Struct {
@@ -124,7 +124,7 @@ std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
 }
 
 std::string check_segments_message(rng::range auto &&r) {
-  auto &&segments = lib::ranges::segments(r);
+  auto &&segments = dr::ranges::segments(r);
   auto &&flat = rng::views::join(segments);
   if (is_equal(r, flat)) {
     return "";
@@ -152,7 +152,7 @@ auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
   auto negate = [](auto &&val) { val = -val; };
   auto input_vector = ops.vec;
   std::vector input_view(ref.begin(), ref.end());
-  xhp::for_each(default_policy(ops.dist_vec), actual, negate);
+  xhp::for_each(actual, negate);
   rng::for_each(ref, negate);
 
   // Check mutated view
@@ -197,7 +197,7 @@ auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
 }
 
 auto check_segments(std::forward_iterator auto di) {
-  const auto &segments = lib::ranges::segments(di);
+  const auto &segments = dr::ranges::segments(di);
   const auto &flat = rng::join_view(segments);
   if (is_equal(di, flat)) {
     return testing::AssertionSuccess();
@@ -237,7 +237,7 @@ concept streamable = requires(std::ostream &os, T value) {
   { os << value } -> std::convertible_to<std::ostream &>;
 };
 
-namespace mhp {
+namespace dr::mhp {
 
 // gtest relies on ADL to find the printer
 template <typename T, typename Alloc>
@@ -267,9 +267,9 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
   return is_equal(local_vec, dist_vec);
 }
 
-} // namespace mhp
+} // namespace dr::mhp
 
-namespace shp {
+namespace dr::shp {
 
 // gtest relies on ADL to find the printer
 template <typename T, typename Alloc>
@@ -299,7 +299,7 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
   return is_equal(dist_vec, local_vec);
 }
 
-} // namespace shp
+} // namespace dr::shp
 
 namespace DR_RANGES_NAMESPACE {
 

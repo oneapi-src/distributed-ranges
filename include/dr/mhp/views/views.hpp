@@ -2,23 +2,34 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+#pragma once
+
+#include <dr/detail/ranges_shim.hpp>
+
+namespace dr::mhp {
 
 // Select segments local to this rank and convert the iterators in the
 // segment to local
 template <typename R> auto local_segments(R &&dr) {
   auto is_local = [](const auto &segment) {
-    return lib::ranges::rank(segment) == default_comm().rank();
+    return dr::ranges::rank(segment) == default_comm().rank();
   };
   // Convert from remote iter to local iter
   auto local_iter = [](const auto &segment) {
-    auto b = lib::ranges::local(rng::begin(segment));
+    auto b = dr::ranges::local(rng::begin(segment));
     return rng::subrange(b, b + rng::distance(segment));
   };
-  return lib::ranges::segments(std::forward<R>(dr)) |
+  return dr::ranges::segments(std::forward<R>(dr)) |
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
-inline constexpr auto take = rng::views::take;
+} // namespace dr::mhp
 
-} // namespace mhp
+namespace dr::mhp::views {
+
+inline constexpr auto all = rng::views::all;
+inline constexpr auto drop = rng::views::drop;
+inline constexpr auto take = rng::views::take;
+inline constexpr auto transform = dr::views::transform;
+
+} // namespace dr::mhp::views

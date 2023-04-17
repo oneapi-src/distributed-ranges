@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace mhp {
+namespace dr::mhp {
 
 #ifdef SYCL_LANGUAGE_VERSION
 namespace _detail {
@@ -34,4 +34,4 @@ struct device_policy {};
 
 #endif // SYCL_LANGUAGE_VERSION
 
-} // namespace mhp
+} // namespace dr::mhp

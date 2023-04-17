@@ -6,21 +6,21 @@
 
 using T = int;
 using V = std::vector<T>;
-using DV = mhp::distributed_vector<T>;
+using DV = dr::mhp::distributed_vector<T>;
 using DVI = typename DV::iterator;
 
 std::size_t radius = 4;
 std::size_t n = 10;
 
 TEST(MhpTests, Stencil) {
-  DV dv_in(n, lib::halo_bounds(radius));
-  DV dv_out(n, lib::halo_bounds(radius));
+  DV dv_in(n, dr::halo_bounds(radius));
+  DV dv_out(n, dr::halo_bounds(radius));
   V v_in(n);
 
-  mhp::iota(dv_in, 10);
+  dr::mhp::iota(dv_in, 10);
   dv_in.halo().exchange();
 
-  mhp::fill(dv_out, 100);
+  dr::mhp::fill(dv_out, 100);
   dv_out.halo().exchange();
 
   if (comm_rank == 0) {
@@ -42,8 +42,8 @@ TEST(MhpTests, Stencil) {
     return s;
   };
 
-  mhp::transform(dv_in.begin() + radius, dv_in.end() - radius,
-                 dv_out.begin() + radius, sum);
+  dr::mhp::transform(dv_in.begin() + radius, dv_in.end() - radius,
+                     dv_out.begin() + radius, sum);
 
   if (comm_rank == 0) {
     V v_out(n);

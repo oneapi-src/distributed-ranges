@@ -15,7 +15,7 @@ TYPED_TEST(ForEach, Range) {
   auto negate = [](auto &v) { v = -v; };
   auto input = ops.vec;
 
-  xhp::for_each(default_policy(ops.dist_vec), ops.dist_vec, negate);
+  xhp::for_each(ops.dist_vec, negate);
   rng::for_each(ops.vec, negate);
   EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
 }
@@ -26,8 +26,7 @@ TYPED_TEST(ForEach, Iterators) {
   auto negate = [](auto &v) { v = -v; };
   auto input = ops.vec;
 
-  xhp::for_each(default_policy(ops.dist_vec), ops.dist_vec.begin() + 1,
-                ops.dist_vec.end() - 1, negate);
+  xhp::for_each(ops.dist_vec.begin() + 1, ops.dist_vec.end() - 1, negate);
   rng::for_each(ops.vec.begin() + 1, ops.vec.end() - 1, negate);
   EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
 }
