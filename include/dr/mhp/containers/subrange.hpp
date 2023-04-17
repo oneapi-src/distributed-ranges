@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace mhp {
+namespace dr::mhp {
 
 template <typename DM> class subrange_iterator {
 public:
@@ -202,8 +202,8 @@ private:
 }; // class subrange
 
 template <typename DM>
-void transform(mhp::subrange<DM> &in, mhp::subrange_iterator<DM> out, auto op) {
-  for (mhp::subrange_iterator<DM> i = rng::begin(in); i != rng::end(in); i++) {
+void transform(subrange<DM> &in, subrange_iterator<DM> out, auto op) {
+  for (subrange_iterator<DM> i = rng::begin(in); i != rng::end(in); i++) {
     if (i.is_local()) {
       *(out) = op(i);
     }
@@ -235,4 +235,4 @@ void transform(mhp::subrange<DM> &in, mhp::subrange_iterator<DM> out,
 
  */
 
-} // namespace mhp
+} // namespace dr::mhp

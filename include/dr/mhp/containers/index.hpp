@@ -9,7 +9,7 @@
 #include <limits>
 #include <tuple>
 
-namespace mhp {
+namespace dr::mhp {
 
 namespace {
 template <typename T, std::size_t I, typename U = std::any>
@@ -84,19 +84,19 @@ public:
   index_type second;
 };
 
-} // namespace mhp
+} // namespace dr::mhp
 
 namespace std {
 
 template <std::size_t Index, std::integral I>
-struct tuple_element<Index, mhp::index<I>>
+struct tuple_element<Index, dr::mhp::index<I>>
     : tuple_element<Index, std::tuple<I, I>> {};
 
 template <std::integral I>
-struct tuple_size<mhp::index<I>> : integral_constant<std::size_t, 2> {};
+struct tuple_size<dr::mhp::index<I>> : integral_constant<std::size_t, 2> {};
 
 template <std::size_t Index, std::integral I>
-inline constexpr I get(mhp::index<I> index)
+inline constexpr I get(dr::mhp::index<I> index)
   requires(Index <= 1)
 {
   if constexpr (Index == 0) {

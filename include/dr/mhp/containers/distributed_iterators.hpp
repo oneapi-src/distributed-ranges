@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace mhp {
+namespace dr::mhp {
 
 template <typename T, typename Allocator = std::allocator<T>>
 class distributed_dense_matrix;
@@ -15,8 +15,8 @@ template <typename T, typename Allocator = std::allocator<T>> class dm_row;
 
 template <typename DM> class dm_rows_iterator {
 public:
-  using value_type = typename mhp::dm_row<typename DM::value_type>;
-  using size_type = typename mhp::dm_row<typename DM::value_type>;
+  using value_type = typename dr::mhp::dm_row<typename DM::value_type>;
+  using size_type = typename dr::mhp::dm_row<typename DM::value_type>;
   using difference_type = typename DM::difference_type;
 
   dm_rows_iterator() = default;
@@ -235,20 +235,20 @@ public:
   value_type get() const {
     auto segment_offset = index_ + dm_->halo_bounds_.prev;
     auto value = dm_->win_.template get<value_type>(rank_, segment_offset);
-    lib::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
+    dr::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
     return value;
   }
 
   void put(const value_type &value) const {
     auto segment_offset = index_ + dm_->halo_bounds_.prev;
-    lib::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
+    dr::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
     dm_->win_.put(value, rank_, segment_offset);
   }
 
   auto rank() const { return rank_; }
   auto local() const { return dm_->data() + index_ + dm_->halo_bounds().prev; }
   auto segments() const {
-    return lib::__detail::drop_segments(dm_->segments(), index_);
+    return dr::__detail::drop_segments(dm_->segments(), index_);
   }
   auto &halo() const { return dm_->halo(); }
 
@@ -258,4 +258,4 @@ private:
   std::size_t index_;
 }; // class dm_segment_iterator
 
-} // namespace mhp
+} // namespace dr::mhp
