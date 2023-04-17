@@ -39,12 +39,6 @@ public:
                  find_dm_offset(index_ + n * rowsize) -
                  default_comm().rank() * dm_->segment_size();
 
-    // if ((offset >= (int)dm_->data_size()) || (offset < 0))
-    // fmt::print("{}: index {} offset {} hb {} dm_off {} n {} rowsize {} \n",
-    //            default_comm().rank(), index_, offset,
-    //            dm_->halo_bounds().prev * dm_->shape()[1],
-    //            find_dm_offset(index_ + n * rowsize), n, rowsize);
-
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
 

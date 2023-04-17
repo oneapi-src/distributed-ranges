@@ -20,20 +20,9 @@ std::size_t nc = 0;
 std::size_t nr = 0;
 std::size_t steps = 0;
 
-#pragma region debug and verification
-// void dump_v(std::string msg, std::vector<std::vector<T>> &vv) {
-//   std::stringstream s;
-//   int idx = 0;
-//   s << comm_rank << ": " << msg << std::endl;
-//   for (auto r : vv) {
-//     s << comm_rank << ": "
-//       << "row : " << idx++;
-//     for (auto el : r)
-//       s << " " << el;
-//     s << std::endl;
-//   }
-//   std::cout << s.str();
-// }
+//
+//  debug and verification functions
+//
 
 auto stencil_op_verify(std::vector<std::vector<T>> &va,
                        std::vector<std::vector<T>> &vb) {
@@ -92,9 +81,10 @@ int check(dr::mhp::distributed_dense_matrix<T> &a,
   return local_compare(a, (steps % 2) ? vb : va) +
          local_compare(b, (steps % 2) ? va : vb);
 }
-#pragma endregion
 
-#pragma region stencil 1
+//
+// stencil 1 - operation on subsequent cells
+//
 
 auto stencil_op1 = [](auto &p) {
   T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
@@ -121,19 +111,18 @@ int stencil1() {
   dr::mhp::for_each(b.rows(),
                     [](auto &row) { std::iota(row.begin(), row.end(), 10); });
 
+  // rectgangular subrange of 2d matrix
   auto in = dr::mhp::subrange(a, {1, a.shape()[0] - 1}, {1, a.shape()[1] - 1});
   auto out = dr::mhp::subrange(b, {1, b.shape()[0] - 1}, {1, b.shape()[1] - 1});
 
+  // transform of the above subrange
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
     dr::mhp::transform(in, out.begin(), stencil_op1);
     std::swap(in, out);
   }
 
-  // a.dump_matrix("final a");
-  // b.dump_matrix("final b");
-
-  if (0 == check(a, b))
+    if (0 == check(a, b))
     fmt::print("{}: stencil1 check OK!\n", comm_rank);
   else
     fmt::print("{}: stencil1 check failed\n", comm_rank);
@@ -141,9 +130,10 @@ int stencil1() {
   return 0;
 }
 
-#pragma endregion stencil 1
+//
+// stencil 2 - operation on subsequent rows
+//
 
-#pragma region stencil 2
 auto stencil_op2 = [](auto &&p) {
   dr::mhp::dm_row<T> out_row((*p).size());
 
@@ -183,7 +173,6 @@ int stencil2() {
 
   return 0;
 }
-#pragma endregion stencil 2
 
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);

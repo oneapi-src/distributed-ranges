@@ -99,7 +99,7 @@ public:
       : dm_row(INT_MIN, Allocator().allocate(size), nullptr, size) {
     // fmt::print("{}: +dm_row allocated {} b at {}\n", default_comm().rank(),
     // size * sizeof(T), (ulong)data_);
-    for (int _i = 0; _i < size_; _i++) {
+    for (std::size_t _i = 0; _i < size_; _i++) {
       data_[_i] = 0;
     }
   }
@@ -352,7 +352,7 @@ private:
     // rows in halo.prev area
     for (int _ind = local_rows_indices_.first - halo_bounds_.prev;
          _ind < local_rows_indices_.first; _ind++) {
-      int _dataoff = (_ind + halo_bounds_.prev - local_rows_indices_.first) *
+      std::size_t _dataoff = (_ind + halo_bounds_.prev - local_rows_indices_.first) *
                      segment_shape_[1];
 
       assert(_dataoff >= 0);
@@ -363,7 +363,7 @@ private:
 
     // rows in halo.next area
     for (int _ind = local_rows_indices_.second + 1;
-         _ind < local_rows_indices_.second + 1 + halo_bounds_.next; _ind++) {
+         _ind < (int)(local_rows_indices_.second + 1 + halo_bounds_.next); _ind++) {
       int _dataoff = (_ind + halo_bounds_.prev - local_rows_indices_.first) *
                      segment_shape_[1];
 
@@ -408,7 +408,7 @@ private:
       dm_rows_; // vector of "regular" rows in segment
   dm_rows<distributed_dense_matrix<T>> dm_halop_rows_,
       dm_halon_rows_; // rows in halo area
-  std::pair<int, int> local_rows_indices_ =
+  std::pair<difference_type, difference_type> local_rows_indices_ =
       std::pair(-1, -1); // global indices of locally stored rows
 
   dr::rma_window win_;
