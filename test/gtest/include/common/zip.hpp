@@ -30,6 +30,13 @@ TYPED_TEST(Zip, Local3) {
             xhp::views::zip(ops.vec0, ops.vec1, ops.vec2));
 }
 
+TYPED_TEST(Zip, Local3Distance) {
+  Ops3<TypeParam> ops(10);
+
+  EXPECT_EQ(rng::distance(rng::views::zip(ops.vec0, ops.vec1, ops.vec2)),
+            rng::distance(xhp::views::zip(ops.vec0, ops.vec1, ops.vec2)));
+}
+
 TYPED_TEST(Zip, Local2Mutate) {
   Ops2<TypeParam> rops(10);
   Ops2<TypeParam> xops(10);
@@ -72,6 +79,14 @@ TYPED_TEST(Zip, Dist3) {
                  xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
 }
 
+TYPED_TEST(Zip, Dist3Distance) {
+  Ops3<TypeParam> ops(10);
+
+  EXPECT_EQ(rng::distance(rng::views::zip(ops.vec0, ops.vec1, ops.vec2)),
+            rng::distance(
+                xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
+}
+
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
@@ -87,6 +102,20 @@ TYPED_TEST(Zip, Iota2nd) {
   EXPECT_TRUE(check_view(rng::views::zip(ops.vec, rng::views::iota(100)),
                          xhp::views::zip(ops.dist_vec, rng::views::iota(100))));
 }
+
+#if 0
+// doesn't compile in mhp
+TEST(Zip, ToTransform) {
+  Ops2<xhp::distributed_vector<int>> ops(10);
+
+  auto mul = [](auto v) { return std::get<0>(v) * std::get<1>(v); };
+  auto local = rng::views::transform(rng::views::zip(ops.vec0, ops.vec1), mul);
+  auto dist =
+      xhp::views::transform(xhp::views::zip(ops.dist_vec0, ops.dist_vec1), mul);
+  static_assert(compliant_view<decltype(dist)>);
+  EXPECT_EQ(local, dist);
+}
+#endif
 
 TYPED_TEST(Zip, All) {
   Ops2<TypeParam> ops(10);

@@ -12,7 +12,8 @@ using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
 #ifdef MINIMAL_TEST
 
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
-#include "common/enumerate.hpp"
+#include "common/reduce.hpp"
+#include "common/zip.hpp"
 
 #else
 

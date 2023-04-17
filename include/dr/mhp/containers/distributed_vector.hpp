@@ -32,7 +32,7 @@ private:
 template <typename DV> class dv_segment_iterator {
 public:
   using value_type = typename DV::value_type;
-  using size_type = typename DV::value_type;
+  using size_type = typename DV::size_type;
   using difference_type = typename DV::difference_type;
 
   dv_segment_iterator() = default;
