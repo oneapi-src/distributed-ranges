@@ -56,7 +56,7 @@ sycl::queue &get_queue_for_pointers(InputIt iter, OutputIt iter2) {
     return queue(device);
     // return sycl::queue(shp::context(), device);
   } else if (get_pointer_type(iter2) == sycl::usm::alloc::device) {
-    auto device = get_pointer_device(iter);
+    auto device = get_pointer_device(iter2);
     return queue(device);
     // return sycl::queue(shp::context(), device);
   } else {
