@@ -13,7 +13,7 @@
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <oneapi/dpl/execution>
 
-amespace dr::shp {
+namespace dr::shp {
 
 namespace __detail {
 
