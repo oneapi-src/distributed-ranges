@@ -32,7 +32,7 @@ private:
 template <typename DV> class dv_segment_iterator {
 public:
   using value_type = typename DV::value_type;
-  using size_type = typename DV::value_type;
+  using size_type = typename DV::size_type;
   using difference_type = typename DV::difference_type;
 
   dv_segment_iterator() = default;
@@ -271,12 +271,3 @@ auto &halo(has_halo_method auto &&dr) {
 }
 
 } // namespace dr::mhp
-
-#if !defined(DR_SPEC)
-
-// Needed to satisfy rng::viewable_range
-template <typename T>
-inline constexpr bool rng::enable_borrowed_range<dr::mhp::dv_segments<T>> =
-    true;
-
-#endif
