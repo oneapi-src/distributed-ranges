@@ -10,13 +10,18 @@
 
 namespace dr::mhp {
 
-auto aligned(dr::distributed_range auto &&r) {
-  return !dr::ranges::segments(r).empty();
-}
+template <typename T>
+concept has_segments = requires(T &t) { dr::ranges::segments(t); };
+
+template <typename T>
+concept no_segments = !has_segments<T>;
+
+auto aligned(has_segments auto &&r) { return !dr::ranges::segments(r).empty(); }
+
+auto aligned(auto &&r) { return true; }
 
 // iter1 is aligned with iter2, and iter2 is aligned with the rest
-bool aligned(dr::distributed_range auto &&r1, dr::distributed_range auto &&r2,
-             dr::distributed_range auto &&...rest) {
+bool aligned(has_segments auto &&r1, has_segments auto &&r2, auto &&...rest) {
   auto z = rng::views::zip(dr::ranges::segments(r1), dr::ranges::segments(r2));
   auto i = rng::distance(z) - 1;
   for (auto seg : z) {
@@ -38,17 +43,12 @@ bool aligned(dr::distributed_range auto &&r1, dr::distributed_range auto &&r2,
   return aligned(r2, rest...);
 }
 
-template <typename T>
-concept local_range = rng::forward_range<T> && !dr::distributed_range<T>;
-
 // Skip local iterators
-bool aligned(local_range auto &&r1, dr::distributed_range auto &&r2,
-             dr::distributed_range auto... rest) {
+bool aligned(no_segments auto &&r1, has_segments auto &&r2, auto... rest) {
   return aligned(r2, rest...);
 }
 
-bool aligned(dr::distributed_range auto &&r1, local_range auto &&r2,
-             dr::distributed_range auto &&...rest) {
+bool aligned(has_segments auto &&r1, no_segments auto &&r2, auto &&...rest) {
   return aligned(r1, rest...);
 }
 
