@@ -74,15 +74,6 @@ namespace __detail {
 
 inline sycl::queue &queue(std::size_t rank) { return queues_[rank]; }
 
-inline sycl::queue &queue(const sycl::device &device) {
-  for (std::size_t rank = 0; rank < shp::nprocs(); rank++) {
-    if (device == shp::devices()[rank]) {
-      return queue(rank);
-    }
-  }
-  assert(false);
-}
-
 inline sycl::queue &default_queue() { return queue(0); }
 
 inline auto &dpl_policy(std::size_t rank) {
