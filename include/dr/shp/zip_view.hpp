@@ -296,6 +296,8 @@ private:
         rng::begin(std::get<Is>(views_))...);
   }
 
+  template <typename T> T min_many_impl_(T t) const { return t; }
+
   template <typename T, typename U> T min_many_impl_(T t, U u) const {
     if (u < t) {
       return u;

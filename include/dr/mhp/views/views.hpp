@@ -31,5 +31,6 @@ inline constexpr auto all = rng::views::all;
 inline constexpr auto drop = rng::views::drop;
 inline constexpr auto take = rng::views::take;
 inline constexpr auto transform = dr::views::transform;
+inline constexpr auto iota = rng::views::iota;
 
 } // namespace dr::mhp::views
