@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <memory>
 #include <span>
 #include <sycl/sycl.hpp>
@@ -14,7 +13,7 @@
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <oneapi/dpl/execution>
 
-namespace dr::shp {
+amespace dr::shp {
 
 namespace __detail {
 
