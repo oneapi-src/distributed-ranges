@@ -46,14 +46,9 @@ TEST(Alignment, Subrange) {
   }
 }
 
-#if 0
-// Support not implemented
-TEST(Alignment, Iota) {
-  EXPECT_TRUE(dr::mhp::aligned(rng::views::iota(100, 20)));
-}
+TEST(Alignment, Iota) { EXPECT_TRUE(dr::mhp::aligned(rng::views::iota(100))); }
 
 TEST(Alignment, Iota2) {
   Ops1<DV> ops(10);
-  EXPECT_TRUE(dr::mhp::aligned(ops.dist_vec, dr::mhp::iota(100, 10)));
+  EXPECT_TRUE(dr::mhp::aligned(ops.dist_vec, rng::views::iota(100)));
 }
-#endif
