@@ -17,14 +17,22 @@ auto aligned(dr::distributed_range auto &&r) {
 // iter1 is aligned with iter2, and iter2 is aligned with the rest
 bool aligned(dr::distributed_range auto &&r1, dr::distributed_range auto &&r2,
              dr::distributed_range auto &&...rest) {
-  for (auto seg :
-       rng::views::zip(dr::ranges::segments(r1), dr::ranges::segments(r2))) {
+  auto z = rng::views::zip(dr::ranges::segments(r1), dr::ranges::segments(r2));
+  auto i = rng::distance(z) - 1;
+  for (auto seg : z) {
     if (dr::ranges::rank(seg.first) != dr::ranges::rank(seg.second)) {
+      dr::drlog.debug("unaligned: ranks: {} {}\n", dr::ranges::rank(seg.first),
+                      dr::ranges::rank(seg.second));
       return false;
     }
-    if (rng::distance(seg.first) != rng::distance(seg.second)) {
+    // Size mismatch would misalign following segments. Skip test if this is the
+    // last segment
+    if (i > 0 && rng::distance(seg.first) != rng::distance(seg.second)) {
+      dr::drlog.debug("unaligned: size: {} {}\n", rng::distance(seg.first),
+                      rng::distance(seg.second));
       return false;
     }
+    i--;
   }
 
   return aligned(r2, rest...);
