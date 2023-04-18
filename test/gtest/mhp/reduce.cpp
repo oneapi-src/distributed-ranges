@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "mhp-tests.hpp"
+
 // Fixture
+
 template <typename T> class ReduceMHP : public testing::Test {
 public:
 };

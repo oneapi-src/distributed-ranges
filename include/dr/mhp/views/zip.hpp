@@ -47,11 +47,13 @@ private:
   using rng_zip_iterator = rng::iterator_t<rng_zip>;
   using base_type = std::tuple<R...>;
   using iterator_base_type = std::tuple<rng::iterator_t<R>...>;
+  using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
 public:
   // Wrap the iterator for rng::zip
   class zip_iterator {
   public:
+    using iterator_category = std::random_access_iterator_tag;
     using value_type = std::iter_value_t<rng_zip_iterator>;
     using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
@@ -59,15 +61,16 @@ public:
     zip_iterator(const zip_view *parent, difference_type offset)
         : parent_(parent), offset_(offset) {}
 
-    auto operator+(difference_type n) {
+    auto operator+(difference_type n) const {
       return zip_iterator(parent_, offset_ + n);
     }
     friend auto operator+(difference_type n, const zip_iterator &other) {
       return other + n;
     }
-    auto operator-(difference_type n) {
+    auto operator-(difference_type n) const {
       return zip_iterator(parent_, offset_ - n);
     }
+    auto operator-(zip_iterator other) const { return offset_ - other.offset_; }
 
     auto &operator+=(difference_type n) {
       offset_ += n;
@@ -109,7 +112,7 @@ public:
     auto operator*() const {
       return *(rng::begin(parent_->rng_zip_) + offset_);
     }
-    auto operator[](difference_type n) { return *(*this + n); }
+    auto operator[](difference_type n) const { return *(*this + n); }
 
     //
     // Support for distributed ranges
@@ -167,6 +170,8 @@ public:
 
   auto begin() const { return zip_iterator(this, 0); }
   auto end() const { return zip_iterator(this, rng::distance(rng_zip_)); }
+  auto size() const { return rng::distance(rng_zip_); }
+  auto operator[](difference_type n) const { return begin()[n]; }
 
   //
   // Support for distributed ranges
@@ -271,7 +276,11 @@ zip_view(R &&...r) -> zip_view<rng::views::all_t<R>...>;
 
 namespace DR_RANGES_NAMESPACE {} // namespace DR_RANGES_NAMESPACE
 
+#if !defined(DR_SPEC)
+
 // Needed to satisfy rng::viewable_range
 template <rng::random_access_range... V>
 inline constexpr bool rng::enable_borrowed_range<dr::mhp::zip_view<V...>> =
     true;
+
+#endif

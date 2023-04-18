@@ -32,7 +32,7 @@ private:
 template <typename DV> class dv_segment_iterator {
 public:
   using value_type = typename DV::value_type;
-  using size_type = typename DV::value_type;
+  using size_type = typename DV::size_type;
   using difference_type = typename DV::difference_type;
 
   dv_segment_iterator() = default;
@@ -158,28 +158,94 @@ private:
   std::size_t size_;
 }; // dv_segment
 
-template <typename DV> class dv_segments : public std::span<dv_segment<DV>> {
-public:
-  dv_segments() {}
-  dv_segments(DV *dv) : std::span<dv_segment<DV>>(dv->segments_) { dv_ = dv; }
-
-private:
-  const DV *dv_;
-}; // dv_segments
-
 /// distributed vector
 template <typename T, typename Allocator = std::allocator<T>>
 class distributed_vector {
-public:
-  dv_segments<distributed_vector> segments() const { return dv_segments_; }
 
+public:
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using iterator =
-      dr::normal_distributed_iterator<dv_segments<distributed_vector>>;
-  using reference = std::iter_reference_t<iterator>;
   using allocator_type = Allocator;
+
+  class iterator {
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = typename distributed_vector::value_type;
+    using difference_type = typename distributed_vector::difference_type;
+
+    iterator() {}
+    iterator(const distributed_vector *parent, difference_type offset)
+        : parent_(parent), offset_(offset) {}
+
+    auto operator+(difference_type n) const {
+      return iterator(parent_, offset_ + n);
+    }
+    friend auto operator+(difference_type n, const iterator &other) {
+      return other + n;
+    }
+    auto operator-(difference_type n) const {
+      return iterator(parent_, offset_ - n);
+    }
+    auto operator-(iterator other) const { return offset_ - other.offset_; }
+
+    auto &operator+=(difference_type n) {
+      offset_ += n;
+      return *this;
+    }
+    auto &operator-=(difference_type n) {
+      offset_ -= n;
+      return *this;
+    }
+    auto &operator++() {
+      offset_++;
+      return *this;
+    }
+    auto operator++(int) {
+      auto old = *this;
+      offset_++;
+      return old;
+    }
+    auto &operator--() {
+      offset_--;
+      return *this;
+    }
+    auto operator--(int) {
+      auto old = *this;
+      offset_--;
+      return old;
+    }
+
+    bool operator==(iterator other) const {
+      assert(parent_ == other.parent_);
+      return offset_ == other.offset_;
+    }
+    auto operator<=>(iterator other) const {
+      assert(parent_ == other.parent_);
+      return offset_ <=> other.offset_;
+    }
+
+    auto operator*() const {
+      auto segment_size = parent_->segment_size_;
+      return parent_
+          ->segments()[offset_ / segment_size][offset_ % segment_size];
+    }
+    auto operator[](difference_type n) const { return *(*this + n); }
+
+    //
+    // Support for distributed ranges
+    //
+    // distributed iterator provides segments
+    // remote iterator provides local
+    //
+    auto segments() {
+      return dr::__detail::drop_segments(parent_->segments(), offset_);
+    }
+
+  private:
+    const distributed_vector *parent_;
+    difference_type offset_;
+  };
 
   // Do not copy
   // We need a move constructor for the implementation of reduce algorithm
@@ -210,17 +276,17 @@ public:
   }
 
   /// Returns iterator to beginning
-  auto begin() const { return iterator(segments(), 0, 0); }
+  auto begin() const { return iterator(this, 0); }
   /// Returns iterator to end
-  auto end() const {
-    return iterator(segments(), rng::distance(segments()), 0);
-  }
+  auto end() const { return begin() + size_; }
 
   /// Returns size
   auto size() const { return size_; }
   /// Returns reference using index
   auto operator[](difference_type n) const { return *(begin() + n); }
   auto &halo() { return *halo_; }
+
+  auto segments() const { return rng::views::all(segments_); }
 
 private:
   void init(auto size, auto hb, auto allocator) {
@@ -240,12 +306,10 @@ private:
     halo_bounds_ = hb;
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
-    dv_segments_ = dv_segments<distributed_vector>(this);
     fence();
   }
 
   friend dv_segment_iterator<distributed_vector>;
-  friend dv_segments<distributed_vector>;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
@@ -255,7 +319,6 @@ private:
   dr::halo_bounds halo_bounds_;
   std::size_t size_;
   std::vector<dv_segment<distributed_vector>> segments_;
-  dv_segments<distributed_vector> dv_segments_;
   dr::rma_window win_;
   Allocator allocator_;
 };
@@ -270,12 +333,3 @@ auto &halo(has_halo_method auto &&dr) {
 }
 
 } // namespace dr::mhp
-
-#if !defined(DR_SPEC)
-
-// Needed to satisfy rng::viewable_range
-template <typename T>
-inline constexpr bool rng::enable_borrowed_range<dr::mhp::dv_segments<T>> =
-    true;
-
-#endif
