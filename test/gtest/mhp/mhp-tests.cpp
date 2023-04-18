@@ -4,45 +4,6 @@
 
 #include "mhp-tests.hpp"
 
-using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
-                                  dr::mhp::distributed_vector<float>>;
-
-// Use this for shorter build time
-// #define MINIMAL_TEST 1
-#ifdef MINIMAL_TEST
-
-using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
-#include "common/reduce.hpp"
-#include "common/zip.hpp"
-
-#else
-
-#ifdef TEST_MHP_SYCL
-using AllTypes = ::testing::Types<
-    dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
-    dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>>;
-#else
-using AllTypes = CPUTypes;
-#endif
-
-#include "common/all.hpp"
-#include "common/copy.hpp"
-#include "common/distributed_vector.hpp"
-#include "common/drop.hpp"
-#include "common/enumerate.hpp"
-#include "common/fill.hpp"
-#include "common/for_each.hpp"
-#include "common/iota.hpp"
-#include "common/reduce.hpp"
-#include "common/subrange.hpp"
-#include "common/take.hpp"
-#include "common/transform_view.hpp"
-#include "common/zip.hpp"
-
-#include "reduce.hpp"
-
-#endif
-
 MPI_Comm comm;
 std::size_t comm_rank;
 std::size_t comm_size;

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Intel Corporation
 //
 // SPDX-License-Identifier: BSD-3-Clause
+#pragma once
 
 #include "cxxopts.hpp"
 #include "dr/mhp.hpp"
@@ -30,3 +31,14 @@ inline void barrier() { dr::mhp::barrier(); }
 inline void fence() { dr::mhp::fence(); }
 
 #include "common-tests.hpp"
+
+using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
+                                  dr::mhp::distributed_vector<float>>;
+
+#ifdef TEST_MHP_SYCL
+using AllTypes = ::testing::Types<
+    dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
+    dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>>;
+#else
+using AllTypes = CPUTypes;
+#endif
