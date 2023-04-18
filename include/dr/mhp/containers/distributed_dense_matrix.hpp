@@ -352,8 +352,9 @@ private:
     // rows in halo.prev area
     for (int _ind = local_rows_indices_.first - halo_bounds_.prev;
          _ind < local_rows_indices_.first; _ind++) {
-      std::size_t _dataoff = (_ind + halo_bounds_.prev - local_rows_indices_.first) *
-                     segment_shape_[1];
+      std::size_t _dataoff =
+          (_ind + halo_bounds_.prev - local_rows_indices_.first) *
+          segment_shape_[1];
 
       assert(_dataoff >= 0);
       assert(_dataoff < halo_bounds_.prev * segment_shape_[1]);
@@ -363,7 +364,8 @@ private:
 
     // rows in halo.next area
     for (int _ind = local_rows_indices_.second + 1;
-         _ind < (int)(local_rows_indices_.second + 1 + halo_bounds_.next); _ind++) {
+         _ind < (int)(local_rows_indices_.second + 1 + halo_bounds_.next);
+         _ind++) {
       int _dataoff = (_ind + halo_bounds_.prev - local_rows_indices_.first) *
                      segment_shape_[1];
 

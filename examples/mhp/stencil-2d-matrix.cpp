@@ -122,7 +122,7 @@ int stencil1() {
     std::swap(in, out);
   }
 
-    if (0 == check(a, b))
+  if (0 == check(a, b))
     fmt::print("{}: stencil1 check OK!\n", comm_rank);
   else
     fmt::print("{}: stencil1 check failed\n", comm_rank);

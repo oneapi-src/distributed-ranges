@@ -34,14 +34,15 @@ public:
         abs_ind <= dm_->local_rows_indices_.second) { // regular rows
       return dm_->dm_rows_[index_ + n];
     }
-    if (abs_ind >= (difference_type)(dm_->local_rows_indices_.first - dm_->halo_bounds().prev) &&
+    if (abs_ind >= (difference_type)(dm_->local_rows_indices_.first -
+                                     dm_->halo_bounds().prev) &&
         abs_ind < dm_->local_rows_indices_.first) { // halo prev
       return dm_->dm_halop_rows_[dm_->halo_bounds().prev -
                                  dm_->local_rows_indices_.first + abs_ind];
     }
     if (abs_ind > dm_->local_rows_indices_.second &&
         abs_ind <= (difference_type)(dm_->local_rows_indices_.second +
-                       dm_->halo_bounds().next)) { // halo next
+                                     dm_->halo_bounds().next)) { // halo next
       return dm_->dm_halon_rows_[dm_->halo_bounds().next +
                                  dm_->local_rows_indices_.second - abs_ind];
     }
