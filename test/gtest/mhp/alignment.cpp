@@ -23,8 +23,14 @@ TEST(Alignment, Three) {
 
 TEST(Alignment, OffsetBy1) {
   Ops2<DV> ops(10);
-  EXPECT_FALSE(
-      dr::mhp::aligned(rng::views::drop(ops.dist_vec0, 1), ops.dist_vec1));
+  bool is_aligned =
+      dr::mhp::aligned(rng::views::drop(ops.dist_vec0, 1), ops.dist_vec1);
+  if (comm_size == 1) {
+    // If there is a single segment, then it is aligned
+    EXPECT_TRUE(is_aligned);
+  } else {
+    EXPECT_FALSE(is_aligned);
+  }
 }
 
 TEST(Alignment, Subrange) {
