@@ -4,7 +4,12 @@
 
 #pragma once
 
-namespace lib {
+#include <iterator>
+#include <type_traits>
+
+#include <dr/detail/ranges_shim.hpp>
+
+namespace dr {
 
 namespace {
 
@@ -192,4 +197,4 @@ private:
   accessor_type accessor_;
 };
 
-} // namespace lib
+} // namespace dr

@@ -11,13 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/alignment.hpp>
 
-namespace mhp {
+namespace dr::mhp {
 
 template <typename T>
-concept has_rank = requires(T &t) { lib::ranges::rank(t); };
+concept has_rank = requires(T &t) { dr::ranges::rank(t); };
 
 template <typename T>
 concept tuple_has_rank = []<std::size_t... N>(std::index_sequence<N...>) {
@@ -27,7 +27,7 @@ concept tuple_has_rank = []<std::size_t... N>(std::index_sequence<N...>) {
 template <typename T>
 concept tuple_has_distributed_range =
     []<std::size_t... N>(std::index_sequence<N...>) {
-      return (lib::distributed_range<typename std::tuple_element<N, T>::type> ||
+      return (dr::distributed_range<typename std::tuple_element<N, T>::type> ||
               ...);
     }(std::make_index_sequence<std::tuple_size_v<T>>());
 
@@ -119,7 +119,7 @@ public:
     auto segments()
       requires(tuple_has_distributed_range<base_type>)
     {
-      return lib::internal::drop_segments(parent_->segments(), offset_);
+      return dr::__detail::drop_segments(parent_->segments(), offset_);
     }
     auto local() {
       auto remainder = rng::distance(*parent_) - offset_;
@@ -150,8 +150,8 @@ public:
     // If it is not a remote iterator, assume it is a local iterator
     auto static base_local(auto iter) { return iter; }
 
-    auto static base_local(lib::remote_iterator auto iter) {
-      return lib::ranges::local(iter);
+    auto static base_local(dr::remote_iterator auto iter) {
+      return dr::ranges::local(iter);
     }
 
     const zip_view *parent_;
@@ -214,9 +214,9 @@ private:
 
   template <typename... V>
   void compute_segment_descriptors(V &&...v)
-    requires(lib::distributed_range<V> || ...)
+    requires(dr::distributed_range<V> || ...)
   {
-    auto segments = lib::ranges::segments(select_dist_range(v...));
+    auto segments = dr::ranges::segments(select_dist_range(v...));
     segment_descriptor descriptor{0, 0};
     for (auto segment : segments) {
       descriptor.size = rng::distance(segment);
@@ -227,22 +227,22 @@ private:
 
   static auto select_rank(auto &&v, auto &&...rest) {
     if constexpr (has_rank<decltype(v)>) {
-      return lib::ranges::rank(v);
+      return dr::ranges::rank(v);
     } else {
       return select_rank(rest...);
     }
   }
 
   static auto select_dist_range(auto &&v, auto &&...rest) {
-    if constexpr (lib::distributed_range<decltype(v)>) {
+    if constexpr (dr::distributed_range<decltype(v)>) {
       return rng::views::all(v);
     } else {
       return select_dist_range(rest...);
     }
   }
 
-  template <lib::distributed_range V> auto base_segments(V &&base) const {
-    return lib::ranges::segments(base);
+  template <dr::distributed_range V> auto base_segments(V &&base) const {
+    return dr::ranges::segments(base);
   }
 
   // If this is not a distributed range, then assume it is local and
@@ -266,10 +266,11 @@ private:
 template <rng::viewable_range... R>
 zip_view(R &&...r) -> zip_view<rng::views::all_t<R>...>;
 
-} // namespace mhp
+} // namespace dr::mhp
 
 namespace DR_RANGES_NAMESPACE {} // namespace DR_RANGES_NAMESPACE
 
 // Needed to satisfy rng::viewable_range
 template <rng::random_access_range... V>
-inline constexpr bool rng::enable_borrowed_range<mhp::zip_view<V...>> = true;
+inline constexpr bool rng::enable_borrowed_range<dr::mhp::zip_view<V...>> =
+    true;

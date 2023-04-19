@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace lib {
+namespace dr {
 
 template <typename Group> class halo_impl {
   using T = typename Group::element_type;
@@ -386,11 +386,11 @@ private:
   }
 };
 
-} // namespace lib
+} // namespace dr
 
-template <> struct fmt::formatter<lib::halo_bounds> : formatter<string_view> {
+template <> struct fmt::formatter<dr::halo_bounds> : formatter<string_view> {
   template <typename FmtContext>
-  auto format(lib::halo_bounds hb, FmtContext &ctx) {
+  auto format(dr::halo_bounds hb, FmtContext &ctx) {
     return format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
   }
 };

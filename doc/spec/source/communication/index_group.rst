@@ -11,7 +11,7 @@
 Interface
 =========
 
-.. doxygenclass:: lib::index_group
+.. doxygenclass:: dr::index_group
    :members:
 
 Description

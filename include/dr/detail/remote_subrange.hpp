@@ -4,11 +4,12 @@
 
 #pragma once
 
-#include <dr/concepts/concepts.hpp>
-#include <dr/details/ranges_shim.hpp>
 #include <iterator>
 
-namespace lib {
+#include <dr/concepts/concepts.hpp>
+#include <dr/detail/ranges_shim.hpp>
+
+namespace dr {
 
 template <std::forward_iterator I>
 class remote_subrange : public rng::subrange<I, I> {
@@ -26,9 +27,9 @@ public:
   constexpr remote_subrange(R &&r, std::size_t rank)
       : base(rng::begin(r), rng::end(r)), rank_(rank) {}
 
-  template <lib::remote_range R>
+  template <dr::remote_range R>
   constexpr remote_subrange(R &&r)
-      : base(rng::begin(r), rng::end(r)), rank_(lib::ranges::rank(r)) {}
+      : base(rng::begin(r), rng::end(r)), rank_(dr::ranges::rank(r)) {}
 
   constexpr std::size_t rank() const noexcept { return rank_; }
 
@@ -39,16 +40,15 @@ private:
 template <rng::forward_range R>
 remote_subrange(R &&, std::size_t) -> remote_subrange<rng::iterator_t<R>>;
 
-template <lib::remote_range R>
+template <dr::remote_range R>
 remote_subrange(R &&) -> remote_subrange<rng::iterator_t<R>>;
 
-} // namespace lib
+} // namespace dr
 
 #if !defined(DR_SPEC)
 
 // Needed to satisfy concepts for rng::begin
 template <typename R>
-inline constexpr bool rng::enable_borrowed_range<lib::remote_subrange<R>> =
-    true;
+inline constexpr bool rng::enable_borrowed_range<dr::remote_subrange<R>> = true;
 
 #endif

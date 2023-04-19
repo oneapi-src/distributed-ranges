@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
-namespace lib {
+namespace dr {
 
-namespace internal {
+namespace __detail {
 
 namespace {
 
@@ -57,6 +57,6 @@ public:
 
 inline constexpr auto enumerate = enumerate_fn_{};
 
-} // namespace internal
+} // namespace __detail
 
-} // namespace lib
+} // namespace dr

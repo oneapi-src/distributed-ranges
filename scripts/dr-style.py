@@ -24,6 +24,34 @@ exclude_rule = re.compile('dr-style ignore')
 
 all_rules = [
     (
+        r'lib::',
+        'use dr::',
+    ),
+    (
+        r'namespace lib {',
+        'use namespace dr {',
+    ),
+    (
+        r'// namespace lib',
+        'use // namespace dr',
+    ),
+    (
+        r'namespace mhp {',
+        'use namespace dr::mhp {',
+    ),
+    (
+        r'// namespace mhp',
+        'use // namespace dr::mhp',
+    ),
+    (
+        r'namespace shp {',
+        'use namespace dr::shp {',
+    ),
+    (
+        r'// namespace shp',
+        'use // namespace dr::shp',
+    ),
+    (
         r'[( ]size_t ',
         'use std::size_t',
     ),
@@ -70,6 +98,18 @@ all_rules = [
 all_rules_compiled = []
 
 include_rules = [
+    (
+        r'#include "',
+        'use #include <>',
+    ),
+    (
+        r'namespace {',
+        'use namespace __detail {',
+    ),
+    (
+        r'namespace internal {',
+        'use namespace __detail {',
+    ),
     (
         r'\.begin\(\)',
         'use rng::begin()',

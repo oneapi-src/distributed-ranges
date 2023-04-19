@@ -22,9 +22,9 @@ Use `std::ranges::zip_view`_
 SHP
 ---
 
-.. doxygenclass:: shp::zip_view
+.. doxygenclass:: dr::shp::zip_view
    :outline:
-.. doxygenfunction:: shp::views::zip
+.. doxygenfunction:: dr::shp::views::zip
    :outline:
 
 Description

@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <dr/details/ranges_shim.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
-namespace lib {
+namespace dr {
 
-namespace internal {
+namespace __detail {
 
 // TODO: this `owning_view` is needed because range-v3 does not have an
 //       `owning_view`.  Ideally we would submit a PR to range-v3 /or
@@ -64,6 +64,6 @@ private:
   R range_;
 };
 
-} // namespace internal
+} // namespace __detail
 
-} // namespace lib
+} // namespace dr

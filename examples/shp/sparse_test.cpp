@@ -6,10 +6,10 @@
 #include <dr/shp/shp.hpp>
 
 int main(int argc, char **argv) {
-  auto devices = shp::get_numa_devices(sycl::default_selector_v);
-  shp::init(devices);
+  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
+  dr::shp::init(devices);
 
-  shp::sparse_matrix<float> x({100, 100}, 0.01);
+  dr::shp::sparse_matrix<float> x({100, 100}, 0.01);
 
   printf("%lu x %lu matrix with %lu stored values.\n", x.shape()[0],
          x.shape()[1], x.size());

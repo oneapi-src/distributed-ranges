@@ -122,8 +122,7 @@ TYPED_TEST(Zip, ForEach) {
   Ops2<TypeParam> ops(10);
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
-  xhp::for_each(default_policy(ops.dist_vec0),
-                xhp::views::zip(ops.dist_vec0, ops.dist_vec1), copy);
+  xhp::for_each(xhp::views::zip(ops.dist_vec0, ops.dist_vec1), copy);
   rng::for_each(rng::views::zip(ops.vec0, ops.vec1), copy);
 
   EXPECT_EQ(ops.vec0, ops.dist_vec0);
@@ -134,8 +133,7 @@ TYPED_TEST(Zip, ForEachIota) {
   Ops1<TypeParam> ops(10);
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
-  xhp::for_each(default_policy(ops.dist_vec),
-                xhp::views::zip(rng::views::iota(100), ops.dist_vec), copy);
+  xhp::for_each(xhp::views::zip(rng::views::iota(100), ops.dist_vec), copy);
   rng::for_each(rng::views::zip(rng::views::iota(100), ops.vec), copy);
 
   EXPECT_EQ(ops.vec, ops.dist_vec);

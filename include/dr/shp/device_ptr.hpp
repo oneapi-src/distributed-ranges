@@ -4,11 +4,13 @@
 
 #pragma once
 
-#include "device_ref.hpp"
-#include <sycl/sycl.hpp>
 #include <type_traits>
 
-namespace shp {
+#include <sycl/sycl.hpp>
+
+#include <dr/shp/device_ref.hpp>
+
+namespace dr::shp {
 
 template <typename T>
   requires(std::is_trivially_copyable_v<T> || std::is_void_v<T>)
@@ -139,4 +141,4 @@ private:
   T *pointer_;
 };
 
-} // namespace shp
+} // namespace dr::shp

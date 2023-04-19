@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <dr/shp/zip_view.hpp>
+#include <dr/mhp/views/zip.hpp>
 
-namespace dr::shp {
+namespace dr::mhp {
 
 namespace views {
 
-namespace {
+namespace __detail {
 
 template <rng::range R> struct range_size {
   using type = std::size_t;
@@ -22,7 +22,7 @@ template <rng::sized_range R> struct range_size<R> {
 
 template <rng::range R> using range_size_t = typename range_size<R>::type;
 
-} // namespace
+} // namespace __detail
 
 class enumerate_adapter_closure {
 public:
@@ -30,8 +30,8 @@ public:
     requires(rng::sized_range<R>)
   auto operator()(R &&r) const {
     using W = std::uint32_t;
-    return dr::shp::zip_view(rng::views::iota(W(0), W(rng::size(r))),
-                             std::forward<R>(r));
+    return mhp::zip_view(rng::views::iota(W(0), W(rng::distance(r))),
+                         std::forward<R>(r));
   }
 
   template <rng::viewable_range R>
@@ -53,4 +53,4 @@ inline constexpr auto enumerate = enumerate_fn_{};
 
 } // namespace views
 
-} // namespace dr::shp
+} // namespace dr::mhp

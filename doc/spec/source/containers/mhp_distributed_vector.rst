@@ -6,14 +6,14 @@
 
 .. _mhp_distributed_vector:
 
-===========================
-``mhp::distributed_vector``
-===========================
+===============================
+``dr::mhp::distributed_vector``
+===============================
 
 Synopsis
 ========
 
-.. doxygenclass:: mhp::distributed_vector
+.. doxygenclass:: dr::mhp::distributed_vector
    :members:
 
 Description

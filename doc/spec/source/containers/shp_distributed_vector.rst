@@ -6,14 +6,14 @@
 
 .. _shp_distributed_vector:
 
-===========================
-``shp::distributed_vector``
-===========================
+===============================
+``dr::shp::distributed_vector``
+===============================
 
 Synopsis
 ========
 
-.. doxygenstruct:: shp::distributed_vector
+.. doxygenstruct:: dr::shp::distributed_vector
 
 Description
 ===========

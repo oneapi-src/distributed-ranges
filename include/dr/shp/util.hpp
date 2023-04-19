@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sycl/sycl.hpp>
 
-namespace shp {
+namespace dr::shp {
 
 template <typename Selector> sycl::device select_device(Selector &&selector) {
   sycl::device d;
@@ -190,22 +190,22 @@ template <typename R> void print_range_details(R &&r, std::string label = "") {
     std::cout << "\"" << label << "\" ";
   }
 
-  std::cout << "distributed range with " << rng::size(lib::ranges::segments(r))
+  std::cout << "distributed range with " << rng::size(dr::ranges::segments(r))
             << " segments." << std::endl;
 
   std::size_t idx = 0;
-  for (auto &&segment : lib::ranges::segments(r)) {
+  for (auto &&segment : dr::ranges::segments(r)) {
     std::cout << "Seg " << idx++ << ", size " << segment.size() << " (rank "
-              << lib::ranges::rank(segment) << ")" << std::endl;
+              << dr::ranges::rank(segment) << ")" << std::endl;
   }
 }
 
-template <lib::distributed_range R>
+template <dr::distributed_range R>
 void range_details(R &&r, std::size_t width = 80) {
   std::size_t size = rng::size(r);
 
   for (auto &&[idx, segment] :
-       lib::internal::enumerate(lib::ranges::segments(r))) {
+       dr::__detail::enumerate(dr::ranges::segments(r))) {
     std::size_t local_size = rng::size(segment);
 
     double percent = double(local_size) / size;
@@ -219,8 +219,8 @@ void range_details(R &&r, std::size_t width = 80) {
     std::size_t after_whitespace = whitespace - initial_whitespace;
 
     std::cout << "[" << std::string(initial_whitespace, ' ')
-              << lib::ranges::rank(segment)
-              << std::string(after_whitespace, ' ') << "]";
+              << dr::ranges::rank(segment) << std::string(after_whitespace, ' ')
+              << "]";
   }
   std::cout << std::endl;
 }
@@ -228,7 +228,7 @@ void range_details(R &&r, std::size_t width = 80) {
 namespace __detail {
 
 inline sycl::event combine_events(const std::vector<sycl::event> &events) {
-  sycl::queue q;
+  auto &&q = __detail::queue(0);
   auto e = q.submit([&](auto &&h) {
     h.depends_on(events);
     h.host_task([] {});
@@ -247,4 +247,4 @@ inline void wait(const std::vector<sycl::event> &events) {
 
 } // namespace __detail
 
-} // namespace shp
+} // namespace dr::shp

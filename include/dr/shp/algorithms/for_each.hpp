@@ -11,17 +11,17 @@
 #include <dr/shp/zip_view.hpp>
 #include <sycl/sycl.hpp>
 
-namespace shp {
+namespace dr::shp {
 
-template <typename ExecutionPolicy, lib::distributed_range R, typename Fn>
+template <typename ExecutionPolicy, dr::distributed_range R, typename Fn>
 void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   static_assert( // currently only one policy supported
       std::is_same_v<std::remove_cvref_t<ExecutionPolicy>, device_policy>);
 
   std::vector<sycl::event> events;
 
-  for (auto &&segment : lib::ranges::segments(r)) {
-    auto &&q = __detail::queue(lib::ranges::rank(segment));
+  for (auto &&segment : dr::ranges::segments(r)) {
+    auto &&q = __detail::queue(dr::ranges::rank(segment));
 
     assert(rng::distance(segment) > 0);
 
@@ -36,10 +36,19 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
   __detail::wait(events);
 }
 
-template <typename ExecutionPolicy, lib::distributed_iterator Iter, typename Fn>
+template <typename ExecutionPolicy, dr::distributed_iterator Iter, typename Fn>
 void for_each(ExecutionPolicy &&policy, Iter begin, Iter end, Fn &&fn) {
   for_each(std::forward<ExecutionPolicy>(policy), rng::subrange(begin, end),
            std::forward<Fn>(fn));
 }
 
-} // namespace shp
+template <dr::distributed_range R, typename Fn> void for_each(R &&r, Fn &&fn) {
+  for_each(dr::shp::par_unseq, std::forward<R>(r), std::forward<Fn>(fn));
+}
+
+template <dr::distributed_iterator Iter, typename Fn>
+void for_each(Iter begin, Iter end, Fn &&fn) {
+  for_each(dr::shp::par_unseq, begin, end, std::forward<Fn>(fn));
+}
+
+} // namespace dr::shp
