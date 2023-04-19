@@ -388,9 +388,13 @@ private:
 
 } // namespace dr
 
+#ifdef DR_FORMAT
+
 template <> struct fmt::formatter<dr::halo_bounds> : formatter<string_view> {
   template <typename FmtContext>
   auto format(dr::halo_bounds hb, FmtContext &ctx) {
     return format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
   }
 };
+
+#endif

@@ -70,13 +70,13 @@ auto reduce(DR &&dr, T init, auto &&binary_op,
 }
 
 /// Collective reduction on a distributed range
-template <dr::distributed_range DR> auto reduce(DR &dr, auto init) {
+template <dr::distributed_range DR> auto reduce(DR &&dr, auto init) {
   return reduce(std::forward<DR>(dr), init, std::plus<>{});
 }
 
 /// Collective reduction on a distributed range
-template <dr::distributed_range DR> auto reduce(DR &dr) {
-  return reduce(std::forward<DR>(dr), typename DR::value_type{}, std::plus<>{});
+template <dr::distributed_range DR> auto reduce(DR &&dr) {
+  return reduce(std::forward<DR>(dr), rng::range_value_t<DR>{}, std::plus<>{});
 }
 
 //
@@ -85,7 +85,7 @@ template <dr::distributed_range DR> auto reduce(DR &dr) {
 
 /// Collective reduction on a distributed range
 template <dr::distributed_iterator DI, typename BinaryOp>
-auto reduce(DI begin, DI end, auto init = typename DI::value_type{},
+auto reduce(DI begin, DI end, auto init = std::iter_value_t<DI>{},
             BinaryOp &&binary_op = std::plus<>(),
             std::optional<std::size_t> root = std::optional<std::size_t>()) {
   return reduce(rng::subrange(begin, end), init,
@@ -94,13 +94,13 @@ auto reduce(DI begin, DI end, auto init = typename DI::value_type{},
 
 /// Collective reduction on a distributed range
 template <dr::distributed_iterator DI>
-auto reduce(DI begin, DI end, auto init = typename DI::value_type{}) {
+auto reduce(DI begin, DI end, auto init = std::iter_value_t<DI>{}) {
   return reduce(rng::subrange(begin, end), init, std::plus<>{});
 }
 
 /// Collective reduction on a distributed range
 template <dr::distributed_iterator DI> auto reduce(DI begin, DI end) {
-  return reduce(rng::subrange(begin, end), typename DI::value_type{},
+  return reduce(rng::subrange(begin, end), std::iter_value_t<DI>{},
                 std::plus<>{});
 }
 

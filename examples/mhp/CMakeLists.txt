@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+add_executable(stencil-slide stencil-slide.cpp)
+target_link_libraries(stencil-slide cxxopts DR::mpi)
+
 add_executable(vector-add vector-add.cpp)
 target_link_libraries(vector-add DR::mpi)
 add_mpi_test(vector-add vector-add 2)

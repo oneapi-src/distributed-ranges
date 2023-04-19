@@ -9,8 +9,6 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/detail/segments_tools.hpp>
 #include <dr/shp/algorithms/algorithms.hpp>
-#include <dr/shp/algorithms/copy.hpp>
-#include <dr/shp/algorithms/iota.hpp>
 #include <dr/shp/containers/dense_matrix.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/detail.hpp>

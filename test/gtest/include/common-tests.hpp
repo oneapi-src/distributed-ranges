@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+constexpr std::size_t EVENLY_DIVIDABLE_SIZE =
+    2 * 3 * 5 * 7 * 11 * 13; // good up to 16 processes
+
 template <dr::distributed_range DR>
 using LocalVec = std::vector<typename DR::value_type>;
 
