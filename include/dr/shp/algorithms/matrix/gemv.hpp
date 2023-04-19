@@ -98,8 +98,7 @@ void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
   }
 
   for (auto &&l_b : local_b) {
-    auto event =
-        dr::shp::copy_async(b.begin(), b.end(), dr::ranges::local(l_b.begin()));
+    auto event = dr::shp::copy_async(b.begin(), b.end(), l_b.begin());
     copy_events.push_back(event);
   }
 

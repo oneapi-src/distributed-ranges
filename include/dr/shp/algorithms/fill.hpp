@@ -11,6 +11,7 @@
 
 #include <dr/concepts/concepts.hpp>
 #include <dr/detail/segments_tools.hpp>
+#include <dr/shp/detail.hpp>
 #include <dr/shp/device_ptr.hpp>
 #include <dr/shp/util.hpp>
 
@@ -21,7 +22,8 @@ template <std::contiguous_iterator Iter>
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
 sycl::event fill_async(Iter first, Iter last,
                        const std::iter_value_t<Iter> &value) {
-  auto &&q = dr::shp::__detail::default_queue();
+  // auto &&q = dr::shp::__detail::default_queue();
+  auto &&q = __detail::get_queue_for_pointer(first);
   std::iter_value_t<Iter> *arr = std::to_address(first);
   return q.parallel_for(sycl::range<>(last - first),
                         [arr, value](auto idx) { arr[idx] = value; });
@@ -39,7 +41,8 @@ template <typename T>
   requires(!std::is_const_v<T>)
 sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
                        const T &value) {
-  auto &&q = dr::shp::__detail::default_queue();
+  // auto &&q = dr::shp::__detail::default_queue();
+  auto &&q = __detail::get_queue_for_pointer(first);
   auto *arr = first.get_raw_pointer();
   return q.parallel_for(sycl::range<>(last - first),
                         [arr, value](auto idx) { arr[idx] = value; });

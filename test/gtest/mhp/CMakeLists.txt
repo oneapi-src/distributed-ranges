@@ -5,11 +5,23 @@
 # tested with a variable number of ranks
 add_executable(
   mhp-tests
-
   mhp-tests.cpp
-
+  mhp-all-tests.cpp
+  mhp-copy-tests.cpp
+  mhp-distributed_vector-tests.cpp
+  mhp-drop-tests.cpp
+  mhp-enumerate-tests.cpp
+  mhp-fill-tests.cpp
+  mhp-for_each-tests.cpp
+  mhp-iota-tests.cpp
+  mhp-reduce-tests.cpp
+  mhp-subrange-tests.cpp
+  mhp-take-tests.cpp
+  mhp-transform_view-tests.cpp
+  mhp-zip-tests.cpp
   alignment.cpp
   distributed_vector.cpp
+  reduce.cpp
   stencil.cpp
 )
 target_link_libraries(
