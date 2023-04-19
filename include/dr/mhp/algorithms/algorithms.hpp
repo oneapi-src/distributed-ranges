@@ -106,6 +106,7 @@ void for_each(DI first, DI last, auto op) {
 //
 //
 
+/// Collective iota on distributed range
 template <dr::distributed_range R, std::integral T> void iota(R &&r, T value) {
   auto iota_view = rng::views::iota(value, T(value + rng::distance(r)));
 
@@ -115,6 +116,7 @@ template <dr::distributed_range R, std::integral T> void iota(R &&r, T value) {
   });
 }
 
+/// Collective iota on iterator/sentinel for a distributed range
 template <dr::distributed_iterator Iter, std::integral T>
 void iota(Iter begin, Iter end, T value) {
   auto r = rng::subrange(begin, end);
