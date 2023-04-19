@@ -296,22 +296,6 @@ private:
         rng::begin(std::get<Is>(views_))...);
   }
 
-  template <typename T> T min_many_impl_(T t) const { return t; }
-
-  template <typename T, typename U> T min_many_impl_(T t, U u) const {
-    if (u < t) {
-      return u;
-    } else {
-      return t;
-    }
-  }
-
-  template <typename T, typename U, typename... Ts>
-  T min_many_impl_(T t, U u, Ts... ts) const {
-    T local_min = min_many_impl_(t, u);
-    return min_many_impl_(local_min, ts...);
-  }
-
   template <dr::distributed_range T>
   decltype(auto) segment_or_orig_(T &&t, std::size_t idx) const {
     return dr::ranges::segments(t)[idx];
@@ -325,9 +309,9 @@ private:
   template <std::size_t... Is>
   std::size_t get_next_segment_size_impl_(auto &&segment_ids, auto &&local_idx,
                                           std::index_sequence<Is...>) const {
-    return min_many_impl_(std::size_t(rng::distance(segment_or_orig_(
-                              get_view<Is>(), segment_ids[Is]))) -
-                          local_idx[Is]...);
+    return std::min({std::size_t(rng::distance(
+                         segment_or_orig_(get_view<Is>(), segment_ids[Is]))) -
+                     local_idx[Is]...});
   }
 
   std::size_t get_next_segment_size(auto &&segment_ids,
