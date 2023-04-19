@@ -5,7 +5,7 @@
 #include "shp-tests.hpp"
 
 // Use this for shorter build time
-#define MINIMAL_TEST 1
+// #define MINIMAL_TEST 1
 #ifdef MINIMAL_TEST
 
 using AllTypes = ::testing::Types<xhp::distributed_vector<int>>;
@@ -17,9 +17,6 @@ using AllTypes = ::testing::Types<xhp::distributed_vector<int>,
                                   xhp::distributed_vector<float>>;
 
 #include "common/all.hpp"
-#include "common/distributed_vector.hpp"
-// Issue with 2 element zips
-// #include "common/enumerate.hpp"
 // need to implement same API as MHP
 // #include "common/copy.hpp"
 #include "common/distributed_vector.hpp"

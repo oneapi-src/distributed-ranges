@@ -302,34 +302,6 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
   return is_equal(dist_vec, local_vec);
 }
 
-template <typename... Ts>
-inline std::ostream &operator<<(std::ostream &os,
-                                const rng::common_tuple<Ts...> &obj) {
-  os << fmt::format("{}", obj);
-  return os;
-}
-
-template <typename T1, typename T2>
-inline std::ostream &operator<<(std::ostream &os,
-                                const rng::common_pair<T1, T2> &obj) {
-  os << fmt::format("{}", obj);
-  return os;
-}
-
-template <typename... Ts>
-inline std::ostream &operator<<(std::ostream &os,
-                                const std::tuple<Ts...> &obj) {
-  os << fmt::format("{}", obj);
-  return os;
-}
-
-template <typename T1, typename T2>
-inline std::ostream &operator<<(std::ostream &os,
-                                const std::pair<T1, T2> &obj) {
-  os << fmt::format("{}", obj);
-  return os;
-}
-
 } // namespace dr::shp
 
 namespace DR_RANGES_NAMESPACE {
@@ -349,20 +321,6 @@ inline std::ostream &operator<<(std::ostream &os,
 template <typename T1, typename T2>
 inline std::ostream &operator<<(std::ostream &os,
                                 const rng::common_pair<T1, T2> &obj) {
-  os << fmt::format("{}", obj);
-  return os;
-}
-
-template <typename... Ts>
-inline std::ostream &operator<<(std::ostream &os,
-                                const std::tuple<Ts...> &obj) {
-  os << fmt::format("{}", obj);
-  return os;
-}
-
-template <typename T1, typename T2>
-inline std::ostream &operator<<(std::ostream &os,
-                                const std::pair<T1, T2> &obj) {
   os << fmt::format("{}", obj);
   return os;
 }
