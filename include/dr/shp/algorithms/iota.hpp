@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-// ALGORITHMS CODE SHARED BETWEEN shp AND mhp
-// DO NOT INCLUDE THIS FILE DIRECTLY
-// INCLUDED BY algorithms.hpp FILES IN mhp AND shp
+#pragma once
+
+#include <dr/concepts/concepts.hpp>
+#include <dr/shp/algorithms/for_each.hpp>
+
+namespace shp {
 
 template <lib::distributed_range R, std::integral T> void iota(R &&r, T value) {
   auto iota_view = rng::views::iota(value, T(value + rng::distance(r)));
@@ -20,3 +23,5 @@ void iota(Iter begin, Iter end, T value) {
   auto r = rng::subrange(begin, end);
   iota(r, value);
 }
+
+} // namespace shp
