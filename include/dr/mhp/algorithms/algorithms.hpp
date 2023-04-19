@@ -106,18 +106,21 @@ void for_each(DI first, DI last, auto op) {
 //
 //
 
-/// Collective iota on iterator/sentinel for a distributed range
-template <dr::distributed_iterator DI, std::integral T>
-void iota(DI first, DI last, T value) {
-  if (default_comm().rank() == 0) {
-    std::iota(first, last, value);
-  }
-  fence();
+/// Collective iota on distributed range
+template <dr::distributed_range R, std::integral T> void iota(R &&r, T value) {
+  auto iota_view = rng::views::iota(value, T(value + rng::distance(r)));
+
+  for_each(views::zip(iota_view, r), [](auto &&elem) {
+    auto &&[idx, v] = elem;
+    v = idx;
+  });
 }
 
-/// Collective iota on distributed range
-void iota(dr::distributed_range auto &&r, std::integral auto value) {
-  mhp::iota(rng::begin(r), rng::end(r), value);
+/// Collective iota on iterator/sentinel for a distributed range
+template <dr::distributed_iterator Iter, std::integral T>
+void iota(Iter begin, Iter end, T value) {
+  auto r = rng::subrange(begin, end);
+  iota(r, value);
 }
 
 //
