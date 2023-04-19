@@ -4,16 +4,24 @@
 
 #include "shp-tests.hpp"
 
-using AllTypes = ::testing::Types<dr::shp::distributed_vector<int>,
-                                  dr::shp::distributed_vector<float>>;
+// Use this for shorter build time
+// #define MINIMAL_TEST 1
+#ifdef MINIMAL_TEST
+
+using AllTypes = ::testing::Types<xhp::distributed_vector<int>>;
+#include "common/zip.hpp"
+
+#else
+
+using AllTypes = ::testing::Types<xhp::distributed_vector<int>,
+                                  xhp::distributed_vector<float>>;
 
 #include "common/all.hpp"
-// Issue with 2 element zips
-// #include "common/enumerate.hpp"
 // need to implement same API as MHP
 // #include "common/copy.hpp"
 #include "common/distributed_vector.hpp"
 #include "common/drop.hpp"
+#include "common/enumerate.hpp"
 #include "common/fill.hpp"
 #include "common/for_each.hpp"
 #include "common/iota.hpp"
@@ -21,8 +29,9 @@ using AllTypes = ::testing::Types<dr::shp::distributed_vector<int>,
 #include "common/subrange.hpp"
 #include "common/take.hpp"
 #include "common/transform_view.hpp"
-// Issue with 2 element zips
-// #include "common/zip.hpp"
+#include "common/zip.hpp"
+
+#endif
 
 // To share tests with MHP
 std::size_t comm_rank = 0;
