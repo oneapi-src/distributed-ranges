@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "index.hpp"
-#include "rows.hpp"
-#include "segment.hpp"
-#include "subrange.hpp"
+#include "dr/mhp/containers/index.hpp"
+#include "dr/mhp/containers/rows.hpp"
+#include "dr/mhp/containers/segment.hpp"
+#include "dr/mhp/containers/subrange.hpp"
 
 namespace dr::mhp {
 
@@ -18,10 +18,10 @@ class by_row final : public distributed_matrix_partition {};
 class by_column final : public distributed_matrix_partition {};
 class tiled final : public distributed_matrix_partition {};
 
-template <typename DM> class dm_segments : public std::span<segment<DM>> {
+template <typename DM> class dm_segments : public std::span<d_segment<DM>> {
 public:
   dm_segments() {}
-  dm_segments(DM *dm) : std::span<segment<DM>>(dm->segments_) { dm_ = dm; }
+  dm_segments(DM *dm) : std::span<d_segment<DM>>(dm->segments_) { dm_ = dm; }
 
 private:
   DM *dm_;
@@ -169,7 +169,7 @@ private:
     halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
 
     // prepare segments
-    // one segment per node, 1-d arrangement of segments
+    // one dsegment per node, 1-d arrangement of segments
 
     segments_.reserve(grid_size_);
 
@@ -243,7 +243,7 @@ private:
   }
 
 private:
-  friend segment_iterator<distributed_dense_matrix>;
+  friend d_segment_iterator<distributed_dense_matrix>;
   friend dm_segments<distributed_dense_matrix>;
   friend dm_rows<distributed_dense_matrix>;
   friend dm_rows_iterator<distributed_dense_matrix>;
@@ -261,7 +261,7 @@ private:
   dr::span_halo<T> *halo_;
   dr::halo_bounds halo_bounds_;
 
-  std::vector<segment<distributed_dense_matrix>> segments_;
+  std::vector<d_segment<distributed_dense_matrix>> segments_;
   dm_segments<distributed_dense_matrix>
       dm_segments_; // lightweight view on segments_
 

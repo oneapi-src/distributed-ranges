@@ -88,7 +88,6 @@ int check(dr::mhp::distributed_dense_matrix<T> &a,
 //
 
 auto stencil_op1 = [](auto &p) {
-  
   // Two notations possible, performance to be verified
   T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
   // the version below (buggy for low egde of the matrix - to be fixed)
@@ -162,7 +161,7 @@ int stencil2() {
 
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
-    //rng::for_each(rng::views::zip(in, out), stencil_op2); // to consider
+    // rng::for_each(rng::views::zip(in, out), stencil_op2); // to consider
     dr::mhp::transform(in, out.begin(), stencil_op2);
     std::swap(in, out);
   }

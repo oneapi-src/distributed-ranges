@@ -156,7 +156,7 @@ private:
     fence();
   }
 
-  friend segment_iterator<distributed_vector>;
+  friend d_segment_iterator<distributed_vector>;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
@@ -165,7 +165,7 @@ private:
 
   dr::halo_bounds halo_bounds_;
   std::size_t size_;
-  std::vector<segment<distributed_vector>> segments_;
+  std::vector<d_segment<distributed_vector>> segments_;
   dr::rma_window win_;
   Allocator allocator_;
 };

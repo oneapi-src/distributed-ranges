@@ -38,13 +38,13 @@ public:
                                      dm_->halo_bounds().prev) &&
         abs_ind < dm_->local_rows_indices_.first) { // halo prev
       return dm_->dm_halo_p_rows_[dm_->halo_bounds().prev -
-                                 dm_->local_rows_indices_.first + abs_ind];
+                                  dm_->local_rows_indices_.first + abs_ind];
     }
     if (abs_ind > dm_->local_rows_indices_.second &&
         abs_ind <= (difference_type)(dm_->local_rows_indices_.second +
                                      dm_->halo_bounds().next)) { // halo next
       return dm_->dm_halo_n_rows_[dm_->halo_bounds().next +
-                                 dm_->local_rows_indices_.second - abs_ind];
+                                  dm_->local_rows_indices_.second - abs_ind];
     }
     assert(0);
   }
@@ -134,14 +134,13 @@ private:
 }; // dm_rows_iterator
 
 template <typename T, typename Allocator> class dm_row : public std::span<T> {
-  using dmatrix = distributed_dense_matrix<T>;
-  using dmsegment = segment<dmatrix>;
+  using DM = distributed_dense_matrix<T>;
 
 public:
   using iterator = typename std::span<T>::iterator;
 
   dm_row(){};
-  dm_row(signed long idx, T *ptr, std::size_t size, dmsegment *segment,
+  dm_row(signed long idx, T *ptr, std::size_t size, d_segment<DM> *segment,
          Allocator allocator = Allocator())
       : std::span<T>({ptr, size}), index_(idx), data_(ptr), size_(size),
         segment_(segment){};
@@ -188,7 +187,7 @@ public:
     }
   }
 
-  dmsegment *segment() { return segment_; }
+  d_segment<DM> *segment() { return segment_; }
   signed long idx() { return index_; }
 
   T &operator[](int index) { return *(std::span<T>::begin() + index); }
@@ -206,7 +205,7 @@ private:
   signed long index_ = 0;
   T *data_ = nullptr;
   std::size_t size_ = 0;
-  dmsegment *segment_ = nullptr;
+  d_segment<DM> *segment_ = nullptr;
 };
 
 template <typename DM>
@@ -233,6 +232,5 @@ public:
 private:
   DM *dm_ = nullptr;
 };
-
 
 } // namespace dr::mhp

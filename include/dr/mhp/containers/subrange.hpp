@@ -46,7 +46,7 @@ public:
 
     signed long idx = default_comm().rank() * dm_->segment_shape()[0];
     value_type *ptr = dm_->data() + offset;
-    segment<DM> *segment = &(dm_->segments()[0]);
+    d_segment<DM> *segment = &(dm_->segments()[0]);
 
     return dm_row<value_type>(idx, ptr, rowsize, segment);
   }

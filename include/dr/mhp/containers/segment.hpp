@@ -8,13 +8,13 @@
 
 namespace dr::mhp {
 
-template <typename DM> class segment;
-template <typename DM> class segment_iterator;
+template <typename DM> class d_segment;
+template <typename DM> class d_segment_iterator;
 
 using key_type = index<>;
 
 template <typename DM> class segment_reference {
-  using iterator = segment_iterator<DM>;
+  using iterator = d_segment_iterator<DM>;
 
 public:
   using value_type = typename DM::value_type;
@@ -36,24 +36,24 @@ private:
   const iterator iterator_;
 }; // segment_reference
 
-template <typename DM> class segment_iterator {
+template <typename DM> class d_segment_iterator {
 public:
   using value_type = typename DM::value_type;
   using size_type = typename DM::size_type;
   using difference_type = typename DM::difference_type;
 
-  segment_iterator() = default;
-  segment_iterator(DM *dm, std::size_t segment_index, std::size_t index) {
+  d_segment_iterator() = default;
+  d_segment_iterator(DM *dm, std::size_t segment_index, std::size_t index) {
     dm_ = dm;
     rank_ = segment_index;
     index_ = index;
   }
 
   // Comparison
-  bool operator==(const segment_iterator &other) const noexcept {
+  bool operator==(const d_segment_iterator &other) const noexcept {
     return index_ == other.index_ && dm_ == other.dm_;
   }
-  auto operator<=>(const segment_iterator &other) const noexcept {
+  auto operator<=>(const d_segment_iterator &other) const noexcept {
     return index_ <=> other.index_;
   }
 
@@ -66,7 +66,7 @@ public:
     index_ += n;
     return *this;
   }
-  difference_type operator-(const segment_iterator &other) const noexcept {
+  difference_type operator-(const d_segment_iterator &other) const noexcept {
     return index_ - other.index_;
   }
 
@@ -104,7 +104,7 @@ public:
   }
 
   // When *this is not first in the expression
-  friend auto operator+(difference_type n, const segment_iterator &other) {
+  friend auto operator+(difference_type n, const d_segment_iterator &other) {
     return other + n;
   }
 
@@ -138,15 +138,16 @@ private:
   std::size_t index_;
 }; // class dm_segment_iterator
 
-template <typename DM> class segment {
+template <typename DM> class d_segment {
 private:
-  using iterator = segment_iterator<DM>;
+  using iterator = d_segment_iterator<DM>;
   using value_type = typename DM::value_type;
 
 public:
   using difference_type = std::ptrdiff_t;
-  segment() = default;
-  segment(DM *dm, std::size_t segment_index, std::size_t size /*, value_type *ptr, key_type shape, */ ) {
+  d_segment() = default;
+  d_segment(DM *dm, std::size_t segment_index,
+            std::size_t size /*, value_type *ptr, key_type shape, */) {
     dm_ = dm;
     // ptr_ = ptr;
     // shape_ = shape;
@@ -163,16 +164,16 @@ public:
 
   bool is_local() { return rank_ == default_comm().rank(); }
 
-  key_type shape() { 
-    return key_type ({size_ / dm_->shape()[1], dm_->shape()[1]});  
+  key_type shape() {
+    return key_type({size_ / dm_->shape()[1], dm_->shape()[1]});
   }
 
   DM *dm() { return dm_; }
 
 private:
   DM *dm_;
-//   value_type *ptr_;
-//   key_type shape_;
+  //   value_type *ptr_;
+  //   key_type shape_;
   std::size_t rank_;
   std::size_t size_;
 }; // class segment
