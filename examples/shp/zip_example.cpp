@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
-#include <sycl/sycl.hpp>
-
-#include <iostream>
+#include <dr/shp.hpp>
 
 int main(int argc, char **argv) {
   printf("Creating NUMA devices...\n");
@@ -26,7 +23,8 @@ int main(int argc, char **argv) {
 
   dr::shp::for_each(dr::shp::par_unseq, v, [](auto &&value) { value += 2; });
 
-  std::size_t sum = dr::shp::reduce(dr::shp::par_unseq, v, int(0), std::plus{});
+  std::size_t sum [[maybe_unused]] =
+      dr::shp::reduce(dr::shp::par_unseq, v, int(0), std::plus{});
 
   dr::shp::print_range(v);
 

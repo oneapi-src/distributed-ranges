@@ -2,9 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
-#include <sycl/sycl.hpp>
-#include <vector>
+#include <dr/shp.hpp>
 
 std::vector<dr::shp::device_ptr<int>> ptrs;
 

@@ -2,9 +2,25 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 add_executable(
   shp-tests
   shp-tests.cpp
+  ../common/all.cpp
+  # need to implement same API as MHP
+  #../common/copy.cpp
+  ../common/distributed_vector.cpp
+  ../common/drop.cpp
+  ../common/enumerate.cpp
+  ../common/fill.cpp
+  ../common/for_each.cpp
+  ../common/iota.cpp
+  ../common/reduce.cpp
+  ../common/subrange.cpp
+  ../common/take.cpp
+  ../common/transform_view.cpp
+  ../common/zip.cpp
   containers.cpp
   algorithms.cpp
   copy.cpp

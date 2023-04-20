@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
+#include <dr/shp.hpp>
 
 int main(int argc, char **argv) {
   auto devices = dr::shp::get_numa_devices(sycl::gpu_selector_v);

@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
+#include <dr/shp.hpp>
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 
 template <dr::distributed_range X, dr::distributed_range Y>
 auto dot_product_distributed(X &&x, Y &&y) {

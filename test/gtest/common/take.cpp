@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Intel Corporation
 //
 // SPDX-License-Identifier: BSD-3-Clause
+
+#include "xhp-tests.hpp"
+
 // Fixture
 template <typename T> class Take : public testing::Test {
 public:
