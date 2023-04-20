@@ -51,8 +51,8 @@ int local_compare(dr::mhp::distributed_dense_matrix<T> &dm,
   int res = 0;
   for (auto r = dm.rows().begin(); r != dm.rows().end(); r++) {
     if (r.is_local())
-      if (-1 == rowcmp((*r).begin(), vv[(*r).idx()], (*r).size())) {
-        fmt::print("{}: Fail (idx = {})\n", comm_rank, (*r).idx());
+      if (-1 == rowcmp(r->begin(), vv[r->idx()], r->size())) {
+        fmt::print("{}: Fail (idx = {})\n", comm_rank, r->idx());
         res = -1;
       }
   }
@@ -78,6 +78,7 @@ int check(dr::mhp::distributed_dense_matrix<T> &a,
     stencil_op_verify(va, vb);
     std::swap(va, vb);
   }
+
   return local_compare(a, (steps % 2) ? vb : va) +
          local_compare(b, (steps % 2) ? va : vb);
 }
@@ -87,12 +88,11 @@ int check(dr::mhp::distributed_dense_matrix<T> &a,
 //
 
 auto stencil_op1 = [](auto &p) {
+  
+  // Two notations possible, performance to be verified
   T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
-
-  // the version below is intended to work, too, still a bug is present when
-  // refering to negative index reaching halo area
-
-  /* T res = p[-1][0] + p[0][0] + p[+1][0] + p[0][-1] + p[0][+1]; */
+  // the version below (buggy for low egde of the matrix - to be fixed)
+  // T res = p[-1][0] + p[0][0] + p[+1][0] + p[0][-1] + p[0][+1];
 
   return res;
 };
@@ -103,8 +103,9 @@ int stencil1() {
 
   // different operation on every row - user must be aware of rows distribution
   for (auto r = a.rows().begin(); r != a.rows().end(); r++) {
-    if (r.is_local())
-      std::iota((*r).begin(), (*r).end(), 10);
+    if (r.is_local()) {
+      std::iota(r->begin(), r->end(), 10);
+    }
   }
 
   // the same operation on each row
@@ -135,8 +136,7 @@ int stencil1() {
 //
 
 auto stencil_op2 = [](auto &&p) {
-  dr::mhp::dm_row<T> out_row((*p).size());
-
+  dr::mhp::dm_row<T> out_row(p->size());
   out_row[0] = p[0][0];
   for (std::size_t i = 1; i < nc - 1; i++) {
     out_row[i] = p[-1][i] + p[0][i - 1] + p[0][i] + p[0][i + 1] + p[1][i];
@@ -162,6 +162,7 @@ int stencil2() {
 
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
+    //rng::for_each(rng::views::zip(in, out), stencil_op2); // to consider
     dr::mhp::transform(in, out.begin(), stencil_op2);
     std::swap(in, out);
   }

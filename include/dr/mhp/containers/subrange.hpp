@@ -35,6 +35,8 @@ public:
 
   dm_row<value_type> operator[](int n) {
     std::size_t rowsize = col_rng_.second - col_rng_.first;
+
+    assert(index_ + n * rowsize > 0);
     int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
                  find_dm_offset(index_ + n * rowsize) -
                  default_comm().rank() * dm_->segment_size();
@@ -44,9 +46,9 @@ public:
 
     signed long idx = default_comm().rank() * dm_->segment_shape()[0];
     value_type *ptr = dm_->data() + offset;
-    dm_segment<DM> *segment = &(dm_->segments()[0]);
+    segment<DM> *segment = &(dm_->segments()[0]);
 
-    return dm_row<value_type>(idx, ptr, segment, rowsize);
+    return dm_row<value_type>(idx, ptr, rowsize, segment);
   }
 
   value_type &operator[](std::pair<int, int> p) {
@@ -194,39 +196,5 @@ private:
   std::size_t subrng_size_ = 0;
 
 }; // class subrange
-
-template <typename DM>
-void transform(subrange<DM> &in, subrange_iterator<DM> out, auto op) {
-  for (subrange_iterator<DM> i = rng::begin(in); i != rng::end(in); i++) {
-    if (i.is_local()) {
-      *(out) = op(i);
-    }
-    ++out;
-  }
-}
-
-/* debug version
-
-template <typename DM>
-void transform(mhp::subrange<DM> &in, mhp::subrange_iterator<DM> out,
-                  auto op) {
-  std::stringstream s;
-  int _i = 0;
-  s << default_comm().rank() << ": dm_transform ";
-  for (mhp::subrange_iterator<DM> i = rng::begin(in); i != in.end(); i++) {
-
-    if (i.is_local()) {
-      *(out) = op(i);
-      s << _i << "(" << i.find_dm_offset() << ")" << *i << "->" << *(out) << "("
-<< out.index_ << "/" << out.find_dm_offset() << ")" << " \n";
-    }
-    ++out;
-    _i++;
-  }
-  s << std::endl;
-  std::cout << s.str();
-}
-
- */
 
 } // namespace dr::mhp
