@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "shp-tests.hpp"
+#include "xhp-tests.hpp"
 
 using T = int;
 using DV = dr::shp::distributed_vector<T, dr::shp::device_allocator<T>>;

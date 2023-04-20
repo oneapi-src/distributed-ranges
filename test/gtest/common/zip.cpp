@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "xhp-tests.hpp"
+
 // Fixture
 template <typename T> class Zip : public testing::Test {
 public:
@@ -90,8 +92,8 @@ TYPED_TEST(Zip, Dist3Distance) {
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
-  auto local = rng::views::zip(rng::views::iota(100), ops.vec);
-  auto dist = xhp::views::zip(rng::views::iota(100), ops.dist_vec);
+  auto local = rng::views::zip(xhp::views::iota(100), ops.vec);
+  auto dist = xhp::views::zip(xhp::views::iota(100), ops.dist_vec);
   static_assert(compliant_view<decltype(dist)>);
   EXPECT_TRUE(check_view(local, dist));
 }
@@ -99,8 +101,8 @@ TYPED_TEST(Zip, Iota) {
 TYPED_TEST(Zip, Iota2nd) {
   Ops1<TypeParam> ops(10);
 
-  EXPECT_TRUE(check_view(rng::views::zip(ops.vec, rng::views::iota(100)),
-                         xhp::views::zip(ops.dist_vec, rng::views::iota(100))));
+  EXPECT_TRUE(check_view(rng::views::zip(ops.vec, xhp::views::iota(100)),
+                         xhp::views::zip(ops.dist_vec, xhp::views::iota(100))));
 }
 
 #if 0
@@ -162,8 +164,8 @@ TYPED_TEST(Zip, ForEachIota) {
   Ops1<TypeParam> ops(10);
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
-  xhp::for_each(xhp::views::zip(rng::views::iota(100), ops.dist_vec), copy);
-  rng::for_each(rng::views::zip(rng::views::iota(100), ops.vec), copy);
+  xhp::for_each(xhp::views::zip(xhp::views::iota(100), ops.dist_vec), copy);
+  rng::for_each(rng::views::zip(xhp::views::iota(100), ops.vec), copy);
 
   EXPECT_EQ(ops.vec, ops.dist_vec);
   EXPECT_EQ(ops.vec, ops.dist_vec);

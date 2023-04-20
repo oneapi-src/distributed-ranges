@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mhp-tests.hpp"
+#include "xhp-tests.hpp"
 
 // Fixture
 

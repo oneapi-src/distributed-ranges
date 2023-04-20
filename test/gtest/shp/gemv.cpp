@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "shp-tests.hpp"
-#include <dr/shp/shp.hpp>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
+#include "xhp-tests.hpp"
 
 TEST(SparseMatrix, Gemv) {
   std::size_t m = 100;

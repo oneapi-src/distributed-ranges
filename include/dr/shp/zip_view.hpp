@@ -25,13 +25,28 @@ inline constexpr bool is_owning_view_v = is_owning_view<T>{};
 
 namespace dr::shp {
 
+namespace __detail {
+
+template <typename... Args> struct tuple_or_pair {
+  using type = std::tuple<Args...>;
+};
+
+template <typename T, typename U> struct tuple_or_pair<T, U> {
+  using type = std::pair<T, U>;
+};
+
+template <typename... Args>
+using tuple_or_pair_t = typename tuple_or_pair<Args...>::type;
+
+}; // namespace __detail
+
 template <rng::random_access_iterator... Iters> class zip_accessor {
 public:
-  using element_type = std::tuple<std::iter_value_t<Iters>...>;
+  using element_type = __detail::tuple_or_pair_t<std::iter_value_t<Iters>...>;
   using value_type = element_type;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = std::tuple<std::iter_reference_t<Iters>...>;
+  using reference = __detail::tuple_or_pair_t<std::iter_reference_t<Iters>...>;
 
   using iterator_category = std::random_access_iterator_tag;
 
@@ -281,20 +296,6 @@ private:
         rng::begin(std::get<Is>(views_))...);
   }
 
-  template <typename T, typename U> T min_many_impl_(T t, U u) const {
-    if (u < t) {
-      return u;
-    } else {
-      return t;
-    }
-  }
-
-  template <typename T, typename U, typename... Ts>
-  T min_many_impl_(T t, U u, Ts... ts) const {
-    T local_min = min_many_impl_(t, u);
-    return min_many_impl_(local_min, ts...);
-  }
-
   template <dr::distributed_range T>
   decltype(auto) segment_or_orig_(T &&t, std::size_t idx) const {
     return dr::ranges::segments(t)[idx];
@@ -308,9 +309,9 @@ private:
   template <std::size_t... Is>
   std::size_t get_next_segment_size_impl_(auto &&segment_ids, auto &&local_idx,
                                           std::index_sequence<Is...>) const {
-    return min_many_impl_(std::size_t(rng::distance(segment_or_orig_(
-                              get_view<Is>(), segment_ids[Is]))) -
-                          local_idx[Is]...);
+    return std::min({std::size_t(rng::distance(
+                         segment_or_orig_(get_view<Is>(), segment_ids[Is]))) -
+                     local_idx[Is]...});
   }
 
   std::size_t get_next_segment_size(auto &&segment_ids,

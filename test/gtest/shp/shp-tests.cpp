@@ -2,31 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "shp-tests.hpp"
-
-using AllTypes = ::testing::Types<dr::shp::distributed_vector<int>,
-                                  dr::shp::distributed_vector<float>>;
-
-#include "common/all.hpp"
-// Issue with 2 element zips
-// #include "common/enumerate.hpp"
-// need to implement same API as MHP
-// #include "common/copy.hpp"
-#include "common/distributed_vector.hpp"
-#include "common/drop.hpp"
-#include "common/fill.hpp"
-#include "common/for_each.hpp"
-#include "common/iota.hpp"
-#include "common/reduce.hpp"
-#include "common/subrange.hpp"
-#include "common/take.hpp"
-#include "common/transform_view.hpp"
-// Issue with 2 element zips
-// #include "common/zip.hpp"
-
-// To share tests with MHP
-std::size_t comm_rank = 0;
-std::size_t comm_size = 1;
+#include "xhp-tests.hpp"
 
 cxxopts::ParseResult options;
 

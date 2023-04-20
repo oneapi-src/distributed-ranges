@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
+#include <dr/shp.hpp>
 #include <sycl/sycl.hpp>
 
 #include <iostream>
