@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
+#include <dr/shp.hpp>
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 
 namespace shp = dr::shp;
 

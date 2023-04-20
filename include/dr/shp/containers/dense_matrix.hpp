@@ -47,9 +47,8 @@ public:
                                   key_type tile_idx, key_type grid_shape,
                                   key_type tile_shape,
                                   key_type matrix_shape) noexcept
-      : tiles_(tiles), grid_idx_(grid_idx), tile_idx_(tile_idx),
-        grid_shape_(grid_shape), tile_shape_(tile_shape),
-        matrix_shape_(matrix_shape) {}
+      : grid_idx_(grid_idx), tile_idx_(tile_idx), grid_shape_(grid_shape),
+        tile_shape_(tile_shape), matrix_shape_(matrix_shape), tiles_(tiles) {}
 
   constexpr dense_matrix_accessor &operator+=(difference_type offset) noexcept {
     std::size_t new_global_idx_ = get_global_idx_() + offset;

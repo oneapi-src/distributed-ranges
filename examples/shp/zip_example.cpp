@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
-#include <sycl/sycl.hpp>
-
-#include <iostream>
+#include <dr/shp.hpp>
 
 int main(int argc, char **argv) {
   printf("Creating NUMA devices...\n");

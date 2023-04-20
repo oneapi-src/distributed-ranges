@@ -4,7 +4,7 @@
 #pragma once
 
 #include "cxxopts.hpp"
-#include "dr/shp/shp.hpp"
+#include "dr/shp.hpp"
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <gtest/gtest.h>

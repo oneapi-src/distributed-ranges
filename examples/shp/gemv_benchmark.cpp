@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <dr/shp/shp.hpp>
+#include <dr/shp.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
+// FIXME: what is grb.hpp? add it to cmake or remove this dependency
 #include <grb/grb.hpp>
 
 #include <concepts>
