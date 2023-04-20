@@ -2,40 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "shp-tests.hpp"
-
-// Use this for shorter build time
-// #define MINIMAL_TEST 1
-#ifdef MINIMAL_TEST
-
-using AllTypes = ::testing::Types<xhp::distributed_vector<int>>;
-#include "common/zip.hpp"
-
-#else
-
-using AllTypes = ::testing::Types<xhp::distributed_vector<int>,
-                                  xhp::distributed_vector<float>>;
-
-#include "common/all.hpp"
-// need to implement same API as MHP
-// #include "common/copy.hpp"
-#include "common/distributed_vector.hpp"
-#include "common/drop.hpp"
-#include "common/enumerate.hpp"
-#include "common/fill.hpp"
-#include "common/for_each.hpp"
-#include "common/iota.hpp"
-#include "common/reduce.hpp"
-#include "common/subrange.hpp"
-#include "common/take.hpp"
-#include "common/transform_view.hpp"
-#include "common/zip.hpp"
-
-#endif
-
-// To share tests with MHP
-std::size_t comm_rank = 0;
-std::size_t comm_size = 1;
+#include "xhp-tests.hpp"
 
 cxxopts::ParseResult options;
 

@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "xhp-tests.hpp"
+
 // Fixture
 template <typename T> class Subrange : public testing::Test {
 public:

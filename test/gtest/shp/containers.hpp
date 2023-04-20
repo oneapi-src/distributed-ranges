@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
-#include "shp-tests.hpp"
+#include "xhp-tests.hpp"
 
 template <typename AllocT> class DistributedVectorTest : public testing::Test {
 public:
