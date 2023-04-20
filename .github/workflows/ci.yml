@@ -87,6 +87,7 @@ jobs:
   icpx:
     runs-on: ubuntu-latest
     env:
+      CC: icx
       CXX: icpx
     steps:
     - uses: actions/checkout@v3
