@@ -26,10 +26,8 @@ int main(int argc, char **argv) {
     send_data.emplace_back(n_elements, allocator);
     receive_data.emplace_back(n_elements, allocator);
 
-    shp::fill(send_data.back().begin().local(), send_data.back().end().local(),
-              i);
-    shp::fill(receive_data.back().begin().local(),
-              receive_data.back().end().local(), i);
+    shp::fill(send_data.back().begin(), send_data.back().end(), i);
+    shp::fill(receive_data.back().begin(), receive_data.back().end(), i);
   }
 
   fmt::print("BW tests...\n");

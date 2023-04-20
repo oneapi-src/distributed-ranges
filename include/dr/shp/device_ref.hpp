@@ -31,7 +31,7 @@ public:
 #endif
   }
 
-  device_ref operator=(const T &value)
+  device_ref operator=(const T &value) const
     requires(!std::is_const_v<T>)
   {
 #ifdef __SYCL_DEVICE_ONLY__

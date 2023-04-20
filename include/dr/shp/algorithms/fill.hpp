@@ -22,13 +22,10 @@ template <std::contiguous_iterator Iter>
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
 sycl::event fill_async(Iter first, Iter last,
                        const std::iter_value_t<Iter> &value) {
-  // auto &&q = dr::shp::__detail::default_queue();
   auto &&q = __detail::get_queue_for_pointer(first);
   std::iter_value_t<Iter> *arr = std::to_address(first);
-  return q.parallel_for(sycl::range<>(last - first),
-                        [arr, value](auto idx) { arr[idx] = value; });
-  // not using q.fill because of CMPLRLLVM-46438
-  // return q.fill(std::to_address(first), value, last - first);
+  return __detail::parallel_for(q, sycl::range<>(last - first),
+                                [=](auto idx) { arr[idx] = value; });
 }
 
 template <std::contiguous_iterator Iter>
@@ -37,22 +34,19 @@ void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
   fill_async(first, last, value).wait();
 }
 
-template <typename T>
-  requires(!std::is_const_v<T>)
+template <typename T, typename U>
+  requires(std::indirectly_writable<device_ptr<T>, U>)
 sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
-                       const T &value) {
-  // auto &&q = dr::shp::__detail::default_queue();
+                       const U &value) {
   auto &&q = __detail::get_queue_for_pointer(first);
   auto *arr = first.get_raw_pointer();
-  return q.parallel_for(sycl::range<>(last - first),
-                        [arr, value](auto idx) { arr[idx] = value; });
-  // not using q.fill because of CMPLRLLVM-46438
-  // return q.fill(first.get_raw_pointer(), value, last - first);
+  return __detail::parallel_for(q, sycl::range<>(last - first),
+                                [=](auto idx) { arr[idx] = value; });
 }
 
-template <typename T>
-  requires(!std::is_const_v<T>)
-void fill(device_ptr<T> first, device_ptr<T> last, const T &value) {
+template <typename T, typename U>
+  requires(std::indirectly_writable<device_ptr<T>, U>)
+void fill(device_ptr<T> first, device_ptr<T> last, const U &value) {
   fill_async(first, last, value).wait();
 }
 
@@ -60,11 +54,8 @@ template <typename T, dr::remote_contiguous_range R>
 sycl::event fill_async(R &&r, const T &value) {
   auto &&q = __detail::queue(dr::ranges::rank(r));
   auto *arr = std::to_address(rng::begin(dr::ranges::local(r)));
-  return q.parallel_for(sycl::range<>(rng::distance(r)),
-                        [arr, value](auto idx) { arr[idx] = value; });
-  // not using q.fill because of CMPLRLLVM-46438
-  // return q.fill(std::to_address(rng::begin(dr::ranges::local(r))), value,
-  //               rng::distance(r));
+  return __detail::parallel_for(q, sycl::range<>(rng::distance(r)),
+                                [=](auto idx) { arr[idx] = value; });
 }
 
 template <typename T, dr::remote_contiguous_range R>
