@@ -15,6 +15,12 @@ int main(int argc, char **argv) {
 
   std::size_t n_elements = 2 * 1000ull * 1000 * 1000ull;
 
+  if (argc == 2) {
+    n_elements = std::atoll(argv[1]);
+  }
+
+  fmt::print("Transfer size {} GB\n", n_elements * 1e-9);
+
   using vector_type = shp::vector<T, shp::device_allocator<T>>;
 
   std::vector<vector_type> send_data;
