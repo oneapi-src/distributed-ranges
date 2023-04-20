@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
 
   sycl::event::wait(events);
   auto end = std::chrono::high_resolution_clock::now();
+  events.clear();
 
   double duration = std::chrono::duration<double>(end - begin).count();
 
@@ -89,6 +90,37 @@ int main(int argc, char **argv) {
   double n_gbytes = double(n_bytes) * 1e-9;
 
   double bw = n_gbytes / duration;
+
+  fmt::print("Allgather. {} GB/s\n", bw);
+
+  fmt::print("Allgather balanced BW tests...\n");
+  begin = std::chrono::high_resolution_clock::now();
+
+  for (std::size_t i = 0; i < shp::nprocs(); i++) {
+    auto &&segments = d_vec.segments();
+    auto &&local = local_data[i];
+    for (std::size_t j_ = 0; j_ != segments.size(); j_++) {
+      std::size_t j = (j_ + i) % std::size_t(segments.size());
+
+      auto &&segment = segments[j];
+
+      std::size_t offset = j * segments[0].size();
+
+      auto e = shp::copy_async(segment.begin(), segment.end(),
+                               local.begin() + offset);
+      events.push_back(e);
+    }
+  }
+
+  sycl::event::wait(events);
+  end = std::chrono::high_resolution_clock::now();
+
+  duration = std::chrono::duration<double>(end - begin).count();
+
+  n_bytes = n_elements * shp::nprocs() * sizeof(T);
+  n_gbytes = double(n_bytes) * 1e-9;
+
+  bw = n_gbytes / duration;
 
   fmt::print("Allgather. {} GB/s\n", bw);
 
