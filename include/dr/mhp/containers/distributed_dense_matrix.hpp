@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "distributed_iterators.hpp"
 #include "index.hpp"
+#include "segments.hpp"
+#include "rows.hpp"
 #include "subrange.hpp"
 
 namespace dr::mhp {
@@ -16,151 +17,14 @@ class distributed_matrix_partition {};
 class by_row final : public distributed_matrix_partition {};
 class by_column final : public distributed_matrix_partition {};
 
-template <typename DM> class dm_segment {
-private:
-  using iterator = dm_segment_iterator<DM>;
-  using value_type = typename DM::value_type;
-
-public:
-  using difference_type = std::ptrdiff_t;
-  dm_segment() = default;
-  dm_segment(DM *dm, value_type *ptr, key_type shape,
-             std::size_t segment_index) {
-    dm_ = dm;
-    ptr_ = ptr;
-    shape_ = shape;
-    rank_ = segment_index;
-    size_ = shape[0] * shape[1];
-  }
-
-  auto size() const { return size_; }
-
-  auto begin() const { return iterator(dm_, rank_, 0); }
-  auto end() const { return begin() + size(); }
-
-  auto operator[](difference_type n) const { return *(begin() + n); }
-
-  bool is_local() { return rank_ == default_comm().rank(); }
-  key_type shape() { return shape_; }
-
-  DM *dm() { return dm_; }
-
-private:
-  DM *dm_;
-  value_type *ptr_;
-  key_type shape_;
-  std::size_t rank_;
-  std::size_t size_;
-};
-template <typename DM> class dm_segments : public std::span<dm_segment<DM>> {
+template <typename DM> class dm_segments : public std::span<d_segment<DM>> {
 public:
   dm_segments() {}
-  dm_segments(DM *dm) : std::span<dm_segment<DM>>(dm->segments_) { dm_ = dm; }
+  dm_segments(DM *dm) : std::span<d_segment<DM>>(dm->segments_) { dm_ = dm; }
 
 private:
   DM *dm_;
 }; // dm_segments
-
-template <typename T, typename Allocator> class dm_row : public std::span<T> {
-  using dmatrix = distributed_dense_matrix<T>;
-  using dmsegment = dm_segment<dmatrix>;
-
-public:
-  using iterator = typename std::span<T>::iterator;
-
-  dm_row(){};
-  dm_row(signed long idx, T *ptr, dmsegment *segment, std::size_t size,
-         Allocator allocator = Allocator())
-      : std::span<T>({ptr, size}), index_(idx), data_(ptr), segment_(segment),
-        size_(size), allocator_(allocator){};
-
-  // copying ctor
-  dm_row(const dm_row &other)
-      : std::span<T>({(other.index_ == INT_MIN)
-                          ? Allocator().allocate(other.size_)
-                          : other.data_,
-                      other.size_}) {
-    index_ = other.index_;
-    data_ = (other.index_ == INT_MIN) ? allocator_.allocate(other.size_)
-                                      : other.data_;
-    segment_ = other.segment_;
-    size_ = other.size_;
-    if (other.index_ == INT_MIN) {
-      iterator i = rng::begin(*this), oi = rng::begin(other);
-      while (i != this->end()) {
-        *(i++) = *(oi++);
-      }
-    }
-  }
-
-  // own memory necessary - the row ist standalone, not part of matrix - index
-  // INT_MIN indicates the situation
-  dm_row(std::size_t size)
-      : dm_row(INT_MIN, Allocator().allocate(size), nullptr, size) {
-    // fmt::print("{}: +dm_row allocated {} b at {}\n", default_comm().rank(),
-    // size * sizeof(T), (ulong)data_);
-    for (std::size_t _i = 0; _i < size_; _i++) {
-      data_[_i] = 0;
-    }
-  }
-
-  ~dm_row() {
-    if (INT_MIN == index_ && nullptr != data_) {
-      // fmt::print("{}: ~dm_row deallocate {} b at {}\n",
-      // default_comm().rank(), size_, (ulong)data_);
-      allocator_.deallocate(data_, size_);
-      data_ = nullptr;
-      size_ = 0;
-      index_ = 0;
-    }
-  }
-
-  dmsegment *segment() { return segment_; }
-  signed long idx() { return index_; }
-
-  T &operator[](int index) { return *(std::span<T>::begin() + index); }
-
-  dm_row<T> operator=(dm_row<T> other) {
-    assert(this->size_ == other.size_);
-    iterator i = rng::begin(*this), oi = rng::begin(other);
-    while (i != this->end()) {
-      *(i++) = *(oi++);
-    }
-    return *this;
-  }
-
-private:
-  signed long index_ = 0;
-  T *data_ = nullptr;
-  dmsegment *segment_ = nullptr;
-  std::size_t size_ = 0;
-  Allocator allocator_;
-};
-
-template <typename DM>
-class dm_rows : public std::vector<dm_row<typename DM::value_type>> {
-public:
-  using iterator = dm_rows_iterator<DM>;
-  using value_type = dm_row<typename DM::value_type>;
-
-  dm_rows(DM *dm) { dm_ = dm; }
-
-  auto segments() { return dm_->segments(); }
-  auto &halo() { return dm_->halo(); }
-
-  iterator begin() const {
-    assert(dm_ != nullptr);
-    return dm_rows_iterator(dm_, 0);
-  }
-  iterator end() const {
-    assert(dm_ != nullptr);
-    return dm_rows_iterator(dm_, this->size());
-  }
-  DM *dm() { return dm_; }
-
-private:
-  DM *dm_ = nullptr;
-};
 
 template <typename T, typename Allocator> class distributed_dense_matrix {
 public:
@@ -312,13 +176,18 @@ private:
 
     std::size_t idx = 0;
     for (std::size_t i = 0; i < grid_size_; i++) {
-      T *_ptr = (idx == default_comm().rank()) ? data_ : nullptr;
-      key_type _ts(
+      // T *_ptr = (idx == default_comm().rank()) ? data_ : nullptr;
+      // key_type _ts(
+      //     segment_shape_[0] -
+      //         ((idx + 1) / default_comm().size()) *
+      //             (default_comm().size() * segment_shape_[0] - shape_[0]),
+      //     segment_shape_[1]);
+       std::size_t _seg_rows =
           segment_shape_[0] -
-              ((idx + 1) / default_comm().size()) *
-                  (default_comm().size() * segment_shape_[0] - shape_[0]),
-          segment_shape_[1]);
-      segments_.emplace_back(this, _ptr, _ts, idx);
+          ((idx + 1) / default_comm().size()) *
+              (default_comm().size() * segment_shape_[0] - shape_[0]);   
+      // segments_.emplace_back(this, _ptr, _ts, idx);
+      segments_.emplace_back(this, idx, _seg_rows * shape_[1]);
       idx++;
     }
 
@@ -384,7 +253,7 @@ private:
   }
 
 private:
-  friend dm_segment_iterator<distributed_dense_matrix>;
+  friend d_segment_iterator<distributed_dense_matrix>;
   friend dm_segments<distributed_dense_matrix>;
   friend dm_rows<distributed_dense_matrix>;
   friend dm_rows_iterator<distributed_dense_matrix>;
@@ -402,7 +271,7 @@ private:
   dr::halo_bounds halo_bounds_;
   // std::size_t size_;
 
-  std::vector<dm_segment<distributed_dense_matrix>> segments_;
+  std::vector<d_segment<distributed_dense_matrix>> segments_;
   dm_segments<distributed_dense_matrix>
       dm_segments_; // lightweight view on segments_
 

@@ -44,7 +44,7 @@ public:
 
     signed long idx = default_comm().rank() * dm_->segment_shape()[0];
     value_type *ptr = dm_->data() + offset;
-    dm_segment<DM> *segment = &(dm_->segments()[0]);
+    d_segment<DM> *segment = &(dm_->segments()[0]);
 
     return dm_row<value_type>(idx, ptr, segment, rowsize);
   }
@@ -54,12 +54,6 @@ public:
                  find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size() +
                  dm_->shape()[1] * p.second + p.first;
-    // if ((offset >= (int)dm_->data_size()) || (offset < 0)) {
-    //   fmt::print("{}: index {} offset {} hb {} dm_off {} p=< {}, {} > \n",
-    //              default_comm().rank(), index_, offset,
-    //              dm_->halo_bounds().prev * dm_->shape()[1],
-    //              find_dm_offset(index_), p.first, p.second);
-    // }
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
     return *(dm_->data() + offset);
