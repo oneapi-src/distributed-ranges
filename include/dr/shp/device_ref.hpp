@@ -43,7 +43,7 @@ public:
     return *this;
   }
 
-  device_ref &operator=(const device_ref &other) {
+  device_ref operator=(const device_ref &other) const {
 #ifdef __SYCL_DEVICE_ONLY__
     *pointer_ = *other.pointer_;
 #else
