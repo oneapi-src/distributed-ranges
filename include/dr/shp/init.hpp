@@ -4,12 +4,12 @@
 
 #pragma once
 
+#include <cassert>
 #include <memory>
 #include <span>
 #include <sycl/sycl.hpp>
 #include <type_traits>
 #include <vector>
-#include <cassert>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <oneapi/dpl/execution>
