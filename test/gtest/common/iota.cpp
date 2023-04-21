@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "xhp-tests.hpp"
+
 // Fixture
 template <typename DistVecT> class IotaTest : public testing::Test {
 public:

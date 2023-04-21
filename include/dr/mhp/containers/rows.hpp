@@ -25,7 +25,7 @@ public:
   using iterator = typename std::span<T>::iterator;
 
   dm_row(){};
-  dm_row(signed long idx, T *ptr, dsegment *segment, std::size_t size,
+  dm_row(signed long idx, T *ptr, std::size_t size, dsegment *segment, 
          Allocator allocator = Allocator())
       : std::span<T>({ptr, size}), index_(idx), data_(ptr), segment_(segment),
         size_(size), allocator_(allocator){};
@@ -52,7 +52,7 @@ public:
   // own memory necessary - the row ist standalone, not part of matrix - index
   // INT_MIN indicates the situation
   dm_row(std::size_t size)
-      : dm_row(INT_MIN, Allocator().allocate(size), nullptr, size) {
+      : dm_row(INT_MIN, Allocator().allocate(size), size, nullptr) {
     for (std::size_t _i = 0; _i < size_; _i++) {
       data_[_i] = 0;
     }
@@ -113,13 +113,13 @@ public:
     if (abs_ind >= (difference_type)(dm_->local_rows_indices_.first -
                                      dm_->halo_bounds().prev) &&
         abs_ind < dm_->local_rows_indices_.first) { // halo prev
-      return dm_->dm_halop_rows_[dm_->halo_bounds().prev -
+      return dm_->dm_halo_p_rows_[dm_->halo_bounds().prev -
                                  dm_->local_rows_indices_.first + abs_ind];
     }
     if (abs_ind > dm_->local_rows_indices_.second &&
         abs_ind <= (difference_type)(dm_->local_rows_indices_.second +
                                      dm_->halo_bounds().next)) { // halo next
-      return dm_->dm_halon_rows_[dm_->halo_bounds().next +
+      return dm_->dm_halo_n_rows_[dm_->halo_bounds().next +
                                  dm_->local_rows_indices_.second - abs_ind];
     }
     assert(0);
@@ -234,6 +234,5 @@ public:
 private:
   DM *dm_ = nullptr;
 };
-
 
 } // namespace dr::mhp

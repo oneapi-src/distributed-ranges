@@ -2,23 +2,25 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 # tested with a variable number of ranks
 add_executable(
   mhp-tests
   mhp-tests.cpp
-  mhp-all-tests.cpp
-  mhp-copy-tests.cpp
-  mhp-distributed_vector-tests.cpp
-  mhp-drop-tests.cpp
-  mhp-enumerate-tests.cpp
-  mhp-fill-tests.cpp
-  mhp-for_each-tests.cpp
-  mhp-iota-tests.cpp
-  mhp-reduce-tests.cpp
-  mhp-subrange-tests.cpp
-  mhp-take-tests.cpp
-  mhp-transform_view-tests.cpp
-  mhp-zip-tests.cpp
+  ../common/all.cpp
+  ../common/copy.cpp
+  ../common/distributed_vector.cpp
+  ../common/drop.cpp
+  ../common/enumerate.cpp
+  ../common/fill.cpp
+  ../common/for_each.cpp
+  ../common/iota.cpp
+  ../common/reduce.cpp
+  ../common/subrange.cpp
+  ../common/take.cpp
+  ../common/transform_view.cpp
+  ../common/zip.cpp
   alignment.cpp
   distributed_vector.cpp
   reduce.cpp

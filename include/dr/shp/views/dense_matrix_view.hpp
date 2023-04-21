@@ -50,8 +50,8 @@ public:
                                        key_type idx_offset,
                                        key_type matrix_shape,
                                        size_type ld) noexcept
-      : data_(data), idx_(idx), idx_offset_(idx_offset),
-        matrix_shape_(matrix_shape), ld_(ld) {}
+      : idx_(idx), matrix_shape_(matrix_shape), ld_(ld),
+        idx_offset_(idx_offset), data_(data) {}
 
   constexpr dense_matrix_view_accessor &
   operator+=(difference_type offset) noexcept {
