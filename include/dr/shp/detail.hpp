@@ -43,7 +43,8 @@ template <typename T> sycl::device get_pointer_device(shp::device_ptr<T> ptr) {
 template <typename InputIt> sycl::queue get_queue_for_pointer(InputIt iter) {
   if (get_pointer_type(iter) == sycl::usm::alloc::device) {
     auto device = get_pointer_device(iter);
-    return sycl::queue(shp::context(), device);
+    return __detail::queue(device);
+    // return sycl::queue(shp::context(), device);
   } else {
     return default_queue();
   }
@@ -53,10 +54,12 @@ template <typename InputIt, typename OutputIt>
 sycl::queue get_queue_for_pointers(InputIt iter, OutputIt iter2) {
   if (get_pointer_type(iter) == sycl::usm::alloc::device) {
     auto device = get_pointer_device(iter);
-    return sycl::queue(shp::context(), device);
+    return __detail::queue(device);
+    // return sycl::queue(shp::context(), device);
   } else if (get_pointer_type(iter2) == sycl::usm::alloc::device) {
     auto device = get_pointer_device(iter2);
-    return sycl::queue(shp::context(), device);
+    return __detail::queue(device);
+    // return sycl::queue(shp::context(), device);
   } else {
     return default_queue();
   }
