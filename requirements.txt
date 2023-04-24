@@ -24,7 +24,7 @@ platformdirs==3.2.0
 pre-commit==3.2.2
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
-Pygments==2.15.0
+Pygments==2.15.1
 PyYAML==6.0
 requests==2.28.2
 snowballstemmer==2.2.0
