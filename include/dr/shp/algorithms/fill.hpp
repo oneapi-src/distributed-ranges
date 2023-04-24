@@ -24,6 +24,7 @@ sycl::event fill_async(Iter first, Iter last,
                        const std::iter_value_t<Iter> &value) {
   auto &&q = __detail::get_queue_for_pointer(first);
   std::iter_value_t<Iter> *arr = std::to_address(first);
+  // not using q.fill because of CMPLRLLVM-46438
   return __detail::parallel_for(q, sycl::range<>(last - first),
                                 [=](auto idx) { arr[idx] = value; });
 }
@@ -40,6 +41,7 @@ sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
                        const U &value) {
   auto &&q = __detail::get_queue_for_pointer(first);
   auto *arr = first.get_raw_pointer();
+  // not using q.fill because of CMPLRLLVM-46438
   return __detail::parallel_for(q, sycl::range<>(last - first),
                                 [=](auto idx) { arr[idx] = value; });
 }
@@ -54,6 +56,7 @@ template <typename T, dr::remote_contiguous_range R>
 sycl::event fill_async(R &&r, const T &value) {
   auto &&q = __detail::queue(dr::ranges::rank(r));
   auto *arr = std::to_address(rng::begin(dr::ranges::local(r)));
+  // not using q.fill because of CMPLRLLVM-46438
   return __detail::parallel_for(q, sycl::range<>(rng::distance(r)),
                                 [=](auto idx) { arr[idx] = value; });
 }
