@@ -97,11 +97,15 @@ jobs:
           ${{ env.IMPI }}
           ${{ env.MKL }}
           ${{ env.ICX }}
+    - name: Patch gcc
+      run: |
+        # workaround for problem with 2023.1.0 finding wrong gcc
+        sudo rm -rf /usr/lib/gcc/x86_64-linux-gnu/{9,10,11}
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build -DENABLE_SYCL=on
-        make -j 2 -C build all test VERBOSE=1
+        make -j 2 -C build all test
     - name: Run disabled tests
       if: false
       run: |
