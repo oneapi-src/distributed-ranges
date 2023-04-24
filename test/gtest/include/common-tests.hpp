@@ -308,7 +308,7 @@ namespace DR_RANGES_NAMESPACE {
 
 template <rng::forward_range R1, rng::forward_range R2>
 bool operator==(R1 &&r1, R2 &&r2) {
-  return is_equal(r1, r2);
+  return is_equal(std::forward<R1>(r1), std::forward<R2>(r2));
 }
 
 template <typename... Ts>

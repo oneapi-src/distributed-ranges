@@ -21,10 +21,12 @@ add_executable(
   ../common/take.cpp
   ../common/transform_view.cpp
   ../common/zip.cpp
+  ../common/zip_local.cpp
   alignment.cpp
   distributed_vector.cpp
   reduce.cpp
   stencil.cpp
+  segmented.cpp
 )
 target_link_libraries(
   mhp-tests

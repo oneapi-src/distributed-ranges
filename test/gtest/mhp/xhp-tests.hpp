@@ -16,16 +16,16 @@ extern std::size_t comm_size;
 namespace xhp = dr::mhp;
 
 template <typename V>
-concept compliant_view =
-    rng::forward_range<V> && rng::random_access_range<V> &&
-    rng::viewable_range<V> && requires(V &v) {
-      // test one at a time so error is apparent
-      dr::ranges::segments(v);
-      dr::ranges::rank(dr::ranges::segments(v)[0]);
-      rng::begin(dr::ranges::segments(v)[0]);
-      dr::ranges::local(rng::begin(dr::ranges::segments(v)[0]));
-      dr::mhp::local_segments(v);
-    };
+concept compliant_view = rng::forward_range<V> && rng::random_access_range<V> &&
+                         rng::viewable_range<V> && requires(V &v) {
+                           // test one at a time so error is apparent
+                           dr::ranges::segments(v);
+                           dr::ranges::segments(v).begin();
+                           *dr::ranges::segments(v).begin();
+                           dr::ranges::rank(*dr::ranges::segments(v).begin());
+                           //  dr::ranges::local(rng::begin(dr::ranges::segments(v)[0]));
+                           //  dr::mhp::local_segments(v);
+                         };
 
 inline void barrier() { dr::mhp::barrier(); }
 inline void fence() { dr::mhp::fence(); }
@@ -42,3 +42,14 @@ using AllTypes = ::testing::Types<
 #else
 using AllTypes = CPUTypes;
 #endif
+
+namespace dr::mhp {
+
+template <typename DV>
+inline std::ostream &operator<<(std::ostream &os,
+                                const dv_segment<DV> &segment) {
+  os << fmt::format("{}", segment);
+  return os;
+}
+
+} // namespace dr::mhp
