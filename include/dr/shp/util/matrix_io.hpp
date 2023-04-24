@@ -51,19 +51,15 @@ auto convert_to_csr(Tuples &&tuples, dr::shp::index<> shape, std::size_t nnz,
     colind[c] = j;
 
     while (r < i) {
-      if (r + 1 > shape[0]) {
-        // TODO: exception?
-        // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
-      }
+      assert(r + 1 <= shape[0]);
+      // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
       rowptr[r + 1] = c;
       r++;
     }
     c++;
 
-    if (c > nnz) {
-      // TODO: exception?
-      // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
-    }
+    assert(c <= nnz);
+    // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
   }
 
   for (; r < shape[0]; r++) {
@@ -155,9 +151,6 @@ inline coo_matrix<T, I> mmread(std::string file_path, bool one_indexed = true) {
   } else {
     matrix.reserve(nnz);
   }
-  /*
-    TODO: reserve? (for general and for symmetric)
-  */
 
   size_type c = 0;
   while (std::getline(f, buf)) {
@@ -235,7 +228,6 @@ auto create_distributed(dr::shp::csr_matrix_view<T, I> local_mat,
   std::vector<dr::shp::csr_matrix_view<T, I>> views;
   std::vector<sycl::event> events;
   views.reserve(a.grid_shape()[0] * a.grid_shape()[1]);
-  events.reserve(a.grid_shape()[0] * a.grid_shape()[1]);
 
   for (I i = 0; i < a.grid_shape()[0]; i++) {
     for (I j = 0; j < a.grid_shape()[1]; j++) {

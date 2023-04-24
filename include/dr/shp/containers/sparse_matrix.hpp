@@ -197,6 +197,8 @@ public:
                         values_[tile_idx].rank());
   }
 
+  // Note: this function is currently *not* asynchronous due to a deadlock
+  // in `gemv_benchmark`.  I believe this is a SYCL bug.
   template <typename... Args>
   auto copy_tile_async(key_type tile_index,
                        csr_matrix_view<T, I, Args...> tile_view) {
@@ -227,10 +229,16 @@ public:
                                    tile_view.rowptr_data() + rowptr.size(),
                                    rowptr.data());
 
+    v_e.wait();
+    c_e.wait();
+    r_e.wait();
+
+    auto e = __detail::combine_events({v_e, c_e, r_e});
+
     tiles_ = generate_tiles_();
     segments_ = generate_segments_();
 
-    return __detail::combine_events({v_e, c_e, r_e});
+    return e;
   }
 
   template <typename... Args>
