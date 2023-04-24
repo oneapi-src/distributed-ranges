@@ -15,6 +15,16 @@
 
 namespace dr::mhp {
 
+template <typename... Rs> class zip_base_view;
+
+namespace views {
+
+template <typename... Rs> auto zip_base(Rs &&...rs) {
+  return zip_base_view(std::forward<Rs>(rs)...);
+}
+
+} // namespace views
+
 template <typename RngIter, typename... BaseIters> class zip_base_iterator {
 public:
   using value_type = rng::iter_value_t<RngIter>;
@@ -95,14 +105,14 @@ private:
   difference_type delta_ = 0;
 };
 
-template <rng::viewable_range... Rs> class zip_base_view {
+template <typename... Rs> class zip_base_view : public rng::view_base {
 private:
   using rng_zip = rng::zip_view<Rs...>;
   using rng_zip_iterator = rng::iterator_t<rng_zip>;
   using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
 public:
-  template <rng::viewable_range... Vs>
+  template <typename... Vs>
   zip_base_view(Vs &&...vs)
       : rng_zip_(rng::views::all(vs)...), base_(rng::views::all(vs)...) {}
 
@@ -122,22 +132,41 @@ public:
   auto size() const { return rng::size(rng_zip_); }
   auto operator[](difference_type n) const { return rng_zip_[n]; }
 
-  auto base() { return base_; }
+  auto base() const { return base_; }
 
   //
   // Distributed Ranges support
   //
-  auto segments()
+  auto segments() const
     requires(distributed_range<Rs> && ...)
   {
-    auto zip = []<typename... Vs>(Vs &&...bases) {
-      return zip_base_view(dr::ranges::segments(std::forward<Vs>(bases))...);
+    // Given segments, return elementwise zip
+    auto zip_segments = [](auto &&...segments) {
+      return views::zip_base(segments...);
     };
 
-    return std::apply(zip, base_);
+    // Given a tuple of segments, return a single segment by doing
+    // elementwise zip
+    auto zip_segment_tuple = [zip_segments](auto &&v) {
+      return std::apply(zip_segments, v);
+    };
+
+    // Given base ranges, return segments
+    auto bases_to_segments = [zip_segment_tuple, this](auto &&...bases) {
+      auto z = rng::views::zip(dr::ranges::segments(bases)...) |
+               rng::views::transform(zip_segment_tuple);
+      // return empty segment when ranges are not aligned
+      if (aligned(bases...)) {
+        return z;
+      } else {
+        return decltype(z){};
+      }
+    };
+
+    return std::apply(bases_to_segments, base_);
   }
 
-  auto rank()
+  auto rank() const
     requires(remote_range<Rs> && ...)
   {
     return dr::ranges::rank(std::get<0>(base_));
@@ -148,15 +177,7 @@ private:
   std::tuple<rng::views::all_t<Rs>...> base_;
 };
 
-template <rng::viewable_range... Rs>
+template <typename... Rs>
 zip_base_view(Rs &&...rs) -> zip_base_view<rng::views::all_t<Rs>...>;
 
 } // namespace dr::mhp
-
-namespace dr::mhp::views {
-
-template <rng::viewable_range... Rs> auto zip_base(Rs &&...rs) {
-  return zip_base_view(std::forward<Rs>(rs)...);
-}
-
-} // namespace dr::mhp::views

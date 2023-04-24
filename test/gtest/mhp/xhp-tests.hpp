@@ -21,9 +21,9 @@ concept compliant_view = rng::forward_range<V> && rng::random_access_range<V> &&
                            // test one at a time so error is apparent
                            dr::ranges::segments(v);
                            dr::ranges::rank(dr::ranges::segments(v)[0]);
-                           rng::begin(dr::ranges::segments(v)[0]);
-                           // dr::ranges::local(rng::begin(dr::ranges::segments(v)[0]));
-                           // dr::mhp::local_segments(v);
+                           // rng::begin(dr::ranges::segments(v)[0]);
+                           //  dr::ranges::local(rng::begin(dr::ranges::segments(v)[0]));
+                           //  dr::mhp::local_segments(v);
                          };
 
 inline void barrier() { dr::mhp::barrier(); }
