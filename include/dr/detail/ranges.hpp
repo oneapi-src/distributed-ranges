@@ -152,8 +152,10 @@ struct local_fn_ {
              std::contiguous_iterator<rng::iterator_t<R>> ||
              rng::contiguous_range<R>)
   auto operator()(R &&r) const {
-    if constexpr (has_local_method<rng::iterator_t<R>>) {
-      return std::span(rng::begin(r).local(), rng::size(r));
+    if constexpr (has_local_method<R>) {
+      return r.local();
+    } else if constexpr (has_local_method<rng::iterator_t<R>>) {
+      return rng::views::counted(rng::begin(r).local(), rng::size(r));
     } else if constexpr (has_local_adl<R>) {
       return local_(std::forward<R>(r));
     } else if constexpr (std::contiguous_iterator<rng::iterator_t<R>>) {
