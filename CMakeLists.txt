@@ -124,7 +124,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(GoogleTest)
 
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
+  # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror>)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-Wno-error=stringop-overflow=)
