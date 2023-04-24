@@ -233,12 +233,10 @@ public:
     c_e.wait();
     r_e.wait();
 
-    auto e = __detail::combine_events({v_e, c_e, r_e});
-
     tiles_ = generate_tiles_();
     segments_ = generate_segments_();
 
-    return e;
+    return __detail::combine_events({v_e, c_e, r_e});
   }
 
   template <typename... Args>
