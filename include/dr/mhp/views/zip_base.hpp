@@ -95,16 +95,16 @@ private:
   difference_type delta_ = 0;
 };
 
-template <rng::viewable_range... R> class zip_base_view {
+template <rng::viewable_range... Rs> class zip_base_view {
 private:
-  using rng_zip = rng::zip_view<R...>;
+  using rng_zip = rng::zip_view<Rs...>;
   using rng_zip_iterator = rng::iterator_t<rng_zip>;
   using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
 public:
-  template <rng::viewable_range... V>
-  zip_base_view(V &&...v)
-      : rng_zip_(rng::views::all(v)...), base_(rng::views::all(v)...) {}
+  template <rng::viewable_range... Vs>
+  zip_base_view(Vs &&...vs)
+      : rng_zip_(rng::views::all(vs)...), base_(rng::views::all(vs)...) {}
 
   auto begin() const {
     auto make_begin = [this](auto &&...bases) {
@@ -124,20 +124,39 @@ public:
 
   auto base() { return base_; }
 
+  //
+  // Distributed Ranges support
+  //
+  auto segments()
+    requires(distributed_range<Rs> && ...)
+  {
+    auto zip = []<typename... Vs>(Vs &&...bases) {
+      return zip_base_view(dr::ranges::segments(std::forward<Vs>(bases))...);
+    };
+
+    return std::apply(zip, base_);
+  }
+
+  auto rank()
+    requires(remote_range<Rs> && ...)
+  {
+    return dr::ranges::rank(std::get<0>(base_));
+  }
+
 private:
   rng_zip rng_zip_;
-  std::tuple<rng::views::all_t<R>...> base_;
+  std::tuple<rng::views::all_t<Rs>...> base_;
 };
 
-template <rng::viewable_range... R>
-zip_base_view(R &&...r) -> zip_base_view<rng::views::all_t<R>...>;
+template <rng::viewable_range... Rs>
+zip_base_view(Rs &&...rs) -> zip_base_view<rng::views::all_t<Rs>...>;
 
 } // namespace dr::mhp
 
 namespace dr::mhp::views {
 
-template <rng::viewable_range... R> auto zip_base(R &&...r) {
-  return zip_base_view(std::forward<R>(r)...);
+template <rng::viewable_range... Rs> auto zip_base(Rs &&...rs) {
+  return zip_base_view(std::forward<Rs>(rs)...);
 }
 
 } // namespace dr::mhp::views

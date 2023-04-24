@@ -157,13 +157,24 @@ TEST_F(ZipLocal, MutateForEach) {
   static_assert(rng::random_access_range<decltype(x)>);
 }
 
-#if 0
 // Fixture
 template <typename T> class Zip : public testing::Test {
 public:
 };
 
 TYPED_TEST_SUITE(Zip, AllTypes);
+
+TYPED_TEST(Zip, Segments) {
+  Ops1<TypeParam> ops(10);
+
+  auto dist = xhp::views::zip(ops.dist_vec);
+  auto segments = dr::ranges::segments(dist);
+  fmt::print("Vector: {}\n"
+             "segments: {}\n",
+             dist, segments);
+  auto get_rank = [](auto &&segment) { return dr::ranges::rank(segment); };
+  fmt::print("Ranks: {}\n", rng::views::transform(segments, get_rank));
+}
 
 TYPED_TEST(Zip, Dist1) {
   Ops1<TypeParam> ops(10);
@@ -199,6 +210,7 @@ TYPED_TEST(Zip, Dist3Distance) {
                 xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
 }
 
+#if 0
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
@@ -215,7 +227,6 @@ TYPED_TEST(Zip, Iota2nd) {
                          xhp::views::zip(ops.dist_vec, xhp::views::iota(100))));
 }
 
-#if 0
 // doesn't compile in mhp
 TEST(Zip, ToTransform) {
   Ops2<xhp::distributed_vector<int>> ops(10);
@@ -270,6 +281,7 @@ TYPED_TEST(Zip, ForEach) {
   EXPECT_EQ(ops.vec1, ops.dist_vec1);
 }
 
+#if 0
 TYPED_TEST(Zip, ForEachIota) {
   Ops1<TypeParam> ops(10);
 
