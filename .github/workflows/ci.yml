@@ -10,10 +10,10 @@ on:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
-  IMPI: impi@2021.8.0
-  MKL:  mkl@2023.0.0
-  TBB:  tbb@2021.8.0
-  ICX:  icx@2023.0.0
+  IMPI: impi@2021.9.0
+  MKL:  mkl@2023.1.0
+  TBB:  tbb@2021.9.0
+  ICX:  icx@2023.1.0
 
 jobs:
   checks:
@@ -87,6 +87,7 @@ jobs:
   icpx:
     runs-on: ubuntu-latest
     env:
+      CC: icx
       CXX: icpx
     steps:
     - uses: actions/checkout@v3
@@ -96,6 +97,10 @@ jobs:
           ${{ env.IMPI }}
           ${{ env.MKL }}
           ${{ env.ICX }}
+    - name: Patch gcc
+      run: |
+        # workaround for problem with 2023.1.0 finding wrong gcc
+        sudo rm -rf /usr/lib/gcc/x86_64-linux-gnu/{9,10,11}
     - name: Build & test
       run: |
         source /opt/intel/oneapi/setvars.sh
