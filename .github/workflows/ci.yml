@@ -101,7 +101,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build -DENABLE_SYCL=on
-        make -j 2 -C build all test
+        make -j 2 -C build all test VERBOSE=1
     - name: Run disabled tests
       if: false
       run: |
