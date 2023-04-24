@@ -33,6 +33,19 @@ target_link_libraries(
   DR::mpi
 )
 
+# tested with a variable number of ranks
+add_executable(
+  zip-base
+  mhp-tests.cpp
+  zip-base.cpp
+)
+target_link_libraries(
+  zip-base
+  GTest::gtest_main
+  cxxopts
+  DR::mpi
+)
+
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if (NOT MPI_IMPL STREQUAL "openmpi")
