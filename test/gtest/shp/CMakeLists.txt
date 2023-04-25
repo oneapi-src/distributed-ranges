@@ -36,7 +36,13 @@ add_executable(
   copy-3.cpp
 )
 
-foreach(test-exec IN ITEMS shp-tests shp-tests-3)
+add_executable(
+  my-tests
+  shp-tests.cpp
+  take.cpp
+)
+
+foreach(test-exec IN ITEMS shp-tests shp-tests-3 my-tests)
   target_link_libraries(
     ${test-exec}
     GTest::gtest_main

@@ -41,14 +41,8 @@ auto take_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
 
   auto take_partial = [=](auto &&v) {
     auto &&[i, segment] = v;
-    if (i == last_seg) {
-      auto first = rng::begin(segment);
-      auto last = rng::begin(segment);
-      rng::advance(last, remainder);
-      return dr::remote_subrange(first, last, dr::ranges::rank(segment));
-    } else {
-      return dr::remote_subrange(segment);
-    }
+    return rng::views::slice(segment, 0,
+                             i == last_seg ? remainder : rng::size(segment));
   };
 
   return enumerate(segments) | rng::views::take(last_seg + 1) |
@@ -71,14 +65,8 @@ auto drop_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
 
   auto drop_partial = [=](auto &&v) {
     auto &&[i, segment] = v;
-    if (i == last_seg) {
-      auto first = rng::begin(segment);
-      rng::advance(first, remainder);
-      auto last = rng::end(segment);
-      return dr::remote_subrange(first, last, dr::ranges::rank(segment));
-    } else {
-      return dr::remote_subrange(segment);
-    }
+    return rng::views::slice(segment, i == last_seg ? remainder : 0,
+                             rng::size(segment));
   };
 
   return enumerate(segments) | rng::views::drop(last_seg) |
