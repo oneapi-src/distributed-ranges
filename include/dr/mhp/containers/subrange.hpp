@@ -36,16 +36,10 @@ public:
   dm_row<value_type> operator[](int n) {
     std::size_t rowsize = col_rng_.second - col_rng_.first;
 
-    int offset;
-    if ((int)(index_ + n * rowsize) > 0) {
-      offset = dm_->halo_bounds().prev * dm_->shape()[1] +
-               find_dm_offset((int)(index_ + n * rowsize)) -
-               default_comm().rank() * dm_->segment_size();
-    } else {
-      offset = dm_->halo_bounds().prev * dm_->shape()[1] +
-               find_dm_offset((int)(index_ + n * rowsize)) -
-               default_comm().rank() * dm_->segment_size();
-    }
+    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
+                 find_dm_offset((int)(index_ + n * rowsize)) -
+                 default_comm().rank() * dm_->segment_size();
+
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
 
