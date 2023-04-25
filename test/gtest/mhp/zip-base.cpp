@@ -190,11 +190,6 @@ TYPED_TEST(Zip, Segments) {
   // static_assert(compliant_view<decltype(dist)>);
 }
 
-template <rng::forward_range R1, rng::forward_range R2>
-bool operator==(R1 &&r1, R2 &&r2) {
-  return is_equal(r1, r2);
-}
-
 TYPED_TEST(Zip, Dist1) {
   Ops1<TypeParam> ops(10);
 
@@ -202,9 +197,6 @@ TYPED_TEST(Zip, Dist1) {
   auto dist = test_zip(ops.dist_vec);
   static_assert(compliant_view<decltype(dist)>);
   EXPECT_EQ(local, dist);
-  auto flat = rng::views::join(dr::ranges::segments(dist));
-  EXPECT_TRUE(is_equal(local, flat));
-  EXPECT_TRUE(local == flat);
 }
 
 TYPED_TEST(Zip, Dist2) {
@@ -231,6 +223,24 @@ TYPED_TEST(Zip, Dist3Distance) {
   EXPECT_EQ(
       rng::distance(rng::views::zip(ops.vec0, ops.vec1, ops.vec2)),
       rng::distance(test_zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
+}
+
+TYPED_TEST(Zip, RangeSegments) {
+  Ops1<TypeParam> ops(10);
+
+  auto local = rng::views::zip(ops.vec);
+  auto dist = test_zip(ops.dist_vec);
+  auto flat = rng::views::join(dr::ranges::segments(dist));
+  EXPECT_TRUE(is_equal(local, flat));
+}
+
+TYPED_TEST(Zip, IterSegments) {
+  Ops1<TypeParam> ops(10);
+
+  auto local = rng::views::zip(ops.vec);
+  auto dist = test_zip(ops.dist_vec);
+  auto flat = rng::views::join(dr::ranges::segments(dist.begin()));
+  EXPECT_TRUE(is_equal(local, flat));
 }
 
 TYPED_TEST(Zip, ConsumingAll) {

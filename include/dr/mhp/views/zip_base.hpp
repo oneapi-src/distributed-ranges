@@ -25,6 +25,37 @@ template <typename... Rs> auto zip_base(Rs &&...rs) {
 
 } // namespace views
 
+namespace __detail {
+
+template <typename Base> auto base_to_segments(Base &&base) {
+  // Given segments, return elementwise zip
+  auto zip_segments = [](auto &&...segments) {
+    return views::zip_base(segments...);
+  };
+
+  // Given a tuple of segments, return a single segment by doing
+  // elementwise zip
+  auto zip_segment_tuple = [zip_segments](auto &&v) {
+    return std::apply(zip_segments, v);
+  };
+
+  // Given base ranges, return segments
+  auto bases_to_segments = [zip_segment_tuple](auto &&...bases) {
+    auto z = rng::views::zip(dr::ranges::segments(bases)...) |
+             rng::views::transform(zip_segment_tuple);
+    // return empty segment when ranges are not aligned
+    if (aligned(bases...)) {
+      return z;
+    } else {
+      return decltype(z){};
+    }
+  };
+
+  return std::apply(bases_to_segments, base);
+}
+
+} // namespace __detail
+
 template <typename RngIter, typename... BaseIters> class zip_base_iterator {
 public:
   using value_type = rng::iter_value_t<RngIter>;
@@ -99,6 +130,15 @@ public:
   auto operator*() const { return *rng_iter_; }
   auto operator[](difference_type n) const { return rng_iter_[n]; }
 
+  //
+  // Distributed Ranges support
+  //
+  auto segments() const
+    requires(distributed_iterator<BaseIters> && ...)
+  {
+    return __detail::base_to_segments(base_);
+  }
+
 private:
   RngIter rng_iter_;
   std::tuple<BaseIters...> base_;
@@ -140,30 +180,7 @@ public:
   auto segments() const
     requires(distributed_range<Rs> && ...)
   {
-    // Given segments, return elementwise zip
-    auto zip_segments = [](auto &&...segments) {
-      return views::zip_base(segments...);
-    };
-
-    // Given a tuple of segments, return a single segment by doing
-    // elementwise zip
-    auto zip_segment_tuple = [zip_segments](auto &&v) {
-      return std::apply(zip_segments, v);
-    };
-
-    // Given base ranges, return segments
-    auto bases_to_segments = [zip_segment_tuple, this](auto &&...bases) {
-      auto z = rng::views::zip(dr::ranges::segments(bases)...) |
-               rng::views::transform(zip_segment_tuple);
-      // return empty segment when ranges are not aligned
-      if (aligned(bases...)) {
-        return z;
-      } else {
-        return decltype(z){};
-      }
-    };
-
-    return std::apply(bases_to_segments, base_);
+    return __detail::base_to_segments(base_);
   }
 
   auto rank() const
