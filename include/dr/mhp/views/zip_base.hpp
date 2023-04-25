@@ -172,6 +172,16 @@ public:
     return dr::ranges::rank(std::get<0>(base_));
   }
 
+  auto local() const
+    requires(remote_range<Rs> && ...)
+  {
+    auto zip = []<typename... Vs>(Vs &&...bases) {
+      return rng::views::zip(dr::ranges::local(std::forward<Vs>(bases))...);
+    };
+
+    return std::apply(zip, base_);
+  }
+
 private:
   rng_zip rng_zip_;
   std::tuple<rng::views::all_t<Rs>...> base_;

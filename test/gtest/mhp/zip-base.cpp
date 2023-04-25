@@ -190,6 +190,11 @@ TYPED_TEST(Zip, Segments) {
   // static_assert(compliant_view<decltype(dist)>);
 }
 
+template <rng::forward_range R1, rng::forward_range R2>
+bool operator==(R1 &&r1, R2 &&r2) {
+  return is_equal(r1, r2);
+}
+
 TYPED_TEST(Zip, Dist1) {
   Ops1<TypeParam> ops(10);
 
@@ -197,6 +202,9 @@ TYPED_TEST(Zip, Dist1) {
   auto dist = test_zip(ops.dist_vec);
   static_assert(compliant_view<decltype(dist)>);
   EXPECT_EQ(local, dist);
+  auto flat = rng::views::join(dr::ranges::segments(dist));
+  EXPECT_TRUE(is_equal(local, flat));
+  EXPECT_TRUE(local == flat);
 }
 
 TYPED_TEST(Zip, Dist2) {
@@ -255,28 +263,31 @@ TYPED_TEST(Zip, ForEach) {
 }
 
 #if 0
-TYPED_TEST(Zip, OfSubrange) {
-  Ops2<TypeParam> ops(10);
-
-  EXPECT_TRUE(check_view(
-      rng::views::zip(rng::subrange(ops.vec0.begin() + 1, ops.vec0.end() - 1),
-                      rng::subrange(ops.vec1.begin() + 1, ops.vec1.end() - 1)),
-      test_zip(
-          rng::subrange(ops.dist_vec0.begin() + 1, ops.dist_vec0.end() - 1),
-          rng::subrange(ops.dist_vec1.begin() + 1, ops.dist_vec1.end() - 1))));
-}
-
-TYPED_TEST(Zip, ForEach) {
+TYPED_TEST(Zip, ForEachDrop) {
   Ops2<TypeParam> ops(10);
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
-  xhp::for_each(test_zip(ops.dist_vec0, ops.dist_vec1), copy);
-  rng::for_each(rng::views::zip(ops.vec0, ops.vec1), copy);
+  xhp::for_each(xhp::views::drop(test_zip(ops.dist_vec0, ops.dist_vec1), 1), copy);
+  rng::for_each(xhp::views::drop(rng::views::zip(ops.vec0, ops.vec1), 1), copy);
 
   EXPECT_EQ(ops.vec0, ops.dist_vec0);
   EXPECT_EQ(ops.vec1, ops.dist_vec1);
 }
+#endif
 
+TYPED_TEST(Zip, ConsumingSubrange) {
+  Ops2<TypeParam> ops(10);
+
+  auto local =
+      rng::views::zip(rng::subrange(ops.vec0.begin() + 1, ops.vec0.end() - 1),
+                      rng::subrange(ops.vec1.begin() + 1, ops.vec1.end() - 1));
+  auto dist = test_zip(
+      rng::subrange(ops.dist_vec0.begin() + 1, ops.dist_vec0.end() - 1),
+      rng::subrange(ops.dist_vec1.begin() + 1, ops.dist_vec1.end() - 1));
+  EXPECT_EQ(local, dist);
+}
+
+#if 0
 // doesn't compile in mhp
 TEST(Zip, ToTransform) {
   Ops2<xhp::distributed_vector<int>> ops(10);
