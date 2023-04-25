@@ -5,8 +5,8 @@
 #pragma once
 
 #include "index.hpp"
-#include "segments.hpp"
 #include "rows.hpp"
+#include "segments.hpp"
 #include "subrange.hpp"
 
 namespace dr::mhp {

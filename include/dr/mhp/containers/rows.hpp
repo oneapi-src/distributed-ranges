@@ -17,7 +17,8 @@ template <typename DM> class d_segment;
 // template <typename DM> class d_segment_iterator;
 // template <typename T, typename Allocator = std::allocator<T>> class dm_row;
 
-template <typename T, typename Allocator = std::allocator<T>> class dm_row : public std::span<T> {
+template <typename T, typename Allocator = std::allocator<T>>
+class dm_row : public std::span<T> {
   using dmatrix = distributed_dense_matrix<T>;
   using dsegment = d_segment<dmatrix>;
 
@@ -25,10 +26,10 @@ public:
   using iterator = typename std::span<T>::iterator;
 
   dm_row(){};
-  dm_row(signed long idx, T *ptr, std::size_t size, dsegment *segment, 
+  dm_row(signed long idx, T *ptr, std::size_t size, dsegment *segment,
          Allocator allocator = Allocator())
-      : std::span<T>({ptr, size}), index_(idx), data_(ptr), segment_(segment),
-        size_(size), allocator_(allocator){};
+      : std::span<T>({ptr, size}), index_(idx), data_(ptr), size_(size),
+        segment_(segment), allocator_(allocator){};
 
   // copying ctor
   dm_row(const dm_row &other)
@@ -36,9 +37,9 @@ public:
                           ? Allocator().allocate(other.size_)
                           : other.data_,
                       other.size_}) {
+
     index_ = other.index_;
-    data_ = (other.index_ == INT_MIN) ? allocator_.allocate(other.size_)
-                                      : other.data_;
+    data_ = &(*this->begin());
     segment_ = other.segment_;
     size_ = other.size_;
     if (other.index_ == INT_MIN) {
@@ -82,10 +83,10 @@ public:
   }
 
 private:
-  signed long index_ = 0;
+  signed long index_ = INT_MIN;
   T *data_ = nullptr;
-  dsegment *segment_ = nullptr;
   std::size_t size_ = 0;
+  dsegment *segment_ = nullptr;
   Allocator allocator_;
 };
 
@@ -114,13 +115,13 @@ public:
                                      dm_->halo_bounds().prev) &&
         abs_ind < dm_->local_rows_indices_.first) { // halo prev
       return dm_->dm_halo_p_rows_[dm_->halo_bounds().prev -
-                                 dm_->local_rows_indices_.first + abs_ind];
+                                  dm_->local_rows_indices_.first + abs_ind];
     }
     if (abs_ind > dm_->local_rows_indices_.second &&
         abs_ind <= (difference_type)(dm_->local_rows_indices_.second +
                                      dm_->halo_bounds().next)) { // halo next
       return dm_->dm_halo_n_rows_[dm_->halo_bounds().next +
-                                 dm_->local_rows_indices_.second - abs_ind];
+                                  dm_->local_rows_indices_.second - abs_ind];
     }
     assert(0);
   }
@@ -128,13 +129,13 @@ public:
   // value_type get() const {
   //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
   //   auto value = dm_->win_.template get<value_type>(rank_, segment_offset);
-  //   lib::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
+  //   dr::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
   //   return value;
   // }
 
   // void put(const value_type &value) const {
   //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
-  //   lib::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
+  //   dr::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
   //   dm_->win_.put(value, rank_, segment_offset);
   // }
 
@@ -198,7 +199,7 @@ public:
   }
 
   auto segments() const {
-    // return lib::internal::drop_segments(dm_->segments(), index_);
+    // return dr::__details__::drop_segments(dm_->segments(), index_);
     return dm_->segments();
   }
   auto &halo() const { return dm_->halo(); }

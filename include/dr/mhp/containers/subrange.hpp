@@ -36,17 +36,22 @@ public:
   dm_row<value_type> operator[](int n) {
     std::size_t rowsize = col_rng_.second - col_rng_.first;
 
-    assert(index_ + n * rowsize > 0);
-    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
-                 find_dm_offset(index_ + n * rowsize) -
-                 default_comm().rank() * dm_->segment_size();
-
+    int offset;
+    if ((int)(index_ + n * rowsize) > 0) {
+      offset = dm_->halo_bounds().prev * dm_->shape()[1] +
+               find_dm_offset((int)(index_ + n * rowsize)) -
+               default_comm().rank() * dm_->segment_size();
+    } else {
+      offset = dm_->halo_bounds().prev * dm_->shape()[1] +
+               find_dm_offset((int)(index_ + n * rowsize)) -
+               default_comm().rank() * dm_->segment_size();
+    }
     assert(offset > 0);
     assert(offset < (int)dm_->data_size());
 
-    signed long idx = default_comm().rank() * dm_->segment_shape()[0];
+    signed long idx = default_comm().rank() * dm_->segment_shape()[0]; // ??
     value_type *ptr = dm_->data() + offset;
-    d_segment<DM> *segment = &(dm_->segments()[0]);
+    d_segment<DM> *segment = &(dm_->segments()[0]); // comm rank ??
 
     return dm_row<value_type>(idx, ptr, rowsize, segment);
   }
@@ -145,8 +150,13 @@ private:
     ind_rows = index / (col_rng_.second - col_rng_.first);
     ind_cols = index % (col_rng_.second - col_rng_.first);
 
+    if (ind_cols < 0) {
+      ind_rows -= 1;
+      ind_cols += (col_rng_.second - col_rng_.first);
+    }
+
     offset += row_rng_.first * dm_->shape()[1] + col_rng_.first;
-    offset += ind_rows * dm_->shape()[1] + ind_cols;
+    offset += (int)(ind_rows * dm_->shape()[1] + ind_cols);
 
     return offset;
   };

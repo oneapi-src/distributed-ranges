@@ -161,9 +161,10 @@ public:
 
   bool is_local() { return segment_index_ == default_comm().rank(); }
 
-  key_type shape() { 
-    return key_type ({size_ / dv_->shape()[1], dv_->shape()[1]});  
+  key_type shape() {
+    return key_type({size_ / dv_->shape()[1], dv_->shape()[1]});
   }
+
 private:
   DV *dv_;
   std::size_t segment_index_;

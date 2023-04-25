@@ -8,7 +8,7 @@
 #include "dr/mhp.hpp"
 #include "dr/mhp/containers/distributed_dense_matrix.hpp"
 
-using T = float;
+using T = double;
 
 MPI_Comm comm;
 int comm_rank;
@@ -46,13 +46,13 @@ int rowcmp(dr::mhp::dm_row<T>::iterator r, std::vector<T> &v,
   return res;
 }
 
-int local_compare(dr::mhp::distributed_dense_matrix<T> &dm,
+int local_compare(std::string label, dr::mhp::distributed_dense_matrix<T> &dm,
                   std::vector<std::vector<T>> &vv) {
   int res = 0;
   for (auto r = dm.rows().begin(); r != dm.rows().end(); r++) {
     if (r.is_local())
       if (-1 == rowcmp((*r).begin(), vv[(*r).idx()], (*r).size())) {
-        fmt::print("{}: Fail (idx = {})\n", comm_rank, (*r).idx());
+        fmt::print("{}: {} Fail (idx = {})\n", comm_rank, label, (*r).idx());
         res = -1;
       }
   }
@@ -79,8 +79,8 @@ int check(dr::mhp::distributed_dense_matrix<T> &a,
     std::swap(va, vb);
   }
 
-  return local_compare(a, (steps % 2) ? vb : va) +
-         local_compare(b, (steps % 2) ? va : vb);
+  return local_compare("A", a, (steps % 2) ? vb : va) +
+         local_compare("B", b, (steps % 2) ? va : vb);
 }
 
 //
@@ -89,9 +89,9 @@ int check(dr::mhp::distributed_dense_matrix<T> &a,
 
 auto stencil_op1 = [](auto &p) {
   // Two notations possible, performance to be verified
-  T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
+  // T res = p[{-1, 0}] + p[{0, 0}] + p[{+1, 0}] + p[{0, -1}] + p[{0, +1}];
   // the version below (buggy for low egde of the matrix - to be fixed)
-  // T res = p[-1][0] + p[0][0] + p[+1][0] + p[0][-1] + p[0][+1];
+  T res = p[-1][0] + p[0][0] + p[+1][0] + p[0][-1] + p[0][+1];
 
   return res;
 };
