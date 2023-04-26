@@ -140,6 +140,12 @@ public:
                                        offset_);
   }
 
+  auto rank() const
+    requires(remote_iterator<BaseIters> && ...)
+  {
+    return dr::ranges::rank(std::get<0>(base_));
+  }
+
   auto local() const
     requires(remote_iterator<BaseIters> && ...)
   {

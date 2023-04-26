@@ -359,7 +359,6 @@ TEST(Zip, CopyConstructor) {
   EXPECT_EQ(dist, dist_copy);
 }
 
-#if 0
 TYPED_TEST(Zip, TransformReduce) {
   Ops2<TypeParam> ops(10);
 
@@ -375,6 +374,7 @@ TYPED_TEST(Zip, TransformReduce) {
   EXPECT_EQ(local_reduce, dist_reduce);
 }
 
+#if 0
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
