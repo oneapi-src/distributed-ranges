@@ -24,8 +24,7 @@ public:
 
   dm_row(){};
   dm_row(signed long idx, T *ptr, std::size_t size, dsegment *segment)
-      : std::span<T>({ptr, size}), index_(idx), data_(ptr), size_(size),
-        segment_(segment){};
+      : std::span<T>({ptr, size}), index_(idx), segment_(segment){};
 
   dsegment *segment() { return segment_; }
   signed long idx() { return index_; }
@@ -33,7 +32,7 @@ public:
   // T &operator[](int index) { return *(std::span<T>::begin() + index); }
 
   dm_row<T> operator=(dm_row<T> other) {
-    assert(this->size_ == other.size_);
+    assert(this->size() == other.size());
     iterator i = rng::begin(*this), oi = rng::begin(other);
     while (i != this->end()) {
       *(i++) = *(oi++);
@@ -43,8 +42,6 @@ public:
 
 private:
   signed long index_ = INT_MIN;
-  T *data_ = nullptr;
-  std::size_t size_ = 0;
   dsegment *segment_ = nullptr;
 };
 

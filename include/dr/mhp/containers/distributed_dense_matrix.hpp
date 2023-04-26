@@ -49,13 +49,8 @@ public:
   distributed_dense_matrix(key_type shape,
                            dr::halo_bounds hb = dr::halo_bounds(),
                            Allocator allocator = Allocator())
-      : shape_(shape), segment_shape_((shape_[0] + default_comm().size() - 1) /
-                                          default_comm().size(),
-                                      shape_[1]),
-        segment_size_(std::max({segment_shape_[0] * shape_[1],
-                                hb.prev * shape_[1], hb.next * shape_[1]})),
-        data_size_(segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1]),
-        dm_rows_(this), dm_halo_p_rows_(this), dm_halo_n_rows_(this) {
+      : shape_(shape), dm_rows_(this), dm_halo_p_rows_(this),
+        dm_halo_n_rows_(this) {
     init_(hb, allocator);
   }
   ~distributed_dense_matrix() {
@@ -86,22 +81,26 @@ public:
 
   bool is_local_row(int index) {
     if (index >= local_rows_indices_.first &&
-        index <= local_rows_indices_.second)
+        index <= local_rows_indices_.second) {
       return true;
-    return false;
+    } else {
+      return false;
+    }
   }
   // index of cell on linear view
   bool is_local_cell(int index) {
     if (index >= local_rows_indices_.first * (int)shape_[1] &&
         index < (local_rows_indices_.second + 1) * (int)shape_[1]) {
       return true;
+    } else {
+      return false;
     }
-    return false;
   }
 
   std::pair<int, int> local_rows_indices() { return local_rows_indices_; }
 
   // for debug only
+#if 1
   void dump_matrix(std::string msg) {
     std::stringstream s;
     s << default_comm().rank() << ": " << msg << " :\n";
@@ -140,35 +139,42 @@ public:
     s << std::endl;
     std::cout << s.str();
   }
-
+#endif
   auto data_size() { return data_size_; }
 
 private:
   void init_(dr::halo_bounds hb, auto allocator) {
 
-    halo_bounds_ = hb;
-    data_ = allocator.allocate(data_size_);
+    assert(shape_[0] > default_comm().size());
 
     grid_size_ = default_comm().size();
+
+    segment_shape_ =
+        index((shape_[0] + grid_size_ - 1) / grid_size_, shape_[1]);
+
+    segment_size_ = std::max({segment_shape_[0], hb.prev, hb.next}) * shape_[1];
+
+    data_size_ = segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1];
+
+    halo_bounds_ = hb;
+    data_ = allocator.allocate(data_size_);
 
     hb.prev *= shape_[1];
     hb.next *= shape_[1];
 
     halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
 
-    // prepare segments
-    // one dsegment per node, 1-d arrangement of segments
+    // prepare sizes and segments
+    // one d_segment per node, 1-d arrangement of segments
 
     segments_.reserve(grid_size_);
 
-    std::size_t idx = 0;
-    for (std::size_t i = 0; i < grid_size_; i++) {
+    for (std::size_t idx = 0; idx < grid_size_; idx++) {
       std::size_t _seg_rows =
-          segment_shape_[0] -
-          ((idx + 1) / default_comm().size()) *
-              (default_comm().size() * segment_shape_[0] - shape_[0]);
+          (idx + 1) < grid_size_
+              ? segment_shape_[0]
+              : segment_shape_[0] * (1 - grid_size_) + shape_[0];
       segments_.emplace_back(this, idx, _seg_rows * shape_[1]);
-      idx++;
     }
 
     // regular rows
@@ -176,7 +182,7 @@ private:
 
     int row_start_index_ = 0;
 
-    // for (const auto &s : local_segments(dr)) {
+    // for (const auto &s : local_segments(dr)) { // check ?
     for (auto _titr = rng::begin(segments_); _titr != rng::end(segments_);
          ++_titr) {
       for (int _ind = row_start_index_;
@@ -241,11 +247,11 @@ private:
 
   key_type shape_;
   std::size_t grid_size_; // distribution of tiles, currently (N, 1), and 2nd
-                          // dimention is omitted
+                          // dimension is omitted
   key_type segment_shape_;
 
-  const std::size_t segment_size_ = 0; // size of local data
-  const std::size_t data_size_ = 0;    // all data with halo buffers
+  std::size_t segment_size_ = 0; // size of local data
+  std::size_t data_size_ = 0;    // all data with halo buffers
 
   T *data_ = nullptr; // local data ptr
 

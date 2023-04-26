@@ -23,13 +23,6 @@ target_link_libraries(
   DR::mpi)
 add_mpi_test(stencil-1d-array stencil-1d-array 2)
 
-# add_executable(stencil-2d stencil-2d.cpp)
-# target_link_libraries(
-#   stencil-2d
-#   cxxopts
-#   DR::mpi)
-# add_mpi_test(stencil-2d stencil-2d 2)
-
 add_executable(stencil-2d-matrix stencil-2d-matrix.cpp)
 target_link_libraries(
   stencil-2d-matrix
