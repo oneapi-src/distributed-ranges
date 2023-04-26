@@ -340,8 +340,7 @@ TYPED_TEST(Zip, ConsumingSubrange) {
   EXPECT_EQ(local, dist);
 }
 
-// doesn't compile in mhp
-TEST(Zip, ToTransform) {
+TEST(Zip, FeedingTransform) {
   Ops2<xhp::distributed_vector<int>> ops(10);
 
   auto mul = [](auto v) { return std::get<0>(v) * std::get<1>(v); };
@@ -352,7 +351,30 @@ TEST(Zip, ToTransform) {
   EXPECT_EQ(local, dist);
 }
 
+TEST(Zip, CopyConstructor) {
+  Ops2<xhp::distributed_vector<int>> ops(10);
+
+  auto dist = test_zip(ops.dist_vec0, ops.dist_vec1);
+  auto dist_copy(dist);
+  EXPECT_EQ(dist, dist_copy);
+}
+
 #if 0
+TYPED_TEST(Zip, TransformReduce) {
+  Ops2<TypeParam> ops(10);
+
+  auto mul = [](auto v) { return std::get<0>(v) * std::get<1>(v); };
+
+  auto local = rng::views::transform(rng::views::zip(ops.vec0, ops.vec1), mul);
+  auto local_reduce = std::reduce(local.begin(), local.end());
+
+  auto dist =
+      xhp::views::transform(test_zip(ops.dist_vec0, ops.dist_vec1), mul);
+  auto dist_reduce = xhp::reduce(dist);
+
+  EXPECT_EQ(local_reduce, dist_reduce);
+}
+
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
