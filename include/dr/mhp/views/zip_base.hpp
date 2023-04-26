@@ -70,7 +70,7 @@ public:
   auto operator+(difference_type n) const {
     auto iter(*this);
     iter.rng_iter_ += n;
-    iter.delta_ += n;
+    iter.offset_ += n;
     return iter;
   }
   friend auto operator+(difference_type n, const zip_base_iterator &other) {
@@ -79,7 +79,7 @@ public:
   auto operator-(difference_type n) const {
     auto iter(*this);
     iter.rng_iter_ -= n;
-    iter.delta_ -= n;
+    iter.offset_ -= n;
     return iter;
   }
   auto operator-(zip_base_iterator other) const {
@@ -88,34 +88,34 @@ public:
 
   auto &operator+=(difference_type n) {
     rng_iter_ += n;
-    delta_ += n;
+    offset_ += n;
     return *this;
   }
   auto &operator-=(difference_type n) {
     rng_iter_ -= n;
-    delta_ -= n;
+    offset_ -= n;
     return *this;
   }
   auto &operator++() {
     rng_iter_++;
-    delta_++;
+    offset_++;
     return *this;
   }
   auto operator++(int) {
     auto iter(*this);
     rng_iter_++;
-    delta_++;
+    offset_++;
     return iter;
   }
   auto &operator--() {
     rng_iter_--;
-    delta_--;
+    offset_--;
     return *this;
   }
   auto operator--(int) {
     auto iter(*this);
     rng_iter_--;
-    delta_--;
+    offset_--;
     return iter;
   }
 
@@ -123,7 +123,7 @@ public:
     return rng_iter_ == other.rng_iter_;
   }
   auto operator<=>(zip_base_iterator other) const {
-    return delta_ <=> other.delta_;
+    return offset_ <=> other.offset_;
   }
 
   // Underlying zip_base_iterator does not return a reference
@@ -136,13 +136,29 @@ public:
   auto segments() const
     requires(distributed_iterator<BaseIters> && ...)
   {
-    return __detail::base_to_segments(base_);
+    return dr::__detail::drop_segments(__detail::base_to_segments(base_),
+                                       offset_);
+  }
+
+  auto local() const
+    requires(remote_iterator<BaseIters> && ...)
+  {
+    // Create a temporary zip_view and return the iterator. This code
+    // assumes the iterator is valid even if the underlying zip_view
+    // is destroyed.
+    auto zip = [this]<typename... Iters>(Iters &&...iters) {
+      return rng::begin(rng::views::zip(rng::subrange(
+          dr::ranges::local(std::forward<Iters>(iters)) + this->offset_,
+          decltype(dr::ranges::local(iters)){})...));
+    };
+
+    return std::apply(zip, base_);
   }
 
 private:
   RngIter rng_iter_;
   std::tuple<BaseIters...> base_;
-  difference_type delta_ = 0;
+  difference_type offset_ = 0;
 };
 
 template <typename... Rs> class zip_base_view : public rng::view_base {

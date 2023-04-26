@@ -243,6 +243,50 @@ TYPED_TEST(Zip, IterSegments) {
   EXPECT_TRUE(is_equal(local, flat));
 }
 
+TYPED_TEST(Zip, Drop) {
+  Ops1<TypeParam> ops(10);
+
+  auto local = rng::views::drop(rng::views::zip(ops.vec), 2);
+  auto dist = xhp::views::drop(test_zip(ops.dist_vec), 2);
+
+  auto flat = rng::views::join(dr::ranges::segments(dist));
+  EXPECT_EQ(local, dist);
+  EXPECT_TRUE(is_equal(local, flat));
+}
+
+TYPED_TEST(Zip, DropLocal) {
+  Ops1<TypeParam> ops(10);
+
+  auto dist = xhp::views::drop(test_zip(ops.dist_vec), 2);
+  for (auto &&segment : dr::ranges::segments(dist)) {
+    if (dr::ranges::rank(segment) == comm_rank) {
+      fmt::print("Local range: {}\n", dr::ranges::local(segment));
+    }
+  }
+}
+
+TYPED_TEST(Zip, SegmentLocal) {
+  Ops1<TypeParam> ops(10);
+
+  auto dist = test_zip(ops.dist_vec);
+  for (auto &&segment : dr::ranges::segments(dist)) {
+    if (dr::ranges::rank(segment) == comm_rank) {
+      fmt::print("Local range: {}\n", dr::ranges::local(segment));
+    }
+  }
+}
+
+TYPED_TEST(Zip, IterLocal) {
+  Ops1<TypeParam> ops(10);
+
+  auto dist = test_zip(ops.dist_vec);
+  for (auto &&segment : dr::ranges::segments(dist)) {
+    if (dr::ranges::rank(segment) == comm_rank) {
+      fmt::print("Local range[0]: {}\n", *dr::ranges::local(segment.begin()));
+    }
+  }
+}
+
 TYPED_TEST(Zip, ConsumingAll) {
   Ops1<TypeParam> ops(10);
 
@@ -272,18 +316,17 @@ TYPED_TEST(Zip, ForEach) {
   EXPECT_EQ(ops.vec1, ops.dist_vec1);
 }
 
-#if 0
 TYPED_TEST(Zip, ForEachDrop) {
   Ops2<TypeParam> ops(10);
 
   auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
-  xhp::for_each(xhp::views::drop(test_zip(ops.dist_vec0, ops.dist_vec1), 1), copy);
+  xhp::for_each(xhp::views::drop(test_zip(ops.dist_vec0, ops.dist_vec1), 1),
+                copy);
   rng::for_each(xhp::views::drop(rng::views::zip(ops.vec0, ops.vec1), 1), copy);
 
   EXPECT_EQ(ops.vec0, ops.dist_vec0);
   EXPECT_EQ(ops.vec1, ops.dist_vec1);
 }
-#endif
 
 TYPED_TEST(Zip, ConsumingSubrange) {
   Ops2<TypeParam> ops(10);
@@ -297,7 +340,6 @@ TYPED_TEST(Zip, ConsumingSubrange) {
   EXPECT_EQ(local, dist);
 }
 
-#if 0
 // doesn't compile in mhp
 TEST(Zip, ToTransform) {
   Ops2<xhp::distributed_vector<int>> ops(10);
@@ -310,6 +352,7 @@ TEST(Zip, ToTransform) {
   EXPECT_EQ(local, dist);
 }
 
+#if 0
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
