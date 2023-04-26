@@ -7,6 +7,7 @@
 #include <dr/detail/ranges.hpp>
 #include <dr/shp/device_ptr.hpp>
 #include <dr/shp/init.hpp>
+#include <dr/shp/util/sycl_utils.hpp>
 #include <iterator>
 #include <sycl/sycl.hpp>
 
@@ -39,23 +40,23 @@ template <typename T> sycl::device get_pointer_device(shp::device_ptr<T> ptr) {
   return sycl::get_pointer_device(ptr.get_raw_pointer(), shp::context());
 }
 
-template <typename InputIt> sycl::queue get_queue_for_pointer(InputIt iter) {
+template <typename InputIt> sycl::queue &get_queue_for_pointer(InputIt iter) {
   if (get_pointer_type(iter) == sycl::usm::alloc::device) {
     auto device = get_pointer_device(iter);
-    return sycl::queue(shp::context(), device);
+    return __detail::queue(device);
   } else {
     return default_queue();
   }
 }
 
 template <typename InputIt, typename OutputIt>
-sycl::queue get_queue_for_pointers(InputIt iter, OutputIt iter2) {
+sycl::queue &get_queue_for_pointers(InputIt iter, OutputIt iter2) {
   if (get_pointer_type(iter) == sycl::usm::alloc::device) {
     auto device = get_pointer_device(iter);
-    return sycl::queue(shp::context(), device);
+    return __detail::queue(device);
   } else if (get_pointer_type(iter2) == sycl::usm::alloc::device) {
     auto device = get_pointer_device(iter2);
-    return sycl::queue(shp::context(), device);
+    return __detail::queue(device);
   } else {
     return default_queue();
   }

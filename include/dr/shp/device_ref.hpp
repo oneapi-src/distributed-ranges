@@ -31,7 +31,7 @@ public:
 #endif
   }
 
-  device_ref operator=(const T &value)
+  device_ref operator=(const T &value) const
     requires(!std::is_const_v<T>)
   {
 #ifdef __SYCL_DEVICE_ONLY__
@@ -43,7 +43,7 @@ public:
     return *this;
   }
 
-  device_ref &operator=(const device_ref &other) {
+  device_ref operator=(const device_ref &other) const {
 #ifdef __SYCL_DEVICE_ONLY__
     *pointer_ = *other.pointer_;
 #else
