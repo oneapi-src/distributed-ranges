@@ -168,9 +168,8 @@ private:
   using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
 public:
-  template <typename... Vs>
-  zip_base_view(Vs &&...vs)
-      : rng_zip_(rng::views::all(vs)...), base_(rng::views::all(vs)...) {}
+  zip_base_view(Rs... rs)
+      : rng_zip_(rng::views::all(rs)...), base_(rng::views::all(rs)...) {}
 
   auto begin() const {
     auto make_begin = [this](auto &&...bases) {
