@@ -89,6 +89,14 @@ TYPED_TEST(Zip, Dist3Distance) {
                 xhp::views::zip(ops.dist_vec0, ops.dist_vec1, ops.dist_vec2)));
 }
 
+TYPED_TEST(Zip, CopyConstructor) {
+  Ops2<TypeParam> ops(10);
+
+  auto dist = xhp::views::zip(ops.dist_vec0, ops.dist_vec1);
+  auto dist_copy(dist);
+  EXPECT_EQ(dist, dist_copy);
+}
+
 TYPED_TEST(Zip, Iota) {
   Ops1<TypeParam> ops(10);
 
