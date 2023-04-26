@@ -14,11 +14,8 @@ template <typename T, typename Allocator = std::allocator<T>>
 class distributed_dense_matrix;
 
 template <typename DM> class d_segment;
-// template <typename DM> class d_segment_iterator;
-// template <typename T, typename Allocator = std::allocator<T>> class dm_row;
 
-template <typename T, typename Allocator = std::allocator<T>>
-class dm_row : public std::span<T> {
+template <typename T> class dm_row : public std::span<T> {
   using dmatrix = distributed_dense_matrix<T>;
   using dsegment = d_segment<dmatrix>;
 
@@ -26,52 +23,14 @@ public:
   using iterator = typename std::span<T>::iterator;
 
   dm_row(){};
-  dm_row(signed long idx, T *ptr, std::size_t size, dsegment *segment,
-         Allocator allocator = Allocator())
+  dm_row(signed long idx, T *ptr, std::size_t size, dsegment *segment)
       : std::span<T>({ptr, size}), index_(idx), data_(ptr), size_(size),
-        segment_(segment), allocator_(allocator){};
-
-  // copying ctor
-  dm_row(const dm_row &other)
-      : std::span<T>({(other.index_ == INT_MIN)
-                          ? Allocator().allocate(other.size_)
-                          : other.data_,
-                      other.size_}) {
-
-    index_ = other.index_;
-    data_ = &(*this->begin());
-    segment_ = other.segment_;
-    size_ = other.size_;
-    if (other.index_ == INT_MIN) {
-      iterator i = rng::begin(*this), oi = rng::begin(other);
-      while (i != this->end()) {
-        *(i++) = *(oi++);
-      }
-    }
-  }
-
-  // own memory necessary - the row ist standalone, not part of matrix - index
-  // INT_MIN indicates the situation
-  dm_row(std::size_t size)
-      : dm_row(INT_MIN, Allocator().allocate(size), size, nullptr) {
-    for (std::size_t _i = 0; _i < size_; _i++) {
-      data_[_i] = 0;
-    }
-  }
-
-  ~dm_row() {
-    if (INT_MIN == index_ && nullptr != data_) {
-      allocator_.deallocate(data_, size_);
-      data_ = nullptr;
-      size_ = 0;
-      index_ = 0;
-    }
-  }
+        segment_(segment){};
 
   dsegment *segment() { return segment_; }
   signed long idx() { return index_; }
 
-  T &operator[](int index) { return *(std::span<T>::begin() + index); }
+  // T &operator[](int index) { return *(std::span<T>::begin() + index); }
 
   dm_row<T> operator=(dm_row<T> other) {
     assert(this->size_ == other.size_);
@@ -87,29 +46,28 @@ private:
   T *data_ = nullptr;
   std::size_t size_ = 0;
   dsegment *segment_ = nullptr;
-  Allocator allocator_;
 };
 
 template <typename DM> class dm_rows_iterator {
 public:
+  using iterator_category = std::random_access_iterator_tag;
   using value_type = typename dr::mhp::dm_row<typename DM::value_type>;
-  using size_type = typename dr::mhp::dm_row<typename DM::value_type>;
+  // using size_type = typename dr::mhp::dm_row<typename DM::value_type>;
   using difference_type = typename DM::difference_type;
 
   dm_rows_iterator() = default;
   dm_rows_iterator(DM *dm, std::size_t index) noexcept {
     dm_ = dm;
-    index_ = index;
+    row_idx_ = index;
   }
 
-  // dereference
-  value_type &operator*() const { return dm_->dm_rows_[index_]; }
-  value_type operator[](difference_type n) {
-    difference_type abs_ind = index_ + n;
+  auto operator*() const { return dm_->dm_rows_[row_idx_]; }
+  auto operator[](difference_type n) {
+    difference_type abs_ind = row_idx_ + n;
 
     if (abs_ind >= dm_->local_rows_indices_.first &&
         abs_ind <= dm_->local_rows_indices_.second) { // regular rows
-      return dm_->dm_rows_[index_ + n];
+      return dm_->dm_rows_[row_idx_ + n];
     }
     if (abs_ind >= (difference_type)(dm_->local_rows_indices_.first -
                                      dm_->halo_bounds().prev) &&
@@ -141,23 +99,23 @@ public:
 
   // Comparison
   bool operator==(const dm_rows_iterator &other) const noexcept {
-    return index_ == other.index_ && dm_ == other.dm_;
+    return row_idx_ == other.row_idx_ && dm_ == other.dm_;
   }
   auto operator<=>(const dm_rows_iterator &other) const noexcept {
-    return index_ <=> other.index_;
+    return row_idx_ <=> other.row_idx_;
   }
 
   // Only these arithmetics manipulate internal state
   auto &operator-=(difference_type n) {
-    index_ -= n;
+    row_idx_ -= n;
     return *this;
   }
   auto &operator+=(difference_type n) {
-    index_ += n;
+    row_idx_ += n;
     return *this;
   }
   difference_type operator-(const dm_rows_iterator &other) const noexcept {
-    return index_ - other.index_;
+    return row_idx_ - other.row_idx_;
   }
 
   // prefix
@@ -199,16 +157,18 @@ public:
   }
 
   auto segments() const {
-    // return dr::__details__::drop_segments(dm_->segments(), index_);
+    // return dr::__details__::drop_segments(dm_->segments(), row_idx_);
     return dm_->segments();
   }
   auto &halo() const { return dm_->halo(); }
 
-  bool is_local() { return dm_->is_local_row(index_); }
+  bool is_local() { return dm_->is_local_row(row_idx_); }
+
+  DM *dm() { return dm_; }
 
 private:
   DM *dm_ = nullptr;
-  std::size_t index_ = 0;
+  std::size_t row_idx_ = 0;
 }; // dm_rows_iterator
 
 template <typename DM>
@@ -219,18 +179,13 @@ public:
 
   dm_rows(DM *dm) { dm_ = dm; }
 
+  iterator begin() const { return iterator(dm_, 0); }
+  iterator end() const { return iterator(dm_, this->size()); }
+
   auto segments() { return dm_->segments(); }
   auto &halo() { return dm_->halo(); }
 
-  iterator begin() const {
-    assert(dm_ != nullptr);
-    return dm_rows_iterator(dm_, 0);
-  }
-  iterator end() const {
-    assert(dm_ != nullptr);
-    return dm_rows_iterator(dm_, this->size());
-  }
-  DM *dm() { return dm_; }
+  // DM *dm() { return dm_; }
 
 private:
   DM *dm_ = nullptr;
