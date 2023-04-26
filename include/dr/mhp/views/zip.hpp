@@ -161,10 +161,9 @@ public:
     difference_type offset_;
   };
 
-  template <rng::viewable_range... V>
-  zip_view(V &&...v)
-      : rng_zip_(rng::views::all(v)...), base_(rng::views::all(v)...) {
-    compute_segment_descriptors(std::forward<V>(v)...);
+  zip_view(R... r)
+      : rng_zip_(rng::views::all(r)...), base_(rng::views::all(r)...) {
+    compute_segment_descriptors(std::forward<R>(r)...);
   }
 
   auto begin() const { return zip_iterator(this, 0); }
