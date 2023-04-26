@@ -26,6 +26,8 @@ add_shp_example(dot_product_benchmark)
 add_shp_example(inclusive_scan_example)
 # unsatisfied dependency of grb/grb.hpp
 # add_shp_example(gemv_benchmark)
+add_shp_example_no_test(copy_test)
+add_shp_example_no_test(gather_test)
 add_shp_example_no_test(gemv_example)  # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example_no_test(matrix_example)  # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example(sparse_test)
