@@ -64,8 +64,8 @@ public:
 
   dm_rows<distributed_dense_matrix> &rows() { return dm_rows_; }
 
-  iterator begin() const { return iterator(segments(), 0, 0); }
-  iterator end() const {
+  iterator begin() { return iterator(segments(), 0, 0); }
+  iterator end() {
     return iterator(segments(), rng::distance(segments()), 0);
   }
 
