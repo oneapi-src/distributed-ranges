@@ -8,7 +8,6 @@
 #include "mpi.h"
 
 #include "dr/mhp.hpp"
-#include "dr/mhp/containers/distributed_dense_matrix.hpp"
 
 using T = float;
 

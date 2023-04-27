@@ -142,13 +142,13 @@ public:
 
   dm_rows<distributed_dense_matrix> &rows() { return dm_rows_; }
 
-  iterator begin() { return iterator(segments(), 0, 0); }
-  iterator end() { return iterator(segments(), rng::distance(segments()), 0); }
+  iterator begin() { return iterator(this, 0); }
+  iterator end() { return begin() + segment_size_; }
 
   T *data() { return data_; }
   key_type shape() noexcept { return shape_; }
   size_type size() noexcept { return shape()[0] * shape()[1]; }
-  auto segments() { return segments_; }
+  auto segments() const { return segments_; }
   size_type segment_size() { return segment_size_; }
   key_type segment_shape() { return segment_shape_; }
 

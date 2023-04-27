@@ -23,6 +23,7 @@ add_executable(
   ../common/zip.cpp
   alignment.cpp
   distributed_vector.cpp
+  distributed_dense_matrix.cpp
   reduce.cpp
   stencil.cpp
 )
