@@ -6,6 +6,7 @@
 
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/shp/algorithms/matrix/local_gemv.hpp>
+#include <dr/shp/containers/duplicated_vector.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/distributed_span.hpp>
@@ -74,30 +75,22 @@ void flat_gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
 
 template <dr::distributed_range C, typename T, typename I,
           dr::distributed_range B>
-void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
+void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b,
+          shp::duplicated_vector<rng::range_value_t<B>> &scratch) {
   assert(c.size() == b.size());
   assert(a.shape()[1] == b.size());
   assert(a.grid_shape()[0] == c.segments().size());
   assert(a.grid_shape()[1] == 1);
 
-  auto &&devices = dr::shp::devices();
+  auto &&b_duplicated = scratch;
 
-  using b_scalar_type = rng::range_value_t<B>;
-
-  using local_vector_type =
-      dr::shp::device_vector<b_scalar_type,
-                             dr::shp::device_allocator<b_scalar_type>>;
-
-  std::vector<local_vector_type> local_b;
   std::vector<sycl::event> copy_events;
   std::vector<sycl::event> comp_events;
+  copy_events.reserve(shp::nprocs());
+  comp_events.reserve(a.grid_shape()[0]);
 
-  for (std::size_t i = 0; i < devices.size(); i++) {
-    dr::shp::device_allocator<T> allocator(dr::shp::context(), devices[i]);
-    local_b.push_back(local_vector_type(b.size(), allocator, i));
-  }
-
-  for (auto &&l_b : local_b) {
+  for (std::size_t i = 0; i < shp::nprocs(); i++) {
+    auto &&l_b = b_duplicated.local_vector(i);
     auto event = dr::shp::copy_async(b.begin(), b.end(), l_b.begin());
     copy_events.push_back(event);
   }
@@ -105,7 +98,8 @@ void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
     auto a_tile = a.tile(dr::shp::index<I>(i, 0));
 
-    auto b_iter = dr::ranges::local(local_b[i].begin());
+    auto b_iter =
+        dr::ranges::local(b_duplicated.local_vector(a_tile.rank()).begin());
     auto c_iter = dr::ranges::local(c.segments()[i].begin());
 
     auto &&q = __detail::queue(a_tile.rank());
@@ -116,6 +110,14 @@ void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
   }
 
   __detail::wait(comp_events);
+}
+
+template <dr::distributed_range C, typename T, typename I,
+          dr::distributed_range B>
+void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
+  dr::shp::duplicated_vector<rng::range_value_t<B>> b_duplicated(b.size());
+
+  gemv(c, a, b, b_duplicated);
 }
 
 template <dr::distributed_range C, typename T, typename I,
