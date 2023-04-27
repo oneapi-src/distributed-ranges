@@ -54,8 +54,8 @@ bool is_equal(A &&a, B &&b) {
 }
 
 int main(int argc, char **argv) {
-  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
-  dr::shp::init(devices);
+  auto devices = shp::get_numa_devices(sycl::default_selector_v);
+  shp::init(devices);
 
   if (argc != 2) {
     fmt::print("usage: ./gemv_benchmark [matrix market file]\n");
@@ -83,6 +83,8 @@ int main(int argc, char **argv) {
   std::size_t m = a.shape()[0];
   std::size_t k = a.shape()[1];
 
+  shp::duplicated_vector<T> b_duplicated(k);
+
   fmt::print("Initializing distributed data structures...\n");
   dr::shp::distributed_vector<T, dr::shp::device_allocator<T>> b(k);
   dr::shp::distributed_vector<T, dr::shp::device_allocator<T>> c(m);
@@ -99,7 +101,7 @@ int main(int argc, char **argv) {
   fmt::print("Verification:\n");
 
   fmt::print("Computing GEMV...\n");
-  dr::shp::gemv(c, a, b);
+  dr::shp::gemv(c, a, b, b_duplicated);
   fmt::print("Copying...\n");
   std::vector<T> l(c.size());
   dr::shp::copy(c.begin(), c.end(), l.begin());
@@ -114,7 +116,7 @@ int main(int argc, char **argv) {
   fmt::print("Benchmarking...\n");
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
-    dr::shp::gemv(c, a, b);
+    dr::shp::gemv(c, a, b, b_duplicated);
     auto end = std::chrono::high_resolution_clock::now();
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
@@ -287,6 +289,8 @@ int main(int argc, char **argv) {
 
     durations.clear();
   }
+
+  fmt::print("Finalize...\n");
 
   shp::finalize();
   return 0;
