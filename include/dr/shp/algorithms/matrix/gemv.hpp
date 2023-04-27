@@ -6,11 +6,11 @@
 
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/shp/algorithms/matrix/local_gemv.hpp>
+#include <dr/shp/containers/duplicated_vector.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/distributed_span.hpp>
 #include <dr/shp/util.hpp>
-#include <dr/shp/containers/duplicated_vector.hpp>
 
 namespace dr::shp {
 
@@ -75,7 +75,8 @@ void flat_gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
 
 template <dr::distributed_range C, typename T, typename I,
           dr::distributed_range B>
-void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b, shp::duplicated_vector<rng::range_value_t<B>> &scratch) {
+void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b,
+          shp::duplicated_vector<rng::range_value_t<B>> &scratch) {
   assert(c.size() == b.size());
   assert(a.shape()[1] == b.size());
   assert(a.grid_shape()[0] == c.segments().size());
@@ -85,7 +86,7 @@ void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b, shp::duplicated_vector<
 
   using b_scalar_type = rng::range_value_t<B>;
 
-  auto&& b_duplicated = scratch;
+  auto &&b_duplicated = scratch;
 
   std::vector<sycl::event> copy_events;
   std::vector<sycl::event> comp_events;

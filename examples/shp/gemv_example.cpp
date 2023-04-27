@@ -21,11 +21,10 @@ int main(int argc, char **argv) {
 
   shp::duplicated_vector<T> b_duplicated(100);
 
-  shp::for_each(shp::par_unseq, shp::enumerate(b),
-                    [](auto &&tuple) {
-                      auto &&[idx, value] = tuple;
-                      value = 1;
-                    });
+  shp::for_each(shp::par_unseq, shp::enumerate(b), [](auto &&tuple) {
+    auto &&[idx, value] = tuple;
+    value = 1;
+  });
 
   shp::distributed_vector<T, shp::device_allocator<T>> c(100);
 
@@ -33,8 +32,7 @@ int main(int argc, char **argv) {
 
   shp::sparse_matrix<T> a(
       {100, 100}, 0.01,
-      shp::block_cyclic({shp::tile::div, shp::tile::div},
-                            {shp::nprocs(), 1}));
+      shp::block_cyclic({shp::tile::div, shp::tile::div}, {shp::nprocs(), 1}));
 
   printf("a tiles: %lu x %lu\n", a.grid_shape()[0], a.grid_shape()[1]);
 

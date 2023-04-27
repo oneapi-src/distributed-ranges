@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <dr/shp/device_vector.hpp>
 #include <dr/shp/allocators.hpp>
+#include <dr/shp/device_vector.hpp>
 
 namespace dr::shp {
 
@@ -45,4 +45,4 @@ private:
   std::size_t size_ = 0;
 };
 
-}
+} // namespace dr::shp
