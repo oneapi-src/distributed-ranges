@@ -27,7 +27,7 @@ using uniform_distribution_t = typename uniform_distribution<T>::type;
 } // namespace
 
 template <typename T = float, std::integral I = std::size_t>
-auto generate_random_csr(dr::shp::index<I> shape, double density = 0.01,
+auto generate_random_csr(dr::index<I> shape, double density = 0.01,
                          unsigned int seed = 0) {
 
   assert(density >= 0.0 && density < 1.0);

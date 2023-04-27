@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "index.hpp"
 #include "rows.hpp"
 #include "segments.hpp"
 #include "subrange.hpp"

@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include "index.hpp"
-
 namespace dr::mhp {
 
 using key_type = index<>;

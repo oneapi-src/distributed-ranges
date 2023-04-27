@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <dr/shp/containers/index.hpp>
+#include <dr/detail/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <iterator>
 
@@ -27,7 +27,7 @@ public:
   using const_iterator_accessor = iterator_accessor;
   using nonconst_iterator_accessor = iterator_accessor;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
 
   constexpr dense_matrix_row_accessor() noexcept = default;
   constexpr ~dense_matrix_row_accessor() noexcept = default;
@@ -80,7 +80,7 @@ public:
 
   using scalar_reference = std::iter_reference_t<Iter>;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
   using map_type = T;
 
   using iterator = dense_matrix_row_iterator<T, Iter>;

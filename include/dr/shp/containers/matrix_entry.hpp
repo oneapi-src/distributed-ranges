@@ -8,7 +8,7 @@
 #include <limits>
 #include <type_traits>
 
-#include <dr/shp/containers/index.hpp>
+#include <dr/detail/index.hpp>
 
 namespace dr::shp {
 
@@ -17,14 +17,14 @@ public:
   using index_type = I;
   using map_type = T;
 
-  matrix_entry(dr::shp::index<I> index, const map_type &value)
+  matrix_entry(dr::index<I> index, const map_type &value)
       : value_(value), index_(index) {}
-  matrix_entry(dr::shp::index<I> index, map_type &&value)
+  matrix_entry(dr::index<I> index, map_type &&value)
       : value_(std::move(value)), index_(index) {}
 
   template <typename U>
     requires(std::is_constructible_v<T, U>)
-  matrix_entry(dr::shp::index<I> index, U &&value)
+  matrix_entry(dr::index<I> index, U &&value)
       : value_(std::forward<U>(value)), index_(index) {}
 
   template <typename Entry>
@@ -44,7 +44,7 @@ public:
     return {{index_[0], index_[1]}, value_};
   }
 
-  dr::shp::index<I> index() const noexcept { return index_; }
+  dr::index<I> index() const noexcept { return index_; }
 
   map_type value() const noexcept { return value_; }
 
@@ -81,7 +81,7 @@ public:
   matrix_entry &operator=(matrix_entry &&) = default;
 
 private:
-  dr::shp::index<I> index_;
+  dr::index<I> index_;
   map_type value_;
 };
 
@@ -99,7 +99,7 @@ void swap(dr::shp::matrix_entry<T, I> a, dr::shp::matrix_entry<T, I> b) {
 
 template <std::size_t Index, typename T, typename I>
 struct tuple_element<Index, dr::shp::matrix_entry<T, I>>
-    : tuple_element<Index, std::tuple<dr::shp::index<I>, T>> {};
+    : tuple_element<Index, std::tuple<dr::index<I>, T>> {};
 
 template <typename T, typename I>
 struct tuple_size<dr::shp::matrix_entry<T, I>> : integral_constant<size_t, 2> {
@@ -115,14 +115,14 @@ public:
   using scalar_type = T;
   using index_type = I;
 
-  using key_type = dr::shp::index<I>;
+  using key_type = dr::index<I>;
   using map_type = T;
 
   using scalar_reference = TRef;
 
   using value_type = dr::shp::matrix_entry<T, I>;
 
-  matrix_ref(dr::shp::index<I> index, scalar_reference value)
+  matrix_ref(dr::index<I> index, scalar_reference value)
       : index_(index), value_(value) {}
 
   operator value_type() const noexcept { return value_type(index_, value_); }
@@ -143,7 +143,7 @@ public:
     }
   }
 
-  dr::shp::index<I> index() const noexcept { return index_; }
+  dr::index<I> index() const noexcept { return index_; }
 
   scalar_reference value() const noexcept { return value_; }
 
@@ -180,7 +180,7 @@ public:
   matrix_ref &operator=(matrix_ref &&) = default;
 
 private:
-  dr::shp::index<I> index_;
+  dr::index<I> index_;
   scalar_reference value_;
 };
 
@@ -199,7 +199,7 @@ void swap(dr::shp::matrix_ref<T, I, TRef> a,
 
 template <std::size_t Index, typename T, typename I, typename TRef>
 struct tuple_element<Index, dr::shp::matrix_ref<T, I, TRef>>
-    : tuple_element<Index, std::tuple<dr::shp::index<I>, TRef>> {};
+    : tuple_element<Index, std::tuple<dr::index<I>, TRef>> {};
 
 template <typename T, typename I, typename TRef>
 struct tuple_size<dr::shp::matrix_ref<T, I, TRef>>
