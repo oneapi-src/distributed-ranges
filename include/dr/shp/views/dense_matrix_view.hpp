@@ -169,9 +169,11 @@ public:
            });
   }
 
-  iterator data() const { return data_; }
+  Iter data() const { return data_; }
 
   std::size_t rank() const { return rank_; }
+
+  size_type ld() const { return ld_; }
 
 private:
   Iter data_;
