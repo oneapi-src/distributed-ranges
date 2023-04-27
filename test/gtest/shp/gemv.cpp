@@ -16,7 +16,9 @@ TEST(SparseMatrix, Gemv) {
   dr::shp::distributed_vector<float> b(k, 1.f);
   dr::shp::distributed_vector<float> c(m, 0.f);
 
-  dr::shp::gemv(c, a, b);
+  dr::shp::duplicated_vector<float> b(k);
+
+  dr::shp::gemv(c, a, b, k);
 
   std::vector<float> c_local(m);
 
