@@ -114,6 +114,14 @@ void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b,
 
 template <dr::distributed_range C, typename T, typename I,
           dr::distributed_range B>
+void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
+  dr::shp::duplicated_vector<rng::range_value_t<B>> b_duplicated(b.size());
+
+  gemv(c, a, b, b_duplicated);
+}
+
+template <dr::distributed_range C, typename T, typename I,
+          dr::distributed_range B>
 void gemv_square(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
   assert(a.shape()[0] == c.size());
   assert(a.shape()[1] == b.size());
