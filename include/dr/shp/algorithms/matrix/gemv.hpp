@@ -82,8 +82,6 @@ void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b,
   assert(a.grid_shape()[0] == c.segments().size());
   assert(a.grid_shape()[1] == 1);
 
-  using b_scalar_type = rng::range_value_t<B>;
-
   auto &&b_duplicated = scratch;
 
   std::vector<sycl::event> copy_events;
