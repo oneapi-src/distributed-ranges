@@ -6,7 +6,7 @@
 
 #include <iterator>
 
-#include <dr/shp/containers/index.hpp>
+#include <dr/detail/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/views/dense_column_view.hpp>
 #include <dr/shp/views/dense_row_view.hpp>
@@ -31,7 +31,7 @@ public:
   using const_iterator_accessor = iterator_accessor;
   using nonconst_iterator_accessor = iterator_accessor;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
 
   constexpr dense_matrix_view_accessor() noexcept = default;
   constexpr ~dense_matrix_view_accessor() noexcept = default;
@@ -113,7 +113,7 @@ public:
   using scalar_reference = std::iter_reference_t<Iter>;
   using reference = dr::shp::matrix_ref<T, std::size_t, scalar_reference>;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
   using map_type = T;
 
   using iterator = dense_matrix_view_iterator<T, Iter>;
@@ -182,11 +182,11 @@ private:
 };
 
 template <std::random_access_iterator Iter>
-dense_matrix_view(Iter, dr::shp::index<>, std::size_t)
+dense_matrix_view(Iter, dr::index<>, std::size_t)
     -> dense_matrix_view<std::iter_value_t<Iter>, Iter>;
 
 template <std::random_access_iterator Iter>
-dense_matrix_view(Iter, dr::shp::index<>)
+dense_matrix_view(Iter, dr::index<>)
     -> dense_matrix_view<std::iter_value_t<Iter>, Iter>;
 
 } // namespace dr::shp
