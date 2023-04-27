@@ -11,11 +11,11 @@ using key_type = index<>;
 template <typename T, typename Allocator = std::allocator<T>>
 class distributed_dense_matrix;
 
-template <typename DM> class d_segment;
+template <typename DM> class dv_segment;
 
 template <typename T> class dm_row : public std::span<T> {
   using dmatrix = distributed_dense_matrix<T>;
-  using dsegment = d_segment<dmatrix>;
+  using dsegment = dv_segment<dmatrix>;
 
 public:
   using iterator = typename std::span<T>::iterator;
@@ -30,7 +30,7 @@ public:
   // T &operator[](int index) { return *(std::span<T>::begin() + index); }
 
   dm_row<T> operator=(dm_row<T> other) {
-    assert(this->size() == other.size());
+    assert(rng::distance(*this) == rng::distance(other));
     iterator i = rng::begin(*this), oi = rng::begin(other);
     while (i != this->end()) {
       *(i++) = *(oi++);

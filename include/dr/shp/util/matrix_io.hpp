@@ -233,14 +233,14 @@ auto create_distributed(dr::shp::csr_matrix_view<T, I> local_mat,
     for (I j = 0; j < a.grid_shape()[1]; j++) {
       auto &&tile = a.tile({i, j});
       dr::index<I> row_bounds(i * a.tile_shape()[0],
-                                   i * a.tile_shape()[0] + tile.shape()[0]);
+                              i * a.tile_shape()[0] + tile.shape()[0]);
       dr::index<I> column_bounds(j * a.tile_shape()[1],
-                                      j * a.tile_shape()[1] + tile.shape()[1]);
+                                 j * a.tile_shape()[1] + tile.shape()[1]);
 
       auto local_submat = local_mat.submatrix(row_bounds, column_bounds);
 
-      auto submatrix_shape = dr::index<I>(
-          row_bounds[1] - row_bounds[0], column_bounds[1] - column_bounds[0]);
+      auto submatrix_shape = dr::index<I>(row_bounds[1] - row_bounds[0],
+                                          column_bounds[1] - column_bounds[0]);
 
       auto copied_submat = __detail::convert_to_csr(
           local_submat, submatrix_shape, rng::distance(local_submat),

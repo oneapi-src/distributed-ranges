@@ -4,22 +4,22 @@
 
 #pragma once
 
-#include "rows.hpp"
-#include "segments.hpp"
-#include "subrange.hpp"
+#include <dr/mhp/containers/rows.hpp>
+#include <dr/mhp/containers/segments.hpp>
+#include <dr/mhp/containers/subrange.hpp>
 
 namespace dr::mhp {
 
 using key_type = index<>;
 
-template <typename DM> class d_segments : public std::span<d_segment<DM>> {
-public:
-  d_segments() {}
-  d_segments(DM *dm) : std::span<d_segment<DM>>(dm->segments_) { dm_ = dm; }
+// template <typename DM> class d_segments : public std::span<dv_segment<DM>> {
+// public:
+//   d_segments() {}
+//   d_segments(DM *dm) : std::span<dv_segment<DM>>(dm->segments_) { dm_ = dm; }
 
-private:
-  DM *dm_;
-}; // d_segments
+// private:
+//   DM *dm_;
+// }; // d_segments
 
 template <typename T, typename Allocator> class distributed_dense_matrix {
 public:
@@ -28,8 +28,8 @@ public:
   using difference_type = std::ptrdiff_t;
   using key_type = index<>;
 
-  using iterator =
-      dr::normal_distributed_iterator<d_segments<distributed_dense_matrix>>;
+  // using iterator =
+  //     dr::normal_distributed_iterator<d_segments<distributed_dense_matrix>>;
 
   distributed_dense_matrix(std::size_t rows, std::size_t cols,
                            dr::halo_bounds hb = dr::halo_bounds(),
@@ -61,17 +61,94 @@ public:
     delete halo_;
   }
 
+  class iterator {
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = typename distributed_dense_matrix::value_type;
+    using difference_type = typename distributed_dense_matrix::difference_type;
+
+    iterator() {}
+    iterator(const distributed_dense_matrix *parent, difference_type offset)
+        : parent_(parent), offset_(offset) {}
+
+    auto operator+(difference_type n) const {
+      return iterator(parent_, offset_ + n);
+    }
+    friend auto operator+(difference_type n, const iterator &other) {
+      return other + n;
+    }
+    auto operator-(difference_type n) const {
+      return iterator(parent_, offset_ - n);
+    }
+    auto operator-(iterator other) const { return offset_ - other.offset_; }
+
+    auto &operator+=(difference_type n) {
+      offset_ += n;
+      return *this;
+    }
+    auto &operator-=(difference_type n) {
+      offset_ -= n;
+      return *this;
+    }
+    auto &operator++() {
+      offset_++;
+      return *this;
+    }
+    auto operator++(int) {
+      auto old = *this;
+      offset_++;
+      return old;
+    }
+    auto &operator--() {
+      offset_--;
+      return *this;
+    }
+    auto operator--(int) {
+      auto old = *this;
+      offset_--;
+      return old;
+    }
+
+    bool operator==(iterator other) const {
+      assert(parent_ == other.parent_);
+      return offset_ == other.offset_;
+    }
+    auto operator<=>(iterator other) const {
+      assert(parent_ == other.parent_);
+      return offset_ <=> other.offset_;
+    }
+
+    auto operator*() const {
+      auto segment_size = parent_->segment_size_;
+      return parent_
+          ->segments()[offset_ / segment_size][offset_ % segment_size];
+    }
+    auto operator[](difference_type n) const { return *(*this + n); }
+
+    //
+    // Support for distributed ranges
+    //
+    // distributed iterator provides segments
+    // remote iterator provides local
+    //
+    auto segments() {
+      return dr::__detail::drop_segments(parent_->segments(), offset_);
+    }
+
+  private:
+    const distributed_dense_matrix *parent_;
+    difference_type offset_;
+  };
+
   dm_rows<distributed_dense_matrix> &rows() { return dm_rows_; }
 
   iterator begin() { return iterator(segments(), 0, 0); }
-  iterator end() {
-    return iterator(segments(), rng::distance(segments()), 0);
-  }
+  iterator end() { return iterator(segments(), rng::distance(segments()), 0); }
 
   T *data() { return data_; }
   key_type shape() noexcept { return shape_; }
   size_type size() noexcept { return shape()[0] * shape()[1]; }
-  auto segments() { return dm_segments_; }
+  auto segments() { return segments_; }
   size_type segment_size() { return segment_size_; }
   key_type segment_shape() { return segment_shape_; }
 
@@ -144,9 +221,8 @@ public:
 private:
   void init_(dr::halo_bounds hb, auto allocator) {
 
-    assert(shape_[0] > default_comm().size());
-
     grid_size_ = default_comm().size();
+    assert(shape_[0] > grid_size_);
 
     segment_shape_ =
         index((shape_[0] + grid_size_ - 1) / grid_size_, shape_[1]);
@@ -164,7 +240,7 @@ private:
     halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
 
     // prepare sizes and segments
-    // one d_segment per node, 1-d arrangement of segments
+    // one dv_segment per node, 1-d arrangement of segments
 
     segments_.reserve(grid_size_);
 
@@ -185,7 +261,8 @@ private:
     for (auto _titr = rng::begin(segments_); _titr != rng::end(segments_);
          ++_titr) {
       for (int _ind = row_start_index_;
-           _ind < row_start_index_ + (int)(*_titr).shape()[0]; _ind++) {
+           _ind < row_start_index_ + (int)rng::distance(*_titr) / shape_[1];
+           _ind++) {
         T *_dataptr = nullptr;
         if ((*_titr).is_local()) {
           if (local_rows_indices_.first == -1)
@@ -202,7 +279,7 @@ private:
         }
         dm_rows_.emplace_back(_ind, _dataptr, shape_[1], &(*_titr));
       }
-      row_start_index_ += (*_titr).shape()[0];
+      row_start_index_ += rng::distance(*_titr) / shape_[1];
     };
     // barrier();
 
@@ -234,13 +311,11 @@ private:
 
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
-    dm_segments_ = d_segments<distributed_dense_matrix>(this);
     fence();
   }
 
 private:
-  friend d_segment_iterator<distributed_dense_matrix>;
-  friend d_segments<distributed_dense_matrix>;
+  friend dv_segment_iterator<distributed_dense_matrix>;
   friend dm_rows<distributed_dense_matrix>;
   friend dm_rows_iterator<distributed_dense_matrix>;
 
@@ -257,10 +332,7 @@ private:
   dr::span_halo<T> *halo_;
   dr::halo_bounds halo_bounds_;
 
-  std::vector<d_segment<distributed_dense_matrix>> segments_;
-
-  // lightweight view on segments_
-  d_segments<distributed_dense_matrix> dm_segments_;
+  std::vector<dv_segment<distributed_dense_matrix>> segments_;
 
   // vector of "regular" rows in segment
   dm_rows<distributed_dense_matrix> dm_rows_;
@@ -297,9 +369,9 @@ void transform(dr::mhp::subrange<DM> &in, subrange_iterator<DM> out, auto op) {
 } // namespace dr::mhp
 
 // Needed to satisfy rng::viewable_range
-template <typename T>
-inline constexpr bool rng::enable_borrowed_range<
-    dr::mhp::d_segments<dr::mhp::distributed_dense_matrix<T>>> = true;
+// template <typename T>
+// inline constexpr bool rng::enable_borrowed_range<
+//     dr::mhp::d_segments<dr::mhp::distributed_dense_matrix<T>>> = true;
 
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<

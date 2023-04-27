@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "segments.hpp"
+#include <dr/mhp/containers/segments.hpp>
 
 namespace dr::mhp {
-
 
 /// distributed vector
 template <typename T, typename Allocator = std::allocator<T>>
@@ -158,7 +157,7 @@ private:
     fence();
   }
 
-  friend d_segment_iterator<distributed_vector>;
+  friend dv_segment_iterator<distributed_vector>;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
@@ -167,7 +166,7 @@ private:
 
   dr::halo_bounds halo_bounds_;
   std::size_t size_;
-  std::vector<d_segment<distributed_vector>> segments_;
+  std::vector<dv_segment<distributed_vector>> segments_;
   dr::rma_window win_;
   Allocator allocator_;
 };
