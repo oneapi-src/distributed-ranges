@@ -73,7 +73,7 @@ struct rank_fn_ {
 
 inline constexpr auto rank = rank_fn_{};
 
-namespace {
+namespace __detail {
 
 template <typename R>
 concept remote_range_shadow_impl_ =
@@ -117,7 +117,7 @@ struct segments_fn_ {
 
 } // namespace
 
-inline constexpr auto segments = segments_fn_{};
+inline constexpr auto segments = __detail::segments_fn_{};
 
 namespace {
 

@@ -33,6 +33,12 @@ public:
 
   constexpr std::size_t rank() const noexcept { return rank_; }
 
+  auto local() {
+    return *this | rng::view::transform([](auto && v){
+      dr::ranges::local(v);
+    });
+  }
+
 private:
   std::size_t rank_;
 };

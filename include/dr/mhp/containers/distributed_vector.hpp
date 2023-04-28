@@ -120,11 +120,31 @@ public:
   }
 
   auto rank() const { return segment_index_; }
-  auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
+  auto local() const {
+    const auto my_process_segment_index = dv_->win_.communicator().rank();
+
+    if (my_process_segment_index == segment_index_)
+      return dv_->data_ + index_ + dv_->halo_bounds_.prev;
+
+    assert(!dv_->halo_bounds().periodic); // not implemented
+
+    if (my_process_segment_index + 1 == segment_index_) {
+      assert(dv_->segment_size_ - index_ <= dv_->halo_bounds().prev);
+      return dv_->data_ + dv_->halo_bounds().prev + index_ - dv_->segment_size_;
+    }
+
+    if (my_process_segment_index == segment_index_ + 1) {
+      assert(index_ <= dv_->halo_bounds().next);  // <= instead of < to cover end() case
+      return dv_->data_ + dv_->halo_bounds_.prev + dv_->segment_size_ + index_;
+    }
+
+    assert(false); // trying to read non-owned memory
+  }
   auto segments() const {
     return dr::__detail::drop_segments(dv_->segments(), segment_index_, index_);
   }
   auto &halo() const { return dv_->halo(); }
+  auto &halo_bounds() const { return dv_->halo_bounds(); }
 
 private:
   DV *dv_ = nullptr;
@@ -285,6 +305,7 @@ public:
   /// Returns reference using index
   auto operator[](difference_type n) const { return *(begin() + n); }
   auto &halo() { return *halo_; }
+  auto &halo_bounds() const { return halo_bounds_; }
 
   auto segments() const { return rng::views::all(segments_); }
 

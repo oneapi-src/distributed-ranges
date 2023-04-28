@@ -18,6 +18,7 @@ add_executable(
   ../common/iota.cpp
   ../common/reduce.cpp
   ../common/subrange.cpp
+  # ../common/slide_view.cpp  # not implemented
   ../common/take.cpp
   ../common/transform_view.cpp
   ../common/zip.cpp
