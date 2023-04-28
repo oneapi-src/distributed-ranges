@@ -24,8 +24,7 @@ public:
 
   value_type &operator*() const {
 
-    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
-                 find_dm_offset(index_) -
+    int offset = dm_->halo_bounds().prev + find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size();
 
     assert(offset > 0);
@@ -36,7 +35,7 @@ public:
   dm_row<value_type> operator[](int n) {
     std::size_t rowsize = col_rng_.second - col_rng_.first;
 
-    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
+    int offset = dm_->halo_bounds().prev +
                  find_dm_offset((int)(index_ + n * rowsize)) -
                  default_comm().rank() * dm_->segment_size();
 
@@ -51,8 +50,7 @@ public:
   }
 
   value_type &operator[](std::pair<int, int> p) {
-    int offset = dm_->halo_bounds().prev * dm_->shape()[1] +
-                 find_dm_offset(index_) -
+    int offset = dm_->halo_bounds_.prev + find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size() +
                  dm_->shape()[1] * p.second + p.first;
     assert(offset > 0);

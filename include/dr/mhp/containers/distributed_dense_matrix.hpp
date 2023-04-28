@@ -10,16 +10,7 @@
 
 namespace dr::mhp {
 
-using key_type = index<>;
-
-// template <typename DM> class d_segments : public std::span<dv_segment<DM>> {
-// public:
-//   d_segments() {}
-//   d_segments(DM *dm) : std::span<dv_segment<DM>>(dm->segments_) { dm_ = dm; }
-
-// private:
-//   DM *dm_;
-// }; // d_segments
+using key_type = dr::index<>;
 
 template <typename T, typename Allocator> class distributed_dense_matrix {
 public:
@@ -27,9 +18,6 @@ public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
   using key_type = index<>;
-
-  // using iterator =
-  //     dr::normal_distributed_iterator<d_segments<distributed_dense_matrix>>;
 
   distributed_dense_matrix(std::size_t rows, std::size_t cols,
                            dr::halo_bounds hb = dr::halo_bounds(),
@@ -148,7 +136,7 @@ public:
   T *data() { return data_; }
   key_type shape() noexcept { return shape_; }
   size_type size() noexcept { return shape()[0] * shape()[1]; }
-  auto segments() const { return segments_; }
+  auto &segments() const { return segments_; }
   size_type segment_size() { return segment_size_; }
   key_type segment_shape() { return segment_shape_; }
 
@@ -183,7 +171,7 @@ public:
     s << default_comm().rank() << ": shape [" << shape_[0] << ", " << shape_[1]
       << " ] seg_size " << segment_size_ << " data_size " << data_size_ << "\n";
     s << default_comm().rank() << ": halo_bounds.prev ";
-    for (T *ptr = data_; ptr < data_ + halo_bounds_.prev * shape_[1]; ptr++)
+    for (T *ptr = data_; ptr < data_ + halo_bounds_.prev; ptr++)
       s << *ptr << " ";
     s << std::endl;
     for (auto r : dm_rows_) {
@@ -195,8 +183,8 @@ public:
       }
     }
     s << default_comm().rank() << ": halo_bounds.next ";
-    T *_hptr = data_ + halo_bounds_.prev * shape_[1] + segment_size_;
-    for (T *ptr = _hptr; ptr < _hptr + halo_bounds_.next * shape_[1]; ptr++)
+    T *_hptr = data_ + halo_bounds_.prev + segment_size_;
+    for (T *ptr = _hptr; ptr < _hptr + halo_bounds_.next; ptr++)
       s << *ptr << " ";
     s << std::endl << std::endl;
     std::cout << s.str();
@@ -205,8 +193,9 @@ public:
   void raw_dump_matrix(std::string msg) {
     std::stringstream s;
     s << default_comm().rank() << ": " << msg << " :\n";
-    for (std::size_t i = 0;
-         i < segment_shape_[0] + halo_bounds_.prev + halo_bounds_.next; i++) {
+    for (std::size_t i = 0; i < segment_shape_[0] + halo_bounds_rows_.prev +
+                                    halo_bounds_rows_.next;
+         i++) {
       for (std::size_t j = 0; j < shape_[1]; j++) {
         s << data_[i * shape_[1] + j] << " ";
       }
@@ -221,7 +210,7 @@ public:
 private:
   void init_(dr::halo_bounds hb, auto allocator) {
 
-    grid_size_ = default_comm().size();
+    auto grid_size_ = default_comm().size(); // dr-style ignore
     assert(shape_[0] > grid_size_);
 
     segment_shape_ =
@@ -231,11 +220,14 @@ private:
 
     data_size_ = segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1];
 
-    halo_bounds_ = hb;
     data_ = allocator.allocate(data_size_);
+
+    halo_bounds_rows_ = hb;
 
     hb.prev *= shape_[1];
     hb.next *= shape_[1];
+
+    halo_bounds_ = hb;
 
     halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
 
@@ -261,7 +253,7 @@ private:
     for (auto _titr = rng::begin(segments_); _titr != rng::end(segments_);
          ++_titr) {
       for (int _ind = row_start_index_;
-           _ind < row_start_index_ + (int)rng::distance(*_titr) / shape_[1];
+           _ind < row_start_index_ + (int)(rng::distance(*_titr) / shape_[1]);
            _ind++) {
         T *_dataptr = nullptr;
         if ((*_titr).is_local()) {
@@ -269,7 +261,7 @@ private:
             local_rows_indices_.first = _ind;
           local_rows_indices_.second = _ind;
 
-          int _dataoff = halo_bounds_.prev * shape_[1]; // start of data
+          int _dataoff = halo_bounds_.prev; // start of data
           _dataoff +=
               (_ind - default_comm().rank() * segment_shape_[0]) * shape_[1];
 
@@ -284,23 +276,23 @@ private:
     // barrier();
 
     // rows in halo.prev area
-    for (int _ind = local_rows_indices_.first - halo_bounds_.prev;
+    for (int _ind = local_rows_indices_.first - halo_bounds_rows_.prev;
          _ind < local_rows_indices_.first; _ind++) {
       std::size_t _dataoff =
-          (_ind + halo_bounds_.prev - local_rows_indices_.first) * shape_[1];
+          halo_bounds_.prev + (_ind - local_rows_indices_.first) * shape_[1];
 
       assert(_dataoff >= 0);
-      assert(_dataoff < halo_bounds_.prev * shape_[1]);
+      assert(_dataoff < halo_bounds_.prev);
       dm_halo_p_rows_.emplace_back(_ind, data_ + _dataoff, shape_[1],
                                    &(*rng::begin(segments_)));
     }
 
     // rows in halo.next area
     for (int _ind = local_rows_indices_.second + 1;
-         _ind < (int)(local_rows_indices_.second + 1 + halo_bounds_.next);
+         _ind < (int)(local_rows_indices_.second + 1 + halo_bounds_rows_.next);
          _ind++) {
       int _dataoff =
-          (_ind + halo_bounds_.prev - local_rows_indices_.first) * shape_[1];
+          halo_bounds_.prev + (_ind - local_rows_indices_.first) * shape_[1];
 
       assert(_dataoff >= 0);
       assert(_dataoff < (int)data_size_);
@@ -318,19 +310,18 @@ private:
   friend dv_segment_iterator<distributed_dense_matrix>;
   friend dm_rows<distributed_dense_matrix>;
   friend dm_rows_iterator<distributed_dense_matrix>;
+  friend subrange_iterator<distributed_dense_matrix>;
 
-  key_type shape_;
-  std::size_t grid_size_; // distribution of tiles, currently (N, 1), and 2nd
-                          // dimension is omitted
+  key_type shape_; // matrix shape
   key_type segment_shape_;
 
   std::size_t segment_size_ = 0; // size of local data
-  std::size_t data_size_ = 0;    // all data with halo buffers
+  std::size_t data_size_ = 0;    // all data - local + halo
 
-  T *data_ = nullptr; // local data ptr
+  T *data_ = nullptr; // data ptr
 
-  dr::span_halo<T> *halo_;
-  dr::halo_bounds halo_bounds_;
+  dr::span_halo<T> *halo_ = nullptr;
+  dr::halo_bounds halo_bounds_, halo_bounds_rows_;
 
   std::vector<dv_segment<distributed_dense_matrix>> segments_;
 
@@ -369,9 +360,6 @@ void transform(dr::mhp::subrange<DM> &in, subrange_iterator<DM> out, auto op) {
 } // namespace dr::mhp
 
 // Needed to satisfy rng::viewable_range
-// template <typename T>
-// inline constexpr bool rng::enable_borrowed_range<
-//     dr::mhp::d_segments<dr::mhp::distributed_dense_matrix<T>>> = true;
 
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<
@@ -380,3 +368,8 @@ inline constexpr bool rng::enable_borrowed_range<
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<
     dr::mhp::subrange<dr::mhp::distributed_dense_matrix<T>>> = true;
+
+template <typename T>
+inline constexpr bool rng::enable_borrowed_range<
+    std::vector<dr::mhp::dv_segment<dr::mhp::distributed_dense_matrix<T>>>> =
+    true;

@@ -65,15 +65,15 @@ public:
       return dm_->dm_rows_[row_idx_ + n];
     }
     if (abs_ind >= (difference_type)(dm_->local_rows_indices_.first -
-                                     dm_->halo_bounds().prev) &&
+                                     dm_->halo_bounds_row_.prev) &&
         abs_ind < dm_->local_rows_indices_.first) { // halo prev
-      return dm_->dm_halo_p_rows_[dm_->halo_bounds().prev -
+      return dm_->dm_halo_p_rows_[dm_->halo_bounds_row_.prev -
                                   dm_->local_rows_indices_.first + abs_ind];
     }
     if (abs_ind > dm_->local_rows_indices_.second &&
         abs_ind <= (difference_type)(dm_->local_rows_indices_.second +
-                                     dm_->halo_bounds().next)) { // halo next
-      return dm_->dm_halo_n_rows_[dm_->halo_bounds().next +
+                                     dm_->halo_bounds_row_.next)) { // halo next
+      return dm_->dm_halo_n_rows_[dm_->halo_bounds_row_.next +
                                   dm_->local_rows_indices_.second - abs_ind];
     }
     assert(0);

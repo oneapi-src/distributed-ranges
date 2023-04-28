@@ -23,7 +23,7 @@ TEST(MhpDmTests, DM_CreateFill) {
 
   EXPECT_EQ(*(a.begin()), -1);
   EXPECT_EQ(*(a.begin() + 13), -1);
-  EXPECT_EQ(*(a.end()-1), -1);
+  EXPECT_EQ(*(a.end() - 1), -1);
 }
 
 // TODO: index operator
@@ -51,39 +51,29 @@ TEST(MhpDmTests, DM_CreateFill) {
 
 } */
 
-/* 
 TEST(MhpTestsDM, DM_Fill) {
   const int rows = 11, cols = 11;
   DM a(rows, cols, -13);
 
   dr::mhp::fill(a, 5);
+  a.dump_matrix("after fill (no hb)");
 
-  if (comm_rank == 0) 
-    EXPECT_EQ(a.begin()[0], 5);
-  if (comm_rank == comm_size - 1) 
-    EXPECT_EQ(a.begin()[rows * cols - 1], 5);
-
+  // if (comm_rank == 0)
+  EXPECT_EQ(a.begin()[0], 5);
+  // if (comm_rank == comm_size - 1)
+  EXPECT_EQ(a.begin()[rows * cols - 1], 5);
 }
 
 TEST(MhpTestsDM, DM_Fill_HB) {
   const int rows = 11, cols = 11;
   dr::halo_bounds hb(1);
   DM a(rows, cols, -13, hb);
-  
-  dr::mhp::fill(a, 5);
-  a.dump_matrix("A1");
 
-  if (comm_rank == 0) {
-    fmt::print("{}: check after fill {} == 5, {} == 5\n", comm_rank, a.begin()[0], a.begin()[120]);
-    EXPECT_EQ(a.begin()[0], 5);
-    EXPECT_EQ(a.begin()[65], 5);
-  }
-  if (comm_rank == comm_size - 1) 
-  {
-    fmt::print("{}: check after fill {} == 5, {} == 5\n", comm_rank, a.begin()[65], a.begin()[120]);
-    EXPECT_EQ(a.begin()[65], 5);
-    EXPECT_EQ(a.begin()[120], 5);
-  }
-  dr::mhp::fence();
-  
-} */
+  dr::mhp::fill(a, 5);
+  a.dump_matrix("after fill");
+
+  // if (comm_rank == 0)
+  EXPECT_EQ(a.begin()[0], 5);
+  // if (comm_rank == comm_size - 1)
+  EXPECT_EQ(a.begin()[rows * cols - 1], 5);
+}
