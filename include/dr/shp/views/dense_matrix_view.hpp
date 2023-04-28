@@ -6,6 +6,7 @@
 
 #include <iterator>
 
+#include <dr/detail/iterator_adaptor.hpp>
 #include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/views/dense_column_view.hpp>
