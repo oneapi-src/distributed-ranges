@@ -214,7 +214,6 @@ void sort(R &&r, Compare comp = Compare()) {
 
       // fmt::print("Sending {}\n", rng::subrange(p_first, p_last));
 
-      std::size_t n_elements = rng::distance(p_first, p_last);
       std::size_t pos = push_positions[segment_id][i];
 
       auto e = shp::copy_async(p_first, p_last, sorted_segments[i] + pos);
@@ -226,7 +225,6 @@ void sort(R &&r, Compare comp = Compare()) {
     // fmt::print("Sending {}\n", rng::subrange(p_first,
     // rng::end(local_segment)));
 
-    std::size_t n_elements = rng::distance(p_first, rng::end(local_segment));
     std::size_t pos = push_positions[segment_id].back();
 
     auto e = shp::copy_async(p_first, rng::end(local_segment),
