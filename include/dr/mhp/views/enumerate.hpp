@@ -30,7 +30,7 @@ public:
     requires(rng::sized_range<R>)
   auto operator()(R &&r) const {
     using W = std::uint32_t;
-    return mhp::views::zip(rng::views::iota(W(0), W(rng::distance(r))),
+    return mhp::views::zip(mhp::views::iota(W(0), W(rng::distance(r))),
                            std::forward<R>(r));
   }
 

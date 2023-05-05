@@ -17,7 +17,7 @@ struct iota_fn_ {
   }
 
   template <std::integral W, std::integral Bound>
-  auto operator()(W value, Bound bound) {
+  auto operator()(W value, Bound bound) const {
     return rng::views::iota(value, W(bound));
   }
 };
