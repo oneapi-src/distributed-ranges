@@ -21,6 +21,7 @@ endfunction()
 add_shp_example(vector_example)
 add_shp_example(test_range)
 add_shp_example(dot_product)
+add_shp_example(sort)
 add_shp_example(dot_product_benchmark)
 add_shp_example(inclusive_scan_example)
 # unsatisfied dependency of grb/grb.hpp
