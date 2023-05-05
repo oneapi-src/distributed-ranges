@@ -14,9 +14,7 @@
 #include <dr/shp/init.hpp>
 #include <sycl/sycl.hpp>
 
-namespace dr {
-
-namespace shp {
+namespace dr::shp {
 
 namespace __detail {
 
@@ -287,6 +285,4 @@ void sort(R &&r, Compare comp = Compare()) {
   sycl::free(medians, shp::context());
 }
 
-} // namespace shp
-
-} // namespace dr
+} // namespace dr::shp
