@@ -46,8 +46,8 @@ void sort(R &&r, Compare comp = Compare()) {
         dr::shp::__detail::dpl_policy(dr::ranges::rank(segment));
     auto &&local_segment = dr::shp::__detail::local(segment);
 
-    __detail::sort_async(local_policy, rng::begin(segment), rng::end(segment),
-                         comp)
+    __detail::sort_async(local_policy, rng::begin(local_segment),
+                         rng::end(local_segment), comp)
         .wait();
     return;
   }
@@ -199,10 +199,6 @@ void sort(R &&r, Compare comp = Compare()) {
   // Copy corresponding elements to each "sorted segment"
   segment_id = 0;
   for (auto &&segment : segments) {
-    auto &&q = dr::shp::__detail::queue(dr::ranges::rank(segment));
-    auto &&local_policy =
-        dr::shp::__detail::dpl_policy(dr::ranges::rank(segment));
-
     auto &&local_segment = dr::shp::__detail::local(segment);
 
     std::size_t *splitter_i = splitter_indices[segment_id];
