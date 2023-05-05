@@ -42,6 +42,16 @@ private:
   SegTplIter tpl_cur_, tpl_end_;
 };
 
+//
+// Some distributed algorithms need an iota_view as an operand. An
+// iota_view does not depend on external data and can be segmented as
+// needed. The segmented_view creates segments for a range using the
+// segments of another range. It can be used to create segments for an
+// iota_view, using the segments of a distributed_range.
+//
+// It should be usable if you have a range that is local and
+// replicated across all processes, but that is not tested.
+//
 template <rng::random_access_range R, rng::forward_range SegTpl>
 class segmented_view : public rng::view_base {
 public:
