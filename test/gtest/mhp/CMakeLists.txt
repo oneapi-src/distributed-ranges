@@ -35,6 +35,21 @@ target_link_libraries(
   DR::mpi
 )
 
+# skeleton for rapid builds of individual tests, feel free to change
+# this
+add_executable(
+  quick-test
+  mhp-tests.cpp
+  ../common/zip.cpp
+)
+target_link_libraries(
+  quick-test
+  GTest::gtest_main
+  cxxopts
+  DR::mpi
+)
+target_compile_definitions(quick-test PRIVATE QUICK_TEST)
+
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if (NOT MPI_IMPL STREQUAL "openmpi")

@@ -32,6 +32,13 @@ inline void fence() { dr::mhp::fence(); }
 
 #include "common-tests.hpp"
 
+#ifdef QUICK_TEST
+
+// minimal testing for quick builds
+using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
+
+#else
+
 using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
                                   dr::mhp::distributed_vector<float>>;
 
@@ -41,6 +48,8 @@ using AllTypes = ::testing::Types<
     dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>>;
 #else
 using AllTypes = CPUTypes;
+#endif
+
 #endif
 
 namespace dr::mhp {
