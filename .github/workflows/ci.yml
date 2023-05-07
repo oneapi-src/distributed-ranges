@@ -33,9 +33,12 @@ jobs:
   clang:
     runs-on: ubuntu-latest
     env:
-      CXX: clang++
+      CXX: clang++-15
+      CC: clang-15
     steps:
     - uses: actions/checkout@v3
+    - name: Install Clang-15
+      run: sudo apt install -y clang-15
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
