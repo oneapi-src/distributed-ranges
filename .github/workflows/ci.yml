@@ -37,8 +37,8 @@ jobs:
       CC: clang-15
     steps:
     - uses: actions/checkout@v3
-    - name: Install Clang-15
-      run: sudo apt install -y clang-15
+    - name: Apt installs
+      run: sudo apt install -y clang-15 libopenmpi-dev
     - uses: rscohn2/setup-oneapi@v0
       with:
         components: |
