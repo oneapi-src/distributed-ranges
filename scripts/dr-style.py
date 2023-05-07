@@ -116,12 +116,8 @@ include_rules = [
         'use rng::end()',
     ),
     (
-        r'rng::size\(',
-        'use rng::distance()',
-    ),
-    (
         r'\.size\(\)',
-        'use rng::distance()',
+        'use rng::size()',
     ),
     (
         r'std::begin\(',
@@ -134,6 +130,10 @@ include_rules = [
     (
         r'std::distance\(',
         'use rng::distance()',
+    ),
+    (
+        r'std::size\(',
+        'use rng::size()',
     ),
 ]
 include_rules_compiled = []

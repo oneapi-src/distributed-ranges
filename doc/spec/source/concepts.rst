@@ -8,8 +8,8 @@
 Concepts
 ========
 
-dr::remote_contiguous_iterator
-===============================
+``remote_contiguous_iterator``
+==============================
 
 .. doxygenconcept:: dr::remote_contiguous_iterator
 
@@ -46,8 +46,8 @@ Instantiations of `remote_ptr`, `device_ptr`, and `BCL::GlobalPtr` should all
 fulfill ``remote_contiguous_iterator``.
 
 
-dr::remote_contiguous_range
-============================
+``remote_contiguous_range``
+===========================
 
 .. doxygenconcept:: dr::remote_contiguous_range
 
@@ -83,8 +83,8 @@ with the same rank, and ``[begin().local(), end().local())`` should form a
 contiguous range referencing the same memory, but locally. Not quite sure how
 to express that concisely.
 
-dr::distributed_contiguous_range
-=================================
+``distributed_contiguous_range``
+================================
 
 .. doxygenconcept:: dr::distributed_contiguous_range
 
