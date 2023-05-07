@@ -34,7 +34,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CXX: clang++-15
-      CC: clang-15
     steps:
     - uses: actions/checkout@v3
     - name: Apt installs
@@ -47,10 +46,6 @@ jobs:
           ${{ env.TBB }}
     - name: Build & test
       run: |
-        # Cmake needs this to find MPI when using versioned clangs
-        alias clang=clang-15
-        alias clang++=clang++-15
-
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j 2 -C build all test
