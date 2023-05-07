@@ -50,9 +50,6 @@ target_link_libraries(
 )
 target_compile_definitions(quick-test PRIVATE QUICK_TEST)
 
-add_executable(mpi-test mpi-test.cpp)
-target_link_libraries(mpi-test MPI::MPI_CXX)
-
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if (NOT MPI_IMPL STREQUAL "openmpi")
