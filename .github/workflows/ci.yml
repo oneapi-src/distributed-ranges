@@ -47,6 +47,10 @@ jobs:
           ${{ env.TBB }}
     - name: Build & test
       run: |
+        # Cmake needs this to find MPI when using versioned clangs
+        alias clang=clang-15
+        alias clang++=clang++-15
+
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
         make -j 2 -C build all test
