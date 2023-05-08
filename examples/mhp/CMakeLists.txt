@@ -5,6 +5,13 @@
 add_executable(stencil-slide stencil-slide.cpp)
 target_link_libraries(stencil-slide cxxopts DR::mpi)
 
+if (ENABLE_SYCL)
+  add_executable(mhp_dot_product_benchmark dot_product_benchmark.cpp)
+  target_compile_options(mhp_dot_product_benchmark PRIVATE -fsycl)
+  target_link_libraries(mhp_dot_product_benchmark DR::mpi)
+  add_mpi_test(mhp_dot_product mhp_dot_product_benchmark 2)
+endif()
+
 add_executable(vector-add vector-add.cpp)
 target_link_libraries(vector-add DR::mpi)
 add_mpi_test(vector-add vector-add 2)
