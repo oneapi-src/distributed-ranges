@@ -112,6 +112,7 @@ public:
           ->segments()[offset_ / segment_size][offset_ % segment_size];
     }
     auto operator[](difference_type n) const { return *(*this + n); }
+    auto operator[](dr::index<difference_type> n) const { return *(*this + n[0] * parent_->shape_[1] + n[1]); }
 
     //
     // Support for distributed ranges
@@ -128,12 +129,26 @@ public:
     difference_type offset_;
   };
 
-  dm_rows<distributed_dense_matrix> &rows() { return dm_rows_; }
+  T & operator[](difference_type index) {
+    assert (index >= default_comm().rank() * segment_size_);
+    assert (index < (default_comm().rank() + 1) * segment_size_);
+    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ + index);
+  }
+
+  T & operator[](dr::index<difference_type> p) {
+    assert (p[0] * shape_[1] + p[1] >= default_comm().rank() * segment_size_);
+    assert (p[0] * shape_[1] + p[1] < (default_comm().rank() + 1) * segment_size_);
+    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ + p[0] * shape_[1] + p[1]);
+  }
+
 
   iterator begin() { return iterator(this, 0); }
   iterator end() { return begin() + segment_size_; }
 
+  dm_rows<distributed_dense_matrix> &rows() { return dm_rows_; }
+
   T *data() { return data_; }
+  auto data_size() { return data_size_; }
   key_type shape() noexcept { return shape_; }
   size_type size() noexcept { return shape()[0] * shape()[1]; }
   auto &segments() const { return segments_; }
@@ -205,7 +220,6 @@ public:
     std::cout << s.str();
   }
 #endif
-  auto data_size() { return data_size_; }
 
 private:
   void init_(dr::halo_bounds hb, auto allocator) {
@@ -321,6 +335,7 @@ private:
   T *data_ = nullptr; // data ptr
 
   dr::span_halo<T> *halo_ = nullptr;
+  // halo boundaries counted in cells and rows
   dr::halo_bounds halo_bounds_, halo_bounds_rows_;
 
   std::vector<dv_segment<distributed_dense_matrix>> segments_;

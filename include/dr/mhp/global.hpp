@@ -47,7 +47,6 @@ inline auto use_sycl() { return __detail::gcontext()->use_sycl_; }
 inline void fence() {
   dr::drlog.debug("fence\n");
   for (auto win : __detail::gcontext()->wins_) {
-    dr::drlog.debug("  win: {}\n", win);
     MPI_Win_fence(0, win);
   }
 }

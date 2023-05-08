@@ -13,14 +13,14 @@ charset-normalizer==3.1.0
 distlib==0.3.6
 docutils==0.19
 filelock==3.12.0
-identify==2.5.22
+identify==2.5.23
 idna==3.4
 imagesize==1.4.1
 Jinja2==3.1.2
 MarkupSafe==2.1.2
 nodeenv==1.7.0
 packaging==23.1
-platformdirs==3.2.0
+platformdirs==3.5.0
 pre-commit==3.2.2
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
@@ -40,4 +40,4 @@ sphinxcontrib-serializinghtml==1.1.5
 sphinxcontrib-spelling==8.0.0
 typing_extensions==4.5.0
 urllib3==1.26.15
-virtualenv==20.22.0
+virtualenv==20.23.0

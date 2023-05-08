@@ -6,6 +6,7 @@
 
 #include <iterator>
 
+#include <dr/detail/iterator_adaptor.hpp>
 #include <dr/detail/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/views/dense_column_view.hpp>
@@ -169,9 +170,11 @@ public:
            });
   }
 
-  iterator data() const { return data_; }
+  Iter data() const { return data_; }
 
   std::size_t rank() const { return rank_; }
+
+  size_type ld() const { return ld_; }
 
 private:
   Iter data_;
