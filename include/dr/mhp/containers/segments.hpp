@@ -167,6 +167,6 @@ private:
   DV *dv_;
   std::size_t segment_index_;
   std::size_t size_;
-}; // dm_segment
+}; // d_segment
 
 } // namespace dr::mhp

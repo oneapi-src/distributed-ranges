@@ -230,12 +230,12 @@ public:
                                    tile_view.rowptr_data() + rowptr.size(),
                                    rowptr.data());
 
+    tiles_ = generate_tiles_();
+    segments_ = generate_segments_();
+
     v_e.wait();
     c_e.wait();
     r_e.wait();
-
-    tiles_ = generate_tiles_();
-    segments_ = generate_segments_();
 
     return __detail::combine_events({v_e, c_e, r_e});
   }

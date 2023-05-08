@@ -117,10 +117,7 @@ public:
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
 
-  void free() {
-    dr::drlog.debug("freeing {}\n", win_);
-    MPI_Win_free(&win_);
-  }
+  void free() { MPI_Win_free(&win_); }
 
   bool operator==(const rma_window other) const noexcept {
     return this->win_ == other.win_;
@@ -153,10 +150,7 @@ public:
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
-  void fence() const {
-    dr::drlog.debug("fence {}\n", win_);
-    MPI_Win_fence(0, win_);
-  }
+  void fence() const { MPI_Win_fence(0, win_); }
 
   void flush(std::size_t rank) const {
     drlog.debug("flush:: rank: {}\n", rank);

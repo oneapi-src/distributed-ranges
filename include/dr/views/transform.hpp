@@ -139,9 +139,9 @@ public:
   {
     auto fn = fn_;
     return dr::ranges::segments(base_) |
-           rng::views::transform([fn](auto &&segment) {
+           rng::views::transform([fn]<typename T>(T &&segment) {
              return transform_view<rng::views::all_t<decltype(segment)>, F>(
-                 segment, fn);
+                 std::forward<T>(segment), fn);
            });
   }
 

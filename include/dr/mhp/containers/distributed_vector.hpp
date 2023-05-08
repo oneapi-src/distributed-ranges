@@ -66,8 +66,11 @@ public:
     }
 
     bool operator==(iterator other) const {
-      assert(parent_ == other.parent_);
-      return offset_ == other.offset_;
+      if (parent_ == nullptr || other.parent_ == nullptr) {
+        return false;
+      } else {
+        return offset_ == other.offset_;
+      }
     }
     auto operator<=>(iterator other) const {
       assert(parent_ == other.parent_);
@@ -92,7 +95,7 @@ public:
     }
 
   private:
-    const distributed_vector *parent_;
+    const distributed_vector *parent_ = nullptr;
     difference_type offset_;
   };
 
