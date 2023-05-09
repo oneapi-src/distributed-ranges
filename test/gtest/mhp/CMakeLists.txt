@@ -40,7 +40,7 @@ target_link_libraries(
 add_executable(
   quick-test
   mhp-tests.cpp
-  ../common/zip.cpp
+  ../common/reduce.cpp
 )
 target_link_libraries(
   quick-test
