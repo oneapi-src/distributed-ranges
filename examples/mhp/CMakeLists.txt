@@ -16,6 +16,13 @@ target_link_libraries(
   DR::mpi)
 add_mpi_test(stencil-1d stencil-1d 2)
 
+add_executable(tile-example tile-example.cpp)
+target_link_libraries(
+  tile-example
+  cxxopts
+  DR::mpi)
+add_mpi_test(tile-example tile-example 2)
+
 add_executable(stencil-1d-array stencil-1d-array.cpp)
 target_link_libraries(
   stencil-1d-array

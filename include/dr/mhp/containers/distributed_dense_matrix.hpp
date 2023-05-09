@@ -178,6 +178,29 @@ public:
 
   std::pair<int, int> local_rows_indices() { return local_rows_indices_; }
 
+  // Given a tile index, return a dense matrix view of that tile.
+  // dense_matrix_view is a view of a dense tile.
+  auto tile(key_type tile_index) {
+    assert(tile_index[0] == 0);
+
+    auto &&segment = segments()[tile_index[1]];
+
+    auto data = rng::begin(segment);
+
+    using Iter = decltype(data);
+
+    return dr::shp::dense_matrix_view<T, Iter>(
+        data,
+        key_type(std::min(segment_shape()[0],
+                          shape()[0] - segment_shape()[0] * tile_index[0]),
+                 segment_shape()[1]),
+        segment_shape()[1], dr::ranges::rank(segment));
+  }
+
+  key_type grid_shape() const noexcept {
+    return key_type(1, rng::size(segments_));
+  }
+
   // for debug only
 #if 1
   void dump_matrix(std::string msg) {
