@@ -47,4 +47,13 @@ concept distributed_contiguous_range =
     remote_contiguous_range<
         rng::range_value_t<decltype(dr::ranges::segments(std::declval<R>()))>>;
 
+template <typename Iter>
+concept distributed_contiguous_iterator =
+    distributed_iterator<Iter> && rng::random_access_iterator<Iter> &&
+    requires(Iter &iter) {
+      { dr::ranges::segments(iter) } -> rng::random_access_range;
+    } &&
+    remote_contiguous_range<rng::range_value_t<decltype(dr::ranges::segments(
+        std::declval<Iter>()))>>;
+
 } // namespace dr

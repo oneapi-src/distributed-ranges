@@ -17,7 +17,7 @@
 
 namespace mhp = dr::mhp;
 
-using T = float;
+using T = double;
 
 MPI_Comm comm;
 std::size_t comm_rank;
@@ -164,11 +164,16 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  if (options.count("help")) {
+    std::cout << options_spec.help() << "\n";
+    exit(0);
+  }
+
   n = options["n"].as<std::size_t>();
   n_iterations = options["i"].as<std::size_t>();
   std::vector<T> x_local(n);
   std::vector<T> y_local(n);
-#if 0
+
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_real_distribution<> dist(0, 10);
@@ -176,22 +181,13 @@ int main(int argc, char **argv) {
     x_local[i] = dist(rng);
     y_local[i] = dist(rng);
   }
-#else
-  rng::iota(x_local, 0);
-  rng::iota(y_local, 0);
-#endif
 
   auto v_serial = dot_product_sequential(x_local, y_local);
 
   mhp::distributed_vector<T> x(n);
   mhp::distributed_vector<T> y(n);
-#if 0
-  rng::copy(x_local, x.begin());
-  rng::copy(y_local, y.begin());
-#else
-  mhp::iota(x, 0);
-  mhp::iota(y, 0);
-#endif
+  mhp::copy(0, x_local, x.begin());
+  mhp::copy(0, y_local, y.begin());
 
   fmt::print("local: {}\n", rng::views::drop(x_local, n - 10));
   fmt::print("dist: {}\n", rng::views::drop(x, n - 10));
