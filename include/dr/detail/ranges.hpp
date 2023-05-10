@@ -127,17 +127,24 @@ concept has_local_adl = requires(Iter &iter) {
 };
 
 template <typename Iter>
-concept has_local_method = std::forward_iterator<Iter> && requires(Iter i) {
-  { i.local() } -> std::forward_iterator;
-};
+concept iter_has_local_method =
+    std::forward_iterator<Iter> && requires(Iter iter) {
+      { iter.local() } -> std::forward_iterator;
+    };
+
+template <typename Segment>
+concept segment_has_local_method =
+    rng::forward_range<Segment> && requires(Segment segment) {
+      { segment.local() } -> rng::forward_range;
+    };
 
 struct local_fn_ {
 
   template <std::forward_iterator Iter>
-    requires(has_local_adl<Iter> || has_local_method<Iter> ||
+    requires(has_local_adl<Iter> || iter_has_local_method<Iter> ||
              std::contiguous_iterator<Iter>)
   auto operator()(Iter iter) const {
-    if constexpr (has_local_method<Iter>) {
+    if constexpr (iter_has_local_method<Iter>) {
       return iter.local();
     } else if constexpr (has_local_adl<Iter>) {
       return local_(iter);
@@ -147,14 +154,14 @@ struct local_fn_ {
   }
 
   template <rng::forward_range R>
-    requires(has_local_adl<R> || has_local_method<rng::iterator_t<R>> ||
-             has_local_method<R> ||
+    requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
+             segment_has_local_method<R> ||
              std::contiguous_iterator<rng::iterator_t<R>> ||
              rng::contiguous_range<R>)
   auto operator()(R &&r) const {
-    if constexpr (has_local_method<R>) {
+    if constexpr (segment_has_local_method<R>) {
       return r.local();
-    } else if constexpr (has_local_method<rng::iterator_t<R>>) {
+    } else if constexpr (iter_has_local_method<rng::iterator_t<R>>) {
       return rng::views::counted(rng::begin(r).local(), rng::size(r));
     } else if constexpr (has_local_adl<R>) {
       return local_(std::forward<R>(r));

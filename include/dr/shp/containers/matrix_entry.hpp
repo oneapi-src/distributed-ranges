@@ -18,14 +18,14 @@ public:
   using map_type = T;
 
   matrix_entry(dr::shp::index<I> index, const map_type &value)
-      : value_(value), index_(index) {}
+      : index_(index), value_(value) {}
   matrix_entry(dr::shp::index<I> index, map_type &&value)
-      : value_(std::move(value)), index_(index) {}
+      : index_(index), value_(std::move(value)) {}
 
   template <typename U>
     requires(std::is_constructible_v<T, U>)
   matrix_entry(dr::shp::index<I> index, U &&value)
-      : value_(std::forward<U>(value)), index_(index) {}
+      : index_(index), value_(std::forward<U>(value)) {}
 
   template <typename Entry>
   matrix_entry(Entry &&entry)

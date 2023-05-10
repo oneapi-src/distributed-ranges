@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <dr/detail/ranges_shim.hpp>
 #include <dr/shp/algorithms/algorithms.hpp>
 #include <dr/shp/containers/dense_matrix.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>

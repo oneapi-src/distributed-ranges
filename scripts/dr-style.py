@@ -72,9 +72,6 @@ all_rules = [
     (r'namespace sycl = ', 'do not define sycl namespace'),
     (r'[< (]cl::sycl', 'delete cl::'),
     (r'parallel_for<class', 'use unnamed lambda'),
-    (r']\(sycl::id<1>', 'use auto instead of id<1> for argument'),
-    (r'sycl::buffer<[a-zA-Z_]+, 1', 'buffer default dimension is 1'),
-    (r'sycl::range<1>', 'range default dimension is 1'),
     (r'parallel_for\(sycl::range(\{|\()', 'use scalar instead of sycl::range'),
     (
         r'sycl::buffer.*?sycl::range(\{|\()',
@@ -119,12 +116,8 @@ include_rules = [
         'use rng::end()',
     ),
     (
-        r'rng::size\(',
-        'use rng::distance()',
-    ),
-    (
         r'\.size\(\)',
-        'use rng::distance()',
+        'use rng::size()',
     ),
     (
         r'std::begin\(',
@@ -137,6 +130,10 @@ include_rules = [
     (
         r'std::distance\(',
         'use rng::distance()',
+    ),
+    (
+        r'std::size\(',
+        'use rng::size()',
     ),
 ]
 include_rules_compiled = []

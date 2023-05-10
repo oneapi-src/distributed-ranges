@@ -22,6 +22,7 @@ add_executable(
   ../common/take.cpp
   ../common/transform_view.cpp
   ../common/zip.cpp
+  ../common/zip_local.cpp
   containers.cpp
   algorithms.cpp
   copy.cpp
