@@ -23,6 +23,7 @@ add_executable(
   ../common/zip.cpp
   ../common/zip_local.cpp
   alignment.cpp
+  copy.cpp
   distributed_vector.cpp
   reduce.cpp
   stencil.cpp
@@ -40,7 +41,10 @@ target_link_libraries(
 add_executable(
   quick-test
   mhp-tests.cpp
-  ../common/reduce.cpp
+  ../common/take.cpp
+  ../common/drop.cpp
+  ../common/distributed_vector.cpp
+  #copy.cpp
 )
 target_link_libraries(
   quick-test

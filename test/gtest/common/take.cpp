@@ -76,6 +76,7 @@ TYPED_TEST(Take, takeOfOneElementHasOneSegmentAndSameRank) {
   auto take_view_segments = dr::ranges::segments(take_view_result);
   auto dv_segments = dr::ranges::segments(dv);
 
+  EXPECT_TRUE(check_segments(take_view_result));
   EXPECT_EQ(rng::size(take_view_segments), 1);
   EXPECT_EQ(dr::ranges::rank(take_view_segments[0]),
             dr::ranges::rank(dv_segments[0]));

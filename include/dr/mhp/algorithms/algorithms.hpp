@@ -39,34 +39,6 @@ void fill(DI first, DI last, auto value) {
 
 //
 //
-// copy
-//
-//
-
-/// Copy
-void copy(dr::distributed_range auto &&in, dr::distributed_iterator auto out) {
-  if (aligned(in, out)) {
-    dr::drlog.debug("copy: parallel execution\n");
-    for (const auto &&[in_seg, out_seg] :
-         rng::views::zip(local_segments(in), local_segments(out))) {
-      rng::copy(in_seg, rng::begin(out_seg));
-    }
-    barrier();
-  } else {
-    dr::drlog.debug("copy: serial execution\n");
-    rng::copy(in, out);
-    fence();
-  }
-}
-
-/// Copy
-template <dr::distributed_iterator DI_IN>
-void copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out) {
-  mhp::copy(rng::subrange(first, last), out);
-}
-
-//
-//
 // for_each
 //
 //
