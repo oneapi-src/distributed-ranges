@@ -14,9 +14,6 @@
 #include <dr/shp/init.hpp>
 #include <sycl/sycl.hpp>
 
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
 namespace dr::shp {
 
 namespace __detail {
@@ -136,8 +133,8 @@ void sort(R &&r, Compare comp = Compare()) {
 
   double step_size = static_cast<double>(n_segments * n_splitters) / n_segments;
 
-  fmt::print("step_size {}--- {} segments, {} splitters\n", step_size,
-             n_segments, n_splitters);
+  // - Collect median of medians to get final splitters.
+  // - Write splitters to [0, n_splitters) in `medians`
 
   auto &&q = dr::shp::__detail::queue(0);
   q.single_task([=] {
@@ -146,40 +143,6 @@ void sort(R &&r, Compare comp = Compare()) {
      }
    }).wait();
 
-  std::vector<T> medians_l(n_splitters * n_segments);
-  q.memcpy(medians_l.data(), medians, sizeof(T) * n_segments * n_splitters)
-      .wait();
-
-  fmt::print("medians: {}\n", medians_l);
-
-  // - Collect median of medians to get final splitters.
-  // - Write splitters to [0, n_splitters) in `medians`
-  /*
-  for (std::size_t i = 0; i < n_splitters; i++) {
-    fmt::print("{} == {} ({} * ({} + 1) + 0.5)\n",
-               i, std::size_t(step_size * (i + 1) + 0.5),
-               step_size, i);
-    medians_l[i] = medians_l[std::size_t(step_size * (i + 1) + 0.5)];
-  }
-  */
-
-  fmt::print("medians: {}\n", medians_l);
-
-  fmt::print("Second memcpy...\n");
-
-  q.memcpy(medians, medians_l.data(), sizeof(T) * n_segments * n_splitters)
-      .wait();
-
-  fmt::print("Medians: [");
-  for (std::size_t i = 0; i < n_splitters; i++) {
-    fmt::print("{}", medians_l[i]);
-
-    if (i + 1 < n_splitters) {
-      fmt::print(", ");
-    }
-  }
-  fmt::print("]\n");
-
   std::vector<std::size_t *> splitter_indices;
   std::vector<std::size_t> sorted_seg_sizes(n_splitters + 1);
   std::vector<std::vector<std::size_t>> push_positions(n_segments);
@@ -187,7 +150,6 @@ void sort(R &&r, Compare comp = Compare()) {
   // Compute how many elements will be sent to each of the new "sorted
   // segments". Simultaneously compute the offsets `push_positions` where each
   // segments' corresponding elements will be pushed.
-  fmt::print("Begin...\n");
 
   segment_id = 0;
   for (auto &&segment : segments) {
@@ -213,15 +175,10 @@ void sort(R &&r, Compare comp = Compare()) {
 
     sycl::free(medians_l, shp::context());
 
-    fmt::print("splitter indices: {}\n",
-               rng::subrange(splitter_i, splitter_i + n_splitters));
-
     auto p_first = rng::begin(local_segment);
     auto p_last = p_first;
     for (std::size_t i = 0; i < n_splitters; i++) {
       p_last = rng::begin(local_segment) + splitter_i[i];
-
-      // fmt::print("Will need to send {}\n", rng::subrange(p_first, p_last));
 
       std::size_t n_elements = rng::distance(p_first, p_last);
       std::size_t pos =
@@ -232,9 +189,6 @@ void sort(R &&r, Compare comp = Compare()) {
       p_first = p_last;
     }
 
-    // fmt::print("Will need to send {}\n", rng::subrange(p_first,
-    // rng::end(local_segment)));
-
     std::size_t n_elements = rng::distance(p_first, rng::end(local_segment));
     std::size_t pos =
         std::atomic_ref(sorted_seg_sizes.back()).fetch_add(n_elements);
@@ -243,8 +197,6 @@ void sort(R &&r, Compare comp = Compare()) {
 
     ++segment_id;
   }
-
-  // fmt::print("sorted segment sizes: {}\n", sorted_seg_sizes);
 
   // Allocate new "sorted segments"
   std::vector<T *> sorted_segments;
@@ -271,8 +223,6 @@ void sort(R &&r, Compare comp = Compare()) {
     for (std::size_t i = 0; i < n_splitters; i++) {
       p_last = rng::begin(local_segment) + splitter_i[i];
 
-      // fmt::print("Sending {}\n", rng::subrange(p_first, p_last));
-
       std::size_t pos = push_positions[segment_id][i];
 
       auto e = shp::copy_async(p_first, p_last, sorted_segments[i] + pos);
@@ -280,9 +230,6 @@ void sort(R &&r, Compare comp = Compare()) {
 
       p_first = p_last;
     }
-
-    // fmt::print("Sending {}\n", rng::subrange(p_first,
-    // rng::end(local_segment)));
 
     std::size_t pos = push_positions[segment_id].back();
 
