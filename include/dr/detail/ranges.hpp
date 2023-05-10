@@ -115,16 +115,14 @@ struct segments_fn_ {
   }
 };
 
-} // namespace
+} // namespace __detail
 
 inline constexpr auto segments = __detail::segments_fn_{};
 
 namespace {
 
-template <typename Iter>
-concept has_local_adl = requires(Iter &iter) {
-  { local_(iter) } -> std::forward_iterator;
-};
+template <typename T>
+concept has_local_adl = requires(T &t) { local_(t); };
 
 template <typename Iter>
 concept iter_has_local_method =
@@ -140,16 +138,18 @@ concept segment_has_local_method =
 
 struct local_fn_ {
 
-  template <std::forward_iterator Iter>
+  template <class Iter>
     requires(has_local_adl<Iter> || iter_has_local_method<Iter> ||
-             std::contiguous_iterator<Iter>)
-  auto operator()(Iter iter) const {
+             std::contiguous_iterator<Iter> ||
+             std::is_scalar_v<std::remove_cvref_t<Iter>>)
+  auto operator()(Iter &&iter) const {
     if constexpr (iter_has_local_method<Iter>) {
       return iter.local();
     } else if constexpr (has_local_adl<Iter>) {
-      return local_(iter);
-    } else if constexpr (std::contiguous_iterator<Iter>) {
-      return iter;
+      return local_(std::forward<Iter>(iter));
+    } else if constexpr (std::contiguous_iterator<Iter> ||
+                         std::is_scalar_v<std::remove_cvref_t<Iter>>) {
+      return std::forward<Iter>(iter);
     }
   }
 

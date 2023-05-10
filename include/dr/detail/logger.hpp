@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <fmt/core.h>
+#include <vendor/source_location/source_location.hpp>
+
 namespace dr {
 
 #if DR_FORMAT

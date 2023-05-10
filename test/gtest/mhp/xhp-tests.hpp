@@ -36,20 +36,23 @@ inline void fence() { dr::mhp::fence(); }
 
 // minimal testing for quick builds
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
+using IntTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
 
-#else
-
-using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
-                                  dr::mhp::distributed_vector<float>>;
-
-#ifdef TEST_MHP_SYCL
+#elif defined(TEST_MHP_SYCL)
 using AllTypes = ::testing::Types<
     dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
     dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>>;
+using IntTypes = ::testing::Types<
+    dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
+    dr::mhp::distributed_vector<
+        unsigned long long int,
+        dr::mhp::sycl_shared_allocator<unsigned long long int>>>;
 #else
-using AllTypes = CPUTypes;
-#endif
-
+using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
+                                  dr::mhp::distributed_vector<float>>;
+using IntTypes =
+    ::testing::Types<dr::mhp::distributed_vector<int>,
+                     dr::mhp::distributed_vector<unsigned long long int>>;
 #endif
 
 namespace dr::mhp {

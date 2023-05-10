@@ -17,7 +17,6 @@ add_executable(
 #  ../common/for_each.cpp
 #  ../common/iota.cpp
 #  ../common/reduce.cpp
-  ../common/slide_view.cpp
 #  ../common/subrange.cpp
 #  ../common/take.cpp
 #  ../common/transform_view.cpp
@@ -28,28 +27,39 @@ add_executable(
 #  reduce.cpp
 #  stencil.cpp
 #  segmented.cpp
+  slide_view.cpp
 )
-target_link_libraries(
-  mhp-tests
-  GTest::gtest_main
-  cxxopts
-  DR::mpi
+
+add_executable(
+  mhp-tests-3
+  mhp-tests.cpp
+  slide_view-3.cpp
 )
+
+foreach(test-exec IN ITEMS mhp-tests mhp-tests-3)
+  target_link_libraries(
+    ${test-exec}
+    GTest::gtest_main
+    cxxopts
+    DR::mpi
+  )
+endforeach()
+
 
 # skeleton for rapid builds of individual tests, feel free to change
 # this
-add_executable(
-  quick-test
-  mhp-tests.cpp
-  ../common/reduce.cpp
-)
-target_link_libraries(
-  quick-test
-  GTest::gtest_main
-  cxxopts
-  DR::mpi
-)
-target_compile_definitions(quick-test PRIVATE QUICK_TEST)
+#add_executable(
+#  quick-test
+#  mhp-tests.cpp
+#  ../common/reduce.cpp
+#)
+#target_link_libraries(
+#  quick-test
+#  GTest::gtest_main
+#  cxxopts
+#  DR::mpi
+#)
+#target_compile_definitions(quick-test PRIVATE QUICK_TEST)
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
@@ -60,6 +70,7 @@ endif()
 add_mpi_test(mhp-tests-2 mhp-tests 2)
 add_mpi_test(mhp-tests-3 mhp-tests 3)
 add_mpi_test(mhp-tests-4 mhp-tests 4)
+add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
 
 if (ENABLE_SYCL)
   add_executable(

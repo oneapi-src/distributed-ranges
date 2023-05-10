@@ -182,6 +182,13 @@ auto equal(rng::range auto &&ref, rng::range auto &&actual,
   return gtest_result(equal_message(ref, actual, title));
 }
 
+template <rng::range Rng>
+auto equal(std::initializer_list<rng::range_value_t<Rng>> ref, Rng &&actual,
+           std::string title = " ") {
+  return gtest_result(
+      equal_message(std::vector<rng::range_value_t<Rng>>(ref), actual, title));
+}
+
 auto check_unary_op(rng::range auto &&in, rng::range auto &&ref,
                     rng::range auto &&tst, std::string title = "") {
   return gtest_result(unary_check_message(in, ref, tst, title));

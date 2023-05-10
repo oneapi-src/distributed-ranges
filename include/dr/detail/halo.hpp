@@ -320,7 +320,7 @@ struct halo_bounds {
     periodic = per;
   }
   /// Constructor
-  halo_bounds(std::size_t prv, std::size_t nxt, bool per = false) {
+  halo_bounds(std::size_t prv, std::size_t nxt, bool per) {
     prev = prv;
     next = nxt;
     periodic = per;

@@ -35,8 +35,9 @@ public:
   using size_type = typename DV::size_type;
   using difference_type = typename DV::difference_type;
 
-  dv_segment_iterator() = default;
+  dv_segment_iterator() : DV(nullptr), segment_index_(99), index_(99){};
   dv_segment_iterator(DV *dv, std::size_t segment_index, std::size_t index) {
+    assert(index < 1000);
     dv_ = dv;
     segment_index_ = segment_index;
     index_ = index;
@@ -44,22 +45,30 @@ public:
 
   // Comparison
   bool operator==(const dv_segment_iterator &other) const noexcept {
+    assert(dv_ != nullptr && dv_ == other.dv_);
     return index_ == other.index_ && dv_ == other.dv_;
+    // return segment_index_ == other.segment_index_ && index_ == other.index_
+    // && dv_ == other.dv_;
   }
   auto operator<=>(const dv_segment_iterator &other) const noexcept {
+    assert(dv_ != nullptr && dv_ == other.dv_);
     return index_ <=> other.index_;
+    // return segment_index_ == other.segment_index_ ? index_ <=> other.index_ :
+    // segment_index_ <=> other.segment_index_;
   }
 
-  // Only these arithmetics manipulate internal state
-  auto &operator-=(difference_type n) {
-    index_ -= n;
-    return *this;
-  }
+  // Only this arithmetic manipulate internal state
   auto &operator+=(difference_type n) {
+    assert(n < 100);
+    assert(dv_ != nullptr);
+    assert(n >= 0 || static_cast<difference_type>(index_) >= -n);
     index_ += n;
     return *this;
   }
+  auto &operator-=(difference_type n) { return *this += (-n); }
   difference_type operator-(const dv_segment_iterator &other) const noexcept {
+    assert(dv_ != nullptr && dv_ == other.dv_);
+    assert(index_ >= other.index_);
     return index_ - other.index_;
   }
 
@@ -102,10 +111,18 @@ public:
   }
 
   // dereference
-  auto operator*() const { return dv_segment_reference<DV>{*this}; }
-  auto operator[](difference_type n) const { return *(*this + n); }
+  auto operator*() const {
+    assert(dv_ != nullptr);
+    return dv_segment_reference<DV>{*this};
+  }
+  auto operator[](difference_type n) const {
+    assert(dv_ != nullptr);
+    return *(*this + n);
+  }
 
   value_type get() const {
+    assert(dv_ != nullptr);
+    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
     auto value =
         dv_->win_.template get<value_type>(segment_index_, segment_offset);
@@ -114,37 +131,68 @@ public:
   }
 
   void put(const value_type &value) const {
+    assert(dv_ != nullptr);
+    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
     dr::drlog.debug("put ({}:{})\n", segment_index_, segment_offset);
     dv_->win_.put(value, segment_index_, segment_offset);
   }
 
-  auto rank() const { return segment_index_; }
+  auto rank() const {
+    assert(dv_ != nullptr);
+    return segment_index_;
+  }
+  auto offset() const {
+    assert(dv_ != nullptr);
+    assert(index_ < 1000);
+    return index_;
+  } // to be removed
   auto local() const {
+    assert(dv_ != nullptr);
     const auto my_process_segment_index = dv_->win_.communicator().rank();
 
-    if (my_process_segment_index == segment_index_)
-      return dv_->data_ + index_ + dv_->halo_bounds_.prev;
+    if (my_process_segment_index == segment_index_) {
+      auto retptr = dv_->data_ + index_ + dv_->halo_bounds_.prev;
+      dr::drlog.debug("read local, segidx:{}, idx:{}, val:{}\n", segment_index_,
+                      index_, *retptr);
+      return retptr;
+    }
 
     assert(!dv_->halo_bounds().periodic); // not implemented
 
     if (my_process_segment_index + 1 == segment_index_) {
       assert(dv_->segment_size_ - index_ <= dv_->halo_bounds().prev);
-      return dv_->data_ + dv_->halo_bounds().prev + index_ - dv_->segment_size_;
+      auto retptr =
+          dv_->data_ + dv_->halo_bounds().prev + index_ - dv_->segment_size_;
+      dr::drlog.debug("read next halo, segidx:{}, idx:{}, val:{}\n",
+                      segment_index_, index_, *retptr);
+      return retptr;
     }
 
     if (my_process_segment_index == segment_index_ + 1) {
-      assert(index_ <= dv_->halo_bounds().next);  // <= instead of < to cover end() case
-      return dv_->data_ + dv_->halo_bounds_.prev + dv_->segment_size_ + index_;
+      assert(index_ <=
+             dv_->halo_bounds().next); // <= instead of < to cover end() case
+      auto retptr =
+          dv_->data_ + dv_->halo_bounds_.prev + dv_->segment_size_ + index_;
+      dr::drlog.debug("read prev halo, segidx:{}, idx:{}, val:{}\n",
+                      segment_index_, index_, *retptr);
+      return retptr;
     }
 
     assert(false); // trying to read non-owned memory
   }
   auto segments() const {
+    assert(dv_ != nullptr);
     return dr::__detail::drop_segments(dv_->segments(), segment_index_, index_);
   }
-  auto &halo() const { return dv_->halo(); }
-  auto &halo_bounds() const { return dv_->halo_bounds(); }
+  auto &halo() const {
+    assert(dv_ != nullptr);
+    return dv_->halo();
+  }
+  auto &halo_bounds() const {
+    assert(dv_ != nullptr);
+    return dv_->halo_bounds();
+  }
 
 private:
   DV *dv_ = nullptr;
@@ -158,17 +206,28 @@ private:
 
 public:
   using difference_type = std::ptrdiff_t;
-  dv_segment() = default;
+  dv_segment() : dv_(nullptr) { assert(false); }
   dv_segment(DV *dv, std::size_t segment_index, std::size_t size) {
     dv_ = dv;
     segment_index_ = segment_index;
     size_ = size;
+    assert(dv_ != nullptr);
   }
 
-  auto size() const { return size_; }
+  auto size() const {
+    assert(dv_ != nullptr);
+    assert(size_ < 100);
+    return size_;
+  }
 
-  auto begin() const { return iterator(dv_, segment_index_, 0); }
-  auto end() const { return begin() + size(); }
+  auto begin() const {
+    assert(dv_ != nullptr);
+    return iterator(dv_, segment_index_, 0);
+  }
+  auto end() const {
+    assert(dv_ != nullptr);
+    return begin() + size();
+  }
 
   auto operator[](difference_type n) const { return *(begin() + n); }
 
@@ -254,6 +313,14 @@ public:
           ->segments()[offset_ / segment_size][offset_ % segment_size];
     }
     auto operator[](difference_type n) const { return *(*this + n); }
+
+    auto local() {
+      dr::drlog.debug("getting local from dv::iter offset:{}\n", offset_);
+      auto segment_size = parent_->segment_size_;
+      return (parent_->segments()[offset_ / segment_size].begin() +
+              offset_ % segment_size)
+          .local();
+    }
 
     //
     // Support for distributed ranges
@@ -354,6 +421,12 @@ concept has_halo_method = dr::distributed_range<DR> && requires(DR &&dr) {
 
 auto &halo(has_halo_method auto &&dr) {
   return rng::begin(dr::ranges::segments(dr)[0]).halo();
+}
+
+template <class DV>
+rng::reference_wrapper<typename DV::value_type>
+local_(dr::mhp::dv_segment_reference<DV> dvref) {
+  return *((&dvref).local());
 }
 
 } // namespace dr::mhp
