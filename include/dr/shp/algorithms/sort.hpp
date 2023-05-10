@@ -197,23 +197,24 @@ void sort(R &&r, Compare comp = Compare()) {
 
     auto &&local_segment = dr::shp::__detail::local(segment);
 
-    // fmt::print("Segment {}: {}\n", dr::ranges::rank(segment), segment);
-
     std::size_t *splitter_i = sycl::malloc_shared<std::size_t>(
         n_splitters, q.get_device(), shp::context());
     splitter_indices.push_back(splitter_i);
 
-    __detail::lower_bound(local_policy, rng::begin(local_segment),
-                          rng::end(local_segment), medians,
-                          medians + n_splitters, splitter_i, comp);
+    // Local copy `medians_l` necessary due to [GSD-3893]
+    T *medians_l =
+        sycl::malloc_device<T>(n_splitters, q.get_device(), shp::context());
 
-    std::vector<std::size_t> splitter_l(n_splitters);
-    q.memcpy(splitter_l.data(), splitter_i, sizeof(std::size_t) * n_splitters)
-        .wait();
+    q.memcpy(medians_l, medians, sizeof(T) * n_splitters).wait();
+
+    __detail::lower_bound(local_policy, rng::begin(local_segment),
+                          rng::end(local_segment), medians_l,
+                          medians_l + n_splitters, splitter_i, comp);
+
+    sycl::free(medians_l, shp::context());
 
     fmt::print("splitter indices: {}\n",
                rng::subrange(splitter_i, splitter_i + n_splitters));
-    fmt::print("splitter_l indices: {}\n", splitter_l);
 
     auto p_first = rng::begin(local_segment);
     auto p_last = p_first;
