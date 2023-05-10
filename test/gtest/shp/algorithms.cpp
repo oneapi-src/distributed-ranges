@@ -224,9 +224,6 @@ TEST(ShpTests, Sort) {
 
     dr::shp::copy(d_v.begin(), d_v.end(), d_v_l.begin());
 
-    fmt::print("d: {}\n", d_v);
-    fmt::print("l: {}\n", l_v);
-
     for (std::size_t i = 0; i < l_v.size(); i++) {
       EXPECT_EQ(l_v[i], d_v_l[i]);
     }
