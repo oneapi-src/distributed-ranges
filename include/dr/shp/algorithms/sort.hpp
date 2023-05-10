@@ -49,14 +49,6 @@ OutputIt lower_bound(LocalPolicy &&policy, InputIt1 start, InputIt1 end,
                                   d_end, d_value_first, d_value_last, d_result,
                                   comp)
       .base();
-
-  /*
-    auto output_iter =
-    oneapi::dpl::lower_bound(std::forward<LocalPolicy>(policy), d_start, d_end,
-                                    d_value_first, d_value_last, d_result,
-    comp);
-                                    */
-  // return output_iter.base();
 }
 
 } // namespace __detail
