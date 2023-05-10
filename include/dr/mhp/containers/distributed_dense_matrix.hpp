@@ -8,6 +8,9 @@
 #include <dr/mhp/containers/segments.hpp>
 #include <dr/mhp/containers/subrange.hpp>
 
+#include <dr/detail/owning_view.hpp>
+#include <dr/shp/views/dense_matrix_view.hpp>
+
 namespace dr::mhp {
 
 using key_type = dr::index<>;
@@ -112,7 +115,9 @@ public:
           ->segments()[offset_ / segment_size][offset_ % segment_size];
     }
     auto operator[](difference_type n) const { return *(*this + n); }
-    auto operator[](dr::index<difference_type> n) const { return *(*this + n[0] * parent_->shape_[1] + n[1]); }
+    auto operator[](dr::index<difference_type> n) const {
+      return *(*this + n[0] * parent_->shape_[1] + n[1]);
+    }
 
     //
     // Support for distributed ranges
@@ -129,18 +134,20 @@ public:
     difference_type offset_;
   };
 
-  T & operator[](difference_type index) {
-    assert (index >= default_comm().rank() * segment_size_);
-    assert (index < (default_comm().rank() + 1) * segment_size_);
-    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ + index);
+  T &operator[](difference_type index) {
+    assert(index >= default_comm().rank() * segment_size_);
+    assert(index < (default_comm().rank() + 1) * segment_size_);
+    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ +
+             index);
   }
 
-  T & operator[](dr::index<difference_type> p) {
-    assert (p[0] * shape_[1] + p[1] >= default_comm().rank() * segment_size_);
-    assert (p[0] * shape_[1] + p[1] < (default_comm().rank() + 1) * segment_size_);
-    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ + p[0] * shape_[1] + p[1]);
+  T &operator[](dr::index<difference_type> p) {
+    assert(p[0] * shape_[1] + p[1] >= default_comm().rank() * segment_size_);
+    assert(p[0] * shape_[1] + p[1] <
+           (default_comm().rank() + 1) * segment_size_);
+    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ +
+             p[0] * shape_[1] + p[1]);
   }
-
 
   iterator begin() { return iterator(this, 0); }
   iterator end() { return begin() + segment_size_; }
@@ -152,8 +159,8 @@ public:
   key_type shape() noexcept { return shape_; }
   size_type size() noexcept { return shape()[0] * shape()[1]; }
   auto &segments() const { return segments_; }
-  size_type segment_size() { return segment_size_; }
-  key_type segment_shape() { return segment_shape_; }
+  size_type segment_size() const noexcept { return segment_size_; }
+  key_type segment_shape() const noexcept { return segment_shape_; }
 
   auto &halo() { return *halo_; }
   dr::halo_bounds &halo_bounds() { return halo_bounds_; }
@@ -180,25 +187,27 @@ public:
 
   // Given a tile index, return a dense matrix view of that tile.
   // dense_matrix_view is a view of a dense tile.
-  auto tile(key_type tile_index) {
-    assert(tile_index[0] == 0);
-
-    auto &&segment = segments()[tile_index[1]];
-
-    auto data = rng::begin(segment);
-
-    using Iter = decltype(data);
-
-    return dr::shp::dense_matrix_view<T, Iter>(
-        data,
-        key_type(std::min(segment_shape()[0],
-                          shape()[0] - segment_shape()[0] * tile_index[0]),
-                 segment_shape()[1]),
-        segment_shape()[1], dr::ranges::rank(segment));
-  }
+  auto tile(key_type tile_index) { return tile_view_impl_(tile_index); }
 
   key_type grid_shape() const noexcept {
-    return key_type(1, rng::size(segments_));
+    return key_type(rng::size(segments_), 1);
+  }
+
+  key_type tile_shape() const noexcept { return segment_shape(); }
+
+  auto tile_segments() {
+    using tile_type = decltype(tile({0, 0}));
+    std::vector<tile_type> tiles;
+
+    for (std::size_t i = 0; i < grid_shape()[0]; i++) {
+      for (std::size_t j = 0; j < grid_shape()[1]; j++) {
+        auto t =
+            tile_view_impl_({i, j}, {i * tile_shape()[0], j * tile_shape()[1]});
+        tiles.push_back(t);
+      }
+    }
+
+    return dr::__detail::owning_view(std::move(tiles));
   }
 
   // for debug only
@@ -245,6 +254,36 @@ public:
 #endif
 
 private:
+  // Return a dense_matrix_view of the tile located at
+  // tile grid coordinates tile_index[0], tile_index[1].
+  //
+  // The row indices of each element in the tile will be incremented
+  // by idx_offset[0], and the column indices incremneted by idx_offset[1].
+  //
+  // When accessing an individual tile, no idx_offset is needed.  (The indices
+  // are with respect to the tile itself.)  When viewing a tile as part of the
+  // overall matrix (e.g. with segments()), an idx_offset is necessary in order
+  // to ensure the correct global indices are observed.
+  auto tile_view_impl_(key_type tile_index, key_type idx_offset = {0, 0}) {
+    assert(tile_index[1] == 0);
+
+    auto &&segment = segments()[tile_index[1]];
+
+    auto data = rng::begin(segment);
+
+    using Iter = decltype(data);
+
+    auto ld = segment_shape()[1];
+
+    auto tile_shape =
+        key_type(std::min(segment_shape()[0],
+                          shape()[0] - segment_shape()[0] * tile_index[0]),
+                 segment_shape()[1]);
+
+    return dr::shp::dense_matrix_view<T, Iter>(data, tile_shape, idx_offset, ld,
+                                               dr::ranges::rank(segment));
+  }
+
   void init_(dr::halo_bounds hb, auto allocator) {
 
     auto grid_size_ = default_comm().size(); // dr-style ignore
