@@ -14,6 +14,9 @@
 #include <dr/shp/init.hpp>
 #include <sycl/sycl.hpp>
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 namespace dr::shp {
 
 namespace __detail {
@@ -30,6 +33,33 @@ sycl::event sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
   } else {
     return sycl::event{};
   }
+}
+
+template <typename LocalPolicy, typename InputIt1, typename InputIt2,
+          typename OutputIt, typename Comparator = std::less<>>
+OutputIt lower_bound(LocalPolicy &&policy, InputIt1 start, InputIt1 end,
+                     InputIt2 value_first, InputIt2 value_last, OutputIt result,
+                     Comparator comp = Comparator()) {
+  dr::__detail::direct_iterator d_start(start);
+  dr::__detail::direct_iterator d_end(end);
+
+  dr::__detail::direct_iterator d_value_first(value_first);
+  dr::__detail::direct_iterator d_value_last(value_last);
+
+  dr::__detail::direct_iterator d_result(result);
+
+  return oneapi::dpl::lower_bound(std::forward<LocalPolicy>(policy), d_start,
+                                  d_end, d_value_first, d_value_last, d_result,
+                                  comp)
+      .base();
+
+  /*
+    auto output_iter =
+    oneapi::dpl::lower_bound(std::forward<LocalPolicy>(policy), d_start, d_end,
+                                    d_value_first, d_value_last, d_result,
+    comp);
+                                    */
+  // return output_iter.base();
 }
 
 } // namespace __detail
@@ -62,9 +92,8 @@ void sort(R &&r, Compare comp = Compare()) {
   // Each segment has `n_splitters` medians,
   // so `n_segments * n_splitters` medians total.
 
-  T *medians = sycl::malloc_shared<T>(n_segments * n_splitters,
+  T *medians = sycl::malloc_device<T>(n_segments * n_splitters,
                                       shp::devices()[0], shp::context());
-
   std::size_t segment_id = 0;
 
   for (auto &&segment : segments) {
@@ -89,6 +118,7 @@ void sort(R &&r, Compare comp = Compare()) {
             local_begin[std::size_t(step_size * (i + 1) + 0.5)];
       });
     });
+    e.wait();
 
     events.push_back(e);
     ++segment_id;
@@ -106,23 +136,49 @@ void sort(R &&r, Compare comp = Compare()) {
 
   double step_size = static_cast<double>(n_segments * n_splitters) / n_segments;
 
+  fmt::print("step_size {}--- {} segments, {} splitters\n", step_size,
+             n_segments, n_splitters);
+
+  auto &&q = dr::shp::__detail::queue(0);
+  q.single_task([=] {
+     for (std::size_t i = 0; i < n_splitters; i++) {
+       medians[i] = medians[std::size_t(step_size * (i + 1) + 0.5)];
+     }
+   }).wait();
+
+  std::vector<T> medians_l(n_splitters * n_segments);
+  q.memcpy(medians_l.data(), medians, sizeof(T) * n_segments * n_splitters)
+      .wait();
+
+  fmt::print("medians: {}\n", medians_l);
+
   // - Collect median of medians to get final splitters.
   // - Write splitters to [0, n_splitters) in `medians`
-  for (std::size_t i = 0; i < n_splitters; i++) {
-    medians[i] = medians[std::size_t(step_size * (i + 1) + 0.5)];
-  }
-
   /*
-    fmt::print("Medians: [");
-    for (std::size_t i = 0; i < n_splitters; i++) {
-      fmt::print("{}", medians[i]);
+  for (std::size_t i = 0; i < n_splitters; i++) {
+    fmt::print("{} == {} ({} * ({} + 1) + 0.5)\n",
+               i, std::size_t(step_size * (i + 1) + 0.5),
+               step_size, i);
+    medians_l[i] = medians_l[std::size_t(step_size * (i + 1) + 0.5)];
+  }
+  */
 
-      if (i +1 < n_splitters) {
-        fmt::print(", ");
-      }
+  fmt::print("medians: {}\n", medians_l);
+
+  fmt::print("Second memcpy...\n");
+
+  q.memcpy(medians, medians_l.data(), sizeof(T) * n_segments * n_splitters)
+      .wait();
+
+  fmt::print("Medians: [");
+  for (std::size_t i = 0; i < n_splitters; i++) {
+    fmt::print("{}", medians_l[i]);
+
+    if (i + 1 < n_splitters) {
+      fmt::print(", ");
     }
-    fmt::print("]\n");
-    */
+  }
+  fmt::print("]\n");
 
   std::vector<std::size_t *> splitter_indices;
   std::vector<std::size_t> sorted_seg_sizes(n_splitters + 1);
@@ -131,6 +187,7 @@ void sort(R &&r, Compare comp = Compare()) {
   // Compute how many elements will be sent to each of the new "sorted
   // segments". Simultaneously compute the offsets `push_positions` where each
   // segments' corresponding elements will be pushed.
+  fmt::print("Begin...\n");
 
   segment_id = 0;
   for (auto &&segment : segments) {
@@ -139,19 +196,24 @@ void sort(R &&r, Compare comp = Compare()) {
         dr::shp::__detail::dpl_policy(dr::ranges::rank(segment));
 
     auto &&local_segment = dr::shp::__detail::local(segment);
-    dr::__detail::direct_iterator local_begin(rng::begin(local_segment));
-    dr::__detail::direct_iterator local_end(rng::end(local_segment));
 
-    // fmt::print("Segment {}: {}\n", dr::ranges::rank(segment), local_segment);
+    // fmt::print("Segment {}: {}\n", dr::ranges::rank(segment), segment);
 
-    std::size_t *splitter_i = sycl::malloc_shared<std::size_t>(n_splitters, q);
+    std::size_t *splitter_i = sycl::malloc_shared<std::size_t>(
+        n_splitters, q.get_device(), shp::context());
     splitter_indices.push_back(splitter_i);
 
-    oneapi::dpl::lower_bound(local_policy, local_begin, local_end, medians,
-                             medians + n_splitters, splitter_i, comp);
+    __detail::lower_bound(local_policy, rng::begin(local_segment),
+                          rng::end(local_segment), medians,
+                          medians + n_splitters, splitter_i, comp);
 
-    // fmt::print("splitter indices: {}\n", rng::subrange(splitter_i, splitter_i
-    // + n_splitters));
+    std::vector<std::size_t> splitter_l(n_splitters);
+    q.memcpy(splitter_l.data(), splitter_i, sizeof(std::size_t) * n_splitters)
+        .wait();
+
+    fmt::print("splitter indices: {}\n",
+               rng::subrange(splitter_i, splitter_i + n_splitters));
+    fmt::print("splitter_l indices: {}\n", splitter_l);
 
     auto p_first = rng::begin(local_segment);
     auto p_last = p_first;
@@ -277,6 +339,11 @@ void sort(R &&r, Compare comp = Compare()) {
   }
 
   sycl::free(medians, shp::context());
+}
+
+template <dr::distributed_iterator RandomIt, typename Compare = std::less<>>
+void sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
+  sort(rng::subrange(first, last), comp);
 }
 
 } // namespace dr::shp

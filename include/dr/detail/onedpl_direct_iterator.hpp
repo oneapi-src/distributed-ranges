@@ -100,6 +100,8 @@ public:
     return iter.iter_ + n;
   }
 
+  Iter base() const noexcept { return iter_; }
+
 private:
   Iter iter_;
 };
