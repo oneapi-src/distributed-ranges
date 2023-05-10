@@ -12,10 +12,10 @@
 namespace shp = dr::shp;
 
 int main(int argc, char **argv) {
-  auto devices = shp::get_duplicated_devices(sycl::default_selector_v, 4);
+  auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
-  std::size_t n = 100;
+  std::size_t n = 1000;
 
   shp::distributed_vector<int> v(n);
 
