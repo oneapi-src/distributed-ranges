@@ -46,7 +46,6 @@ void copy(std::size_t root, dr::distributed_contiguous_range auto &&in,
 /// Copy
 void copy(std::size_t root, rng::contiguous_range auto &&in,
           dr::distributed_contiguous_iterator auto out) {
-  drlog.debug("copy local2dist segments: {}\n", dr::ranges::segments(out));
   if (default_comm().rank() == root) {
     auto in_ptr = std::to_address(in.begin());
     for (auto remainder = rng::size(in); remainder > 0;) {
