@@ -8,7 +8,6 @@ using T = int;
 using DV = dr::shp::distributed_vector<T, dr::shp::device_allocator<T>>;
 using V = std::vector<T>;
 
-// hard to reproduce fails
 TEST(ShpTests, InclusiveScan_aligned) {
   std::size_t n = 100;
 
@@ -204,6 +203,29 @@ TEST(ShpTests, DISABLED_InclusiveScan_nonaligned) {
 
     for (std::size_t i = 0; i < lv.size(); i++) {
       EXPECT_EQ(lv[i], o[i]);
+    }
+  }
+}
+
+TEST(ShpTests, Sort) {
+  std::vector<std::size_t> sizes = {1, 2, 4, 100};
+
+  for (std::size_t n : sizes) {
+    std::vector<T> l_v = generate_random<T>(n, 100);
+
+    dr::shp::distributed_vector<T> d_v(n);
+
+    dr::shp::copy(l_v.begin(), l_v.end(), d_v.begin());
+
+    std::sort(l_v.begin(), l_v.end());
+    dr::shp::sort(d_v);
+
+    std::vector<T> d_v_l(n);
+
+    dr::shp::copy(d_v.begin(), d_v.end(), d_v_l.begin());
+
+    for (std::size_t i = 0; i < l_v.size(); i++) {
+      EXPECT_EQ(l_v[i], d_v_l[i]);
     }
   }
 }
