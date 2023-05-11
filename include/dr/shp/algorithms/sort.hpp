@@ -107,7 +107,6 @@ void sort(R &&r, Compare comp = Compare()) {
             local_begin[std::size_t(step_size * (i + 1) + 0.5)];
       });
     });
-    e.wait();
 
     events.push_back(e);
     ++segment_id;
