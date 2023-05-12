@@ -6,8 +6,8 @@
 
 #include <iterator>
 
-#include <dr/detail/iterator_adaptor.hpp>
 #include <dr/detail/index.hpp>
+#include <dr/detail/iterator_adaptor.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/views/dense_column_view.hpp>
 #include <dr/shp/views/dense_row_view.hpp>

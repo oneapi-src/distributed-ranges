@@ -112,7 +112,9 @@ public:
           ->segments()[offset_ / segment_size][offset_ % segment_size];
     }
     auto operator[](difference_type n) const { return *(*this + n); }
-    auto operator[](dr::index<difference_type> n) const { return *(*this + n[0] * parent_->shape_[1] + n[1]); }
+    auto operator[](dr::index<difference_type> n) const {
+      return *(*this + n[0] * parent_->shape_[1] + n[1]);
+    }
 
     //
     // Support for distributed ranges
@@ -129,21 +131,24 @@ public:
     difference_type offset_;
   };
 
-  T & operator[](difference_type index) {
-    assert (index >= default_comm().rank() * segment_size_);
-    assert (index < (default_comm().rank() + 1) * segment_size_);
-    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ + index);
+  T &operator[](difference_type index) {
+    assert(index >= (difference_type)(default_comm().rank() * segment_size_));
+    assert(index <
+           (difference_type)((default_comm().rank() + 1) * segment_size_));
+    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ +
+             index);
   }
 
-  T & operator[](dr::index<difference_type> p) {
-    assert (p[0] * shape_[1] + p[1] >= default_comm().rank() * segment_size_);
-    assert (p[0] * shape_[1] + p[1] < (default_comm().rank() + 1) * segment_size_);
-    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ + p[0] * shape_[1] + p[1]);
+  T &operator[](dr::index<difference_type> p) {
+    assert(p[0] * shape_[1] + p[1] >= default_comm().rank() * segment_size_);
+    assert(p[0] * shape_[1] + p[1] <
+           (default_comm().rank() + 1) * segment_size_);
+    return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ +
+             p[0] * shape_[1] + p[1]);
   }
-
 
   iterator begin() { return iterator(this, 0); }
-  iterator end() { return begin() + segment_size_; }
+  iterator end() { return begin() + size(); }
 
   dm_rows<distributed_dense_matrix> &rows() { return dm_rows_; }
 
@@ -151,7 +156,7 @@ public:
   auto data_size() { return data_size_; }
   key_type shape() noexcept { return shape_; }
   size_type size() noexcept { return shape()[0] * shape()[1]; }
-  auto &segments() const { return segments_; }
+  auto segments() const { return rng::views::all(segments_); }
   size_type segment_size() { return segment_size_; }
   key_type segment_shape() { return segment_shape_; }
 
