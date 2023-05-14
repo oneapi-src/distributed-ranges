@@ -55,6 +55,9 @@ int main(int argc, char **argv) {
     std::size_t remainder = vec_size%dev_num;
     std::cout<< devices.size() <<std::endl;
 
+    std::vector<sycl::buffer> buffers_x;
+    std::vector<sycl::buffer> buffers_y;
+
     std::vector<double> durations;
     durations.reserve(dev_num);
 
@@ -65,9 +68,13 @@ int main(int argc, char **argv) {
         std::size_t chunk_size = vec_size/dev_num;
         if (i==devices.size()-1 && remainder>0)
             chunk_size = chunk_size + remainder;
-        float *x_chunk_dev = sycl::malloc_device<float>(chunk_size, queues[i]);
-        float *y_chunk_dev = sycl::malloc_device<float>(chunk_size, queues[i]);
-        float *result_chunk_dev = sycl::malloc_device<float>(1, queues[i]);
+
+        buffers_x[i] = sycl::buffer(x.begin()+i*chunk_size, x.begin()+(i+1)*chunk_size)
+        buffers_y[i] = sycl::buffer(y.begin()+i*chunk_size, y.begin()+(i+1)*chunk_size)
+
+        // float *x_chunk_dev = sycl::malloc_device<float>(chunk_size, queues[i]);
+        // float *y_chunk_dev = sycl::malloc_device<float>(chunk_size, queues[i]);
+        // float *result_chunk_dev = sycl::malloc_device<float>(1, queues[i]);
 
         // buffers with accessors compare2?
         // use h.depends_on(sycl::event) to wait for the end of exec of the prev one? 
