@@ -32,3 +32,28 @@ TYPED_TEST(ForEach, Iterators) {
   rng::for_each(ops.vec.begin() + 1, ops.vec.end() - 1, negate);
   EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
 }
+
+TYPED_TEST(ForEach, RangeAlignedZip) {
+  Ops2<TypeParam> ops(10);
+
+  auto copy = [](auto v) { std::get<0>(v) = std::get<1>(v); };
+  auto dist = xhp::views::zip(ops.dist_vec0, ops.dist_vec1);
+  auto local = rng::views::zip(ops.vec0, ops.vec1);
+
+  xhp::for_each(dist, copy);
+  rng::for_each(local, copy);
+  EXPECT_EQ(local, dist);
+}
+
+TYPED_TEST(ForEach, RangeUnalignedZip) {
+  Ops2<TypeParam> ops(10);
+
+  auto copy = [](auto v) { std::get<0>(v) = std::get<1>(v); };
+  auto dist =
+      xhp::views::zip(xhp::views::drop(ops.dist_vec0, 1), ops.dist_vec1);
+  auto local = rng::views::zip(rng::views::drop(ops.vec0, 1), ops.vec1);
+
+  xhp::for_each(dist, copy);
+  rng::for_each(local, copy);
+  EXPECT_EQ(local, dist);
+}

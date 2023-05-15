@@ -19,17 +19,19 @@ namespace dr::mhp {
 
 /// Collective for_each on distributed range
 void for_each(dr::distributed_range auto &&dr, auto op) {
-  if (mhp::use_sycl()) {
-    dr::drlog.debug("for_each: dpl execution\n");
+  if (aligned(dr)) {
+    dr::drlog.debug("for_each: parallel execution\n");
     for (const auto &s : local_segments(dr)) {
-      std::for_each(dpl_policy(), dr::__detail::direct_iterator(rng::begin(s)),
-                    dr::__detail::direct_iterator(rng::end(s)), op);
+      if (mhp::use_sycl()) {
+        std::for_each(dpl_policy(),
+                      dr::__detail::direct_iterator(rng::begin(s)),
+                      dr::__detail::direct_iterator(rng::end(s)), op);
+      } else {
+        rng::for_each(s, op);
+      }
     }
   } else {
-    dr::drlog.debug("for_each: parallel cpu execution\n");
-    for (const auto &s : local_segments(dr)) {
-      rng::for_each(s, op);
-    }
+    rng::for_each(dr, op);
   }
 
   barrier();

@@ -41,10 +41,7 @@ target_link_libraries(
 add_executable(
   quick-test
   mhp-tests.cpp
-  ../common/take.cpp
-  ../common/drop.cpp
-  ../common/distributed_vector.cpp
-  #copy.cpp
+  ../common/for_each.cpp
 )
 target_link_libraries(
   quick-test
