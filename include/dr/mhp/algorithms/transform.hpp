@@ -19,17 +19,14 @@ namespace dr::mhp {
 
 void transform(dr::distributed_range auto &&in,
                dr::distributed_iterator auto out, auto op) {
-  if (aligned(in, out)) {
-    for (const auto &&[in_seg, out_seg] :
-         rng::views::zip(local_segments(in), local_segments(out))) {
-      rng::transform(in_seg, rng::begin(out_seg), op);
-    }
-    barrier();
-  } else {
-    dr::drlog.debug("transform: serial execution\n");
-    rng::transform(in, out, op);
-    fence();
-  }
+  assert(aligned(in, out));
+
+  auto zip = mhp::views::zip(in, rng::subrange(out, out + rng::size(in)));
+  auto transform_op = [op](auto pair) {
+    auto &[in, out] = pair;
+    out = op(in);
+  };
+  for_each(zip, transform_op);
 }
 
 template <dr::distributed_iterator DI_IN>

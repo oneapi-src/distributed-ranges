@@ -19,6 +19,7 @@ add_executable(
   ../common/reduce.cpp
   ../common/subrange.cpp
   ../common/take.cpp
+  ../common/transform.cpp
   ../common/transform_view.cpp
   ../common/zip.cpp
   ../common/zip_local.cpp
@@ -39,17 +40,17 @@ target_link_libraries(
 # skeleton for rapid builds of individual tests, feel free to change
 # this
 add_executable(
-  quick-test
+  mhp-quick-test
   mhp-tests.cpp
-  ../common/for_each.cpp
+  ../common/transform.cpp
 )
 target_link_libraries(
-  quick-test
+  mhp-quick-test
   GTest::gtest_main
   cxxopts
   DR::mpi
 )
-target_compile_definitions(quick-test PRIVATE QUICK_TEST)
+target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
