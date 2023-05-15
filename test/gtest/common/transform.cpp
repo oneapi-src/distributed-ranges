@@ -22,6 +22,20 @@ TYPED_TEST(Transform, Range) {
   EXPECT_EQ(ops.vec1, ops.dist_vec1);
 }
 
+TYPED_TEST(Transform, RangeMutate) {
+  Ops2<TypeParam> ops(10);
+
+  auto negate = [](auto &&v) {
+    v++;
+    return -v;
+  };
+
+  xhp::transform(ops.dist_vec0, ops.dist_vec1.begin(), negate);
+  rng::transform(ops.vec0, ops.vec1.begin(), negate);
+  EXPECT_EQ(ops.vec0, ops.dist_vec0);
+  EXPECT_EQ(ops.vec1, ops.dist_vec1);
+}
+
 TYPED_TEST(Transform, Iterators) {
   Ops2<TypeParam> ops(10);
 
