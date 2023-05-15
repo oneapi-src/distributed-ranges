@@ -33,6 +33,26 @@ TEST(Alignment, OffsetBy1) {
   }
 }
 
+TEST(Alignment, EmptyRangeRange) {
+  Ops2<DV> ops(10);
+  EXPECT_TRUE(dr::mhp::aligned(
+      rng::subrange(ops.dist_vec0.begin() + 10, ops.dist_vec0.begin() + 10),
+      rng::subrange(ops.dist_vec1.begin() + 10, ops.dist_vec1.begin() + 10)));
+}
+
+TEST(Alignment, EmptyRangeIter) {
+  Ops2<DV> ops(10);
+  EXPECT_TRUE(dr::mhp::aligned(
+      rng::subrange(ops.dist_vec0.begin() + 10, ops.dist_vec0.begin() + 10),
+      ops.dist_vec1.begin() + 10));
+}
+
+TEST(Alignment, EmptyIterIter) {
+  Ops2<DV> ops(10);
+  EXPECT_TRUE(
+      dr::mhp::aligned(ops.dist_vec1.begin() + 10, ops.dist_vec1.begin() + 10));
+}
+
 TEST(Alignment, Subrange) {
   Ops2<DV> ops(10);
   auto is_aligned = dr::mhp::aligned(

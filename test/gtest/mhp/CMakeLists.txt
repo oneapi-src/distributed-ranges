@@ -42,7 +42,7 @@ target_link_libraries(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  ../common/transform.cpp
+  alignment.cpp
 )
 target_link_libraries(
   mhp-quick-test
