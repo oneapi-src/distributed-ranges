@@ -14,7 +14,7 @@ TYPED_TEST_SUITE(ForEach, AllTypes);
 TYPED_TEST(ForEach, Range) {
   Ops1<TypeParam> ops(10);
 
-  auto negate = [](auto &v) { v = -v; };
+  auto negate = [](auto &&v) { v = -v; };
   auto input = ops.vec;
 
   xhp::for_each(ops.dist_vec, negate);
@@ -25,7 +25,7 @@ TYPED_TEST(ForEach, Range) {
 TYPED_TEST(ForEach, Iterators) {
   Ops1<TypeParam> ops(10);
 
-  auto negate = [](auto &v) { v = -v; };
+  auto negate = [](auto &&v) { v = -v; };
   auto input = ops.vec;
 
   xhp::for_each(ops.dist_vec.begin() + 1, ops.dist_vec.end() - 1, negate);

@@ -71,9 +71,9 @@ inline auto sycl_queue() {
   assert(false);
   return 0;
 }
-inline auto dpl_policy() {
+inline const auto &dpl_policy() {
   assert(false);
-  return std::execution::par_unseq;
+  return std::execution::seq;
 }
 #endif
 } // namespace dr::mhp

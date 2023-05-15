@@ -61,7 +61,10 @@ namespace fmt {}
 #include <dr/mhp/views/views.hpp>
 #include <dr/mhp/views/zip.hpp>
 #include <dr/mhp/views/enumerate.hpp>
-#include <dr/mhp/algorithms/algorithms.hpp>
 #include <dr/mhp/algorithms/copy.hpp>
+#include <dr/mhp/algorithms/fill.hpp>
+#include <dr/mhp/algorithms/for_each.hpp>
+#include <dr/mhp/algorithms/iota.hpp>
 #include <dr/mhp/algorithms/reduce.hpp>
+#include <dr/mhp/algorithms/transform.hpp>
 #include <dr/mhp/containers/distributed_vector.hpp>
