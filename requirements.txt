@@ -20,7 +20,7 @@ Jinja2==3.1.2
 MarkupSafe==2.1.2
 nodeenv==1.7.0
 packaging==23.1
-platformdirs==3.5.0
+platformdirs==3.5.1
 pre-commit==3.3.1
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
