@@ -9,6 +9,8 @@
 #include <fmt/ranges.h>
 #include <gtest/gtest.h>
 
+#define TEST_MHP
+
 extern MPI_Comm comm;
 extern std::size_t comm_rank;
 extern std::size_t comm_size;
