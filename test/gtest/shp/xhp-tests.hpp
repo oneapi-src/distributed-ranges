@@ -9,6 +9,8 @@
 #include <fmt/ranges.h>
 #include <gtest/gtest.h>
 
+#define TEST_SHP
+
 // To share tests with MHP
 const std::size_t comm_rank = 0;
 const std::size_t comm_size = 1;
