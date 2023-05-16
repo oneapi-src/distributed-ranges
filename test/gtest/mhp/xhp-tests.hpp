@@ -41,16 +41,8 @@ using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
 
 #else
 
-using CPUTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
+using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
                                   dr::mhp::distributed_vector<float>>;
-
-#ifdef TEST_MHP_SYCL
-using AllTypes = ::testing::Types<
-    dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
-    dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>>;
-#else
-using AllTypes = CPUTypes;
-#endif
 
 #endif
 

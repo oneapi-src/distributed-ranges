@@ -52,6 +52,11 @@ target_link_libraries(
 )
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 
+if (ENABLE_SYCL)
+  target_compile_options(mhp-tests PRIVATE -fsycl)
+  target_compile_options(mhp-quick-test PRIVATE -fsycl)
+endif()
+
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if (NOT MPI_IMPL STREQUAL "openmpi")
@@ -63,47 +68,12 @@ add_mpi_test(mhp-tests-3 mhp-tests 3)
 add_mpi_test(mhp-tests-4 mhp-tests 4)
 
 if (ENABLE_SYCL)
-  add_executable(
-    mhp-sycl-tests
-
-    mhp-tests.cpp
-    ../common/all.cpp
-    ../common/copy.cpp
-    ../common/distributed_vector.cpp
-    ../common/drop.cpp
-    ../common/enumerate.cpp
-    ../common/fill.cpp
-    ../common/for_each.cpp
-    ../common/iota.cpp
-    ../common/reduce.cpp
-    ../common/subrange.cpp
-    # investigate failures
-    #../common/take.cpp
-    ../common/transform.cpp
-    ../common/transform_view.cpp
-    ../common/zip.cpp
-    ../common/zip_local.cpp
-    alignment.cpp
-    copy.cpp
-    distributed_vector.cpp
-    reduce.cpp
-    stencil.cpp
-    segmented.cpp
-    )
-  target_compile_definitions(mhp-sycl-tests PRIVATE TEST_MHP_SYCL)
-  target_compile_options(mhp-sycl-tests PRIVATE -fsycl)
-  target_link_libraries(
-    mhp-sycl-tests
-    GTest::gtest_main
-    cxxopts
-    DR::mpi
-    )
-
   if (NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mpi_test(mhp-sycl-tests-1 mhp-sycl-tests 1)
+    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-Take*)
   endif()
-  add_mpi_test(mhp-sycl-tests-2 mhp-sycl-tests 2)
-  add_mpi_test(mhp-sycl-tests-3 mhp-sycl-tests 3)
-  add_mpi_test(mhp-sycl-tests-4 mhp-sycl-tests 4)
+  # TODO fix sycl Take issues
+  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-Take*)
+  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-Take*)
+  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-Take*)
 endif()
