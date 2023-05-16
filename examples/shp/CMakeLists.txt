@@ -25,6 +25,7 @@ add_shp_example(sort)
 add_shp_example(dot_product_benchmark)
 add_shp_example(sort_benchmark)
 add_shp_example(inclusive_scan_example)
+add_shp_example(exclusive_scan_example)
 # unsatisfied dependency of grb/grb.hpp
 # add_shp_example(gemv_benchmark)
 add_shp_example_no_test(copy_test)

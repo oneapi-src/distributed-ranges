@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/shp/algorithms/copy.hpp>
+#include <dr/shp/algorithms/exclusive_scan.hpp>
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/algorithms/fill.hpp>
 #include <dr/shp/algorithms/for_each.hpp>
