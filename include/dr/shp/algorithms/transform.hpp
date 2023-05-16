@@ -67,4 +67,28 @@ auto transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in,
       rng::end(in), out_end};
 }
 
+template <dr::distributed_range R, dr::distributed_iterator Iter, typename Fn>
+auto transform(R &&in, Iter out, Fn &&fn) {
+  return transform(dr::shp::par_unseq, std::forward<R>(in),
+                   std::forward<Iter>(out), std::forward<Fn>(fn));
+}
+
+template <typename ExecutionPolicy, dr::distributed_iterator Iter1,
+          dr::distributed_iterator Iter2, typename Fn>
+auto transform(ExecutionPolicy &&policy, Iter1 in_begin, Iter1 in_end,
+               Iter2 out_end, Fn &&fn) {
+  return transform(
+      std::forward<ExecutionPolicy>(policy),
+      rng::subrange(std::forward<Iter1>(in_begin), std::forward<Iter1>(in_end)),
+      std::forward<Iter2>(out_end), std::forward<Fn>(fn));
+}
+
+template <dr::distributed_iterator Iter1, dr::distributed_iterator Iter2,
+          typename Fn>
+auto transform(Iter1 in_begin, Iter1 in_end, Iter2 out_end, Fn &&fn) {
+  return transform(dr::shp::par_unseq, std::forward<Iter1>(in_begin),
+                   std::forward<Iter1>(in_end), std::forward<Iter2>(out_end),
+                   std::forward<Fn>(fn));
+}
+
 } // namespace dr::shp
