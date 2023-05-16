@@ -10,6 +10,25 @@ std::size_t comm_size;
 
 cxxopts::ParseResult options;
 
+void dr_init() {
+#ifdef SYCL_LANGUAGE_VERSION
+  if (options.count("sycl")) {
+    sycl::queue q;
+    if (comm_rank == 0) {
+      fmt::print("Enable sycl device: {}\n",
+                 q.get_device().get_info<sycl::info::device::name>());
+    }
+    dr::mhp::init(q);
+    return;
+  }
+#endif
+
+  if (comm_rank == 0) {
+    fmt::print("Enable CPU\n");
+  }
+  dr::mhp::init();
+}
+
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   comm = MPI_COMM_WORLD;
@@ -18,19 +37,15 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(comm, &size);
   comm_rank = rank;
   comm_size = size;
-#ifdef TEST_MHP_SYCL
-  dr::mhp::init(sycl::queue());
-#else
-  dr::mhp::init();
-#endif
   ::testing::InitGoogleTest(&argc, argv);
 
   cxxopts::Options options_spec(argv[0], "DR MHP tests");
 
   // clang-format off
   options_spec.add_options()
+    ("drhelp", "Print help")
     ("log", "Enable logging")
-    ("drhelp", "Print help");
+    ("sycl", "Execute on SYCL device");
   // clang-format on
 
   try {
@@ -45,6 +60,7 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
+  dr_init();
   std::ofstream *logfile = nullptr;
   if (options.count("log")) {
     logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
