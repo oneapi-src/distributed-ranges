@@ -9,8 +9,8 @@ using V = std::vector<T>;
 using DV = dr::mhp::distributed_vector<T>;
 using DVI = typename DV::iterator;
 
-std::size_t radius = 4;
-std::size_t n = 10;
+const std::size_t radius = 4;
+const std::size_t n = 10;
 
 TEST(MhpTests, Stencil) {
   DV dv_in(n, dr::halo_bounds(radius));

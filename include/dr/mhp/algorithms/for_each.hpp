@@ -24,9 +24,11 @@ void for_each(dr::distributed_range auto &&dr, auto op) {
 
   for (const auto &s : local_segments(dr)) {
     if (mhp::use_sycl()) {
+      dr::drlog.debug("  using sycl\n");
       std::for_each(dpl_policy(), dr::__detail::direct_iterator(rng::begin(s)),
                     dr::__detail::direct_iterator(rng::end(s)), op);
     } else {
+      dr::drlog.debug("  using cpu\n");
       rng::for_each(s, op);
     }
   }

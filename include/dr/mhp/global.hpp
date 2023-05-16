@@ -11,7 +11,8 @@ namespace __detail {
 struct global_context {
   global_context() {}
 #ifdef SYCL_LANGUAGE_VERSION
-  global_context(sycl::queue q) : sycl_queue_(q), dpl_policy_(q) {}
+  global_context(sycl::queue q)
+      : sycl_queue_(q), dpl_policy_(q), use_sycl_(true) {}
   sycl::queue sycl_queue_;
   decltype(oneapi::dpl::execution::make_device_policy(
       std::declval<sycl::queue>())) dpl_policy_;
