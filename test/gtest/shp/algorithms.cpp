@@ -207,6 +207,207 @@ TEST(ShpTests, DISABLED_InclusiveScan_nonaligned) {
   }
 }
 
+TEST(ShpTests, ExclusiveScan_aligned) {
+  std::size_t n = 100;
+
+  // With execution Policy
+  {
+    dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> v(n);
+    std::vector<int> lv(n);
+
+    // Range case, no binary op or init, perfectly aligned
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(0));
+    dr::shp::exclusive_scan(dr::shp::par_unseq, v, v, int(0));
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], v[i]);
+    }
+
+    // Iterator case, no binary op or init, perfectly aligned
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(0));
+    dr::shp::exclusive_scan(dr::shp::par_unseq, v.begin(), v.end(), v.begin(),
+                            int(0));
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], v[i]);
+    }
+  }
+
+  // Without execution policies
+  {
+    dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> v(n);
+    std::vector<int> lv(n);
+
+    // Range case, no binary op or init, perfectly aligned
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(0));
+    dr::shp::exclusive_scan(v, v, int(0));
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], v[i]);
+    }
+
+    // Iterator case, no binary op or init, perfectly aligned
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(0));
+    dr::shp::exclusive_scan(v.begin(), v.end(), v.begin(), int(0));
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], v[i]);
+    }
+  }
+}
+
+TEST(ShpTests, DISABLED_ExclusiveScan_nonaligned) {
+  std::size_t n = 100;
+
+  // With execution policies
+  {
+    dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> v(n);
+    dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> o(
+        v.size() * 2);
+    std::vector<int> lv(n);
+
+    // Range case, binary op no init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(0));
+    dr::shp::exclusive_scan(dr::shp::par_unseq, v, o, int(0), std::plus<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+
+    // Range case, binary op, init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), 12,
+                        std::multiplies<>());
+    dr::shp::exclusive_scan(dr::shp::par_unseq, v, o, 12, std::multiplies<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+
+    // Iterator case, binary op no init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(0));
+    dr::shp::exclusive_scan(dr::shp::par_unseq, v.begin(), v.end(), o.begin(),
+                            int(0), std::plus<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+
+    // Range case, binary op, init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(12),
+                        std::multiplies<>());
+    dr::shp::exclusive_scan(dr::shp::par_unseq, v.begin(), v.end(), o.begin(),
+                            int(12), std::multiplies<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+  }
+
+  // Without execution policies
+  {
+    dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> v(n);
+    dr::shp::distributed_vector<int, dr::shp::device_allocator<int>> o(
+        v.size() * 2);
+    std::vector<int> lv(n);
+
+    // Range case, binary op no init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(12));
+    dr::shp::exclusive_scan(v, o, int(12), std::plus<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+
+    // Range case, binary op, init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), 12,
+                        std::multiplies<>());
+    dr::shp::exclusive_scan(v, o, 12, std::multiplies<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+
+    // Iterator case, binary op no init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), int(0));
+    dr::shp::exclusive_scan(v.begin(), v.end(), o.begin(), int(0),
+                            std::plus<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+
+    // Range case, binary op, init, non-aligned ranges
+    for (auto &&x : lv) {
+      x = lrand48() % 100;
+    }
+    dr::shp::copy(lv.begin(), lv.end(), v.begin());
+
+    std::exclusive_scan(lv.begin(), lv.end(), lv.begin(), 12,
+                        std::multiplies<>());
+    dr::shp::exclusive_scan(v.begin(), v.end(), o.begin(), 12,
+                            std::multiplies<>());
+
+    for (std::size_t i = 0; i < lv.size(); i++) {
+      EXPECT_EQ(lv[i], o[i]);
+    }
+  }
+}
+
 TEST(ShpTests, Sort) {
   std::vector<std::size_t> sizes = {1, 2, 4, 100};
 
