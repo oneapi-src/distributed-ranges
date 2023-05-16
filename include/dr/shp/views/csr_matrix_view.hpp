@@ -122,7 +122,8 @@ using csr_matrix_view_iterator =
     dr::iterator_adaptor<csr_matrix_view_accessor<T, I, TIter, IIter>>;
 
 template <typename T, typename I, typename TIter = T *, typename IIter = I *>
-class csr_matrix_view {
+class csr_matrix_view
+    : public rng::view_interface<csr_matrix_view<T, I, TIter, IIter>> {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
