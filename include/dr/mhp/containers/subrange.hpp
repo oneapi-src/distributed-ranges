@@ -39,7 +39,7 @@ public:
                  find_dm_offset((int)(index_ + n * rowsize)) -
                  default_comm().rank() * dm_->segment_size();
 
-    assert(offset > 0);
+    assert(offset >= 0);
     assert(offset < (int)dm_->data_size());
 
     signed long idx = default_comm().rank() * dm_->segment_shape()[0]; // ??
@@ -53,7 +53,7 @@ public:
     int offset = dm_->halo_bounds_.prev + find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size() +
                  dm_->shape()[1] * p.second + p.first;
-    assert(offset > 0);
+    assert(offset >= 0);
     assert(offset < (int)dm_->data_size());
     return *(dm_->data() + offset);
   }
