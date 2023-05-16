@@ -167,7 +167,7 @@ private:
 }; // dv_segment
 
 /// distributed vector
-template <typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = dr::mhp::default_allocator<T>>
 class distributed_vector {
 
 public:
