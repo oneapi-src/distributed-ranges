@@ -66,8 +66,29 @@ if (ENABLE_SYCL)
   add_executable(
     mhp-sycl-tests
 
-    # pulls in the common test
     mhp-tests.cpp
+    ../common/all.cpp
+    ../common/copy.cpp
+    ../common/distributed_vector.cpp
+    ../common/drop.cpp
+    ../common/enumerate.cpp
+    ../common/fill.cpp
+    ../common/for_each.cpp
+    ../common/iota.cpp
+    ../common/reduce.cpp
+    ../common/subrange.cpp
+    # investigate failures
+    #../common/take.cpp
+    ../common/transform.cpp
+    ../common/transform_view.cpp
+    ../common/zip.cpp
+    ../common/zip_local.cpp
+    alignment.cpp
+    copy.cpp
+    distributed_vector.cpp
+    reduce.cpp
+    stencil.cpp
+    segmented.cpp
     )
   target_compile_definitions(mhp-sycl-tests PRIVATE TEST_MHP_SYCL)
   target_compile_options(mhp-sycl-tests PRIVATE -fsycl)
