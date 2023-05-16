@@ -7,9 +7,6 @@
 #include <concepts>
 #include <dr/shp/algorithms/inclusive_scan.hpp>
 
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
 namespace dr::shp {
 
 template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
@@ -52,8 +49,6 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
     std::vector<U> inits(rng::size(zipped_segments));
 
     shp::copy(d_inits, d_inits + inits.size(), inits.data() + 1);
-
-    fmt::print("Inits: {}\n", inits);
 
     sycl::free(d_inits, shp::context());
 
@@ -144,6 +139,8 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
   }
 }
 
+// Ranges versions
+
 template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O, typename T, typename BinaryOp>
 void exclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, T init,
@@ -159,6 +156,57 @@ void exclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, T init) {
   exclusive_scan_impl_(std::forward<ExecutionPolicy>(policy),
                        std::forward<R>(r), std::forward<O>(o), init,
                        std::plus<>{});
+}
+
+template <dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O, typename T, typename BinaryOp>
+void exclusive_scan(R &&r, O &&o, T init, BinaryOp &&binary_op) {
+  exclusive_scan_impl_(dr::shp::par_unseq, std::forward<R>(r),
+                       std::forward<O>(o), init,
+                       std::forward<BinaryOp>(binary_op));
+}
+
+template <dr::distributed_contiguous_range R,
+          dr::distributed_contiguous_range O, typename T>
+void exclusive_scan(R &&r, O &&o, T init) {
+  exclusive_scan_impl_(dr::shp::par_unseq, std::forward<R>(r),
+                       std::forward<O>(o), init, std::plus<>{});
+}
+
+// Iterator versions
+
+template <typename ExecutionPolicy, dr::distributed_iterator Iter,
+          dr::distributed_iterator OutputIter, typename T, typename BinaryOp>
+void exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
+                    OutputIter d_first, T init, BinaryOp &&binary_op) {
+  auto dist = rng::distance(first, last);
+  auto d_last = d_first;
+  rng::advance(d_last, dist);
+  exclusive_scan_impl_(
+      std::forward<ExecutionPolicy>(policy), rng::subrange(first, last),
+      rng::subrange(d_first, d_last), init, std::forward<BinaryOp>(binary_op));
+}
+
+template <typename ExecutionPolicy, dr::distributed_iterator Iter,
+          dr::distributed_iterator OutputIter, typename T>
+void exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last,
+                    OutputIter d_first, T init) {
+  exclusive_scan(std::forward<ExecutionPolicy>(policy), first, last, d_first,
+                 init, std::plus<>{});
+}
+
+template <dr::distributed_iterator Iter, dr::distributed_iterator OutputIter,
+          typename T, typename BinaryOp>
+void exclusive_scan(Iter first, Iter last, OutputIter d_first, T init,
+                    BinaryOp &&binary_op) {
+  exclusive_scan(dr::shp::par_unseq, first, last, d_first, init,
+                 std::forward<BinaryOp>(binary_op));
+}
+
+template <dr::distributed_iterator Iter, dr::distributed_iterator OutputIter,
+          typename T>
+void exclusive_scan(Iter first, Iter last, OutputIter d_first, T init) {
+  exclusive_scan(dr::shp::par_unseq, first, last, d_first, init);
 }
 
 } // namespace dr::shp
