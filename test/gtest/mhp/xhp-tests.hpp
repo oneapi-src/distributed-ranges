@@ -34,17 +34,8 @@ inline void fence() { dr::mhp::fence(); }
 
 #include "common-tests.hpp"
 
-#ifdef QUICK_TEST
-
 // minimal testing for quick builds
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
-
-#else
-
-using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
-                                  dr::mhp::distributed_vector<float>>;
-
-#endif
 
 namespace dr::mhp {
 
