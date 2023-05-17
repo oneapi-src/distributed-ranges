@@ -42,7 +42,7 @@ target_link_libraries(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  alignment.cpp
+  ../common/take.cpp
 )
 target_link_libraries(
   mhp-quick-test
@@ -73,7 +73,7 @@ if (ENABLE_SYCL)
     add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-Take*)
   endif()
   # TODO fix sycl Take issues
-  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-Take*)
-  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-Take*)
-  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-Take*)
+  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl)
+  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl)
+  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl)
 endif()
