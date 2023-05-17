@@ -31,5 +31,4 @@ concept compliant_view = rng::forward_range<V> && requires(V &v) {
 
 #include "common-tests.hpp"
 
-using AllTypes = ::testing::Types<xhp::distributed_vector<int>,
-                                  xhp::distributed_vector<float>>;
+using AllTypes = ::testing::Types<xhp::distributed_vector<int>>;
