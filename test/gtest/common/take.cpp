@@ -12,7 +12,7 @@ public:
 TYPED_TEST_SUITE(Take, AllTypes);
 
 TYPED_TEST(Take, isCompliant) {
-  TypeParam dv;
+  TypeParam dv(10);
   static_assert(compliant_view<decltype(xhp::views::take(dv, 6))>);
 }
 
@@ -44,13 +44,13 @@ TYPED_TEST(Take, zero) { localAndDrTakeResultsAreSameTest<TypeParam>(0); }
 TYPED_TEST(Take, one) { localAndDrTakeResultsAreSameTest<TypeParam>(1); }
 
 TYPED_TEST(Take, emptyInput_zeroSize) {
-  TypeParam dv;
+  TypeParam dv(0);
   auto dist = xhp::views::take(dv, 0);
   EXPECT_TRUE(rng::empty(dist));
 }
 
 TYPED_TEST(Take, emptyInput_nonZeroSize) {
-  TypeParam dv;
+  TypeParam dv(0);
   auto dist = xhp::views::take(dv, 1);
   EXPECT_TRUE(rng::empty(dist));
 }
