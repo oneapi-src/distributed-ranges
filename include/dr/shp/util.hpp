@@ -227,29 +227,11 @@ void range_details(R &&r, std::size_t width = 80) {
 
 namespace __detail {
 
-inline sycl::event combine_events(sycl::queue &q,
-                                  const std::vector<sycl::event> &events) {
-  auto e = q.submit([&](auto &&h) {
-    h.depends_on(events);
-    h.host_task([] {});
-  });
+template <typename T>
+concept sycl_device_selector = requires(T &t, const sycl::device &device) {
+  { t(device) } -> std::convertible_to<int>;
+};
 
-  return e;
 }
-
-inline sycl::event combine_events(const std::vector<sycl::event> &events) {
-  auto &&q = __detail::queue(0);
-  return combine_events(q, events);
-}
-
-inline void wait(sycl::event &event) { event.wait(); }
-
-inline void wait(sycl::event &&event) { event.wait(); }
-
-inline void wait(const std::vector<sycl::event> &events) {
-  sycl::event::wait(events);
-}
-
-} // namespace __detail
 
 } // namespace dr::shp
