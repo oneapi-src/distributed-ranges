@@ -4,8 +4,21 @@
 
 #pragma once
 
-#include <concepts>
-#include <dr/shp/algorithms/inclusive_scan.hpp>
+#include <sycl/sycl.hpp>
+
+#include <oneapi/dpl/execution>
+#include <oneapi/dpl/numeric>
+
+#include <oneapi/dpl/async>
+
+#include <dr/concepts/concepts.hpp>
+#include <dr/detail/onedpl_direct_iterator.hpp>
+#include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/allocators.hpp>
+#include <dr/shp/detail.hpp>
+#include <dr/shp/init.hpp>
+#include <dr/shp/vector.hpp>
+#include <dr/shp/views/views.hpp>
 
 namespace dr::shp {
 
