@@ -110,19 +110,27 @@ public:
   auto operator*() const { return dv_segment_reference<DV>{*this}; }
   auto operator[](difference_type n) const { return *(*this + n); }
 
-  value_type get() const {
+  void get(value_type *dst, std::size_t size) const {
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
-    auto value =
-        dv_->win_.template get<value_type>(segment_index_, segment_offset);
-    dr::drlog.debug("get ({}:{})\n", segment_index_, segment_offset);
-    return value;
+    dv_->win_.get(dst, size * sizeof(*dst), segment_index_,
+                  segment_offset * sizeof(*dst));
   }
 
-  void put(const value_type &value) const {
-    auto segment_offset = index_ + dv_->halo_bounds_.prev;
-    dr::drlog.debug("put ({}:{})\n", segment_index_, segment_offset);
-    dv_->win_.put(value, segment_index_, segment_offset);
+  value_type get() const {
+    value_type val;
+    get(&val, 1);
+    return val;
   }
+
+  void put(const value_type *dst, std::size_t size) const {
+    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
+                    size);
+    dv_->win_.put(dst, size * sizeof(*dst), segment_index_,
+                  segment_offset * sizeof(*dst));
+  }
+
+  void put(const value_type &value) const { put(&value, 1); }
 
   auto rank() const { return segment_index_; }
   auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
