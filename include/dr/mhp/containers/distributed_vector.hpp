@@ -7,7 +7,7 @@
 namespace dr::mhp {
 
 /// distributed vector
-template <typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = dr::mhp::default_allocator<T>>
 class distributed_vector {
 
 public:
@@ -140,14 +140,16 @@ public:
   auto segments() const { return rng::views::all(segments_); }
 
 private:
-  void init(auto size, auto hb, auto allocator) {
+  void init(auto size, auto hb, const auto &allocator) {
     allocator_ = allocator;
     size_ = size;
     auto comm_size = default_comm().size(); // dr-style ignore
     segment_size_ =
         std::max({(size + comm_size - 1) / comm_size, hb.prev, hb.next});
     data_size_ = segment_size_ + hb.prev + hb.next;
-    data_ = allocator.allocate(data_size_);
+    if (size_ > 0) {
+      data_ = allocator_.allocate(data_size_);
+    }
     halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {

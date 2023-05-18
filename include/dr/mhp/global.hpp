@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <dr/mhp/sycl_support.hpp>
+
 namespace dr::mhp {
 
 namespace __detail {
@@ -11,7 +13,8 @@ namespace __detail {
 struct global_context {
   global_context() {}
 #ifdef SYCL_LANGUAGE_VERSION
-  global_context(sycl::queue q) : sycl_queue_(q), dpl_policy_(q) {}
+  global_context(sycl::queue q)
+      : sycl_queue_(q), dpl_policy_(q), use_sycl_(true) {}
   sycl::queue sycl_queue_;
   decltype(oneapi::dpl::execution::make_device_policy(
       std::declval<sycl::queue>())) dpl_policy_;
@@ -58,7 +61,7 @@ inline void init() {
 }
 
 #ifdef SYCL_LANGUAGE_VERSION
-inline auto sycl_queue() { return __detail::gcontext()->sycl_queue_; }
+inline sycl::queue sycl_queue() { return __detail::gcontext()->sycl_queue_; }
 inline auto dpl_policy() { return __detail::gcontext()->dpl_policy_; }
 
 inline void init(sycl::queue q) {
@@ -71,9 +74,48 @@ inline auto sycl_queue() {
   assert(false);
   return 0;
 }
-inline auto dpl_policy() {
+inline const auto &dpl_policy() {
   assert(false);
-  return std::execution::par_unseq;
+  return std::execution::seq;
 }
 #endif
+
+template <typename T> class default_allocator {
+public:
+  default_allocator() {
+#ifdef SYCL_LANGUAGE_VERSION
+    if (mhp::use_sycl()) {
+      sycl_allocator_ = sycl_shared_allocator<T>(sycl_queue());
+    }
+#endif
+  }
+
+  T *allocate(std::size_t sz) {
+#ifdef SYCL_LANGUAGE_VERSION
+    if (mhp::use_sycl()) {
+      return sycl_allocator_.allocate(sz);
+    }
+#endif
+
+    return std_allocator_.allocate(sz);
+  }
+
+  void deallocate(T *ptr, std::size_t sz) {
+#ifdef SYCL_LANGUAGE_VERSION
+    if (mhp::use_sycl()) {
+      sycl_allocator_.deallocate(ptr, sz);
+      return;
+    }
+#endif
+
+    std_allocator_.deallocate(ptr, sz);
+  }
+
+private:
+#ifdef SYCL_LANGUAGE_VERSION
+  sycl_shared_allocator<T> sycl_allocator_;
+#endif
+  std::allocator<T> std_allocator_;
+};
+
 } // namespace dr::mhp

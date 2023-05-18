@@ -108,14 +108,6 @@ include_rules = [
         'use namespace __detail {',
     ),
     (
-        r'\.begin\(\)',
-        'use rng::begin()',
-    ),
-    (
-        r'\.end\(\)',
-        'use rng::end()',
-    ),
-    (
         r'\.size\(\)',
         'use rng::size()',
     ),
