@@ -61,7 +61,6 @@ TEST(MhpTests, DM_Fill_index_1d) {
   EXPECT_EQ((a.begin()[55]), 5);
   EXPECT_EQ((a.begin()[99]), 5);
   EXPECT_EQ((a.begin()[rows * cols - 1]), 5);
-
 }
 
 TEST(MhpTests, DM_Fill_index_2d) {
@@ -85,7 +84,6 @@ TEST(MhpTests, DM_Fill_HB) {
     EXPECT_EQ((a[{0, 0}]), 5);
   }
   EXPECT_EQ((a.begin()[{10, 10}]), 5);
-  
 }
 
 TEST(MhpTests, DM_Iota1) {
