@@ -54,7 +54,6 @@ public:
                  default_comm().rank() * dm_->segment_size() +
                  dm_->shape()[1] * p.first + p.second;
 
-
     assert(offset >= 0);
     assert(offset < (int)dm_->data_size());
     return *(dm_->data() + offset);
