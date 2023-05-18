@@ -235,7 +235,9 @@ private:
     segment_shape_ =
         index((shape_[0] + grid_size_ - 1) / grid_size_, shape_[1]);
 
-    segment_size_ = std::max({segment_shape_[0], hb.prev, hb.next}) * shape_[1];
+    assert(hb.prev <= segment_shape_[0]);
+    assert(hb.next <= segment_shape_[0]); 
+    segment_size_ = segment_shape_[0] * shape_[1];
 
     data_size_ = segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1];
 
