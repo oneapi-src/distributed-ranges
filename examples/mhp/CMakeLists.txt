@@ -37,12 +37,12 @@ target_link_libraries(
   DR::mpi)
 add_mpi_test(stencil-2d-matrix stencil-2d-matrix 2)
 
-add_executable(wave_equation wave_equation.cpp)
-target_link_libraries(
-  wave_equation
-  cxxopts
-  DR::mpi)
-add_mpi_test(wave_equation wave_equation 4)
+# add_executable(wave_equation wave_equation.cpp)
+# target_link_libraries(
+#   wave_equation
+#   cxxopts
+#   DR::mpi)
+# add_mpi_test(wave_equation wave_equation 4)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)
