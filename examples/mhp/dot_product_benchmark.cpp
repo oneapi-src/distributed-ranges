@@ -79,9 +79,8 @@ auto dot_product_sequential(X &&x, Y &&y) {
   return std::reduce(z.begin(), z.end(), rng::range_value_t<X>(0), std::plus());
 }
 
-void stats(auto &durations, auto &sum, auto v_serial, auto &x_local,
-           auto &y_local) {
-  fmt::print("MHP executing on {} ranks:\n", comm_size);
+void time_summary(auto &durations, auto &sum) {
+  fmt::print("Result: {}\n", sum);
   fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
                                   return x * 1000;
                                 }));
@@ -91,7 +90,14 @@ void stats(auto &durations, auto &sum, auto v_serial, auto &x_local,
   double median_duration = durations[durations.size() / 2];
 
   fmt::print("Median duration: {} ms\n", median_duration * 1000);
-  fmt::print("Result: {}\n", sum);
+  fmt::print("Memory bandwidth: {:.6} MB/s\n",
+             n * 3 * sizeof(T) / (median_duration * 1000 * 1000));
+}
+
+void stats(auto &durations, auto &sum, auto v_serial, auto &x_local,
+           auto &y_local) {
+  fmt::print("MHP executing on {} ranks:\n", comm_size);
+  time_summary(durations, sum);
 
   // Execute on one device:
   durations.clear();
@@ -122,19 +128,8 @@ void stats(auto &durations, auto &sum, auto v_serial, auto &x_local,
     }
     sum += v;
   }
-
   fmt::print("oneDPL executing on one device:\n");
-  fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
-                                  return x * 1000;
-                                }));
-
-  std::sort(durations.begin(), durations.end());
-
-  median_duration = durations[durations.size() / 2];
-
-  fmt::print("Median duration: {} ms\n", median_duration * 1000);
-
-  fmt::print("Result: {}\n", sum);
+  time_summary(durations, sum);
 }
 
 int main(int argc, char **argv) {
@@ -146,14 +141,14 @@ int main(int argc, char **argv) {
   comm_rank = rank;
   comm_size = size;
 
-  mhp::init();
-
   cxxopts::Options options_spec(argv[0], "mhp dot product benchmark");
   // clang-format off
   options_spec.add_options()
-    ("n", "Size of array", cxxopts::value<std::size_t>()->default_value("1000000"))
+    ("help", "Print help")
     ("i", "Number of iterations", cxxopts::value<std::size_t>()->default_value("10"))
-    ("help", "Print help");
+    ("log", "Enable logging")
+    ("n", "Size of array", cxxopts::value<std::size_t>()->default_value("1000000"))
+    ("sycl", "Execute on sycl device");
   // clang-format on
 
   cxxopts::ParseResult options;
@@ -169,6 +164,20 @@ int main(int argc, char **argv) {
     exit(0);
   }
 
+  std::ofstream *logfile = nullptr;
+  if (options.count("log")) {
+    logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
+    dr::drlog.set_file(*logfile);
+  }
+  dr::drlog.debug("Rank: {}\n", comm_rank);
+
+  sycl::queue q;
+  if (options.count("sycl")) {
+    mhp::init(q);
+  } else {
+    mhp::init();
+  }
+
   n = options["n"].as<std::size_t>();
   n_iterations = options["i"].as<std::size_t>();
   std::vector<T> x_local(n);
@@ -176,7 +185,7 @@ int main(int argc, char **argv) {
 
   std::random_device dev;
   std::mt19937 rng(dev());
-  std::uniform_real_distribution<> dist(0, 10);
+  std::uniform_real_distribution<> dist(0, 1000);
   for (std::size_t i = 0; i < n; i++) {
     x_local[i] = dist(rng);
     y_local[i] = dist(rng);
@@ -189,8 +198,6 @@ int main(int argc, char **argv) {
   mhp::copy(0, x_local, x.begin());
   mhp::copy(0, y_local, y.begin());
 
-  fmt::print("local: {}\n", rng::views::drop(x_local, n - 10));
-  fmt::print("dist: {}\n", rng::views::drop(x, n - 10));
   std::vector<double> durations;
   durations.reserve(n_iterations);
 
@@ -214,7 +221,6 @@ int main(int argc, char **argv) {
     }
     sum += v;
   }
-
   if (comm_rank == 0) {
     stats(durations, sum, v_serial, x_local, y_local);
   }
