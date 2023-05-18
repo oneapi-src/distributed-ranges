@@ -67,5 +67,6 @@ namespace fmt {}
 #include <dr/mhp/algorithms/for_each.hpp>
 #include <dr/mhp/algorithms/iota.hpp>
 #include <dr/mhp/algorithms/reduce.hpp>
+#include <dr/mhp/algorithms/transform.hpp>
 #include <dr/mhp/containers/distributed_vector.hpp>
 #include <dr/mhp/containers/distributed_dense_matrix.hpp>
