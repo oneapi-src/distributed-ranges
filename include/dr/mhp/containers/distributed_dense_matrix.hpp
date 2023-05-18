@@ -164,8 +164,7 @@ public:
   dr::halo_bounds &halo_bounds() { return halo_bounds_; }
 
   bool is_local_row(int index) {
-    if (index >= local_rows_indices_.first &&
-        index <= local_rows_indices_.second) {
+    if (index >= local_rows_ind_.first && index <= local_rows_ind_.second) {
       return true;
     } else {
       return false;
@@ -173,15 +172,15 @@ public:
   }
   // index of cell on linear view
   bool is_local_cell(int index) {
-    if (index >= local_rows_indices_.first * (int)shape_[1] &&
-        index < (local_rows_indices_.second + 1) * (int)shape_[1]) {
+    if (index >= local_rows_ind_.first * (int)shape_[1] &&
+        index < (local_rows_ind_.second + 1) * (int)shape_[1]) {
       return true;
     } else {
       return false;
     }
   }
 
-  std::pair<int, int> local_rows_indices() { return local_rows_indices_; }
+  std::pair<int, int> local_rows_indices() { return local_rows_ind_; }
 
   // for debug only
 #if 1
@@ -236,7 +235,7 @@ private:
         index((shape_[0] + grid_size_ - 1) / grid_size_, shape_[1]);
 
     assert(hb.prev <= segment_shape_[0]);
-    assert(hb.next <= segment_shape_[0]); 
+    assert(hb.next <= segment_shape_[0]);
     segment_size_ = segment_shape_[0] * shape_[1];
 
     data_size_ = segment_size_ + hb.prev * shape_[1] + hb.next * shape_[1];
@@ -270,17 +269,16 @@ private:
 
     int row_start_index_ = 0;
 
-    // for (const auto &s : local_segments(dr)) { // check ?
-    for (auto _titr = rng::begin(segments_); _titr != rng::end(segments_);
-         ++_titr) {
+    for (auto _sitr = rng::begin(segments_); _sitr != rng::end(segments_);
+         ++_sitr) {
       for (int _ind = row_start_index_;
-           _ind < row_start_index_ + (int)(rng::distance(*_titr) / shape_[1]);
+           _ind < row_start_index_ + (int)(rng::distance(*_sitr) / shape_[1]);
            _ind++) {
         T *_dataptr = nullptr;
-        if ((*_titr).is_local()) {
-          if (local_rows_indices_.first == -1)
-            local_rows_indices_.first = _ind;
-          local_rows_indices_.second = _ind;
+        if ((*_sitr).is_local()) {
+          if (local_rows_ind_.first == -1)
+            local_rows_ind_.first = _ind;
+          local_rows_ind_.second = _ind;
 
           int _dataoff = halo_bounds_.prev; // start of data
           _dataoff +=
@@ -290,17 +288,17 @@ private:
           assert(_dataoff < (int)data_size_);
           _dataptr = data_ + _dataoff;
         }
-        dm_rows_.emplace_back(_ind, _dataptr, shape_[1], &(*_titr));
+        dm_rows_.emplace_back(_ind, _dataptr, shape_[1], &(*_sitr));
       }
-      row_start_index_ += rng::distance(*_titr) / shape_[1];
+      row_start_index_ += rng::distance(*_sitr) / shape_[1];
     };
     // barrier();
 
     // rows in halo.prev area
-    for (int _ind = local_rows_indices_.first - halo_bounds_rows_.prev;
-         _ind < local_rows_indices_.first; _ind++) {
+    for (int _ind = local_rows_ind_.first - halo_bounds_rows_.prev;
+         _ind < local_rows_ind_.first; _ind++) {
       std::size_t _dataoff =
-          halo_bounds_.prev + (_ind - local_rows_indices_.first) * shape_[1];
+          halo_bounds_.prev + (_ind - local_rows_ind_.first) * shape_[1];
 
       assert(_dataoff >= 0);
       assert(_dataoff < halo_bounds_.prev);
@@ -309,11 +307,11 @@ private:
     }
 
     // rows in halo.next area
-    for (int _ind = local_rows_indices_.second + 1;
-         _ind < (int)(local_rows_indices_.second + 1 + halo_bounds_rows_.next);
+    for (int _ind = local_rows_ind_.second + 1;
+         _ind < (int)(local_rows_ind_.second + 1 + halo_bounds_rows_.next);
          _ind++) {
       int _dataoff =
-          halo_bounds_.prev + (_ind - local_rows_indices_.first) * shape_[1];
+          halo_bounds_.prev + (_ind - local_rows_ind_.first) * shape_[1];
 
       assert(_dataoff >= 0);
       assert(_dataoff < (int)data_size_);
@@ -353,7 +351,7 @@ private:
   dm_rows<distributed_dense_matrix> dm_halo_p_rows_, dm_halo_n_rows_;
 
   // global indices of locally stored rows (lowest and highest)
-  std::pair<difference_type, difference_type> local_rows_indices_ =
+  std::pair<difference_type, difference_type> local_rows_ind_ =
       std::pair(-1, -1);
 
   dr::rma_window win_;
