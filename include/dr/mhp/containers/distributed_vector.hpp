@@ -59,7 +59,7 @@ public:
 
   // Only this arithmetic manipulate internal state
   auto &operator+=(difference_type n) {
-    assert(n < 100);
+    assert(n < 1000000);
     assert(dv_ != nullptr);
     assert(n >= 0 || static_cast<difference_type>(index_) >= -n);
     index_ += n;
@@ -157,29 +157,32 @@ public:
 
     if (my_process_segment_index == segment_index_) {
       auto retptr = dv_->data_ + index_ + dv_->halo_bounds_.prev;
-      dr::drlog.debug("read local, segidx:{}, idx:{}, val:{}\n", segment_index_,
-                      index_, *retptr);
+      dr::drlog.debug("read local, segidx:{}, idx:{}, addr:{}, val:{}\n",
+                      segment_index_, index_, static_cast<void *>(retptr),
+                      *retptr);
       return retptr;
     }
 
     assert(!dv_->halo_bounds().periodic); // not implemented
 
     if (my_process_segment_index + 1 == segment_index_) {
-      assert(dv_->segment_size_ - index_ <= dv_->halo_bounds().prev);
+      assert(index_ <=
+             dv_->halo_bounds().next); // <= instead of < to cover end() case
       auto retptr =
-          dv_->data_ + dv_->halo_bounds().prev + index_ - dv_->segment_size_;
-      dr::drlog.debug("read next halo, segidx:{}, idx:{}, val:{}\n",
-                      segment_index_, index_, *retptr);
+          dv_->data_ + dv_->halo_bounds().prev + index_ + dv_->segment_size_;
+      dr::drlog.debug("read next halo, segidx:{}, idx:{}, addr:{}, val:{}\n",
+                      segment_index_, index_, static_cast<void *>(retptr),
+                      *retptr);
       return retptr;
     }
 
     if (my_process_segment_index == segment_index_ + 1) {
-      assert(index_ <=
-             dv_->halo_bounds().next); // <= instead of < to cover end() case
+      assert(dv_->segment_size_ - index_ <= dv_->halo_bounds().prev);
       auto retptr =
-          dv_->data_ + dv_->halo_bounds_.prev + dv_->segment_size_ + index_;
-      dr::drlog.debug("read prev halo, segidx:{}, idx:{}, val:{}\n",
-                      segment_index_, index_, *retptr);
+          dv_->data_ + dv_->halo_bounds_.prev + index_ - dv_->segment_size_;
+      dr::drlog.debug("read prev halo, segidx:{}, idx:{}, addr:{}, val:{}\n",
+                      segment_index_, index_, static_cast<void *>(retptr),
+                      *retptr);
       return retptr;
     }
 
@@ -221,7 +224,7 @@ public:
 
   auto size() const {
     assert(dv_ != nullptr);
-    assert(size_ < 100);
+    assert(size_ < 100000);
     return size_;
   }
 
@@ -383,6 +386,15 @@ public:
   auto &halo_bounds() const { return halo_bounds_; }
 
   auto segments() const { return rng::views::all(segments_); }
+
+  void print_myself_to_log(std::string desc) const {
+    dr::drlog.debug("DV {}, dataAddr:{}", desc,
+                    static_cast<void *>(this->data_));
+    for (std::size_t idx = 0; idx < data_size_; ++idx)
+      dr::drlog.debug(" - idx:{} val:{} addr:{}", idx, this->data_[idx],
+                      static_cast<void *>(this->data_ + idx));
+    dr::drlog.debug("\n");
+  }
 
 private:
   void init(auto size, auto hb, const auto &allocator) {

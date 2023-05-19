@@ -30,8 +30,24 @@ template <typename R> auto local_segments(R &&dr) {
 
   // Convert from remote iter to local iter
   auto local_iter = [](const auto &segment) {
-    return segment | rng::views::transform(
-                         [](const auto &&v) { return dr::ranges::local(v); });
+    dr::drlog.debug("wrapuje segment tr(local), size-of-input-segment:{}\n",
+                    rng::size(segment));
+    auto retVal = segment | rng::views::transform([](const auto &&v) {
+                    // type of v const
+                    // ranges::subrange<dr::mhp::distributed_vector<int>::iterator,
+                    // dr::mhp::distributed_vector<int>::iterator,
+                    // ranges::subrange_kind::sized>&&
+                    dr::drlog.debug("konwertuje wartosc do local\n");
+                    auto x = dr::ranges::local(v);
+                    // type of x ranges::subrange<int*, int*,
+                    // ranges::subrange_kind::sized>
+                    // static_assert(std::same_as<decltype(x), int>);
+                    return x;
+                  });
+    dr::drlog.debug(
+        "wrapwanie segmentu tr(local) skonczone, size-of-output-segment:{}\n",
+        rng::size(retVal));
+    return retVal;
   };
   return dr::ranges::segments(std::forward<R>(dr)) |
          rng::views::filter(is_local) | rng::views::transform(local_iter);

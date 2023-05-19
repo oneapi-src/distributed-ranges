@@ -64,7 +64,6 @@ endforeach()
 
 if (ENABLE_SYCL)
   target_compile_options(mhp-tests PRIVATE -fsycl)
-  target_compile_options(mhp-quick-test PRIVATE -fsycl)
 endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)

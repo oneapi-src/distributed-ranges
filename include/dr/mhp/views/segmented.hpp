@@ -72,6 +72,7 @@ public:
   }
 
   auto size() const { return rng::size(segments_tpl_); }
+  auto empty() const { return rng::empty(segments_tpl_); }
 
 private:
   rng::views::all_t<R> base_;
