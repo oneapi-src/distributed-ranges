@@ -29,28 +29,38 @@ add_executable(
   reduce.cpp
   stencil.cpp
   segmented.cpp
+  slide_view.cpp
 )
-target_link_libraries(
-  mhp-tests
-  GTest::gtest_main
-  cxxopts
-  DR::mpi
+
+add_executable(
+  mhp-tests-3
+  mhp-tests.cpp
+  slide_view-3.cpp
 )
+
+foreach(test-exec IN ITEMS mhp-tests mhp-tests-3)
+  target_link_libraries(
+    ${test-exec}
+    GTest::gtest_main
+    cxxopts
+    DR::mpi
+  )
+endforeach()
 
 # skeleton for rapid builds of individual tests, feel free to change
 # this
-add_executable(
-  mhp-quick-test
-  mhp-tests.cpp
-  ../common/take.cpp
-)
-target_link_libraries(
-  mhp-quick-test
-  GTest::gtest_main
-  cxxopts
-  DR::mpi
-)
-target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
+#add_executable(
+#  mhp-quick-test
+#  mhp-tests.cpp
+#  ../common/take.cpp
+#)
+#target_link_libraries(
+#  mhp-quick-test
+#  GTest::gtest_main
+#  cxxopts
+#  DR::mpi
+#)
+#target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 
 if (ENABLE_SYCL)
   target_compile_options(mhp-tests PRIVATE -fsycl)
@@ -66,6 +76,7 @@ endif()
 add_mpi_test(mhp-tests-2 mhp-tests 2)
 add_mpi_test(mhp-tests-3 mhp-tests 3)
 add_mpi_test(mhp-tests-4 mhp-tests 4)
+add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
 
 if (ENABLE_SYCL)
   if (NOT MPI_IMPL STREQUAL "openmpi")
