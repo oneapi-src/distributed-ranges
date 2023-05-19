@@ -57,6 +57,7 @@ public:
   }
 
   auto operator*() const { return dm_->dm_rows_[row_idx_]; }
+  auto operator->() const { return &(dm_->dm_rows_[row_idx_]); }
   auto operator[](difference_type n) {
     difference_type abs_ind = row_idx_ + n;
 

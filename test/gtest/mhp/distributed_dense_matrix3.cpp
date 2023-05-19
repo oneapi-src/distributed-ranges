@@ -23,6 +23,7 @@ TEST(MhpTests3, DM_Index) {
 
   const int rows = 11, cols = 11;
   DM a(rows, cols, -1);
+  fence();
 
   if (dr::mhp::default_comm().rank() == 0) {
     EXPECT_EQ(a[0], -1);
@@ -103,10 +104,9 @@ TEST(MhpTests3, DM_Fill) {
   }
 }
 
-
 TEST(MhpTests3, DM_Fill_HB) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(2,3,false);
+  dr::halo_bounds hb(2, 3, false);
   DM a(rows, cols, -13, hb);
 
   dr::mhp::fill(a, 5);
@@ -163,7 +163,7 @@ TEST(MhpTests3, DM_Iota2) {
   const int rows = 11, cols = 11;
   DM a(rows, cols, -13);
 
-  dr::mhp::iota(a.begin()+1, a.end()-1, 1);
+  dr::mhp::iota(a.begin() + 1, a.end() - 1, 1);
 
   if (dr::mhp::default_comm().rank() == 0) {
     EXPECT_EQ(a[0], -13);
