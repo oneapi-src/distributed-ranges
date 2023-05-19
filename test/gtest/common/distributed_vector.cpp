@@ -11,7 +11,7 @@ public:
 
 TYPED_TEST_SUITE(DistributedVectorAllTypes, AllTypes);
 
-TYPED_TEST(DistributedVectorAllTypes, Requirements) {
+TYPED_TEST(DistributedVectorAllTypes, StaticAsserts) {
   TypeParam dv(10);
 
   static_assert(rng::random_access_range<decltype(dv.segments())>);
@@ -41,6 +41,14 @@ TYPED_TEST(DistributedVectorAllTypes, Equality) {
   rng::iota(ops.vec, 100);
   EXPECT_TRUE(ops.dist_vec == ops.vec);
   EXPECT_EQ(ops.vec, ops.dist_vec);
+}
+
+TYPED_TEST(DistributedVectorAllTypes, Segments) {
+  Ops1<TypeParam> ops(10);
+
+  EXPECT_TRUE(check_segments(ops.dist_vec));
+  EXPECT_TRUE(check_segments(rng::begin(ops.dist_vec)));
+  EXPECT_TRUE(check_segments(rng::begin(ops.dist_vec) + 5));
 }
 
 TEST(DistributedVector, ConstructorBasic) {

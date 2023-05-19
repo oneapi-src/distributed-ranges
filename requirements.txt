@@ -7,7 +7,7 @@ alabaster==0.7.13
 Babel==2.12.1
 beautifulsoup4==4.12.2
 breathe==4.35.0
-certifi==2022.12.7
+certifi==2023.5.7
 cfgv==3.3.1
 charset-normalizer==3.1.0
 distlib==0.3.6
@@ -18,9 +18,9 @@ idna==3.4
 imagesize==1.4.1
 Jinja2==3.1.2
 MarkupSafe==2.1.2
-nodeenv==1.7.0
+nodeenv==1.8.0
 packaging==23.1
-platformdirs==3.5.0
+platformdirs==3.5.1
 pre-commit==3.3.1
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
@@ -29,7 +29,7 @@ PyYAML==6.0
 requests==2.30.0
 snowballstemmer==2.2.0
 soupsieve==2.4.1
-Sphinx==6.2.0
+Sphinx==6.2.1
 sphinx-book-theme==1.0.1
 sphinxcontrib-applehelp==1.0.4
 sphinxcontrib-devhelp==1.0.2

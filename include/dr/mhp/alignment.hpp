@@ -16,12 +16,20 @@ concept has_segments = requires(T &t) { dr::ranges::segments(t); };
 template <typename T>
 concept no_segments = !has_segments<T>;
 
-auto aligned(has_segments auto &&r) { return !dr::ranges::segments(r).empty(); }
+auto sub_aligned(bool non_empty, has_segments auto &&r) {
+  if (non_empty && dr::ranges::segments(r).empty()) {
+    dr::drlog.debug("unaligned: empty segments\n");
+    return false;
+  } else {
+    return true;
+  }
+}
 
-auto aligned(auto &&r) { return true; }
+auto sub_aligned(bool non_empty, auto &&r) { return true; }
 
 // iter1 is aligned with iter2, and iter2 is aligned with the rest
-bool aligned(has_segments auto &&r1, has_segments auto &&r2, auto &&...rest) {
+bool sub_aligned(bool non_empty, has_segments auto &&r1, has_segments auto &&r2,
+                 auto &&...rest) {
   auto z = rng::views::zip(dr::ranges::segments(r1), dr::ranges::segments(r2));
   auto i = rng::distance(z) - 1;
   for (auto seg : z) {
@@ -40,16 +48,25 @@ bool aligned(has_segments auto &&r1, has_segments auto &&r2, auto &&...rest) {
     i--;
   }
 
-  return aligned(r2, rest...);
+  if (!rng::empty(dr::ranges::segments(r1))) {
+    non_empty = true;
+  }
+  return sub_aligned(non_empty, r2, rest...);
 }
 
 // Skip local iterators
-bool aligned(no_segments auto &&r1, has_segments auto &&r2, auto... rest) {
-  return aligned(r2, rest...);
+bool sub_aligned(bool non_empty, no_segments auto &&r1, has_segments auto &&r2,
+                 auto... rest) {
+  return sub_aligned(non_empty, r2, rest...);
 }
 
-bool aligned(has_segments auto &&r1, no_segments auto &&r2, auto &&...rest) {
-  return aligned(r1, rest...);
+bool sub_aligned(bool non_empty, has_segments auto &&r1, no_segments auto &&r2,
+                 auto &&...rest) {
+  return sub_aligned(non_empty, r1, rest...);
+}
+
+template <typename... Args> bool aligned(Args &&...args) {
+  return sub_aligned(false, std::forward<Args>(args)...);
 }
 
 } // namespace dr::mhp

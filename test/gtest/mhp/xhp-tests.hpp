@@ -9,6 +9,8 @@
 #include <fmt/ranges.h>
 #include <gtest/gtest.h>
 
+#define TEST_MHP
+
 extern MPI_Comm comm;
 extern std::size_t comm_rank;
 extern std::size_t comm_size;
@@ -32,28 +34,8 @@ inline void fence() { dr::mhp::fence(); }
 
 #include "common-tests.hpp"
 
-#ifdef QUICK_TEST
-
 // minimal testing for quick builds
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
-using IntTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
-
-#elif defined(TEST_MHP_SYCL)
-using AllTypes = ::testing::Types<
-    dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
-    dr::mhp::distributed_vector<float, dr::mhp::sycl_shared_allocator<float>>>;
-using IntTypes = ::testing::Types<
-    dr::mhp::distributed_vector<int, dr::mhp::sycl_shared_allocator<int>>,
-    dr::mhp::distributed_vector<
-        unsigned long long int,
-        dr::mhp::sycl_shared_allocator<unsigned long long int>>>;
-#else
-using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>,
-                                  dr::mhp::distributed_vector<float>>;
-using IntTypes =
-    ::testing::Types<dr::mhp::distributed_vector<int>,
-                     dr::mhp::distributed_vector<unsigned long long int>>;
-#endif
 
 namespace dr::mhp {
 

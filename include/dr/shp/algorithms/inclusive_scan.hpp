@@ -20,6 +20,7 @@
 #include <dr/shp/detail.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/vector.hpp>
+#include <dr/shp/views/views.hpp>
 
 namespace dr::shp {
 

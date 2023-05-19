@@ -4,7 +4,7 @@
 
 namespace dr::mhp::__detail {
 
-auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
+inline auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
   using value_type = rng::range_value_t<decltype(r)>;
   if (rng::empty(r)) {
     return value_type{};
@@ -17,19 +17,14 @@ auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
   }
 }
 
-auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
+inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
   rng::range_value_t<decltype(r)> none{};
   if (rng::empty(r)) {
     return none;
   } else {
-#if SYCL_LANGUAGE_VERSION
     return std::reduce(
         dpl_policy(), dr::__detail::direct_iterator(rng::begin(r) + 1),
         dr::__detail::direct_iterator(rng::end(r)), *rng::begin(r), binary_op);
-#else
-    assert(false);
-    return none;
-#endif
   }
 }
 

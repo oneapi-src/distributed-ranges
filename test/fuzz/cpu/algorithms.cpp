@@ -13,17 +13,17 @@ void check_transform(std::size_t n, std::size_t b, std::size_t e) {
 
   DV dvi1(n), dvr1(n, 0);
   dr::mhp::iota(dvi1, iota_base);
-  dr::mhp::transform(dvi1.begin() + b, dvi1.begin() + e, dvr1.begin(), op);
+  dr::mhp::transform(dvi1.begin() + b, dvi1.begin() + e, dvr1.begin() + b, op);
 
   DV dvi2(n), dvr2(n, 0);
   dr::mhp::iota(dvi2, iota_base);
 
   if (comm_rank == 0) {
-    std::transform(dvi2.begin() + b, dvi2.begin() + e, dvr2.begin(), op);
+    std::transform(dvi2.begin() + b, dvi2.begin() + e, dvr2.begin() + b, op);
 
     std::vector<int> v(n, 0), vr(n, 0);
     rng::iota(v, iota_base);
-    std::transform(v.begin() + b, v.begin() + e, vr.begin(), op);
+    std::transform(v.begin() + b, v.begin() + e, vr.begin() + b, op);
     assert(is_equal(vr, dvr1));
     assert(is_equal(vr, dvr2));
   }

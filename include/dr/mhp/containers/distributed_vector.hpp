@@ -120,33 +120,37 @@ public:
     return *(*this + n);
   }
 
-  value_type get() const {
+  void get(value_type *dst, std::size_t size) const {
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
-    auto value =
-        dv_->win_.template get<value_type>(segment_index_, segment_offset);
-    dr::drlog.debug("get ({}:{})\n", segment_index_, segment_offset);
-    return value;
+    dv_->win_.get(dst, size * sizeof(*dst), segment_index_,
+                  segment_offset * sizeof(*dst));
   }
 
-  void put(const value_type &value) const {
+  value_type get() const {
+    value_type val;
+    get(&val, 1);
+    return val;
+  }
+
+  void put(const value_type *dst, std::size_t size) const {
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
     auto segment_offset = index_ + dv_->halo_bounds_.prev;
-    dr::drlog.debug("put ({}:{})\n", segment_index_, segment_offset);
-    dv_->win_.put(value, segment_index_, segment_offset);
+    dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
+                    size);
+    dv_->win_.put(dst, size * sizeof(*dst), segment_index_,
+                  segment_offset * sizeof(*dst));
   }
+
+  void put(const value_type &value) const { put(&value, 1); }
 
   auto rank() const {
     assert(dv_ != nullptr);
     return segment_index_;
   }
-  auto offset() const {
-    assert(dv_ != nullptr);
-    assert(index_ < 1000);
-    return index_;
-  } // to be removed
+
   auto local() const {
     assert(dv_ != nullptr);
     const auto my_process_segment_index = dv_->win_.communicator().rank();
@@ -181,6 +185,7 @@ public:
 
     assert(false); // trying to read non-owned memory
   }
+
   auto segments() const {
     assert(dv_ != nullptr);
     return dr::__detail::drop_segments(dv_->segments(), segment_index_, index_);
@@ -238,7 +243,7 @@ private:
 }; // dv_segment
 
 /// distributed vector
-template <typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = dr::mhp::default_allocator<T>>
 class distributed_vector {
 
 public:
@@ -380,14 +385,16 @@ public:
   auto segments() const { return rng::views::all(segments_); }
 
 private:
-  void init(auto size, auto hb, auto allocator) {
+  void init(auto size, auto hb, const auto &allocator) {
     allocator_ = allocator;
     size_ = size;
     auto comm_size = default_comm().size(); // dr-style ignore
     segment_size_ =
         std::max({(size + comm_size - 1) / comm_size, hb.prev, hb.next});
     data_size_ = segment_size_ + hb.prev + hb.next;
-    data_ = allocator.allocate(data_size_);
+    if (size_ > 0) {
+      data_ = allocator_.allocate(data_size_);
+    }
     halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
