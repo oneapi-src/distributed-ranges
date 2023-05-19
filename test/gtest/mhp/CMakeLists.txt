@@ -47,7 +47,9 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3)
 endforeach()
 
 # skeleton for rapid builds of individual tests, feel free to change
-# this
+# this, ucomment when developing but not commit to repo once you do PR
+
+# BEGIN OF SKELETON
 #add_executable(
 #  mhp-quick-test
 #  mhp-tests.cpp
@@ -60,10 +62,13 @@ endforeach()
 #  DR::mpi
 #)
 #target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
+#if (ENABLE_SYCL)
+#  target_compile_options(mhp-quick-test PRIVATE -fsycl)
+#endif()
+# END OF SKELETON
 
 if (ENABLE_SYCL)
   target_compile_options(mhp-tests PRIVATE -fsycl)
-  target_compile_options(mhp-quick-test PRIVATE -fsycl)
 endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
