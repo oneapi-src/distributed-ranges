@@ -29,7 +29,6 @@ add_executable(
   reduce.cpp
   stencil.cpp
   segmented.cpp
-  slide_view.cpp
 )
 
 add_executable(
