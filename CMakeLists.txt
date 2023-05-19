@@ -77,6 +77,26 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
+  # repeated later after we turn on Wall, but also needed for google bench
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    # Most code get warnings with -ffast-math
+    add_compile_options(-Wno-tautological-constant-compare)
+  endif()
+
+  #
+  # Google test
+  #
+  FetchContent_Declare(
+    googlebench
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG v1.8.0
+  )
+  FetchContent_MakeAvailable(googlebench)
+
+
+  #
+  # Command-line options parser
+  #
   FetchContent_Declare(
     cxxopts
     GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
@@ -148,6 +168,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_subdirectory(test/gtest/serial)
   add_subdirectory(examples/mhp)
   add_subdirectory(test/gtest/mhp)
+  add_subdirectory(benchmarks/gbench/mhp)
 
   # Requires clang, icpx/llvm nightly do not support the tools
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ENABLE_SYCL)
