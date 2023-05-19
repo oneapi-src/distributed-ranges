@@ -4,10 +4,12 @@
 
 #include "xhp-bench.hpp"
 
+#ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/async>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
+#endif
 
 using T = double;
 
