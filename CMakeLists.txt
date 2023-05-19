@@ -77,10 +77,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
-  # repeated later after we turn on Wall, but also needed for google bench
+  # For need this argument for google bench. Later, we want to turn on
+  # -Wall and need to repeat -Wno-tautol...  The SHELL: hack disables
+  # deduplication of options, allowing us to specify it twice.
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     # Most code get warnings with -ffast-math
-    add_compile_options(-Wno-tautological-constant-compare)
+    add_compile_options("SHELL: -Wno-tautological-constant-compare")
   endif()
 
   #

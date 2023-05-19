@@ -92,10 +92,12 @@ int main(int argc, char *argv[]) {
 
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
-  fmt::print("Configuration:\n"
-             "  default vector size: {}\n"
-             "  default repetitions: {}\n",
-             default_vector_size, default_repetitions);
+  if (comm_rank == 0) {
+    fmt::print("Configuration:\n"
+               "  default vector size: {}\n"
+               "  default repetitions: {}\n",
+               default_vector_size, default_repetitions);
+  }
 
   dr_init();
   if (rank == 0) {
