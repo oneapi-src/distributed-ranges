@@ -8,6 +8,7 @@ add_executable(
   mhp-bench
   mhp-bench.cpp
   ../common/distributed_vector.cpp
+  rooted.cpp
 )
 target_link_libraries(
   mhp-bench

@@ -77,17 +77,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
-  # For need this argument for google bench. Later, we want to turn on
-  # -Wall and need to repeat -Wno-tautol...  The SHELL: hack disables
-  # deduplication of options, allowing us to specify it twice.
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-    # Most code get warnings with -ffast-math
-    add_compile_options("SHELL: -Wno-tautological-constant-compare")
-  endif()
-
   #
   # Google test
   #
+  set(BENCHMARK_ENABLE_TESTING off)
+  set(BENCHMARK_ENABLE_WERROR off)
   FetchContent_Declare(
     googlebench
     GIT_REPOSITORY https://github.com/google/benchmark.git

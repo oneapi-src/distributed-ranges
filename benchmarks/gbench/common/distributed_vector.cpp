@@ -4,6 +4,11 @@
 
 #include "xhp-bench.hpp"
 
+#include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/async>
+#include <oneapi/dpl/execution>
+#include <oneapi/dpl/numeric>
+
 using T = double;
 
 // Store result here to avoid compiler optimization of unused
@@ -78,6 +83,22 @@ static void Reduce_Local(benchmark::State &state) {
 }
 
 BENCHMARK(Reduce_Local);
+
+#ifdef SYCL_LANGUAGE_VERSION
+static void Reduce_DPL(benchmark::State &state) {
+  sycl::queue q;
+  auto policy = oneapi::dpl::execution::make_device_policy(q);
+  auto src = sycl::malloc_device<T>(default_vector_size, q);
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      auto res = std::reduce(policy, src, src + default_vector_size);
+      benchmark::DoNotOptimize(res);
+    }
+  }
+}
+
+BENCHMARK(Reduce_DPL);
+#endif
 
 static void TransformIdentity_DR(benchmark::State &state) {
   xhp::distributed_vector<T> src(default_vector_size);
@@ -168,3 +189,31 @@ static void DotProduct_Local(benchmark::State &state) {
 }
 
 BENCHMARK(DotProduct_Local);
+
+// Does not compile
+#if 0
+#ifdef SYCL_LANGUAGE_VERSION
+static void DotProduct_DPL(benchmark::State &state) {
+  auto mul = [](auto v) {
+    auto [a, b] = v;
+    return a * b;
+  };
+  sycl::queue q;
+  auto policy = oneapi::dpl::execution::make_device_policy(q);
+  auto a = rng::views::counted(sycl::malloc_device<T>(default_vector_size, q), default_vector_size);
+  auto b = rng::views::counted(sycl::malloc_device<T>(default_vector_size, q), default_vector_size);
+  auto &&z = rng::views::zip(a, b) | rng::views::transform(mul);
+  dr::__detail::direct_iterator d_first(z.begin());
+  dr::__detail::direct_iterator d_last(z.end());
+
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      auto res = oneapi::dpl::experimental::reduce_async(policy, d_first, d_last, T(0), std::plus()).get();
+      benchmark::DoNotOptimize(res);
+    }
+  }
+}
+
+BENCHMARK(DotProduct_DPL);
+#endif
+#endif
