@@ -77,6 +77,22 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
+  #
+  # Google test
+  #
+  set(BENCHMARK_ENABLE_TESTING off)
+  set(BENCHMARK_ENABLE_WERROR off)
+  FetchContent_Declare(
+    googlebench
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG v1.8.0
+  )
+  FetchContent_MakeAvailable(googlebench)
+
+
+  #
+  # Command-line options parser
+  #
   FetchContent_Declare(
     cxxopts
     GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
@@ -148,6 +164,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_subdirectory(test/gtest/serial)
   add_subdirectory(examples/mhp)
   add_subdirectory(test/gtest/mhp)
+  add_subdirectory(benchmarks/gbench/mhp)
 
   # Requires clang, icpx/llvm nightly do not support the tools
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ENABLE_SYCL)
