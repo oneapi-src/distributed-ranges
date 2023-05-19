@@ -36,6 +36,7 @@ add_executable(
   mhp-tests-3
   mhp-tests.cpp
   slide_view-3.cpp
+  distributed_dense_matrix3.cpp
 )
 
 foreach(test-exec IN ITEMS mhp-tests mhp-tests-3)
