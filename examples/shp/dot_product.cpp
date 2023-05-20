@@ -48,7 +48,10 @@ int main(int argc, char **argv) {
 
   auto v_serial = dot_product_sequential(x_local, y_local);
 
-  assert(v == v_serial);
+  if (v != v_serial) {
+    fmt::print("Wrong result. Expected {}, actual {}\n", v_serial, v);
+    return 1;
+  }
 
   return 0;
 }

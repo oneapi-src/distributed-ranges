@@ -91,6 +91,8 @@ inline sycl::queue &queue(const sycl::device &device) {
     }
   }
   assert(false);
+  // Reaches here with -DNDEBUG
+  return queue(0);
 }
 
 inline sycl::queue &default_queue() { return queue(0); }
