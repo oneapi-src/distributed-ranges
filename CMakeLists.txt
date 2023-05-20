@@ -55,8 +55,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g -ggdb")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb")
-  set(CMAKE_C_FLAGS_RELEASE "-O3")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+  set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
   #
   # Common dependencies for examples
@@ -158,6 +158,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_subdirectory(examples/shp)
     add_subdirectory(test/gtest/shp)
+    add_subdirectory(benchmarks/gbench/shp)
   endif()
 
   add_subdirectory(examples/serial)

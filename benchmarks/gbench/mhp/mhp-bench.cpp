@@ -2,12 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "cxxopts.hpp"
-#include "dr/mhp.hpp"
-#include "mpi.h"
-#include <benchmark/benchmark.h>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
+#include "xhp-bench.hpp"
 
 MPI_Comm comm;
 std::size_t comm_rank;
@@ -29,8 +24,8 @@ public:
 };
 
 void dr_init() {
-  if (options.count("sycl")) {
 #ifdef SYCL_LANGUAGE_VERSION
+  if (options.count("sycl")) {
     sycl::queue q;
     if (comm_rank == 0) {
       fmt::print("  run on sycl device: {}\n",
@@ -38,9 +33,8 @@ void dr_init() {
     }
     dr::mhp::init(q);
     return;
-#endif
-    assert(false && "sycl requested, but did not build with SYCL enabled");
   }
+#endif
 
   if (comm_rank == 0) {
     fmt::print("  run on CPU\n");
@@ -65,7 +59,9 @@ int main(int argc, char *argv[]) {
   options_spec.add_options()
     ("drhelp", "Print help")
     ("log", "Enable logging")
+#ifdef SYCL_LANGUAGE_VERSION
     ("sycl", "Execute on SYCL device")
+#endif
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ;
@@ -106,7 +102,7 @@ int main(int argc, char *argv[]) {
     NullReporter null_reporter;
     benchmark::RunSpecifiedBenchmarks(&null_reporter);
   }
-  // benchmark::Shutdown();
+  benchmark::Shutdown();
 
   if (logfile) {
     delete logfile;

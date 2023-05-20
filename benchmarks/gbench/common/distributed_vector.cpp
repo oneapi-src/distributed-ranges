@@ -39,6 +39,9 @@ static void Fill_Local(benchmark::State &state) {
 
 BENCHMARK(Fill_Local);
 
+#ifndef BENCH_SHP
+// Not defined?
+
 static void Copy_DR(benchmark::State &state) {
   xhp::distributed_vector<T> src(default_vector_size);
   xhp::distributed_vector<T> dst(default_vector_size);
@@ -50,6 +53,7 @@ static void Copy_DR(benchmark::State &state) {
 }
 
 BENCHMARK(Copy_DR);
+#endif
 
 static void Copy_Local(benchmark::State &state) {
   std::vector<T> src(default_vector_size);
@@ -126,6 +130,9 @@ static void TransformIdentity_Local(benchmark::State &state) {
 
 BENCHMARK(TransformIdentity_Local);
 
+#ifndef BENCH_SHP
+// segfault
+
 static void Mul_DR(benchmark::State &state) {
   xhp::distributed_vector<T> a(default_vector_size);
   xhp::distributed_vector<T> b(default_vector_size);
@@ -142,6 +149,7 @@ static void Mul_DR(benchmark::State &state) {
 }
 
 BENCHMARK(Mul_DR);
+#endif
 
 static void Mul_Local(benchmark::State &state) {
   std::vector<T> a(default_vector_size);
