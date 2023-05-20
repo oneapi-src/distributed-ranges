@@ -55,8 +55,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g -ggdb")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb")
-  set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+  # When we define NDEBUG, ranges-v3 uses printf, which is not ok in
+  # sycl kernels. When we do not define NDEBUG, google bench warns
+  # about timing error. Need to investigate if there is another way to
+  # stop ranges-v3 from using printf
+  #
+  # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+  # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+  set(CMAKE_C_FLAGS_RELEASE "-O3")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
   #
   # Common dependencies for examples
