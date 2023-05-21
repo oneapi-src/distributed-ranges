@@ -8,6 +8,7 @@ add_executable(
   shp-bench
   shp-bench.cpp
   ../common/distributed_vector.cpp
+  ../common/dot_product.cpp
 )
 target_link_libraries(
   shp-bench

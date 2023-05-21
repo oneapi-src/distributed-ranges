@@ -13,10 +13,6 @@
 
 using T = double;
 
-// Store result here to avoid compiler optimization of unused
-// operations
-T bit_bucket = 0;
-
 static void Fill_DR(benchmark::State &state) {
   xhp::distributed_vector<T> vec(default_vector_size);
   for (auto _ : state) {
@@ -71,7 +67,8 @@ static void Reduce_DR(benchmark::State &state) {
   xhp::distributed_vector<T> src(default_vector_size);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
-      bit_bucket += xhp::reduce(src);
+      auto res = xhp::reduce(src);
+      benchmark::DoNotOptimize(res);
     }
   }
 }
@@ -82,8 +79,8 @@ static void Reduce_Local(benchmark::State &state) {
   std::vector<T> src(default_vector_size);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
-      bit_bucket +=
-          std::reduce(std::execution::par_unseq, src.begin(), src.end());
+      auto res = std::reduce(std::execution::par_unseq, src.begin(), src.end());
+      benchmark::DoNotOptimize(res);
     }
   }
 }
@@ -165,65 +162,3 @@ static void Mul_Local(benchmark::State &state) {
 }
 
 BENCHMARK(Mul_Local);
-
-static void DotProduct_DR(benchmark::State &state) {
-  xhp::distributed_vector<T> a(default_vector_size);
-  xhp::distributed_vector<T> b(default_vector_size);
-  auto mul = [](auto v) {
-    auto [a, b] = v;
-    return a * b;
-  };
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      bit_bucket +=
-          xhp::reduce(xhp::views::zip(a, b) | xhp::views::transform(mul));
-    }
-  }
-}
-
-BENCHMARK(DotProduct_DR);
-
-static void DotProduct_Local(benchmark::State &state) {
-  std::vector<T> a(default_vector_size);
-  std::vector<T> b(default_vector_size);
-  auto mul = [](auto v) {
-    auto [a, b] = v;
-    return a * b;
-  };
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      auto &&m = rng::views::zip(a, b) | rng::views::transform(mul);
-      bit_bucket += std::reduce(std::execution::par_unseq, m.begin(), m.end());
-    }
-  }
-}
-
-BENCHMARK(DotProduct_Local);
-
-// Does not compile
-#if 0
-#ifdef SYCL_LANGUAGE_VERSION
-static void DotProduct_DPL(benchmark::State &state) {
-  auto mul = [](auto v) {
-    auto [a, b] = v;
-    return a * b;
-  };
-  sycl::queue q;
-  auto policy = oneapi::dpl::execution::make_device_policy(q);
-  auto a = rng::views::counted(sycl::malloc_device<T>(default_vector_size, q), default_vector_size);
-  auto b = rng::views::counted(sycl::malloc_device<T>(default_vector_size, q), default_vector_size);
-  auto &&z = rng::views::zip(a, b) | rng::views::transform(mul);
-  dr::__detail::direct_iterator d_first(z.begin());
-  dr::__detail::direct_iterator d_last(z.end());
-
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      auto res = oneapi::dpl::experimental::reduce_async(policy, d_first, d_last, T(0), std::plus()).get();
-      benchmark::DoNotOptimize(res);
-    }
-  }
-}
-
-BENCHMARK(DotProduct_DPL);
-#endif
-#endif
