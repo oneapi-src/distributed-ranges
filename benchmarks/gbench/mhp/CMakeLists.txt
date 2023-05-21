@@ -8,6 +8,7 @@ add_executable(
   mhp-bench
   mhp-bench.cpp
   ../common/distributed_vector.cpp
+  ../common/dot_product.cpp
   rooted.cpp
   mpi.cpp
 )
