@@ -36,7 +36,7 @@ static void DotProduct_ZipReduce_DR(benchmark::State &state) {
     auto [a, b] = v;
     return a * b;
   };
-  T res;
+  T res = 0;
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       res = xhp::reduce(xhp::views::zip(a, b) | xhp::views::transform(mul));
@@ -57,7 +57,7 @@ static void DotProduct_ZipReduce_Std(benchmark::State &state) {
   };
   auto &&m = rng::views::zip(a, b) | rng::views::transform(mul);
 
-  T res;
+  T res = 0;
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       res = std::reduce(std::execution::par_unseq, m.begin(), m.end());
@@ -74,7 +74,7 @@ static void DotProduct_TransformReduce_Std(benchmark::State &state) {
   std::vector<T> b(default_vector_size, init_val);
   auto mul = [](auto a, auto b) { return a * b; };
 
-  T res;
+  T res = 0;
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       res = std::transform_reduce(std::execution::par_unseq, a.begin(), a.end(),
@@ -90,7 +90,7 @@ BENCHMARK(DotProduct_TransformReduce_Std);
 static void DotProduct_Loop_Std(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
   std::vector<T> b(default_vector_size, init_val);
-  T res;
+  T res = 0;
 
   for (auto _ : state) {
     res = 0;
@@ -106,7 +106,7 @@ BENCHMARK(DotProduct_Loop_Std);
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
-  T res;
+  T res = 0;
   sycl::queue q;
   auto policy = oneapi::dpl::execution::make_device_policy(q);
 
