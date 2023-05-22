@@ -38,33 +38,28 @@ add_executable(
   slide_view-3.cpp
 )
 
-foreach(test-exec IN ITEMS mhp-tests mhp-tests-3)
+# mhp-quick-test is a skeleton for rapid builds of individual tests,
+# feel free to change this
+
+add_executable(
+  mhp-quick-test
+  mhp-tests.cpp
+  ../common/take.cpp
+)
+
+target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
+
+foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
   target_link_libraries(
     ${test-exec}
     GTest::gtest_main
     cxxopts
     DR::mpi
   )
+  if (ENABLE_SYCL)
+    target_compile_options(${test-exec} PRIVATE -fsycl)
+  endif()
 endforeach()
-
-# skeleton for rapid builds of individual tests, feel free to change
-# this
-#add_executable(
-#  mhp-quick-test
-#  mhp-tests.cpp
-#  ../common/take.cpp
-#)
-#target_link_libraries(
-#  mhp-quick-test
-#  GTest::gtest_main
-#  cxxopts
-#  DR::mpi
-#)
-#target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
-
-if (ENABLE_SYCL)
-  target_compile_options(mhp-tests PRIVATE -fsycl)
-endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
@@ -86,4 +81,5 @@ if (ENABLE_SYCL)
   add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl)
   add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl)
   add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl)
+  add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl)
 endif()

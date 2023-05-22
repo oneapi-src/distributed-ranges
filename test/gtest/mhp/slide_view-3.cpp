@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#define QUICK_TEST
 #include "xhp-tests.hpp"
 #include <dr/mhp/views/sliding.hpp>
 
