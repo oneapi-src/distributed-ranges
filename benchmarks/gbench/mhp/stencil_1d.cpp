@@ -72,6 +72,7 @@ static void Stencil1D_Subrange_DR(benchmark::State &state) {
 
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
+      xhp::halo(in).exchange();
       xhp::transform(in, out.begin(), stencil1d_subrange_op);
       std::swap(in, out);
     }
