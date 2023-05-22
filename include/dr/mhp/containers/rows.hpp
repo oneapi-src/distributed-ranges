@@ -21,10 +21,10 @@ public:
   using iterator = typename std::span<T>::iterator;
 
   dm_row(){};
-  dm_row(signed long idx, T *ptr, std::size_t size, dsegment *segment)
+  dm_row(signed long idx, T *ptr, std::size_t size, const dsegment *segment)
       : std::span<T>({ptr, size}), index_(idx), segment_(segment){};
 
-  dsegment *segment() { return segment_; }
+  const dsegment *segment() { return segment_; }
   signed long idx() { return index_; }
 
   // T &operator[](int index) { return *(std::span<T>::begin() + index); }
@@ -40,7 +40,7 @@ public:
 
 private:
   signed long index_ = INT_MIN;
-  dsegment *segment_ = nullptr;
+  const dsegment *segment_ = nullptr;
 };
 
 template <typename DM> class dm_rows_iterator {

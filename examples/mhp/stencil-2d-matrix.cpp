@@ -41,28 +41,17 @@ bool is_equal(Tp a, Tp b,
   return diff < std::max(abs_th, epsilon * norm);
 }
 
-int rowcmp(dr::mhp::dm_row<T>::iterator r, std::vector<T> &v,
-           std::size_t size) {
+int matrix_compare(std::string label, dr::mhp::distributed_dense_matrix<T> &dm,
+                   std::vector<std::vector<T>> &vv) {
   int res = 0;
-  for (std::size_t _i = 0; _i < size; _i++) {
-    if (!is_equal(r[_i], v[_i])) {
-      fmt::print("{}: Fail (r[{}] = {}, v[{}] = {})\n", comm_rank, _i, r[_i],
-                 _i, v[_i]);
-      res = -1;
-    }
-  }
-  return res;
-}
-
-int local_compare(std::string label, dr::mhp::distributed_dense_matrix<T> &dm,
-                  std::vector<std::vector<T>> &vv) {
-  int res = 0;
-  for (auto r = dm.rows().begin(); r != dm.rows().end(); r++) {
-    if (r.is_local())
-      if (-1 == rowcmp((*r).begin(), vv[(*r).idx()], (*r).size())) {
-        fmt::print("{}: {} Fail (idx = {})\n", comm_rank, label, (*r).idx());
+  for (std::size_t i = 0; i < vv.size(); i++) {
+    for (std::size_t j = 0; j < vv[i].size(); j++) {
+      if (!is_equal(vv[i][j], (T)dm.begin()[{i, j}])) {
+        fmt::print("{}: {} Fail in cell [{},{}] values: ref {} matrix {})\n",
+                   comm_rank, label, i, j, vv[i][j], (T)dm.begin()[{i, j}]);
         res = -1;
       }
+    }
   }
   return res;
 }
@@ -107,8 +96,8 @@ int stencil_check(dr::mhp::distributed_dense_matrix<T> &a,
     std::swap(va, vb);
   }
 
-  return local_compare("A", a, (steps % 2) ? vb : va) +
-         local_compare("B", b, (steps % 2) ? va : vb);
+  return matrix_compare("A", a, (steps % 2) ? vb : va) +
+         matrix_compare("B", b, (steps % 2) ? va : vb);
 }
 
 //
@@ -135,9 +124,6 @@ int stencil() {
   }
 
   dr::mhp::for_each(b.rows(), [](auto row) { rng::iota(row, 10); });
-  // for (auto r : b.rows()) {
-  //   if (r.is_local()) rng::iota(*r, 10);
-  // }
 
   // rectgangular subrange of 2d matrix
   auto in = dr::mhp::subrange(a, {1, a.shape()[0] - 1}, {1, a.shape()[1] - 1});
@@ -150,11 +136,17 @@ int stencil() {
     std::swap(in, out);
   }
 
-  if (0 == stencil_check(a, b))
-    fmt::print("{}: stencil1 check OK!\n", comm_rank);
-  else
-    fmt::print("{}: stencil1 check failed\n", comm_rank);
+  dr::mhp::fence();
+  MPI_Barrier(MPI_COMM_WORLD);
 
+  if (comm_rank == 0) {
+    if (0 == stencil_check(a, b)) {
+      fmt::print("stencil check OK!\n");
+    } else {
+      fmt::print("stencil check failed\n");
+      return 1;
+    }
+  }
   return 0;
 }
 

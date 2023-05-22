@@ -158,7 +158,7 @@ public:
     size_ = size;
   }
 
-  bool is_local() { return segment_index_ == default_comm().rank(); }
+  bool is_local() const { return segment_index_ == default_comm().rank(); }
 
   auto size() const { return size_; }
 
