@@ -119,10 +119,12 @@ struct segments_fn_ {
 
 inline constexpr auto segments = __detail::segments_fn_{};
 
-namespace {
+namespace __detail {
 
-template <typename T>
-concept has_local_adl = requires(T &t) { local_(t); };
+template <typename Iter>
+concept has_local_adl = requires(Iter &iter) {
+  { local_(iter) } -> std::forward_iterator;
+};
 
 template <typename Iter>
 concept iter_has_local_method =
@@ -138,18 +140,16 @@ concept segment_has_local_method =
 
 struct local_fn_ {
 
-  template <class Iter>
+  template <std::forward_iterator Iter>
     requires(has_local_adl<Iter> || iter_has_local_method<Iter> ||
-             std::contiguous_iterator<Iter> ||
-             std::is_scalar_v<std::remove_cvref_t<Iter>>)
-  auto operator()(Iter &&iter) const {
+             std::contiguous_iterator<Iter>)
+  auto operator()(Iter iter) const {
     if constexpr (iter_has_local_method<Iter>) {
       return iter.local();
     } else if constexpr (has_local_adl<Iter>) {
-      return local_(std::forward<Iter>(iter));
-    } else if constexpr (std::contiguous_iterator<Iter> ||
-                         std::is_scalar_v<std::remove_cvref_t<Iter>>) {
-      return std::forward<Iter>(iter);
+      return local_(iter);
+    } else if constexpr (std::contiguous_iterator<Iter>) {
+      return iter;
     }
   }
 
@@ -171,9 +171,9 @@ struct local_fn_ {
   }
 };
 
-} // namespace
+} // namespace __detail
 
-inline constexpr auto local = local_fn_{};
+inline constexpr auto local = __detail::local_fn_{};
 
 namespace __detail {
 
@@ -182,7 +182,7 @@ concept has_local = requires(T &t) {
   { dr::ranges::local(t) } -> std::convertible_to<std::any>;
 };
 
-struct local_fn_ {
+struct local_fn_used_by_transform_ {
   template <typename T>
     requires(has_local<T>)
   auto operator()(T &&t) const {
@@ -192,7 +192,9 @@ struct local_fn_ {
   template <typename T> auto operator()(T &&t) const { return t; }
 };
 
-inline constexpr auto local = local_fn_{};
+// FIXME: why we have two different local_fn_?
+// TODO: merge into one, simplify if possible
+inline constexpr auto local_used_by_transform = local_fn_used_by_transform_{};
 
 } // namespace __detail
 

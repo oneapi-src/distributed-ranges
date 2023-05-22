@@ -120,7 +120,6 @@ auto rank_(V &&v) {
   return dr::ranges::rank(std::forward<V>(v).base());
 }
 
-// all below except subrange are probably not needed
 template <rng::range V>
   requires(dr::is_ref_view_v<std::remove_cvref_t<V>> &&
            dr::distributed_range<decltype(std::declval<V>().base())>)

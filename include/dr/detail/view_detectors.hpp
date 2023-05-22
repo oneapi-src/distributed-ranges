@@ -48,6 +48,7 @@ inline constexpr bool is_subrange_view_v = is_subrange_view<T>::value;
   inline constexpr bool is_##NAME##_v =                                        \
       is_##NAME<std::remove_cvref_t<T>>::value;
 
+// TODO: change manually defined detectors into generated ones
 // DEFINE_DETECTOR(drop)
 // DEFINE_DETECTOR(iota)
 // DEFINE_DETECTOR(ref)

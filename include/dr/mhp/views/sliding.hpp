@@ -13,8 +13,9 @@ namespace views {
 namespace __detail {
 
 struct sliding_fn {
-  // maybe also add rng::range_difference_t<Rng> left_side_len,
-  // rng::range_difference_t<Rng> right_side_len
+  // TODO: specify rng::range_difference_t<Rng> left_side_len,
+  //  rng::range_difference_t<Rng> right_side_len, now it is determined by halo
+  //  bounds
   template <typename Rng>
     requires rng::viewable_range<Rng> && rng::forward_range<Rng>
   auto operator()(Rng &&r) const {

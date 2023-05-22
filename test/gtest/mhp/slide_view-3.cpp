@@ -120,7 +120,6 @@ TYPED_TEST(Slide3,
       break;
     case 2:
       EXPECT_EQ(0, rng::size(ls));
-      // EXPECT_TRUE(equal({3, 4, 5, 6}, ls[0]));
       break;
     default:
       EXPECT_TRUE(false);
@@ -134,7 +133,6 @@ TYPED_TEST(
   TypeParam dv(6, dr::halo_bounds(1, 1, false));
   iota(dv, 1);
   dv.halo().exchange();
-  dv.print_myself_to_log("after exchage");
 
   auto dv_sliding_view = xhp::views::sliding(dv);
   for (auto &&ls : dr::mhp::local_segments(dv_sliding_view)) {

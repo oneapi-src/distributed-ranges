@@ -138,7 +138,6 @@ public:
            std::size_t disp) const {
     drlog.debug("comm get:: ({}:{}:{})\n", rank, disp, size);
     MPI_Request request;
-    assert(disp < 10000);
     MPI_Rget(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
