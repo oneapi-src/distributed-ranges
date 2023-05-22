@@ -15,5 +15,6 @@ namespace xhp = dr::mhp;
 
 extern std::size_t default_vector_size;
 extern std::size_t default_repetitions;
+extern std::size_t stencil_steps;
 
 #define BENCH_MHP

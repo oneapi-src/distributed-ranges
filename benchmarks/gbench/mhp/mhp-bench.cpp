@@ -10,6 +10,7 @@ std::size_t comm_size;
 
 std::size_t default_vector_size;
 std::size_t default_repetitions;
+std::size_t stencil_steps;
 
 cxxopts::ParseResult options;
 
@@ -63,6 +64,7 @@ int main(int argc, char *argv[]) {
     ("sycl", "Execute on SYCL device")
 #endif
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
+    ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("100"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ;
   // clang-format on
@@ -88,6 +90,7 @@ int main(int argc, char *argv[]) {
 
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
+  stencil_steps = options["stencil-steps"].as<std::size_t>();
   if (comm_rank == 0) {
     fmt::print("Configuration:\n"
                "  default vector size: {}\n"

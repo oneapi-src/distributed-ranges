@@ -13,7 +13,7 @@
 
 using T = double;
 
-T init_val = 1;
+static T init_val = 1;
 
 void check_dp(auto actual, const nostd::source_location location =
                                nostd::source_location::current()) {
@@ -111,10 +111,9 @@ static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
   auto policy = oneapi::dpl::execution::make_device_policy(q);
 
   auto mul = [](auto a, auto b) { return a * b; };
+
   auto a = sycl::malloc_device<T>(default_vector_size, q);
-  ;
   auto b = sycl::malloc_device<T>(default_vector_size, q);
-  ;
   q.fill(a, init_val, default_vector_size);
   q.fill(b, init_val, default_vector_size);
   q.wait();
