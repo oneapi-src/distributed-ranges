@@ -12,6 +12,7 @@ add_executable(
   mpi.cpp
   rooted.cpp
   stencil_1d.cpp
+  stencil_2d.cpp
 )
 target_link_libraries(
   mhp-bench
