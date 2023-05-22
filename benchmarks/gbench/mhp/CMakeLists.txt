@@ -9,8 +9,9 @@ add_executable(
   mhp-bench.cpp
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
-  rooted.cpp
   mpi.cpp
+  rooted.cpp
+  stencil_1d.cpp
 )
 target_link_libraries(
   mhp-bench
