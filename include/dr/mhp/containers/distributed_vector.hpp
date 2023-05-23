@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <dr/mhp/containers/distribution.hpp>
+
 namespace dr::mhp {
 
 template <typename DV> class dv_segment_iterator;
@@ -108,7 +110,7 @@ public:
   auto operator[](difference_type n) const { return *(*this + n); }
 
   void get(value_type *dst, std::size_t size) const {
-    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dv_->win_.get(dst, size * sizeof(*dst), segment_index_,
                   segment_offset * sizeof(*dst));
   }
@@ -120,7 +122,7 @@ public:
   }
 
   void put(const value_type *dst, std::size_t size) const {
-    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
     dv_->win_.put(dst, size * sizeof(*dst), segment_index_,
@@ -130,7 +132,9 @@ public:
   void put(const value_type &value) const { put(&value, 1); }
 
   auto rank() const { return segment_index_; }
-  auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
+  auto local() const {
+    return dv_->data_ + index_ + dv_->distribution_.halo().prev;
+  }
   auto segments() const {
     return dr::__detail::drop_segments(dv_->segments(), segment_index_, index_);
   }
@@ -267,14 +271,14 @@ public:
   distributed_vector(distributed_vector &&) { assert(false); }
 
   /// Constructor
-  distributed_vector(std::size_t size = 0, halo_bounds hb = halo_bounds()) {
-    init(size, hb, Allocator());
+  distributed_vector(std::size_t size = 0, distribution dist = distribution()) {
+    init(size, dist, Allocator());
   }
 
   /// Constructor
   distributed_vector(std::size_t size, value_type fill_value,
-                     halo_bounds hb = halo_bounds()) {
-    init(size, hb, Allocator());
+                     distribution dist = distribution()) {
+    init(size, dist, Allocator());
     mhp::fill(*this, fill_value);
   }
 
@@ -301,10 +305,11 @@ public:
   auto segments() const { return rng::views::all(segments_); }
 
 private:
-  void init(auto size, auto hb, const auto &allocator) {
+  void init(auto size, auto dist, const auto &allocator) {
     allocator_ = allocator;
     size_ = size;
     auto comm_size = default_comm().size(); // dr-style ignore
+    auto hb = dist.halo();
     segment_size_ =
         std::max({(size + comm_size - 1) / comm_size, hb.prev, hb.next});
     data_size_ = segment_size_ + hb.prev + hb.next;
@@ -317,7 +322,7 @@ private:
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i));
     }
-    halo_bounds_ = hb;
+    distribution_ = dist;
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
     fence();
@@ -330,7 +335,7 @@ private:
   T *data_ = nullptr;
   span_halo<T> *halo_;
 
-  halo_bounds halo_bounds_;
+  distribution distribution_;
   std::size_t size_;
   std::vector<dv_segment<distributed_vector>> segments_;
   dr::rma_window win_;

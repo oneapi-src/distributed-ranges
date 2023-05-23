@@ -162,9 +162,9 @@ static void Stencil2D_1DArray_DR(benchmark::State &state) {
 
   using Row = std::array<T, cols_static>;
 
-  dr::mhp::halo_bounds hb(1);
-  dr::mhp::distributed_vector<Row> a(rows, hb);
-  dr::mhp::distributed_vector<Row> b(rows, hb);
+  auto dist = dr::mhp::distribution().halo(1);
+  dr::mhp::distributed_vector<Row> a(rows, dist);
+  dr::mhp::distributed_vector<Row> b(rows, dist);
 
   auto fill_row = [](auto &row) {
     std::fill(row.begin(), row.end(), init_val);

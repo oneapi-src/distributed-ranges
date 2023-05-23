@@ -78,8 +78,8 @@ int check(auto &&actual) {
 }
 
 int stencil() {
-  dr::mhp::halo_bounds hb(1);
-  dr::mhp::distributed_vector<Row> a(rows, hb), b(rows, hb);
+  auto dist = dr::mhp::distribution().halo(1);
+  dr::mhp::distributed_vector<Row> a(rows, dist), b(rows, dist);
   dr::mhp::for_each(a, [](auto &&row) { rng::iota(row, 100); });
   dr::mhp::for_each(b, [](auto &&row) { rng::fill(row, 0); });
 
