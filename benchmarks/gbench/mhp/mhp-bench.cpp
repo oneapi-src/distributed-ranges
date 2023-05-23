@@ -11,6 +11,7 @@ std::size_t comm_size;
 std::size_t default_vector_size;
 std::size_t default_repetitions;
 std::size_t stencil_steps;
+bool check_results;
 
 cxxopts::ParseResult options;
 
@@ -58,6 +59,7 @@ int main(int argc, char *argv[]) {
 
   // clang-format off
   options_spec.add_options()
+    ("check", "Check results")
     ("drhelp", "Print help")
     ("log", "Enable logging")
 #ifdef SYCL_LANGUAGE_VERSION
@@ -91,6 +93,8 @@ int main(int argc, char *argv[]) {
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
   stencil_steps = options["stencil-steps"].as<std::size_t>();
+  check_results = options.count("check");
+
   if (comm_rank == 0) {
     fmt::print("Configuration:\n"
                "  default vector size: {}\n"
