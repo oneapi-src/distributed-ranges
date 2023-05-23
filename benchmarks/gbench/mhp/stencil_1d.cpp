@@ -63,7 +63,7 @@ static void Stencil1D_Subrange_Std(benchmark::State &state) {
 BENCHMARK(Stencil1D_Subrange_Std);
 
 static void Stencil1D_Subrange_DR(benchmark::State &state) {
-  dr::halo_bounds hb(1);
+  xhp::halo_bounds hb(1);
   xhp::distributed_vector<T> a(default_vector_size, init_val, hb);
   xhp::distributed_vector<T> b(default_vector_size, init_val, hb);
 

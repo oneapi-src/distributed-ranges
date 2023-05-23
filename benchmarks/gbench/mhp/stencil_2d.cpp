@@ -160,7 +160,9 @@ static void Stencil2D_1DArray_DR(benchmark::State &state) {
   }
   assert(cols == cols_static);
 
-  dr::halo_bounds hb(1);
+  using Row = std::array<T, cols_static>;
+
+  dr::mhp::halo_bounds hb(1);
   dr::mhp::distributed_vector<Row> a(rows, hb);
   dr::mhp::distributed_vector<Row> b(rows, hb);
 

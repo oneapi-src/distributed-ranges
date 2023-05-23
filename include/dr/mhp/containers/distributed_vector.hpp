@@ -267,14 +267,13 @@ public:
   distributed_vector(distributed_vector &&) { assert(false); }
 
   /// Constructor
-  distributed_vector(std::size_t size = 0,
-                     dr::halo_bounds hb = dr::halo_bounds()) {
+  distributed_vector(std::size_t size = 0, halo_bounds hb = halo_bounds()) {
     init(size, hb, Allocator());
   }
 
   /// Constructor
   distributed_vector(std::size_t size, value_type fill_value,
-                     dr::halo_bounds hb = dr::halo_bounds()) {
+                     halo_bounds hb = halo_bounds()) {
     init(size, hb, Allocator());
     mhp::fill(*this, fill_value);
   }
@@ -312,7 +311,7 @@ private:
     if (size_ > 0) {
       data_ = allocator_.allocate(data_size_);
     }
-    halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
+    halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
@@ -329,9 +328,9 @@ private:
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
   T *data_ = nullptr;
-  dr::span_halo<T> *halo_;
+  span_halo<T> *halo_;
 
-  dr::halo_bounds halo_bounds_;
+  halo_bounds halo_bounds_;
   std::size_t size_;
   std::vector<dv_segment<distributed_vector>> segments_;
   dr::rma_window win_;
