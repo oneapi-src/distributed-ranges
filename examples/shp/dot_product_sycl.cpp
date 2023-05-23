@@ -40,7 +40,15 @@ int main(int argc, char **argv) {
         for (auto &dev : this_platform.get_devices(sycl::info::device_type::cpu) ) {
             std::cout << dev.get_info<sycl::info::device::name>() <<std::endl;
             devices.emplace_back(dev);
+            devices.emplace_back(dev);
+            devices.emplace_back(dev);
         }
+    }
+
+    if (dev_num < devices.size()) {
+        std::cout << "There is not enough available devices" << std::endl;
+        std::cout << "Available devices= " << devices.size() << ", requested devices= " << dev_num;
+        return 0;
     }
 
     vec_size  = vec_size * 1000 * 1000ull;
