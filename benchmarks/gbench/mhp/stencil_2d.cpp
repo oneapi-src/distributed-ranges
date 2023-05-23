@@ -79,6 +79,7 @@ struct Checker {
     checked = true;
   }
 
+#ifdef SYCL_LANGUAGE_VERSION
   void check_device(sycl::queue q, T *p) {
     if (!check_results || checked) {
       return;
@@ -91,6 +92,7 @@ struct Checker {
     common.check(local);
     checked = true;
   }
+#endif
 
   void check_array(rng::forward_range auto &&actual) {
     if (!check_results || checked) {
