@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
 namespace dr::mhp {
 
 template <typename DV> class dv_segment_iterator;

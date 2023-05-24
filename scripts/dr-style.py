@@ -22,6 +22,8 @@ logger.propagate = False
 
 exclude_rule = re.compile('dr-style ignore')
 
+pragma_once_rule = re.compile('#pragma once')
+
 all_rules = [
     (
         r'lib::',
@@ -170,10 +172,24 @@ def check_file(path):
             lineno += 1
 
 
+def check_header_file(path):
+    logging.info(f'Checking header {path}')
+    with open(path) as fin:
+        found_pragma_once = False
+        for line in fin.readlines():
+            if pragma_once_rule.search(line):
+                found_pragma_once = True
+                break
+        if not found_pragma_once:
+            warning('add #pragma once', path, '', '')
+
+
 def check_files():
     for dir in args.directory:
         for file in iglob(f'{dir}/**/*.[ch]pp', recursive=True):
             check_file(abspath(file))
+        for file in iglob(f'{dir}/**/*.hpp', recursive=True):
+            check_header_file(abspath(file))
 
 
 def compile_checks():
