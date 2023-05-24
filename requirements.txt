@@ -21,12 +21,12 @@ MarkupSafe==2.1.2
 nodeenv==1.8.0
 packaging==23.1
 platformdirs==3.5.1
-pre-commit==3.3.1
+pre-commit==3.3.2
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
 Pygments==2.15.1
 PyYAML==6.0
-requests==2.30.0
+requests==2.31.0
 snowballstemmer==2.2.0
 soupsieve==2.4.1
 Sphinx==6.2.1

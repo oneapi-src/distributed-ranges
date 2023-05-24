@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
 namespace dr {
 
 template <typename Group> class halo_impl {

@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
 namespace dr::mhp::__detail {
 
 inline auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
