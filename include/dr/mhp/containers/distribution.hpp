@@ -15,10 +15,18 @@ public:
     return *this;
   }
 
-  auto halo() { return halo_bounds_; }
+  auto halo() const { return halo_bounds_; }
+
+  distribution &granularity(std::size_t size) {
+    granularity_ = size;
+    return *this;
+  }
+
+  auto granularity() const { return granularity_; }
 
 private:
   halo_bounds halo_bounds_;
+  std::size_t granularity_ = 1;
 };
 
 } // namespace dr::mhp

@@ -310,8 +310,13 @@ private:
     size_ = size;
     auto comm_size = default_comm().size(); // dr-style ignore
     auto hb = dist.halo();
-    segment_size_ =
-        std::max({(size + comm_size - 1) / comm_size, hb.prev, hb.next});
+    std::size_t gran = dist.granularity();
+    assert(size % gran == 0 && "size must be a multiple of the granularity");
+    std::size_t num_chunks = size / gran;
+    std::size_t chunks_per_segment =
+        std::max({(num_chunks + comm_size - 1) / comm_size, hb.prev / gran,
+                  hb.next / gran});
+    segment_size_ = chunks_per_segment * gran;
     data_size_ = segment_size_ + hb.prev + hb.next;
     if (size_ > 0) {
       data_ = allocator_.allocate(data_size_);

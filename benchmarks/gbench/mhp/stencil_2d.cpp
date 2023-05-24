@@ -109,7 +109,7 @@ struct Checker {
   bool checked = false;
 };
 
-static void stencil_global_op(auto in, auto out, auto cols, auto i, auto j) {
+static void stencil_1darray_op(auto in, auto out, auto cols, auto i, auto j) {
   out[i * cols + j] =
       (in[(i - 1) * cols + j] + in[i * cols + j - 1] + in[i * cols + j] +
        in[i * cols + j + 1] + in[(i + 1) * cols + j]) /
@@ -132,7 +132,7 @@ static void Stencil2D_Loop_Std(benchmark::State &state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
       for (std::size_t i = 1; i < rows - 1; i++) {
         for (std::size_t j = 1; j < cols - 1; j++) {
-          stencil_global_op(in, out, cols, i, j);
+          stencil_1darray_op(in, out, cols, i, j);
         }
       }
       std::swap(in, out);
@@ -144,7 +144,7 @@ static void Stencil2D_Loop_Std(benchmark::State &state) {
 
 BENCHMARK(Stencil2D_Loop_Std);
 
-auto stencil_1darray_op = [](auto &&v) {
+auto stencil_2darray_op = [](auto &&v) {
   auto &[in_row, out_row] = v;
   auto p = &in_row;
   for (std::size_t i = 1; i < cols_static - 1; i++) {
@@ -152,7 +152,7 @@ auto stencil_1darray_op = [](auto &&v) {
   }
 };
 
-static void Stencil2D_1DArray_DR(benchmark::State &state) {
+static void Stencil2D_StdArray_DR(benchmark::State &state) {
   auto [rows, cols] = shape();
 
   if (rows == 0) {
@@ -178,10 +178,52 @@ static void Stencil2D_1DArray_DR(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
       dr::mhp::halo(in).exchange();
-      dr::mhp::for_each(dr::mhp::views::zip(in, out), stencil_1darray_op);
+      dr::mhp::for_each(dr::mhp::views::zip(in, out), stencil_2darray_op);
       std::swap(in, out);
     }
     checker.check_array(stencil_steps % 2 ? b : a);
+  }
+}
+
+BENCHMARK(Stencil2D_StdArray_DR);
+
+static void Stencil2D_1DArray_DR(benchmark::State &state) {
+  auto [rows, cols] = shape();
+  if (rows == 0) {
+    return;
+  }
+
+  // auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
+  auto dist = dr::mhp::distribution().halo(cols);
+  dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
+  dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
+
+  Checker checker;
+  auto in = rng::subrange(a.begin() + cols, a.end() - cols);
+  auto out = rng::subrange(b.begin() + cols, b.end() - cols);
+  for (auto _ : state) {
+    for (std::size_t s = 0; s < stencil_steps; s++) {
+      auto segments_in = dr::mhp::local_segments(in);
+      auto segment_in = *rng::begin(segments_in);
+      auto base_in = segment_in.begin();
+
+      auto segments_out = dr::mhp::local_segments(out);
+      auto segment_out = *rng::begin(segments_out);
+      auto base_out = segment_out.begin();
+
+      auto row_slice = segment_in.size() / cols;
+      assert(segment_in.size() % cols == 0);
+
+      dr::mhp::halo(in).exchange();
+
+      for (std::size_t i = 0; i < row_slice; i++) {
+        for (std::size_t j = 1; j < cols - 1; j++) {
+          stencil_1darray_op(base_in, base_out, cols, i, j);
+        }
+      }
+      std::swap(in, out);
+    }
+    checker.check(stencil_steps % 2 ? b : a);
   }
 }
 
@@ -209,7 +251,7 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
       auto op = [=](auto it) {
-        stencil_global_op(in, out, cols, it[0] + 1, it[1] + 1);
+        stencil_1darray_op(in, out, cols, it[0] + 1, it[1] + 1);
       };
       q.parallel_for(sycl::range(rows - 2, cols - 2), op).wait();
       std::swap(in, out);
