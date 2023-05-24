@@ -44,12 +44,17 @@ public:
 
   // Comparison
   bool operator==(const dv_segment_iterator &other) const noexcept {
-    assert(dv_ != nullptr && dv_ == other.dv_);
+    // assertion below checks against compare dereferenceable iterator to a
+    // singular iterator and against attempt to compare iterators from different
+    // sequences like _Safe_iterator<gnu_cxx::normal_iterator> does
+    assert(dv_ == other.dv_);
     return index_ == other.index_ && dv_ == other.dv_;
   }
   auto operator<=>(const dv_segment_iterator &other) const noexcept {
-    assert(dv_ != nullptr && dv_ == other.dv_);
-    return index_ <=> other.index_;
+    assert(dv_ == other.dv_);
+    return segment_index_ == other.segment_index_
+               ? index_ <=> other.index_
+               : segment_index_ <=> other.segment_index_;
   }
 
   // Only this arithmetic manipulate internal state
@@ -184,9 +189,11 @@ public:
   }
 
 private:
+  // all fields need to be initialized by default ctor so every default
+  // constructed iter is equal to any other default constructed iter
   DV *dv_ = nullptr;
-  std::size_t segment_index_;
-  std::size_t index_;
+  std::size_t segment_index_ = 0;
+  std::size_t index_ = 0;
 }; // dv_segment_iterator
 
 template <typename DV> class dv_segment {
