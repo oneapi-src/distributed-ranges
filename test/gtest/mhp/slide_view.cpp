@@ -28,6 +28,41 @@ TYPED_TEST(Slide, segements_are_present) {
   EXPECT_EQ(rng::size(dv_segments), comm_size);
 }
 
+TYPED_TEST(Slide, segements_are_present_if_n_equals_halo_plus_1) {
+  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::halo_bounds(3));
+  const auto dv_segments = dr::ranges::segments(xhp::views::sliding(dv, 7));
+  EXPECT_EQ(rng::size(dv_segments), comm_size);
+}
+
+TYPED_TEST(Slide, segements_are_absent_if_n_neq_halo_plus_1) {
+  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::halo_bounds(3));
+  EXPECT_DEATH(dr::ranges::segments(xhp::views::sliding(dv, 5)),
+               "Assertion .* failed");
+}
+
+TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_greater_than_halo_plus_1) {
+  TypeParam dv(10, dr::halo_bounds(3));
+  iota(dv, 1);
+  auto dv_sliding_view = xhp::views::sliding(dv, 8);
+
+  EXPECT_EQ(rng::size(dv_sliding_view), 3);
+  EXPECT_TRUE(equal({1, 2, 3, 4, 5, 6, 7, 8}, dv_sliding_view[0]));
+  EXPECT_TRUE(equal({2, 3, 4, 5, 6, 7, 8, 9}, dv_sliding_view[1]));
+  EXPECT_TRUE(equal({3, 4, 5, 6, 7, 8, 9, 10}, dv_sliding_view[2]));
+}
+
+TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_less_than_halo_plus_1) {
+  TypeParam dv(10, dr::halo_bounds(3));
+  iota(dv, 1);
+  auto dv_sliding_view = xhp::views::sliding(dv, 6);
+
+  EXPECT_EQ(rng::size(dv_sliding_view), 5);
+  EXPECT_TRUE(equal({1, 2, 3, 4, 5, 6}, dv_sliding_view[0]));
+  EXPECT_TRUE(equal({2, 3, 4, 5, 6, 7}, dv_sliding_view[1]));
+  // ...
+  EXPECT_TRUE(equal({5, 6, 7, 8, 9, 10}, dv_sliding_view[4]));
+}
+
 TYPED_TEST(Slide, slide_can_modify_inplace) {
   TypeParam dv(6, dr::halo_bounds(1));
   iota(dv, 10); // 10,11,12,13,14,15

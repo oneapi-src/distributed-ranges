@@ -19,7 +19,7 @@ int check(auto dv, auto n, auto steps) {
   auto out = rng::ref_view(b);
 
   for (std::size_t s = 0; s < steps; s++) {
-    rng::transform(rng::sliding_view(in, 3), out.begin() + 1, stencil_op);
+    rng::transform(rng::views::sliding(in, 3), out.begin() + 1, stencil_op);
     std::swap(in, out);
   }
 
@@ -46,7 +46,7 @@ int stencil(auto n, auto steps) {
   auto out = rng::ref_view(b);
 
   for (std::size_t s = 0; s < steps; s++) {
-    dr::mhp::halo(in.base()).exchange();
+    dr::mhp::halo(in).exchange();
     dr::mhp::transform(dr::mhp::views::sliding(in), out.begin() + 1,
                        stencil_op);
 

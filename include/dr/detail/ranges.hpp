@@ -73,7 +73,7 @@ struct rank_fn_ {
 
 inline constexpr auto rank = rank_fn_{};
 
-namespace __detail {
+namespace {
 
 template <typename R>
 concept remote_range_shadow_impl_ =
@@ -115,11 +115,11 @@ struct segments_fn_ {
   }
 };
 
-} // namespace __detail
+} // namespace
 
-inline constexpr auto segments = __detail::segments_fn_{};
+inline constexpr auto segments = segments_fn_{};
 
-namespace __detail {
+namespace {
 
 template <typename Iter>
 concept has_local_adl = requires(Iter &iter) {
@@ -171,9 +171,9 @@ struct local_fn_ {
   }
 };
 
-} // namespace __detail
+} // namespace
 
-inline constexpr auto local = __detail::local_fn_{};
+inline constexpr auto local = local_fn_{};
 
 namespace __detail {
 
@@ -182,7 +182,7 @@ concept has_local = requires(T &t) {
   { dr::ranges::local(t) } -> std::convertible_to<std::any>;
 };
 
-struct local_fn_used_by_transform_ {
+struct local_fn_ {
   template <typename T>
     requires(has_local<T>)
   auto operator()(T &&t) const {
@@ -192,9 +192,7 @@ struct local_fn_used_by_transform_ {
   template <typename T> auto operator()(T &&t) const { return t; }
 };
 
-// FIXME: why we have two different local_fn_?
-// TODO: merge into one, simplify if possible
-inline constexpr auto local_used_by_transform = local_fn_used_by_transform_{};
+inline constexpr auto local = local_fn_{};
 
 } // namespace __detail
 

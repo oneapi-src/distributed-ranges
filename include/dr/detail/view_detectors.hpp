@@ -41,22 +41,12 @@ struct is_subrange_view<rng::subrange<T>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_subrange_view_v = is_subrange_view<T>::value;
 
-#define DEFINE_DETECTOR(NAME)                                                  \
-  template <typename T> struct is_##NAME : std::false_type {};                 \
-  template <typename T> struct is_##NAME<rng::NAME<T>> : std::true_type {};    \
-  template <typename T>                                                        \
-  inline constexpr bool is_##NAME##_v =                                        \
-      is_##NAME<std::remove_cvref_t<T>>::value;
-
-// TODO: change manually defined detectors into generated ones
-// DEFINE_DETECTOR(drop)
-// DEFINE_DETECTOR(iota)
-// DEFINE_DETECTOR(ref)
-DEFINE_DETECTOR(sliding_view)
-// DEFINE_DETECTOR(subrange)
-// DEFINE_DETECTOR(take)
-
-#undef DEFINE_DETECTOR
+template <typename T> struct is_sliding_view : std::false_type {};
+template <typename T>
+struct is_sliding_view<rng::sliding_view<T>> : std::true_type {};
+template <typename T>
+inline constexpr bool is_sliding_view_v =
+    is_sliding_view<std::remove_cvref_t<T>>::value;
 
 template <typename T> struct is_zip_view : std::false_type {};
 

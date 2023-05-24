@@ -17,7 +17,6 @@ TYPED_TEST(Drop, Basic) {
   auto local = rng::views::drop(ops.dist_vec, 2);
   auto dist = xhp::views::drop(ops.dist_vec, 2);
   static_assert(compliant_view<decltype(dist)>);
-
   EXPECT_TRUE(check_view(local, dist));
 }
 

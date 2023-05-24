@@ -13,15 +13,22 @@ namespace views {
 namespace __detail {
 
 struct sliding_fn {
-  // TODO: specify rng::range_difference_t<Rng> left_side_len,
-  //  rng::range_difference_t<Rng> right_side_len, now it is determined by halo
-  //  bounds
+
+  // one can not use local algorithms if n is not equal to halo_bounds.prev + 1
+  // + halo_bounds.next
+  template <typename Rng, typename Int>
+    requires rng::viewable_range<Rng> && rng::forward_range<Rng> &&
+             rng::detail::integer_like_<Int>
+  auto operator()(Rng &&r, Int n) const {
+    return rng::views::sliding(static_cast<Rng &&>(r), n);
+  }
+
   template <typename Rng>
     requires rng::viewable_range<Rng> && rng::forward_range<Rng>
   auto operator()(Rng &&r) const {
     auto halo_bounds = (&(*rng::begin(r))).halo_bounds();
-    return rng::views::sliding(static_cast<Rng &&>(r),
-                               halo_bounds.prev + 1 + halo_bounds.next);
+    return operator()(static_cast<Rng &&>(r),
+                      halo_bounds.prev + 1 + halo_bounds.next);
   }
 };
 
@@ -42,6 +49,7 @@ auto segments_(V &&v) {
   const auto halo_bounds = (&(*first)).halo_bounds();
   const auto sliding_view_size = rng::size(v);
   const auto orig_range_size = rng::size(v.base());
+  // sliding_view doesn't work in local algorithms if its size is not halo+1
   assert(halo_bounds.prev + sliding_view_size + halo_bounds.next ==
          orig_range_size);
   assert(
@@ -52,5 +60,7 @@ auto segments_(V &&v) {
       dr::__detail::take_segments(
           dr::ranges::segments(first + halo_bounds.prev), sliding_view_size));
 }
+
+// TODO: add support for dr::mhp::halo(dr::mhp::views::sliding(r)).exchange()
 
 } // namespace DR_RANGES_NAMESPACE

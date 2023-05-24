@@ -42,19 +42,19 @@ public:
     index_ = index;
   }
 
-  // Comparison
-  bool operator==(const dv_segment_iterator &other) const noexcept {
+  auto operator<=>(const dv_segment_iterator &other) const noexcept {
     // assertion below checks against compare dereferenceable iterator to a
     // singular iterator and against attempt to compare iterators from different
     // sequences like _Safe_iterator<gnu_cxx::normal_iterator> does
     assert(dv_ == other.dv_);
-    return index_ == other.index_ && dv_ == other.dv_;
-  }
-  auto operator<=>(const dv_segment_iterator &other) const noexcept {
-    assert(dv_ == other.dv_);
     return segment_index_ == other.segment_index_
                ? index_ <=> other.index_
                : segment_index_ <=> other.segment_index_;
+  }
+
+  // Comparison
+  bool operator==(const dv_segment_iterator &other) const noexcept {
+    return (*this <=> other) == 0;
   }
 
   // Only this arithmetic manipulate internal state
@@ -161,6 +161,7 @@ public:
 
     assert(!dv_->halo_bounds().periodic); // not implemented
 
+    // sliding view needs local iterators that point to the halo
     if (my_process_segment_index + 1 == segment_index_) {
       assert(index_ <=
              dv_->halo_bounds().next); // <= instead of < to cover end() case
@@ -366,15 +367,6 @@ public:
   auto &halo_bounds() const { return halo_bounds_; }
 
   auto segments() const { return rng::views::all(segments_); }
-
-  void dump_to_log(std::string desc = "") const {
-    dr::drlog.debug("DV {}, dataAddr:{}", desc,
-                    static_cast<void *>(this->data_));
-    for (std::size_t idx = 0; idx < data_size_; ++idx)
-      dr::drlog.debug(" - idx:{} val:{} addr:{}", idx, this->data_[idx],
-                      static_cast<void *>(this->data_ + idx));
-    dr::drlog.debug("\n");
-  }
 
 private:
   void init(auto size, auto hb, const auto &allocator) {
