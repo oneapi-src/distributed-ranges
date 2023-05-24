@@ -163,25 +163,6 @@ public:
   auto &halo() { return *halo_; }
   dr::halo_bounds &halo_bounds() { return halo_bounds_; }
 
-  bool is_local_row(int index) {
-    if (index >= local_rows_ind_.first && index <= local_rows_ind_.second) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  // index of cell on linear view
-  bool is_local_cell(int index) {
-    if (index >= local_rows_ind_.first * (int)shape_[1] &&
-        index < (local_rows_ind_.second + 1) * (int)shape_[1]) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  std::pair<int, int> local_rows_indices() { return local_rows_ind_; }
-
   // for debug only
 #if 1
   void dump_matrix(std::string msg) {
@@ -325,6 +306,23 @@ private:
     fence();
   }
 
+  bool is_local_row(int index) {
+    if (index >= local_rows_ind_.first && index <= local_rows_ind_.second) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  // index of cell on linear view
+  bool is_local_cell(int index) {
+    if (index >= local_rows_ind_.first * (int)shape_[1] &&
+        index < (local_rows_ind_.second + 1) * (int)shape_[1]) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
 private:
   friend dv_segment_iterator<distributed_dense_matrix>;
   friend dm_rows<distributed_dense_matrix>;
@@ -372,6 +370,17 @@ void transform(dr::mhp::subrange<DM> &in, subrange_iterator<DM> out, auto op) {
   for (subrange_iterator<DM> i = rng::begin(in); i != rng::end(in); i++) {
     if (i.is_local()) {
       *(out) = op(i);
+    }
+    ++out;
+  }
+}
+
+template <typename DM>
+void transform(rng::subrange<dm_rows_iterator<DM>> &in,
+               dm_rows_iterator<DM> out, auto op) {
+  for (auto i = rng::begin(in); i != rng::end(in); i++) {
+    if (i.is_local()) {
+      *out = op(i);
     }
     ++out;
   }

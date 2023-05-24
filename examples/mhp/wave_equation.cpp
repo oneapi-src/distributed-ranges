@@ -274,10 +274,10 @@ int main(int argc, char *argv[]) {
     if (t >= next_t_export - 1e-8) {
 
       double elev_max = dr::mhp::reduce(e, static_cast<T>(0), max);
-      double u_max = dr::mhp::reduce(u, static_cast<T>(0), max, 0);
+      double u_max = dr::mhp::reduce(u, static_cast<T>(0), max);
 
       double total_v =
-          (dr::mhp::reduce(e, static_cast<T>(0), std::plus{}, 0) + h) * dx * dy;
+          (dr::mhp::reduce(e, static_cast<T>(0), std::plus{}) + h) * dx * dy;
       if (i == 0) {
         initial_v = total_v;
       }

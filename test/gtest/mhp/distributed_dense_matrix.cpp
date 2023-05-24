@@ -30,7 +30,7 @@ TEST(MhpTests, DM_CreateFill) {
   EXPECT_EQ(*(a.end() - 1), -1);
 }
 
-TEST(MhpTests, DM_Rows) {
+TEST(MhpTests, DM_Rows_For) {
   const int rows = 11, cols = 11;
   dr::halo_bounds hb(3, 1, false); // 1 row
   DM a(rows, cols, -1, hb);
@@ -46,6 +46,20 @@ TEST(MhpTests, DM_Rows) {
       EXPECT_TRUE(equal(v, *r));
     }
   }
+}
 
-  // dr::mhp::for_each(b.rows(), [](auto row) { rng::iota(row, 10); });
+TEST(MhpTests, DM_Rows_ForEach) {
+  const int rows = 11, cols = 11;
+  dr::halo_bounds hb(3, 1, false); // 1 row
+  DM a(rows, cols, -1, hb);
+
+  dr::mhp::for_each(a.rows(), [](auto row) { rng::iota(row, 10); });
+
+  a.dump_matrix("after for_each");
+
+  EXPECT_EQ(*(a.begin()), 10);
+  EXPECT_EQ(*(a.begin() + 13), 12);
+  EXPECT_EQ(*(a.begin() + 48), 14);
+  EXPECT_EQ(*(a.end() - 1), 20);
+  EXPECT_EQ(*(a.end() - 24), 19);
 }

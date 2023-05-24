@@ -5,7 +5,7 @@
 add_executable(stencil-slide stencil-slide.cpp)
 target_link_libraries(stencil-slide cxxopts DR::mpi)
 
-if (ENABLE_SYCL)
+if(ENABLE_SYCL)
   add_executable(mhp_dot_product_benchmark dot_product_benchmark.cpp)
   target_compile_options(mhp_dot_product_benchmark PRIVATE -fsycl)
   target_link_libraries(mhp_dot_product_benchmark DR::mpi cxxopts)
@@ -37,12 +37,19 @@ target_link_libraries(
   DR::mpi)
 add_mpi_test(stencil-2d-matrix stencil-2d-matrix 2)
 
-# add_executable(wave_equation wave_equation.cpp)
-# target_link_libraries(
-#   wave_equation
-#   cxxopts
-#   DR::mpi)
-# add_mpi_test(wave_equation wave_equation 4)
+add_executable(stencil-2d-matrix-rows stencil-2d-matrix-rows.cpp)
+target_link_libraries(
+  stencil-2d-matrix-rows
+  cxxopts
+  DR::mpi)
+add_mpi_test(stencil-2d-matrix-rows stencil-2d-matrix-rows 2)
+
+add_executable(wave_equation wave_equation.cpp)
+target_link_libraries(
+  wave_equation
+  cxxopts
+  DR::mpi)
+add_mpi_test(wave_equation wave_equation 4)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)

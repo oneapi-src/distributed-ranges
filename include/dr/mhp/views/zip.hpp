@@ -217,6 +217,7 @@ public:
 
   auto begin() const {
     auto make_begin = [this](auto &&...bases) {
+      // char *i = this->rng_zip_;
       return zip_iterator(rng::begin(this->rng_zip_), rng::begin(bases)...);
     };
     return std::apply(make_begin, base_);

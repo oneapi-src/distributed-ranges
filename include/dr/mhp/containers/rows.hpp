@@ -29,11 +29,12 @@ public:
 
   // T &operator[](int index) { return *(std::span<T>::begin() + index); }
 
-  dm_row<T> operator=(dm_row<T> other) {
+  dm_row<T> operator=(rng::range auto other) {
     assert(rng::distance(*this) == rng::distance(other));
-    iterator i = rng::begin(*this), oi = rng::begin(other);
-    while (i != this->end()) {
-      *(i++) = *(oi++);
+
+    auto oi = other.begin();
+    for (auto i = rng::begin(*this); i != this->end(); i++) {
+      *i = *(oi++);
     }
     return *this;
   }
@@ -47,7 +48,6 @@ template <typename DM> class dm_rows_iterator {
 public:
   using iterator_category = std::random_access_iterator_tag;
   using value_type = typename dr::mhp::dm_row<typename DM::value_type>;
-  // using size_type = typename dr::mhp::dm_row<typename DM::value_type>;
   using difference_type = typename DM::difference_type;
 
   dm_rows_iterator() = default;
@@ -58,24 +58,25 @@ public:
 
   auto operator*() const { return dm_->dm_rows_[row_idx_]; }
   auto operator->() const { return &(dm_->dm_rows_[row_idx_]); }
-  auto operator[](difference_type n) {
+  auto operator[](difference_type n) const {
     difference_type abs_ind = row_idx_ + n;
 
-    if (abs_ind >= dm_->local_rows_indices_.first &&
-        abs_ind <= dm_->local_rows_indices_.second) { // regular rows
+    if (abs_ind >= dm_->local_rows_ind_.first &&
+        abs_ind <= dm_->local_rows_ind_.second) { // regular rows
       return dm_->dm_rows_[row_idx_ + n];
     }
-    if (abs_ind >= (difference_type)(dm_->local_rows_indices_.first -
-                                     dm_->halo_bounds_row_.prev) &&
-        abs_ind < dm_->local_rows_indices_.first) { // halo prev
-      return dm_->dm_halo_p_rows_[dm_->halo_bounds_row_.prev -
-                                  dm_->local_rows_indices_.first + abs_ind];
+    if (abs_ind >= (difference_type)(dm_->local_rows_ind_.first -
+                                     dm_->halo_bounds_rows_.prev) &&
+        abs_ind < dm_->local_rows_ind_.first) { // halo prev
+      return dm_->dm_halo_p_rows_[dm_->halo_bounds_rows_.prev -
+                                  dm_->local_rows_ind_.first + abs_ind];
     }
-    if (abs_ind > dm_->local_rows_indices_.second &&
-        abs_ind <= (difference_type)(dm_->local_rows_indices_.second +
-                                     dm_->halo_bounds_row_.next)) { // halo next
-      return dm_->dm_halo_n_rows_[dm_->halo_bounds_row_.next +
-                                  dm_->local_rows_indices_.second - abs_ind];
+    if (abs_ind > dm_->local_rows_ind_.second &&
+        abs_ind <=
+            (difference_type)(dm_->local_rows_ind_.second +
+                              dm_->halo_bounds_rows_.next)) { // halo next
+      return dm_->dm_halo_n_rows_[dm_->halo_bounds_rows_.next +
+                                  dm_->local_rows_ind_.second - abs_ind];
     }
     assert(0);
   }
@@ -152,10 +153,11 @@ public:
     return other + n;
   }
 
-  auto segments() const {
+  auto segments() {
     // return dr::__details__::drop_segments(dm_->segments(), row_idx_);
     return dm_->segments();
   }
+  auto rank() const { return (*this).rank(); }
   auto &halo() const { return dm_->halo(); }
 
   bool is_local() { return dm_->is_local_row(row_idx_); }
@@ -178,7 +180,7 @@ public:
   iterator begin() const { return iterator(dm_, 0); }
   iterator end() const { return iterator(dm_, this->size()); }
 
-  auto segments() { return dm_->segments(); }
+  auto segments() const { return dm_->segments(); }
   auto &halo() { return dm_->halo(); }
 
   // DM *dm() { return dm_; }
