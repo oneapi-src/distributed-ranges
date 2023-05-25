@@ -67,10 +67,11 @@ TYPED_TEST(Slide, slide_can_modify_inplace) {
   TypeParam dv(6, dr::halo_bounds(1));
   iota(dv, 10); // 10,11,12,13,14,15
   dv.halo().exchange();
-
   xhp::for_each(xhp::views::sliding(dv), [](auto &&r) {
+  // SYCL kernel cannot use exceptions
+#ifndef SYCL_LANGUAGE_VERSION
     EXPECT_EQ(3, rng::size(r));
-    dr::drlog.debug("assign into {} a sum of {} and {}\n", r[1], r[0], r[2]);
+#endif
     // watch out that when you use r[0] you get already changed value (or not if
     // halo)
     r[1] += r[2];

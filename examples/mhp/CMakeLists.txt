@@ -30,6 +30,13 @@ target_link_libraries(
   DR::mpi)
 add_mpi_test(stencil-1d-array stencil-1d-array 2)
 
+if (ENABLE_SYCL)
+  # TODO: resolve "SYCL kernel cannot..." errors in transform
+  # target_compile_options(stencil-1d PRIVATE -fsycl)
+  target_compile_options(stencil-1d-array PRIVATE -fsycl)
+endif ()
+
+
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)
   target_link_libraries(vector-add-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX fmt::fmt)
