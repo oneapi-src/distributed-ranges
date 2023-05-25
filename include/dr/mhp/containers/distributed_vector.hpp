@@ -308,26 +308,32 @@ private:
   void init(auto size, auto dist, const auto &allocator) {
     allocator_ = allocator;
     size_ = size;
+    distribution_ = dist;
+
+    // determine the distribution of data
     auto comm_size = default_comm().size(); // dr-style ignore
     auto hb = dist.halo();
     std::size_t gran = dist.granularity();
+    // TODO: make this an error that is reported back to user
     assert(size % gran == 0 && "size must be a multiple of the granularity");
-    std::size_t num_chunks = size / gran;
-    std::size_t chunks_per_segment =
-        std::max({(num_chunks + comm_size - 1) / comm_size, hb.prev / gran,
-                  hb.next / gran});
-    segment_size_ = chunks_per_segment * gran;
+    assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
+    assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
+    segment_size_ = gran * std::max({(size / gran + comm_size - 1) / comm_size,
+                                     hb.prev / gran, hb.next / gran});
+
     data_size_ = segment_size_ + hb.prev + hb.next;
     if (size_ > 0) {
       data_ = allocator_.allocate(data_size_);
     }
+
     halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
+
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i));
     }
-    distribution_ = dist;
+
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
     fence();
