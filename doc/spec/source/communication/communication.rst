@@ -9,6 +9,5 @@
 .. toctree::
    :maxdepth: 1
 
-   halo_bounds
    unstructured_halo
    index_group

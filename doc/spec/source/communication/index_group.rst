@@ -11,7 +11,7 @@
 Interface
 =========
 
-.. doxygenclass:: dr::index_group
+.. doxygenclass:: dr::mhp::index_group
    :members:
 
 Description

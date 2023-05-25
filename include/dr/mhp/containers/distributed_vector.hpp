@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <dr/mhp/containers/distribution.hpp>
+
 namespace dr::mhp {
 
 template <typename DV> class dv_segment_iterator;
@@ -108,7 +110,7 @@ public:
   auto operator[](difference_type n) const { return *(*this + n); }
 
   void get(value_type *dst, std::size_t size) const {
-    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dv_->win_.get(dst, size * sizeof(*dst), segment_index_,
                   segment_offset * sizeof(*dst));
   }
@@ -120,7 +122,7 @@ public:
   }
 
   void put(const value_type *dst, std::size_t size) const {
-    auto segment_offset = index_ + dv_->halo_bounds_.prev;
+    auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
     dv_->win_.put(dst, size * sizeof(*dst), segment_index_,
@@ -130,7 +132,9 @@ public:
   void put(const value_type &value) const { put(&value, 1); }
 
   auto rank() const { return segment_index_; }
-  auto local() const { return dv_->data_ + index_ + dv_->halo_bounds_.prev; }
+  auto local() const {
+    return dv_->data_ + index_ + dv_->distribution_.halo().prev;
+  }
   auto segments() const {
     return dr::__detail::drop_segments(dv_->segments(), segment_index_, index_);
   }
@@ -267,15 +271,14 @@ public:
   distributed_vector(distributed_vector &&) { assert(false); }
 
   /// Constructor
-  distributed_vector(std::size_t size = 0,
-                     dr::halo_bounds hb = dr::halo_bounds()) {
-    init(size, hb, Allocator());
+  distributed_vector(std::size_t size = 0, distribution dist = distribution()) {
+    init(size, dist, Allocator());
   }
 
   /// Constructor
   distributed_vector(std::size_t size, value_type fill_value,
-                     dr::halo_bounds hb = dr::halo_bounds()) {
-    init(size, hb, Allocator());
+                     distribution dist = distribution()) {
+    init(size, dist, Allocator());
     mhp::fill(*this, fill_value);
   }
 
@@ -302,23 +305,35 @@ public:
   auto segments() const { return rng::views::all(segments_); }
 
 private:
-  void init(auto size, auto hb, const auto &allocator) {
+  void init(auto size, auto dist, const auto &allocator) {
     allocator_ = allocator;
     size_ = size;
+    distribution_ = dist;
+
+    // determine the distribution of data
     auto comm_size = default_comm().size(); // dr-style ignore
-    segment_size_ =
-        std::max({(size + comm_size - 1) / comm_size, hb.prev, hb.next});
+    auto hb = dist.halo();
+    std::size_t gran = dist.granularity();
+    // TODO: make this an error that is reported back to user
+    assert(size % gran == 0 && "size must be a multiple of the granularity");
+    assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
+    assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
+    segment_size_ = gran * std::max({(size / gran + comm_size - 1) / comm_size,
+                                     hb.prev / gran, hb.next / gran});
+
     data_size_ = segment_size_ + hb.prev + hb.next;
     if (size_ > 0) {
       data_ = allocator_.allocate(data_size_);
     }
-    halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
+
+    halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
+
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i));
     }
-    halo_bounds_ = hb;
+
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
     fence();
@@ -329,9 +344,9 @@ private:
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0;
   T *data_ = nullptr;
-  dr::span_halo<T> *halo_;
+  span_halo<T> *halo_;
 
-  dr::halo_bounds halo_bounds_;
+  distribution distribution_;
   std::size_t size_;
   std::vector<dv_segment<distributed_vector>> segments_;
   dr::rma_window win_;
