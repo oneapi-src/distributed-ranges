@@ -25,6 +25,15 @@ template <typename R> auto local_segments(R &&dr) {
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
+template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
+  auto segments = dr::mhp::local_segments(std::forward<R>(r));
+
+  // Should be error, not assert
+  assert(rng::distance(segments) == 1);
+
+  return *rng::begin(segments);
+}
+
 } // namespace dr::mhp
 
 namespace dr::mhp::views {
