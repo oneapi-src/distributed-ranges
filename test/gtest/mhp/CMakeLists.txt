@@ -28,7 +28,7 @@ add_executable(
   distributed_vector.cpp
   reduce.cpp
   stencil.cpp
-  segmented.cpp
+  segments.cpp
 )
 
 add_executable(
@@ -43,7 +43,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  distributed_vector.cpp
+  segments.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)

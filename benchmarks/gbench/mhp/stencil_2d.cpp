@@ -193,8 +193,7 @@ static void Stencil2D_1DArray_DR(benchmark::State &state) {
     return;
   }
 
-  // auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
-  auto dist = dr::mhp::distribution().halo(cols);
+  auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
   dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
   dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
 
@@ -203,22 +202,18 @@ static void Stencil2D_1DArray_DR(benchmark::State &state) {
   auto out = rng::subrange(b.begin() + cols, b.end() - cols);
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
-      auto segments_in = dr::mhp::local_segments(in);
-      auto segment_in = *rng::begin(segments_in);
-      auto base_in = segment_in.begin();
-
-      auto segments_out = dr::mhp::local_segments(out);
-      auto segment_out = *rng::begin(segments_out);
-      auto base_out = segment_out.begin();
-
-      auto row_slice = segment_in.size() / cols;
-      assert(segment_in.size() % cols == 0);
+      auto in_segment = dr::mhp::local_segment(in);
+      auto out_segment = dr::mhp::local_segment(out);
+      auto size = rng::size(in_segment);
+      assert(size % cols == 0);
+      auto row_slice = size / cols;
 
       dr::mhp::halo(in).exchange();
 
       for (std::size_t i = 0; i < row_slice; i++) {
         for (std::size_t j = 1; j < cols - 1; j++) {
-          stencil_1darray_op(base_in, base_out, cols, i, j);
+          stencil_1darray_op(in_segment.begin(), out_segment.begin(), cols, i,
+                             j);
         }
       }
       std::swap(in, out);
