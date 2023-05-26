@@ -41,7 +41,7 @@ static void Chunk_2DLoop_Std(benchmark::State &state) {
 
 BENCHMARK(Chunk_2DLoop_Std);
 
-static void Chunk_Chunked_2DIndex_Std(benchmark::State &state) {
+static void Chunk_2DIndex_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -58,9 +58,9 @@ static void Chunk_Chunked_2DIndex_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_Chunked_2DIndex_Std);
+BENCHMARK(Chunk_2DIndex_Std);
 
-static void Chunk_Chunked_2DIters_Std(benchmark::State &state) {
+static void Chunk_2DIters_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -74,9 +74,9 @@ static void Chunk_Chunked_2DIters_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_Chunked_2DIters_Std);
+BENCHMARK(Chunk_2DIters_Std);
 
-static void Chunk_ChunkedFlattened_1DIters_Std(benchmark::State &state) {
+static void ChunkFlattened_1DIters_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -90,10 +90,9 @@ static void Chunk_ChunkedFlattened_1DIters_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_ChunkedFlattened_1DIters_Std);
-;
+BENCHMARK(ChunkFlattened_1DIters_Std);
 
-static void Chunk_ChunkedFlattened_for_each_Std(benchmark::State &state) {
+static void ChunkFlattened_ForEach_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -105,5 +104,24 @@ static void Chunk_ChunkedFlattened_for_each_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_ChunkedFlattened_for_each_Std);
-;
+BENCHMARK(ChunkFlattened_ForEach_Std);
+
+static void ChunkTransformFlatten_ForEach_Std(benchmark::State &state) {
+  auto size = num_rows * num_columns;
+  std::vector<T> a(size, init_val), b(size, init_val);
+
+  auto slice = [](auto &&chunk) {
+    return rng::subrange(chunk.begin() + 1, chunk.end() - 1);
+  };
+
+  auto a_flat = a | rng::views::chunk(num_columns) |
+                rng::views::take(num_rows - 1) | rng::views::drop(1) |
+                rng::views::transform(slice) | rng::views::join;
+
+  for (auto _ : state) {
+    auto b_it = b.begin();
+    rng::for_each(a_flat, [&b_it](auto &ae) { *b_it++ = ae; });
+  }
+}
+
+BENCHMARK(ChunkTransformFlatten_ForEach_Std);
