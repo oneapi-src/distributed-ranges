@@ -39,6 +39,7 @@ template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
 namespace dr::mhp::views {
 
 inline constexpr auto all = rng::views::all;
+inline constexpr auto counted = rng::views::counted;
 inline constexpr auto drop = rng::views::drop;
 inline constexpr auto iota = dr::views::iota;
 inline constexpr auto take = rng::views::take;

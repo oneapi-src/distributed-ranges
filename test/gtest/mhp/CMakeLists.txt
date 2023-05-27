@@ -10,6 +10,7 @@ add_executable(
   mhp-tests.cpp
   ../common/all.cpp
   ../common/copy.cpp
+  ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
   ../common/enumerate.cpp
@@ -43,7 +44,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  segments.cpp
+  ../common/counted.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
