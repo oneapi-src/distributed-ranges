@@ -116,7 +116,10 @@ static void stencil_1darray_op(auto in, auto out, auto cols, auto i, auto j) {
       4;
 }
 
-static void Stencil2D_Loop_Std(benchmark::State &state) {
+//
+// Serial baseline
+//
+static void Stencil2D_Loop_Serial(benchmark::State &state) {
   auto [rows, cols] = shape();
   if (rows == 0) {
     return;
@@ -142,9 +145,9 @@ static void Stencil2D_Loop_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_Loop_Std);
+BENCHMARK(Stencil2D_Loop_Serial);
 
-auto stencil_2darray_op = [](auto &&v) {
+auto stencil_foreach_stdArray_op = [](auto &&v) {
   auto &[in_row, out_row] = v;
   auto p = &in_row;
   for (std::size_t i = 1; i < cols_static - 1; i++) {
@@ -152,7 +155,10 @@ auto stencil_2darray_op = [](auto &&v) {
   }
 };
 
-static void Stencil2D_StdArray_DR(benchmark::State &state) {
+//
+// Distributed vector of std::array
+//
+static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   auto [rows, cols] = shape();
 
   if (rows == 0) {
@@ -178,16 +184,21 @@ static void Stencil2D_StdArray_DR(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
       dr::mhp::halo(in).exchange();
-      dr::mhp::for_each(dr::mhp::views::zip(in, out), stencil_2darray_op);
+      dr::mhp::for_each(dr::mhp::views::zip(in, out),
+                        stencil_foreach_stdArray_op);
       std::swap(in, out);
     }
     checker.check_array(stencil_steps % 2 ? b : a);
   }
 }
 
-BENCHMARK(Stencil2D_StdArray_DR);
+BENCHMARK(Stencil2D_ForeachStdArray_DR);
 
-static void Stencil2D_1DArray_DR(benchmark::State &state) {
+//
+// Distributed vector of floats. Granularity ensures segments contain
+// whole rows. Explicitly process segments SPMD-style.
+//
+static void Stencil2D_Nocollective_DR(benchmark::State &state) {
   auto [rows, cols] = shape();
   if (rows == 0) {
     return;
@@ -219,8 +230,9 @@ static void Stencil2D_1DArray_DR(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_1DArray_DR);
+BENCHMARK(Stencil2D_Nocollective_DR);
 
+// Under construction
 #if 0
 auto nslice(auto &&r, cols) {
   auto slice = [](auto &&chunk) {
@@ -231,6 +243,9 @@ auto nslice(auto &&r, cols) {
     | rng::views::join;
 }
 
+//
+// Slice implemented by views. Use for_each on flat representation
+//
 static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
   auto v = shape();
   auto rows = std::get<0>(v);
@@ -268,6 +283,9 @@ static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
 BENCHMARK(Stencil2D_1DArrayTransform_DR);
 #endif
 
+//
+// Single process SYCL baseline
+//
 #ifdef SYCL_LANGUAGE_VERSION
 static void Stencil2D_Basic_SYCL(benchmark::State &state) {
   auto s = shape();
