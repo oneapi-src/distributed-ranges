@@ -153,20 +153,24 @@ struct local_fn_ {
     }
   }
 
-  template <rng::forward_range R>
-    requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
-             segment_has_local_method<R> ||
-             std::contiguous_iterator<rng::iterator_t<R>> ||
-             rng::contiguous_range<R>)
-  auto operator()(R &&r) const {
+  template <rng::forward_range R> auto operator()(R &&r) const {
     if constexpr (segment_has_local_method<R>) {
       return r.local();
     } else if constexpr (iter_has_local_method<rng::iterator_t<R>>) {
       return rng::views::counted(rng::begin(r).local(), rng::size(r));
     } else if constexpr (has_local_adl<R>) {
       return local_(std::forward<R>(r));
-    } else if constexpr (std::contiguous_iterator<rng::iterator_t<R>>) {
-      return std::span(rng::begin(r), rng::size(r));
+    } else {
+      // SHP needs to allow contiguous_range. MHP::zip needs to allow
+      // remote_subrange with iota iterators. Don't know how to
+      // recognize iota iterator. Instead, weaken requirements to
+      // allow any forward_range and assume that if none of the
+      // previous conditions are true, then the iterators can be used
+      // without change.
+      //
+      // Another option is to create a remote subrange that has a
+      // local method. The constructor would be passed a local range.
+      return rng::views::counted(rng::begin(r), rng::size(r));
     }
   }
 };

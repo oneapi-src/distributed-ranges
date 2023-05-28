@@ -171,35 +171,7 @@ public:
                                        offset_);
   }
 
-  auto rank() const
-    requires(remote_iterator<BaseIters> || ...)
-  {
-    return dr::ranges::rank(std::get<0>(base_));
-  }
-
-  auto local() const
-    requires(remote_iterator<BaseIters> || ...)
-  {
-    // Create a temporary zip_view and return the iterator. This code
-    // assumes the iterator is valid even if the underlying zip_view
-    // is destroyed.
-    auto zip = [this]<typename... Iters>(Iters &&...iters) {
-      return rng::begin(rng::views::zip(
-          rng::subrange(base_local(std::forward<Iters>(iters)) + this->offset_,
-                        decltype(base_local(iters)){})...));
-    };
-
-    return std::apply(zip, base_);
-  }
-
 private:
-  // If it is not a remote iterator, assume it is a local iterator
-  auto static base_local(auto iter) { return iter; }
-
-  auto static base_local(dr::remote_iterator auto iter) {
-    return dr::ranges::local(iter);
-  }
-
   RngIter rng_iter_;
   std::tuple<BaseIters...> base_;
   difference_type offset_ = 0;

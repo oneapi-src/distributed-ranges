@@ -80,7 +80,7 @@ segmented_view(R &&r, Seg &&seg)
 
 namespace views {
 
-/// Zip
+/// Segmented
 template <typename R, typename Seg> auto segmented(R &&r, Seg &&seg) {
   return segmented_view(std::forward<R>(r), std::forward<Seg>(seg));
 }
