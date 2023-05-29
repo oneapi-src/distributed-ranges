@@ -141,9 +141,9 @@ int stencil() {
 
   if (comm_rank == 0) {
     if (0 == stencil_check(a, b)) {
-      fmt::print("stencil check OK!\n");
+      fmt::print("stencil-2d-matrix: check OK!\n");
     } else {
-      fmt::print("stencil check failed\n");
+      fmt::print("stencil-2d-matrix: check failed\n");
       return 1;
     }
   }

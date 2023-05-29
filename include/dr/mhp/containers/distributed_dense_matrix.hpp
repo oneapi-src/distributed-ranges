@@ -135,8 +135,10 @@ public:
   };
 
   T &operator[](difference_type index) {
-    assert(index >= default_comm().rank() * segment_size_);
-    assert(index < (default_comm().rank() + 1) * segment_size_);
+    assert(index >=
+           static_cast<difference_type>(default_comm().rank() * segment_size_));
+    assert(index < static_cast<difference_type>((default_comm().rank() + 1) *
+                                                segment_size_));
     return *(data_ + halo_bounds_.prev - default_comm().rank() * segment_size_ +
              index);
   }
@@ -165,25 +167,7 @@ public:
   auto &halo() { return *halo_; }
   dr::halo_bounds &halo_bounds() { return halo_bounds_; }
 
-  bool is_local_row(int index) {
-    if (index >= local_rows_indices_.first &&
-        index <= local_rows_indices_.second) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  // index of cell on linear view
-  bool is_local_cell(int index) {
-    if (index >= local_rows_indices_.first * (int)shape_[1] &&
-        index < (local_rows_indices_.second + 1) * (int)shape_[1]) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  std::pair<int, int> local_rows_indices() { return local_rows_indices_; }
+  std::pair<int, int> local_rows_indices() { return local_rows_ind_; }
 
   // Given a tile index, return a dense matrix view of that tile.
   // dense_matrix_view is a view of a dense tile.
@@ -433,8 +417,11 @@ private:
   Allocator allocator_;
 }; // class distributed_dense_matrix
 
+//
+// for_each, but iterator is passed to lambda
+//
 template <typename T>
-void for_each(dm_rows<distributed_dense_matrix<T>> &rows, auto op) {
+auto for_each(dm_rows<distributed_dense_matrix<T>> &rows, auto op) {
   for (auto itr = rng::begin(rows); itr != rng::end(rows); itr++) {
     if ((*itr).segment()->is_local()) {
       op(*itr);
@@ -442,10 +429,33 @@ void for_each(dm_rows<distributed_dense_matrix<T>> &rows, auto op) {
   }
 };
 
+template <typename T>
+concept has_segment = requires(T t) { (*(t.begin())).segment(); };
+
+template <typename T1, typename T2>
+  requires(has_segment<T1> && has_segment<T2>)
+auto for_each(zip_view<T1, T2> &v, auto op) {
+  fmt::print("{}: inside for_each \n", default_comm().rank());
+  for (auto itr = rng::begin(v); itr != rng::end(v); itr++) {
+    fmt::print("{}: inside for \n", default_comm().rank());
+    auto [in, out] = *itr;
+    if (in.segment()->is_local()) {
+      assert(out.segment()->is_local());
+      fmt::print("{}: is_local \n", default_comm().rank());
+      op(*itr);
+    }
+  }
+};
+
+//
+// transform, but iterator pointing at element is passed to lambda instead of
+// element
+//
 template <typename DM>
 void transform(dr::mhp::subrange<DM> &in, subrange_iterator<DM> out, auto op) {
   for (subrange_iterator<DM> i = rng::begin(in); i != rng::end(in); i++) {
     if (i.is_local()) {
+      assert(out.is_local());
       *(out) = op(i);
     }
     ++out;
@@ -457,6 +467,7 @@ void transform(rng::subrange<dm_rows_iterator<DM>> &in,
                dm_rows_iterator<DM> out, auto op) {
   for (auto i = rng::begin(in); i != rng::end(in); i++) {
     if (i.is_local()) {
+      assert(out.is_local());
       *out = op(i);
     }
     ++out;

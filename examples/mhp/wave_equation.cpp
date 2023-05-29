@@ -103,7 +103,6 @@ void rhs(dr::mhp::distributed_dense_matrix<T> &u,
 
   dr::mhp::transform(epx, dudt_interior.begin(), rhs_dedx);
   dr::mhp::transform(epy, dvdt_interior.begin(), rhs_dedy);
-
   dr::mhp::transform(upx, dudx_view.begin(), rhs_dudx);
   dr::mhp::transform(vpy, dvdy_view.begin(), rhs_dvdy);
   dr::mhp::transform(dr::mhp::views::zip(dudx, dvdy), dedt.begin(), add);
@@ -325,6 +324,7 @@ int main(int argc, char *argv[]) {
     // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
     rhs(u2, v2, e2, dudx, dvdy, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
     // FIXME write directly to u instead of u3
+#if 0
     dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u3.begin(),
                        rk_update3);
     dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v3.begin(),
@@ -334,6 +334,12 @@ int main(int argc, char *argv[]) {
     dr::mhp::copy(u3, u.begin());
     dr::mhp::copy(v3, v.begin());
     dr::mhp::copy(e3, e.begin());
+
+#else
+    dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(), rk_update3);
+    dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
+    dr::mhp::transform(dr::mhp::views::zip(e, e2, dedt), e.begin(), rk_update3);
+#endif
     dr::mhp::halo(u).exchange();
     dr::mhp::halo(v).exchange();
     dr::mhp::halo(e).exchange();
