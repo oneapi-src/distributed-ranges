@@ -16,4 +16,10 @@ TYPED_TEST(Slide3, suite_works_for_3_processes_only) {
   EXPECT_EQ(dr::mhp::default_comm().size(), 3); // dr-style ignore
 }
 
+TYPED_TEST(Slide3, different_halos) {
+  TypeParam dv(6, dr::mhp::distribution().halo(1, 2));
+  iota(dv, 1);
+  dv.halo().exchange();
+}
+
 // more Slide3 tests are comming, all assume that there are 3 mpi processes
