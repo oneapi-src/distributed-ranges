@@ -85,4 +85,19 @@ TYPED_TEST(Slide, slide_can_modify_inplace) {
   EXPECT_EQ(15, dv[5]);
 }
 
+TYPED_TEST(Slide, slide_no_halo_works_with_transform) {
+  TypeParam dv_in(6);
+  TypeParam dv_out(6, 0); // 0,0,0,0,0,0
+  iota(dv_in, 10);        // 10,11,12,13,14,15
+
+  xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out),
+                 [](auto &&v) { return v[0] * 2; });
+
+  EXPECT_EQ(20, dv_out[0]);
+  EXPECT_EQ(22, dv_out[1]);
+  EXPECT_EQ(24, dv_out[2]);
+  // ...
+  EXPECT_EQ(30, dv_out[5]);
+}
+
 // rest of tests is in the Slide3 suite

@@ -83,6 +83,35 @@ template <typename Base> auto base_to_segments(Base &&base) {
   return std::apply(bases_to_segments, base);
 }
 
+// based on https://ericniebler.github.io/range-v3/#autotoc_md30  "Create custom
+// iterators"
+template <typename Iter> struct cursor_over_local_ranges {
+  Iter iter;
+
+  auto read() const {
+    return rng::subrange(dr::ranges::local(rng::begin(*iter)),
+                         dr::ranges::local(rng::begin(*iter)) +
+                             rng::size(*iter));
+  }
+
+  bool equal(const cursor_over_local_ranges &other) const {
+    return iter == other.iter;
+  }
+
+  void next() { ++iter; }
+
+  void prev() { --iter; }
+
+  void advance(std::ptrdiff_t n) { this->iter += n; }
+
+  std::ptrdiff_t distance_to(const cursor_over_local_ranges &other) const {
+    return other.iter - this->iter;
+  }
+
+  cursor_over_local_ranges() = default;
+  cursor_over_local_ranges(Iter iter) : iter(iter) {}
+};
+
 } // namespace __detail
 
 template <std::random_access_iterator RngIter,
@@ -194,7 +223,14 @@ public:
 
 private:
   // If it is not a remote iterator, assume it is a local iterator
-  auto static base_local(auto iter) { return iter; }
+  auto static base_local(auto iter) {
+    if constexpr (dr::localizable_range<decltype(*iter)>) {
+      return rng::basic_iterator<
+          dr::mhp::__detail::cursor_over_local_ranges<decltype(iter)>>(iter);
+    } else {
+      return iter;
+    }
+  }
 
   auto static base_local(dr::remote_iterator auto iter) {
     return dr::ranges::local(iter);

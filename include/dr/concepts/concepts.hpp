@@ -56,4 +56,9 @@ concept distributed_contiguous_iterator =
     remote_contiguous_range<rng::range_value_t<decltype(dr::ranges::segments(
         std::declval<Iter>()))>>;
 
+template <typename R>
+concept localizable_range = rng::range<R> && requires(R &r) {
+  { dr::ranges::local(rng::begin(r)) } -> std::contiguous_iterator;
+};
+
 } // namespace dr

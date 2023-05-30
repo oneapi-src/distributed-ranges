@@ -31,8 +31,7 @@ target_link_libraries(
 add_mpi_test(stencil-1d-array stencil-1d-array 2)
 
 if (ENABLE_SYCL)
-  # TODO: resolve "SYCL kernel cannot..." errors in transform
-  # target_compile_options(stencil-1d PRIVATE -fsycl)
+  target_compile_options(stencil-1d PRIVATE -fsycl)
   target_compile_options(stencil-1d-array PRIVATE -fsycl)
 endif ()
 
