@@ -107,14 +107,10 @@ TYPED_TEST(Slide, slide_works_with_transform) {
   // of 10 also in output is required
   TypeParam dv_out(10, 0); // 0,0,0,0,0,0,0,0,0,0
   iota(dv_in, 0);          // 0,1,2,3,4,5,6,7,8,9
-  dv_in.print_myself_to_log("in after iota");
-
   dv_in.halo().exchange();
-  dv_in.print_myself_to_log("in after exchage");
-  dv_out.print_myself_to_log("out before transform");
+  
   xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out) + 2,
                  [](auto &&r) { return rng::accumulate(r, 0); });
-  dv_out.print_myself_to_log("out after transform");
 
   EXPECT_EQ(0, dv_out[0]);
   EXPECT_EQ(0, dv_out[1]);
