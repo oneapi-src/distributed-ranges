@@ -10,6 +10,7 @@ add_executable(
   mhp-tests.cpp
   ../common/all.cpp
   ../common/copy.cpp
+  ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
   ../common/enumerate.cpp
@@ -28,7 +29,7 @@ add_executable(
   distributed_vector.cpp
   reduce.cpp
   stencil.cpp
-  segmented.cpp
+  segments.cpp
   slide_view.cpp
 )
 
