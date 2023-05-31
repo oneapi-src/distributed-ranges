@@ -97,13 +97,9 @@ template <typename Iter> struct cursor_over_local_ranges {
   bool equal(const cursor_over_local_ranges &other) const {
     return iter == other.iter;
   }
-
   void next() { ++iter; }
-
   void prev() { --iter; }
-
   void advance(std::ptrdiff_t n) { this->iter += n; }
-
   std::ptrdiff_t distance_to(const cursor_over_local_ranges &other) const {
     return other.iter - this->iter;
   }

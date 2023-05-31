@@ -108,7 +108,7 @@ TYPED_TEST(Slide, slide_works_with_transform) {
   TypeParam dv_out(10, 0); // 0,0,0,0,0,0,0,0,0,0
   iota(dv_in, 0);          // 0,1,2,3,4,5,6,7,8,9
   dv_in.halo().exchange();
-  
+
   xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out) + 2,
                  [](auto &&r) { return rng::accumulate(r, 0); });
 
