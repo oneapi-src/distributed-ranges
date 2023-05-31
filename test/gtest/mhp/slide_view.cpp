@@ -102,18 +102,30 @@ TYPED_TEST(Slide, slide_no_halo_works_with_transform) {
 
 TYPED_TEST(Slide, slide_works_with_transform) {
   TypeParam dv_in(10, dr::mhp::distribution().halo(2));
-  TypeParam dv_out(6, 0); // 0,0,0,0,0,0
-  iota(dv_in, 0);         // 0,1,2,3,4,5,6,7,8,9
+  // although dv_out having size 6 is sufficient to store result, but its
+  // segments have to be aligned with segments of input sliding view, hence size
+  // of 10 also in output is required
+  TypeParam dv_out(10, 0); // 0,0,0,0,0,0,0,0,0,0
+  iota(dv_in, 0);          // 0,1,2,3,4,5,6,7,8,9
+  dv_in.print_myself_to_log("in after iota");
 
   dv_in.halo().exchange();
-  xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out),
+  dv_in.print_myself_to_log("in after exchage");
+  dv_out.print_myself_to_log("out before transform");
+  xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out) + 2,
                  [](auto &&r) { return rng::accumulate(r, 0); });
+  dv_out.print_myself_to_log("out after transform");
 
-  EXPECT_EQ(0 + 1 + 2 + 3 + 4, dv_out[0]);
-  EXPECT_EQ(1 + 2 + 3 + 4 + 5, dv_out[1]);
-  EXPECT_EQ(2 + 3 + 4 + 5 + 6, dv_out[2]);
-  // ...
-  EXPECT_EQ(5 + 6 + 7 + 8 + 9, dv_out[5]);
+  EXPECT_EQ(0, dv_out[0]);
+  EXPECT_EQ(0, dv_out[1]);
+  EXPECT_EQ(0 + 1 + 2 + 3 + 4, dv_out[2]);
+  EXPECT_EQ(1 + 2 + 3 + 4 + 5, dv_out[3]);
+  EXPECT_EQ(2 + 3 + 4 + 5 + 6, dv_out[4]);
+  EXPECT_EQ(3 + 4 + 5 + 6 + 7, dv_out[5]);
+  EXPECT_EQ(4 + 5 + 6 + 7 + 8, dv_out[6]);
+  EXPECT_EQ(5 + 6 + 7 + 8 + 9, dv_out[7]);
+  EXPECT_EQ(0, dv_out[8]);
+  EXPECT_EQ(0, dv_out[9]);
 }
 
 // rest of tests is in the Slide3 suite
