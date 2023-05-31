@@ -7,6 +7,9 @@
 std::size_t default_vector_size;
 std::size_t default_repetitions;
 
+std::size_t comm_rank = 0;
+std::size_t comm_size = 1;
+
 cxxopts::ParseResult options;
 
 int main(int argc, char *argv[]) {

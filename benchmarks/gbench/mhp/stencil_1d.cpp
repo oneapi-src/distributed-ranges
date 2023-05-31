@@ -36,6 +36,7 @@ static void Stencil1D_Slide_Std(benchmark::State &state) {
       std::swap(out_curr, out_prev);
     }
   }
+  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Stencil1D_Slide_Std);
@@ -58,6 +59,7 @@ static void Stencil1D_Subrange_Std(benchmark::State &state) {
       std::swap(in, out);
     }
   }
+  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Stencil1D_Subrange_Std);
@@ -77,6 +79,7 @@ static void Stencil1D_Subrange_DR(benchmark::State &state) {
       std::swap(in, out);
     }
   }
+  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Stencil1D_Subrange_DR);
@@ -99,6 +102,7 @@ static void Stencil1D_Subrange_DPL(benchmark::State &state) {
       std::swap(in, out);
     }
   }
+  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Stencil1D_Subrange_DPL);

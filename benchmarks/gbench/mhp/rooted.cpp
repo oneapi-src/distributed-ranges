@@ -14,6 +14,8 @@ static void CopyDist2Local_DR(benchmark::State &state) {
       xhp::copy(0, src, dst.begin());
     }
   }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(CopyDist2Local_DR);
@@ -26,6 +28,8 @@ static void CopyLocal2Dist_DR(benchmark::State &state) {
       xhp::copy(0, src, dst.begin());
     }
   }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(CopyLocal2Dist_DR);

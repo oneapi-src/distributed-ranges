@@ -20,6 +20,8 @@ static void Fill_DR(benchmark::State &state) {
       xhp::fill(vec, 0);
     }
   }
+  memory_bandwidth(state,
+                   default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Fill_DR);
@@ -31,6 +33,8 @@ static void Fill_Local(benchmark::State &state) {
       rng::fill(vec, 0);
     }
   }
+  memory_bandwidth(state,
+                   default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Fill_Local);
@@ -46,6 +50,8 @@ static void Copy_DR(benchmark::State &state) {
       xhp::copy(src, dst.begin());
     }
   }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Copy_DR);
@@ -59,6 +65,8 @@ static void Copy_Local(benchmark::State &state) {
       rng::copy(src, dst.begin());
     }
   }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Copy_Local);
@@ -71,6 +79,8 @@ static void Reduce_DR(benchmark::State &state) {
       benchmark::DoNotOptimize(res);
     }
   }
+  memory_bandwidth(state,
+                   default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Reduce_DR);
@@ -83,6 +93,8 @@ static void Reduce_Local(benchmark::State &state) {
       benchmark::DoNotOptimize(res);
     }
   }
+  memory_bandwidth(state,
+                   default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Reduce_Local);
@@ -98,6 +110,8 @@ static void Reduce_DPL(benchmark::State &state) {
       benchmark::DoNotOptimize(res);
     }
   }
+  memory_bandwidth(state,
+                   default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Reduce_DPL);
@@ -111,6 +125,8 @@ static void TransformIdentity_DR(benchmark::State &state) {
       xhp::transform(src, dst.begin(), std::identity());
     }
   }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(TransformIdentity_DR);
@@ -123,6 +139,8 @@ static void TransformIdentity_Local(benchmark::State &state) {
       rng::transform(src, dst.begin(), std::identity());
     }
   }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(TransformIdentity_Local);
@@ -143,6 +161,8 @@ static void Mul_DR(benchmark::State &state) {
       xhp::transform(xhp::views::zip(a, b), c.begin(), mul);
     }
   }
+  memory_bandwidth(state,
+                   3 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Mul_DR);
@@ -159,6 +179,8 @@ static void Mul_Local(benchmark::State &state) {
                      c.begin(), mul);
     }
   }
+  memory_bandwidth(state,
+                   3 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(Mul_Local);

@@ -3,21 +3,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#include "cxxopts.hpp"
-#include <benchmark/benchmark.h>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-#include <vendor/source_location/source_location.hpp>
+#include "../common/common-bench.hpp"
 
 #include "dr/mhp.hpp"
 
 namespace xhp = dr::mhp;
 
-extern std::size_t default_vector_size;
-extern std::size_t default_repetitions;
+#define BENCH_MHP
+
 extern std::size_t stencil_steps;
 extern std::size_t num_rows;
 extern std::size_t num_columns;
 extern bool check_results;
-
-#define BENCH_MHP
