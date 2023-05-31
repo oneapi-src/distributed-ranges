@@ -218,18 +218,17 @@ public:
   }
 
 private:
-  // If it is not a remote iterator, assume it is a local iterator
   auto static base_local(auto iter) {
-    if constexpr (dr::localizable_range<decltype(*iter)>) {
+    if constexpr (dr::remote_iterator<decltype(iter)>) {
+      return dr::ranges::local(iter);
+    } else if constexpr (dr::localizable_range<decltype(*iter)>) {
       return rng::basic_iterator<
           dr::mhp::__detail::cursor_over_local_ranges<decltype(iter)>>(iter);
     } else {
+      // If it is neither a remote iterator, nor an iterator pointing to range
+      // that can made be local, then assume it is a local iterator.
       return iter;
     }
-  }
-
-  auto static base_local(dr::remote_iterator auto iter) {
-    return dr::ranges::local(iter);
   }
 
   RngIter rng_iter_;
