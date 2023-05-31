@@ -315,21 +315,8 @@ private:
 };
 
 struct halo_bounds {
-  /// Constructor
-  halo_bounds(std::size_t radius = 0, bool per = false) {
-    prev = radius;
-    next = radius;
-    periodic = per;
-  }
-  /// Constructor
-  halo_bounds(std::size_t prv, std::size_t nxt, bool per) {
-    prev = prv;
-    next = nxt;
-    periodic = per;
-  }
-
-  std::size_t prev, next;
-  bool periodic;
+  std::size_t prev = 0, next = 0;
+  bool periodic = false;
 };
 
 template <typename T, typename Memory>

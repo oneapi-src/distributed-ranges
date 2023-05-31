@@ -10,7 +10,7 @@ template <typename T> class Slide : public testing::Test {};
 TYPED_TEST_SUITE(Slide, AllTypes);
 
 TYPED_TEST(Slide, is_compliant) {
-  TypeParam dv(10, dr::halo_bounds(2, 1, false));
+  TypeParam dv(10, dr::mhp::distribution().halo(2, 1));
   LocalVec<TypeParam> lv(10);
   iota(dv, 100);
   std::iota(rng::begin(lv), rng::end(lv), 100);
@@ -23,25 +23,25 @@ TYPED_TEST(Slide, is_compliant) {
 }
 
 TYPED_TEST(Slide, segements_are_present) {
-  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::halo_bounds(3));
+  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::mhp::distribution().halo(3));
   const auto dv_segments = dr::ranges::segments(xhp::views::sliding(dv));
   EXPECT_EQ(rng::size(dv_segments), comm_size);
 }
 
 TYPED_TEST(Slide, segements_are_present_if_n_equals_halo_plus_1) {
-  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::halo_bounds(3));
+  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::mhp::distribution().halo(3));
   const auto dv_segments = dr::ranges::segments(xhp::views::sliding(dv, 7));
   EXPECT_EQ(rng::size(dv_segments), comm_size);
 }
 
 TYPED_TEST(Slide, segements_are_absent_if_n_neq_halo_plus_1) {
-  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::halo_bounds(3));
+  TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::mhp::distribution().halo(3));
   EXPECT_DEATH(dr::ranges::segments(xhp::views::sliding(dv, 5)),
                "Assertion .* failed");
 }
 
 TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_greater_than_halo_plus_1) {
-  TypeParam dv(10, dr::halo_bounds(3));
+  TypeParam dv(10, dr::mhp::distribution().halo(3));
   iota(dv, 1);
   auto dv_sliding_view = xhp::views::sliding(dv, 8);
 
@@ -52,7 +52,7 @@ TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_greater_than_halo_plus_1) {
 }
 
 TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_less_than_halo_plus_1) {
-  TypeParam dv(10, dr::halo_bounds(3));
+  TypeParam dv(10, dr::mhp::distribution().halo(3));
   iota(dv, 1);
   auto dv_sliding_view = xhp::views::sliding(dv, 6);
 
@@ -64,7 +64,7 @@ TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_less_than_halo_plus_1) {
 }
 
 TYPED_TEST(Slide, slide_can_modify_inplace) {
-  TypeParam dv(6, dr::halo_bounds(1));
+  TypeParam dv(6, dr::mhp::distribution().halo(1));
   iota(dv, 10); // 10,11,12,13,14,15
   dv.halo().exchange();
   xhp::for_each(xhp::views::sliding(dv), [](auto &&r) {
@@ -98,6 +98,22 @@ TYPED_TEST(Slide, slide_no_halo_works_with_transform) {
   EXPECT_EQ(24, dv_out[2]);
   // ...
   EXPECT_EQ(30, dv_out[5]);
+}
+
+TYPED_TEST(Slide, slide_works_with_transform) {
+  TypeParam dv_in(10, dr::mhp::distribution().halo(2));
+  TypeParam dv_out(6, 0); // 0,0,0,0,0,0
+  iota(dv_in, 0);         // 0,1,2,3,4,5,6,7,8,9
+
+  dv_in.halo().exchange();
+  xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out),
+                 [](auto &&r) { return rng::accumulate(r, 0); });
+
+  EXPECT_EQ(0 + 1 + 2 + 3 + 4, dv_out[0]);
+  EXPECT_EQ(1 + 2 + 3 + 4 + 5, dv_out[1]);
+  EXPECT_EQ(2 + 3 + 4 + 5 + 6, dv_out[2]);
+  // ...
+  EXPECT_EQ(5 + 6 + 7 + 8 + 9, dv_out[5]);
 }
 
 // rest of tests is in the Slide3 suite

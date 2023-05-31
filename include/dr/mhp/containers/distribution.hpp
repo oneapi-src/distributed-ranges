@@ -11,7 +11,19 @@ namespace dr::mhp {
 struct distribution {
 public:
   distribution &halo(std::size_t radius) {
-    halo_bounds_ = halo_bounds(radius);
+    halo_bounds_.prev = radius;
+    halo_bounds_.next = radius;
+    return *this;
+  }
+
+  distribution &halo(std::size_t prev, std::size_t next) {
+    halo_bounds_.prev = prev;
+    halo_bounds_.next = next;
+    return *this;
+  }
+
+  distribution &periodic() {
+    halo_bounds_.periodic = true;
     return *this;
   }
 

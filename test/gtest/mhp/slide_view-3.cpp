@@ -44,7 +44,7 @@ TYPED_TEST(Slide3, no_sides) {
 }
 
 TYPED_TEST(Slide3, with_sides) {
-  TypeParam dv(6, dr::halo_bounds(1, 2, false));
+  TypeParam dv(6, dr::mhp::distribution().halo(1, 2));
   iota(dv, 1);
 
   auto dv_sliding_view = xhp::views::sliding(dv);
@@ -101,7 +101,7 @@ TYPED_TEST(Slide3, local_no_sides_converts_to_correct_pointers) {
 
 TYPED_TEST(Slide3,
            local_converts_to_correct_pointers_with_sides_halo_eq_segment) {
-  TypeParam dv(6, dr::halo_bounds(2, 2, false));
+  TypeParam dv(6, dr::mhp::distribution().halo(2, 2));
   iota(dv, 1);
   dv.halo().exchange();
 
@@ -130,7 +130,7 @@ TYPED_TEST(Slide3,
 TYPED_TEST(
     Slide3,
     local_converts_to_correct_pointers_with_sides_halo_less_than_segment) {
-  TypeParam dv(6, dr::halo_bounds(1, 1, false));
+  TypeParam dv(6, dr::mhp::distribution().halo(1, 1));
   iota(dv, 1);
   dv.halo().exchange();
 

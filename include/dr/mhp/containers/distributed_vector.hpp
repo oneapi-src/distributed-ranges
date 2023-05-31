@@ -167,14 +167,16 @@ public:
 
     // sliding view needs local iterators that point to the halo
     if (my_process_segment_index + 1 == segment_index_) {
-      assert(index_ <=
-             dv_->distribution_.halo().next); // <= instead of < to cover end() case
-      return dv_->data_ + dv_->distribution_.halo().prev + index_ + dv_->segment_size_;
+      assert(index_ <= dv_->distribution_.halo()
+                           .next); // <= instead of < to cover end() case
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ +
+             dv_->segment_size_;
     }
 
     if (my_process_segment_index == segment_index_ + 1) {
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
-      return dv_->data_ + dv_->distribution_.halo().prev + index_ - dv_->segment_size_;
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ -
+             dv_->segment_size_;
     }
 
     assert(false); // trying to read non-owned memory
