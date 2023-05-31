@@ -8,9 +8,9 @@ namespace shp = dr::shp;
 
 template <typename T>
 auto serial_test(std::size_t m, std::size_t n, std::size_t k) {
-  T *a_d = (T *)malloc(m * k * sizeof(T));
-  T *b_d = (T *)malloc(k * n * sizeof(T));
-  T *c_d = (T *)malloc(m * n * sizeof(T));
+  T *a_d = new T[m * k * sizeof(T)];
+  T *b_d = new T[k * n * sizeof(T)];
+  T *c_d = new T[m * n * sizeof(T)];
 
   shp::dense_matrix_view<T> a(a_d, {m, k}, k, 0);
   shp::dense_matrix_view<T> b(b_d, {k, n}, n, 0);
@@ -36,8 +36,8 @@ auto serial_test(std::size_t m, std::size_t n, std::size_t k) {
     }
   }
 
-  free(a_d);
-  free(b_d);
+  delete[] a_d;
+  delete[] b_d;
 
   return c;
 }
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  free(c_serial.data());
+  delete[] c_serial.data();
 
   return 0;
 }
