@@ -30,5 +30,5 @@ cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if (NOT MPI_IMPL STREQUAL "openmpi")
   # MPI_Win_create fails for communicator with size 1
-  add_mpi_test(mhp-bench-1 mhp-bench 1)
+  add_mpi_test(mhp-bench-1 mhp-bench 1 --benchmark_time_unit=ms --vector-size 20000 --rows 100 --columns 100 --check)
 endif()
