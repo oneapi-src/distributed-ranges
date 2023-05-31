@@ -44,6 +44,8 @@ static void DotProduct_ZipReduce_DR(benchmark::State &state) {
     }
   }
   check_dp(res);
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(DotProduct_ZipReduce_DR);
@@ -65,6 +67,8 @@ static void DotProduct_ZipReduce_Std(benchmark::State &state) {
     }
   }
   check_dp(res);
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(DotProduct_ZipReduce_Std);
@@ -83,6 +87,8 @@ static void DotProduct_TransformReduce_Std(benchmark::State &state) {
     }
   }
   check_dp(res);
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(DotProduct_TransformReduce_Std);
@@ -93,13 +99,17 @@ static void DotProduct_Loop_Std(benchmark::State &state) {
   T res = 0;
 
   for (auto _ : state) {
-    res = 0;
-    for (std::size_t i = 0; i < default_vector_size; i++) {
-      res += a[i] * b[i];
+    for (std::size_t rep = 0; rep < default_repetitions; rep++) {
+      res = 0;
+      for (std::size_t i = 0; i < default_vector_size; i++) {
+        res += a[i] * b[i];
+      }
+      benchmark::DoNotOptimize(res);
     }
-    benchmark::DoNotOptimize(res);
   }
   check_dp(res);
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(DotProduct_Loop_Std);
@@ -126,6 +136,8 @@ static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
     }
   }
   check_dp(res);
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
 BENCHMARK(DotProduct_TransformReduce_DPL);

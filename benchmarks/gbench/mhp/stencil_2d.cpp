@@ -143,6 +143,7 @@ static void Stencil2D_Loop_Serial(benchmark::State &state) {
 
     checker.check(rng::span(in, rows * cols));
   }
+  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
 BENCHMARK(Stencil2D_Loop_Serial);
@@ -190,6 +191,7 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
     }
     checker.check_array(stencil_steps % 2 ? b : a);
   }
+  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
 BENCHMARK(Stencil2D_ForeachStdArray_DR);
@@ -228,6 +230,7 @@ static void Stencil2D_NocollectiveCPU_DR(benchmark::State &state) {
     }
     checker.check(stencil_steps % 2 ? b : a);
   }
+  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
 BENCHMARK(Stencil2D_NocollectiveCPU_DR);
@@ -315,6 +318,7 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
     }
     checker.check_device(q, in);
   }
+  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
 BENCHMARK(Stencil2D_Basic_SYCL);
