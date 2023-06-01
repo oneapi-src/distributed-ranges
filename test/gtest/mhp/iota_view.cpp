@@ -5,11 +5,11 @@
 #include "xhp-tests.hpp"
 
 TEST(IotaView, ZipWithDR) {
-  dr::mhp::distributed_vector<int> dv(20);
+  xhp::distributed_vector<int> dv(20);
   auto v = dr::views::iota(1, 20);
   int ref = 1;
 
-  auto z = dr::mhp::views::zip(dv, v);
+  auto z = xhp::views::zip(dv, v);
   for (auto itr = z.begin(); itr != z.end(); itr++) {
     auto [dve, ve] = *itr;
     dve = ve;
@@ -19,7 +19,7 @@ TEST(IotaView, ZipWithDR) {
 }
 
 TEST(IotaView, Copy) {
-  dr::mhp::distributed_vector<int> dv(10);
+  xhp::distributed_vector<int> dv(10);
   auto v = dr::views::iota(1, 11);
 
   rng::copy(v, dv.begin());
@@ -28,7 +28,7 @@ TEST(IotaView, Copy) {
 }
 
 TEST(IotaView, Transform) {
-  dr::mhp::distributed_vector<int> dv(10);
+  xhp::distributed_vector<int> dv(10);
   auto v = dr::views::iota(1, 11);
   auto negate = [](auto v) { return -v; };
 
@@ -39,7 +39,7 @@ TEST(IotaView, Transform) {
 }
 
 TEST(IotaView, ForEach) {
-  dr::mhp::distributed_vector<int> dv(10);
+  xhp::distributed_vector<int> dv(10);
   auto v = dr::views::iota(1, 11);
 
   auto negate = [](auto v) {
@@ -47,7 +47,7 @@ TEST(IotaView, ForEach) {
     out = -in;
   };
 
-  auto z = dr::mhp::views::zip(v, dv);
+  auto z = xhp::views::zip(v, dv);
 
   rng::for_each(z, negate);
 

@@ -8,8 +8,9 @@ add_executable(
   shp-tests
   shp-tests.cpp
   ../common/all.cpp
+
   # need to implement same API as MHP
-  #../common/copy.cpp
+  # ../common/copy.cpp
   ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
@@ -67,7 +68,7 @@ foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)
 endforeach()
 
 function(add_shp_test test_name name)
-  if (DISABLED_TESTS)
+  if(DISABLED_TESTS)
     add_test(NAME ${test_name}-disabled COMMAND ./${name} ${ARGN} --gtest_also_run_disabled_tests)
   else()
     add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
