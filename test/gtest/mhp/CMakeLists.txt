@@ -17,6 +17,7 @@ add_executable(
   ../common/fill.cpp
   ../common/for_each.cpp
   ../common/iota.cpp
+  ../common/iota_view.cpp
   ../common/reduce.cpp
   ../common/subrange.cpp
   ../common/take.cpp
@@ -27,7 +28,6 @@ add_executable(
   alignment.cpp
   copy.cpp
   distributed_vector.cpp
-  iota_view.cpp
   reduce.cpp
   stencil.cpp
   segments.cpp

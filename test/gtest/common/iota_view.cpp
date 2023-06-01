@@ -4,7 +4,13 @@
 
 #include "xhp-tests.hpp"
 
-TEST(IotaView, ZipWithDR) {
+template <typename DistVecT> class IotaView : public testing::Test {
+public:
+};
+
+TYPED_TEST_SUITE(IotaView, AllTypes);
+
+TYPED_TEST(IotaView, ZipWithDR) {
   xhp::distributed_vector<int> dv(20);
   auto v = dr::views::iota(1, 20);
   int ref = 1;
@@ -18,8 +24,8 @@ TEST(IotaView, ZipWithDR) {
   }
 }
 
-TEST(IotaView, Copy) {
-  xhp::distributed_vector<int> dv(10);
+TYPED_TEST(IotaView, Copy) {
+  TypeParam dv(10);
   auto v = dr::views::iota(1, 11);
 
   rng::copy(v, dv.begin());
@@ -27,8 +33,8 @@ TEST(IotaView, Copy) {
   EXPECT_TRUE(equal(dv, std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
 }
 
-TEST(IotaView, Transform) {
-  xhp::distributed_vector<int> dv(10);
+TYPED_TEST(IotaView, Transform) {
+  TypeParam dv(10);
   auto v = dr::views::iota(1, 11);
   auto negate = [](auto v) { return -v; };
 
@@ -38,8 +44,8 @@ TEST(IotaView, Transform) {
       equal(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
 }
 
-TEST(IotaView, ForEach) {
-  xhp::distributed_vector<int> dv(10);
+TYPED_TEST(IotaView, ForEach) {
+  TypeParam dv(10);
   auto v = dr::views::iota(1, 11);
 
   auto negate = [](auto v) {
