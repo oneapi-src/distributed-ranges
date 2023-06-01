@@ -19,7 +19,8 @@ template <typename R> auto local_segments(R &&dr) {
 
   // Convert from remote iter to local iter
   auto local_iter = [](const auto &segment) {
-    if constexpr (localizable_range<decltype(*rng::begin(segment))>) {
+    if constexpr (localizable_contiguous_range<decltype(*rng::begin(
+                      segment))>) {
       return segment | rng::views::transform(
                            [](const auto &&v) { return dr::ranges::local(v); });
     } else {

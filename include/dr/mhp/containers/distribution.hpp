@@ -22,12 +22,14 @@ public:
     return *this;
   }
 
-  distribution &periodic() {
-    halo_bounds_.periodic = true;
+  auto halo() const { return halo_bounds_; }
+
+  distribution &periodic(bool periodic) {
+    halo_bounds_.periodic = periodic;
     return *this;
   }
 
-  auto halo() const { return halo_bounds_; }
+  auto periodic() const { return halo_bounds_.periodic; }
 
   distribution &granularity(std::size_t size) {
     granularity_ = size;
