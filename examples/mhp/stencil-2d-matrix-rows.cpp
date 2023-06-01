@@ -110,7 +110,7 @@ int stencil_check(dr::mhp::distributed_dense_matrix<T> &a,
 // - requires custom version of transform
 // -> should be abandoned
 //
-auto stencil_op_t = [](auto &&p) {
+auto stencil_op = [](auto &&p) {
   std::vector<T> out_row((*p).size());
 
   out_row[0] = p[0][0];
@@ -120,30 +120,6 @@ auto stencil_op_t = [](auto &&p) {
   }
   out_row[nc - 1] = p[0][nc - 1];
   return out_row;
-};
-
-//
-// for call by for_each
-//
-auto stencil_op_f = [](auto &&v) {
-  auto &[in_row, out_row] = v;
-  auto p = &in_row;
-
-  fmt::print("{}: out_row", comm_rank);
-  for (auto a : p[0])
-    fmt::print("{} ", a);
-  fmt::print("\n");
-
-  out_row[0] = p[0][0];
-  for (std::size_t i = 1; i < nc - 1; i++) {
-    out_row[i] =
-        calculate(p[-1][i], p[0][i - 1], p[0][i], p[0][i + 1], p[1][i]);
-  }
-  out_row[nc - 1] = p[0][nc - 1];
-  fmt::print("{}: out_row", comm_rank);
-  for (auto a : out_row)
-    fmt::print("{} ", a);
-  fmt::print("\n");
 };
 
 int stencil() {
@@ -167,18 +143,9 @@ int stencil() {
   // version 1 - transform of the subranges above
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
-    dr::mhp::transform(in, out.begin(), stencil_op_t);
+    dr::mhp::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
   }
-
-  // version 2 - for each row do stencil_op
-  /* for (std::size_t s = 0; s < steps; s++) {
-    dr::mhp::halo(in).exchange();
-    auto z = dr::mhp::views::zip(in, out);
-    fmt::print("{}: for_each call \n", comm_rank);
-    dr::mhp::for_each(z, stencil_op_f);
-    std::swap(in, out);
-  } */
 
   dr::mhp::fence();
   MPI_Barrier(MPI_COMM_WORLD);
