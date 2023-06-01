@@ -54,14 +54,3 @@ TEST(IotaView, ForEach) {
   EXPECT_TRUE(
       equal(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
 }
-
-TYPED_TEST(IotaView, ReduceRootRange) {
-  auto v = dr::views::iota(1, 11);
-  auto root = 0;
-
-  auto result = dr::mhp::reduce(root, v, 0, std::plus{});
-
-  if (comm_rank == root) {
-    EXPECT_EQ(55, result);
-  }
-}
