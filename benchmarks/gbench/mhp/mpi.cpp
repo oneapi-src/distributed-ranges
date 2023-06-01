@@ -9,7 +9,7 @@ static void Barrier(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Barrier)->Iterations(1000000);
+BENCHMARK(Barrier)->Iterations(1000000)->UseRealTime();
 
 static void Fence(benchmark::State &state) {
   for (auto _ : state) {
@@ -17,4 +17,4 @@ static void Fence(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Fence)->Iterations(100000000);
+BENCHMARK(Fence)->Iterations(100000000)->UseRealTime();

@@ -146,7 +146,7 @@ static void Stencil2D_Loop_Serial(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_Loop_Serial);
+BENCHMARK(Stencil2D_Loop_Serial)->UseRealTime();
 
 auto stencil_foreach_stdArray_op = [](auto &&v) {
   auto &[in_row, out_row] = v;
@@ -194,7 +194,7 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_ForeachStdArray_DR);
+BENCHMARK(Stencil2D_ForeachStdArray_DR)->UseRealTime();
 
 //
 // Distributed vector of floats. Granularity ensures segments contain
@@ -233,7 +233,7 @@ static void Stencil2D_NocollectiveCPU_DR(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_NocollectiveCPU_DR);
+BENCHMARK(Stencil2D_NocollectiveCPU_DR)->UseRealTime();
 
 // Under construction
 #if 0
@@ -283,7 +283,7 @@ static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_1DArrayTransform_DR);
+BENCHMARK(Stencil2D_1DArrayTransform_DR)->UseRealTime();
 #endif
 
 //
@@ -321,7 +321,7 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_Basic_SYCL);
+BENCHMARK(Stencil2D_Basic_SYCL)->UseRealTime();
 
 //
 // Distributed vector of floats. Granularity ensures segments contain
@@ -362,8 +362,9 @@ static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
     }
     checker.check(stencil_steps % 2 ? b : a);
   }
+  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_NocollectiveSYCL_DR);
+BENCHMARK(Stencil2D_NocollectiveSYCL_DR)->UseRealTime();
 
 #endif

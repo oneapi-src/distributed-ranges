@@ -48,7 +48,7 @@ static void DotProduct_ZipReduce_DR(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(DotProduct_ZipReduce_DR);
+BENCHMARK(DotProduct_ZipReduce_DR)->UseRealTime();
 
 static void DotProduct_ZipReduce_Std(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
@@ -71,7 +71,7 @@ static void DotProduct_ZipReduce_Std(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(DotProduct_ZipReduce_Std);
+BENCHMARK(DotProduct_ZipReduce_Std)->UseRealTime();
 
 static void DotProduct_TransformReduce_Std(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
@@ -91,7 +91,7 @@ static void DotProduct_TransformReduce_Std(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(DotProduct_TransformReduce_Std);
+BENCHMARK(DotProduct_TransformReduce_Std)->UseRealTime();
 
 static void DotProduct_Loop_Std(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
@@ -112,7 +112,7 @@ static void DotProduct_Loop_Std(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(DotProduct_Loop_Std);
+BENCHMARK(DotProduct_Loop_Std)->UseRealTime();
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
@@ -140,5 +140,5 @@ static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(DotProduct_TransformReduce_DPL);
+BENCHMARK(DotProduct_TransformReduce_DPL)->UseRealTime();
 #endif
