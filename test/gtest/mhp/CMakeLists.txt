@@ -27,6 +27,7 @@ add_executable(
   alignment.cpp
   copy.cpp
   distributed_vector.cpp
+  iota.cpp
   reduce.cpp
   stencil.cpp
   segments.cpp
