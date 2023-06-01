@@ -39,7 +39,7 @@ static void Stencil1D_Slide_Std(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Slide_Std);
+BENCHMARK(Stencil1D_Slide_Std)->UseRealTime();
 
 auto stencil1d_subrange_op = [](auto &center) {
   auto win = &center;
@@ -62,7 +62,7 @@ static void Stencil1D_Subrange_Std(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Subrange_Std);
+BENCHMARK(Stencil1D_Subrange_Std)->UseRealTime();
 
 static void Stencil1D_Subrange_DR(benchmark::State &state) {
   auto dist = dr::mhp::distribution().halo(1);
@@ -82,7 +82,7 @@ static void Stencil1D_Subrange_DR(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Subrange_DR);
+BENCHMARK(Stencil1D_Subrange_DR)->UseRealTime();
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void Stencil1D_Subrange_DPL(benchmark::State &state) {
@@ -105,5 +105,5 @@ static void Stencil1D_Subrange_DPL(benchmark::State &state) {
   memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Subrange_DPL);
+BENCHMARK(Stencil1D_Subrange_DPL)->UseRealTime();
 #endif

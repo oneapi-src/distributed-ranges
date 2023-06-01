@@ -18,7 +18,7 @@ static void CopyDist2Local_DR(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(CopyDist2Local_DR);
+BENCHMARK(CopyDist2Local_DR)->UseRealTime();
 
 static void CopyLocal2Dist_DR(benchmark::State &state) {
   std::vector<T> src(default_vector_size);
@@ -32,4 +32,4 @@ static void CopyLocal2Dist_DR(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(CopyLocal2Dist_DR);
+BENCHMARK(CopyLocal2Dist_DR)->UseRealTime();

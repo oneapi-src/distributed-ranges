@@ -24,7 +24,7 @@ static void Chunk_1DLoop_Std(benchmark::State &state) {
     }
   }
 }
-BENCHMARK(Chunk_1DLoop_Std);
+BENCHMARK(Chunk_1DLoop_Std)->UseRealTime();
 
 static void Chunk_2DLoop_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -39,7 +39,7 @@ static void Chunk_2DLoop_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DLoop_Std);
+BENCHMARK(Chunk_2DLoop_Std)->UseRealTime();
 
 static void Chunk_2DIndex_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -58,7 +58,7 @@ static void Chunk_2DIndex_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DIndex_Std);
+BENCHMARK(Chunk_2DIndex_Std)->UseRealTime();
 
 static void Chunk_2DIters_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -74,7 +74,7 @@ static void Chunk_2DIters_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DIters_Std);
+BENCHMARK(Chunk_2DIters_Std)->UseRealTime();
 
 static void ChunkFlattened_1DIters_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -90,7 +90,7 @@ static void ChunkFlattened_1DIters_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkFlattened_1DIters_Std);
+BENCHMARK(ChunkFlattened_1DIters_Std)->UseRealTime();
 
 static void ChunkFlattened_ForEach_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -104,7 +104,7 @@ static void ChunkFlattened_ForEach_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkFlattened_ForEach_Std);
+BENCHMARK(ChunkFlattened_ForEach_Std)->UseRealTime();
 
 static void ChunkTransformFlatten_ForEach_Std(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -124,4 +124,4 @@ static void ChunkTransformFlatten_ForEach_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkTransformFlatten_ForEach_Std);
+BENCHMARK(ChunkTransformFlatten_ForEach_Std)->UseRealTime();
