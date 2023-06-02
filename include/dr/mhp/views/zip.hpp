@@ -83,31 +83,6 @@ template <typename Base> auto base_to_segments(Base &&base) {
   return std::apply(bases_to_segments, base);
 }
 
-// based on https://ericniebler.github.io/range-v3/#autotoc_md30  "Create custom
-// iterators"
-template <typename Iter> struct cursor_over_local_ranges {
-  Iter iter;
-
-  auto read() const {
-    return rng::subrange(dr::ranges::local(rng::begin(*iter)),
-                         dr::ranges::local(rng::begin(*iter)) +
-                             rng::size(*iter));
-  }
-
-  bool equal(const cursor_over_local_ranges &other) const {
-    return iter == other.iter;
-  }
-  void next() { ++iter; }
-  void prev() { --iter; }
-  void advance(std::ptrdiff_t n) { this->iter += n; }
-  std::ptrdiff_t distance_to(const cursor_over_local_ranges &other) const {
-    return other.iter - this->iter;
-  }
-
-  cursor_over_local_ranges() = default;
-  cursor_over_local_ranges(Iter iter) : iter(iter) {}
-};
-
 } // namespace __detail
 
 template <std::random_access_iterator RngIter,
@@ -202,35 +177,7 @@ public:
     return dr::ranges::rank(std::get<0>(base_));
   }
 
-  auto local() const
-    requires(remote_iterator<BaseIters> || ...)
-  {
-    // Create a temporary zip_view and return the iterator. This code
-    // assumes the iterator is valid even if the underlying zip_view
-    // is destroyed.
-    auto zip = [this]<typename... Iters>(Iters &&...iters) {
-      return rng::begin(rng::views::zip(
-          rng::subrange(base_local(std::forward<Iters>(iters)) + this->offset_,
-                        decltype(base_local(iters)){})...));
-    };
-
-    return std::apply(zip, base_);
-  }
-
 private:
-  auto static base_local(auto iter) {
-    if constexpr (dr::remote_iterator<decltype(iter)>) {
-      return dr::ranges::local(iter);
-    } else if constexpr (dr::localizable_contiguous_range<decltype(*iter)>) {
-      return rng::basic_iterator<
-          dr::mhp::__detail::cursor_over_local_ranges<decltype(iter)>>(iter);
-    } else {
-      // If it is neither a remote iterator, nor an iterator pointing to range
-      // that can made be local, then assume it is a local iterator.
-      return iter;
-    }
-  }
-
   RngIter rng_iter_;
   std::tuple<BaseIters...> base_;
   difference_type offset_ = 0;

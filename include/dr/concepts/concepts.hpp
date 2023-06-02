@@ -33,14 +33,10 @@ concept distributed_iterator = std::forward_iterator<I> && requires(I &iter) {
 };
 
 template <typename R>
-concept localizable_contiguous_range =
-    rng::random_access_range<R> && requires(R &r) {
+concept remote_contiguous_range =
+    remote_range<R> && rng::random_access_range<R> && requires(R &r) {
       { dr::ranges::local(r) } -> rng::contiguous_range;
     };
-
-template <typename R>
-concept remote_contiguous_range =
-    remote_range<R> && localizable_contiguous_range<R>;
 
 template <typename R>
 concept distributed_contiguous_range =

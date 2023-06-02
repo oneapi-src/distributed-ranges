@@ -124,4 +124,56 @@ TYPED_TEST(Slide, slide_works_with_transform) {
   EXPECT_EQ(0, dv_out[9]);
 }
 
+TYPED_TEST(Slide, two_slides_can_be_zipped_and_read_by_foreach) {
+  TypeParam dv_1(6, dr::mhp::distribution().halo(1));
+  iota(dv_1, 10); // 10,11,12,13,14,15
+  dv_1.halo().exchange();
+
+  TypeParam dv_2(6, dr::mhp::distribution().halo(1));
+  iota(dv_2, 20); // 20,21,22,23,24,25
+  dv_2.halo().exchange();
+
+  xhp::for_each(
+      xhp::zip_view(xhp::views::sliding(dv_1), xhp::views::sliding(dv_2)),
+      [](auto &&zr) {
+        auto &[first, second] = zr;
+// SYCL kernel cannot use exceptions
+#ifndef SYCL_LANGUAGE_VERSION
+        EXPECT_EQ(3, rng::size(first));
+        EXPECT_EQ(3, rng::size(second));
+#endif
+        first[0] = second[1] + second[2];
+        second[0] = first[1] + first[2];
+      });
+
+  dv_1.halo().exchange();
+  dv_2.halo().exchange();
+
+  EXPECT_EQ(21 + 22, dv_1[0]);
+  EXPECT_EQ(22 + 23, dv_1[1]);
+  EXPECT_EQ(23 + 24, dv_1[2]);
+  EXPECT_EQ(24 + 25, dv_1[3]);
+  EXPECT_EQ(14, dv_1[4]);
+  EXPECT_EQ(15, dv_1[5]);
+
+  EXPECT_EQ(11 + 12, dv_2[0]);
+  EXPECT_EQ(12 + 13, dv_2[1]);
+  EXPECT_EQ(13 + 14, dv_2[2]);
+  EXPECT_EQ(14 + 15, dv_2[3]);
+  EXPECT_EQ(24, dv_2[4]);
+  EXPECT_EQ(25, dv_2[5]);
+}
+
 // rest of tests is in the Slide3 suite
+
+// TYPED_TEST(Slide, slide_works_with_transform) {
+//   TypeParam *dv_in = nullptr, *dv_out [[maybe_unused]]= nullptr;
+//
+//   static_assert(dr::ranges::is_localizable<decltype(rng::begin(*dv_in))>);
+//   static_assert(dr::ranges::is_localizable<typename
+//   decltype(rng::begin(xhp::views::sliding(*dv_in)))::value_type>);
+//
+////  xhp::for_each(xhp::views::sliding(*dv_in), [](auto &&) {});
+//  xhp::transform(xhp::views::sliding(*dv_in), rng::begin(*dv_out),
+//                 [](auto &&r) { return rng::accumulate(r, 0); });
+//}

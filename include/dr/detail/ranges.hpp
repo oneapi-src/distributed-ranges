@@ -132,6 +132,24 @@ concept iter_has_local_method =
       { iter.local() } -> std::forward_iterator;
     };
 
+template <typename T> struct is_localizable_helper : std::false_type {};
+
+template <has_local_adl T> struct is_localizable_helper<T> : std::true_type {};
+
+template <iter_has_local_method T>
+struct is_localizable_helper<T> : std::true_type {};
+
+template <rng::forward_iterator Iter>
+  requires(not iter_has_local_method<Iter> && not has_local_adl<Iter>)
+struct is_localizable_helper<Iter>
+    : is_localizable_helper<typename Iter::value_type> {};
+
+template <rng::forward_range R>
+struct is_localizable_helper<R> : is_localizable_helper<rng::iterator_t<R>> {};
+
+template <typename T>
+concept is_localizable = is_localizable_helper<T>::value;
+
 template <typename Segment>
 concept segment_has_local_method =
     rng::forward_range<Segment> && requires(Segment segment) {
@@ -153,20 +171,43 @@ struct local_fn_ {
     }
   }
 
-  template <rng::forward_range R>
-    requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
-             segment_has_local_method<R> ||
-             std::contiguous_iterator<rng::iterator_t<R>> ||
-             rng::contiguous_range<R>)
-  auto operator()(R &&r) const {
+  // based on https://ericniebler.github.io/range-v3/#autotoc_md30  "Create
+  // custom iterators"
+  template <typename Iter> struct cursor_over_local_ranges {
+    Iter iter;
+    auto read() const {
+      return rng::views::counted(local_fn_{}(rng::begin(*iter)),
+                                 rng::size(*iter));
+    }
+    bool equal(const cursor_over_local_ranges &other) const {
+      return iter == other.iter;
+    }
+    void next() { ++iter; }
+    void prev() { --iter; }
+    void advance(std::ptrdiff_t n) { this->iter += n; }
+    std::ptrdiff_t distance_to(const cursor_over_local_ranges &other) const {
+      return other.iter - this->iter;
+    }
+    cursor_over_local_ranges() = default;
+    cursor_over_local_ranges(Iter iter) : iter(iter) {}
+  };
+
+  template <rng::forward_range R> auto operator()(R &&r) const {
     if constexpr (segment_has_local_method<R>) {
       return r.local();
     } else if constexpr (iter_has_local_method<rng::iterator_t<R>>) {
       return rng::views::counted(rng::begin(r).local(), rng::size(r));
     } else if constexpr (has_local_adl<R>) {
       return local_(std::forward<R>(r));
+    } else if constexpr (is_localizable<R>) {
+      return rng::views::counted(
+          rng::basic_iterator<cursor_over_local_ranges<rng::iterator_t<R>>>(
+              rng::begin(r)),
+          rng::size(r));
     } else if constexpr (std::contiguous_iterator<rng::iterator_t<R>>) {
       return std::span(rng::begin(r), rng::size(r));
+    } else {
+      return rng::views::all(r);
     }
   }
 };

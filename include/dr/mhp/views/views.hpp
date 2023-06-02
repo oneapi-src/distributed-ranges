@@ -16,21 +16,10 @@ template <typename R> auto local_segments(R &&dr) {
   auto is_local = [](const auto &segment) {
     return dr::ranges::rank(segment) == default_comm().rank();
   };
-
-  // Convert from remote iter to local iter
-  auto local_iter = [](const auto &segment) {
-    if constexpr (localizable_contiguous_range<decltype(*rng::begin(
-                      segment))>) {
-      return segment | rng::views::transform(
-                           [](const auto &&v) { return dr::ranges::local(v); });
-    } else {
-      auto b = dr::ranges::local(rng::begin(segment));
-      return rng::subrange(b, b + rng::distance(segment));
-    }
-  };
-
   return dr::ranges::segments(std::forward<R>(dr)) |
-         rng::views::filter(is_local) | rng::views::transform(local_iter);
+         rng::views::filter(is_local) |
+         rng::views::transform(
+             [](const auto &segment) { return dr::ranges::local(segment); });
 }
 
 template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
@@ -38,7 +27,6 @@ template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
 
   // Should be error, not assert
   assert(rng::distance(segments) == 1);
-
   return *rng::begin(segments);
 }
 
