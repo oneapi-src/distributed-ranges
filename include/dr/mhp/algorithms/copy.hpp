@@ -10,6 +10,10 @@ namespace dr::mhp {
 
 /// Copy
 void copy(dr::distributed_range auto &&in, dr::distributed_iterator auto out) {
+  if (rng::empty(in)) {
+    return;
+  }
+
   if (aligned(in, out)) {
     dr::drlog.debug("copy: parallel execution\n");
     for (const auto &&[in_seg, out_seg] :

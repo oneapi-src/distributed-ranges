@@ -44,7 +44,8 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  ../common/counted.cpp
+  alignment.cpp
+  ../common/zip_local.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)

@@ -36,6 +36,10 @@ auto reduce(std::size_t root, bool root_provided, DR &&dr, auto &&binary_op) {
   using value_type = rng::range_value_t<DR>;
   auto comm = default_comm();
 
+  if (rng::empty(dr)) {
+    return rng::range_value_t<DR>{};
+  }
+
   if (aligned(dr)) {
     dr::drlog.debug("Parallel reduce\n");
 
