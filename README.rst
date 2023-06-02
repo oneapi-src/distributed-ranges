@@ -166,7 +166,7 @@ See also
 `Security`_
   Security policy
 
-.. _`Security`: security.rst
+.. _`Security`: SECURITY.md
 .. _`Testing`: doc/developer/testing
 .. _`pre-commit`: doc/developer/testing/pre-commit.rst
 .. _`Spec Editing`: doc/spec/README.rst
