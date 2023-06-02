@@ -163,6 +163,10 @@ See also
 `Testing`_
   Test system maintenance
 
+`Security`_
+  Security policy
+
+.. _`Security`: security.rst
 .. _`Testing`: doc/developer/testing
 .. _`pre-commit`: doc/developer/testing/pre-commit.rst
 .. _`Spec Editing`: doc/spec/README.rst

@@ -3,6 +3,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+#ifdef SYCL_LANGUAGE_VERSION
+#include <sycl/sycl.hpp>
+#endif
+
 #include "cxxopts.hpp"
 #include <benchmark/benchmark.h>
 #include <fmt/core.h>
@@ -20,3 +24,14 @@ inline void memory_bandwidth(benchmark::State &state, std::size_t bytes) {
       benchmark::Counter(bytes, benchmark::Counter::kIsIterationInvariantRate,
                          benchmark::Counter::kIs1024);
 }
+
+#ifdef SYCL_LANGUAGE_VERSION
+
+inline void show_device(sycl::device device) {
+  fmt::print("  name: {}\n"
+             "    max compute units: {}\n",
+             device.get_info<sycl::info::device::name>(),
+             device.get_info<sycl::info::device::max_compute_units>());
+}
+
+#endif

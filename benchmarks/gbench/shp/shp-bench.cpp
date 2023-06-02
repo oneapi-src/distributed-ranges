@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
   // clang-format off
   options_spec.add_options()
-    ("d, num-devices", "number of sycl devices, 0 uses all available devices", cxxopts::value<unsigned int>()->default_value("0"))
+    ("d, num-devices", "number of sycl devices, 0 uses all available devices", cxxopts::value<std::size_t>()->default_value("0"))
     ("drhelp", "Print help")
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
@@ -40,24 +40,22 @@ int main(int argc, char *argv[]) {
 
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
-  const unsigned int dev_num = options["num-devices"].as<unsigned int>();
+  std::size_t num_devices = options["num-devices"].as<std::size_t>();
   fmt::print("Configuration:\n"
              "  default vector size: {}\n"
              "  default repetitions: {}\n"
              "  number of devices requested: {}\n",
-             default_vector_size, default_repetitions, dev_num);
+             default_vector_size, default_repetitions, num_devices);
 
-  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
-
-  if (dev_num > 0) {
-    unsigned int i = 0;
-    while (devices.size() < dev_num) {
-      devices.push_back(devices[i++]);
-    }
-    devices.resize(dev_num); // if too many devices
+  auto available_devices = dr::shp::get_numa_devices(sycl::default_selector_v);
+  if (num_devices == 0) {
+    num_devices = available_devices.size();
   }
-  for (auto &device : devices) {
-    fmt::print("    {}\n", device.get_info<sycl::info::device::name>());
+
+  std::vector<sycl::device> devices;
+  for (std::size_t i = 0; i < num_devices; i++) {
+    devices.push_back(available_devices[i % available_devices.size()]);
+    show_device(devices.back());
   }
 
   dr::shp::init(devices);
