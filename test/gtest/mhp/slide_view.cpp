@@ -16,7 +16,7 @@ TYPED_TEST(Slide, is_compliant) {
   std::iota(rng::begin(lv), rng::end(lv), 100);
 
   auto local_sliding_view = rng::sliding_view(lv, 4); // halo_bounds + 1
-  auto dv_sliding_view [[maybe_unused]] = xhp::views::sliding(dv);
+  auto dv_sliding_view [[maybe_unused]] = xhp::views::sliding(dv, 4);
 
   static_assert(compliant_view<decltype(dv_sliding_view)>);
   EXPECT_TRUE(check_view(local_sliding_view, dv_sliding_view));
@@ -24,7 +24,7 @@ TYPED_TEST(Slide, is_compliant) {
 
 TYPED_TEST(Slide, segements_are_present) {
   TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::mhp::distribution().halo(3));
-  const auto dv_segments = dr::ranges::segments(xhp::views::sliding(dv));
+  const auto dv_segments = dr::ranges::segments(xhp::views::sliding(dv, 7));
   EXPECT_EQ(rng::size(dv_segments), comm_size);
 }
 
@@ -67,7 +67,7 @@ TYPED_TEST(Slide, slide_can_modify_inplace) {
   TypeParam dv(6, dr::mhp::distribution().halo(1));
   iota(dv, 10); // 10,11,12,13,14,15
   dv.halo().exchange();
-  xhp::for_each(xhp::views::sliding(dv), [](auto &&r) {
+  xhp::for_each(xhp::views::sliding(dv, 3), [](auto &&r) {
   // SYCL kernel cannot use exceptions
 #ifndef SYCL_LANGUAGE_VERSION
     EXPECT_EQ(3, rng::size(r));
@@ -90,7 +90,7 @@ TYPED_TEST(Slide, slide_no_halo_works_with_transform) {
   TypeParam dv_out(6, 0); // 0,0,0,0,0,0
   iota(dv_in, 10);        // 10,11,12,13,14,15
 
-  xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out),
+  xhp::transform(xhp::views::sliding(dv_in, 1), rng::begin(dv_out),
                  [](auto &&v) { return v[0] * 2; });
 
   EXPECT_EQ(20, dv_out[0]);
@@ -109,7 +109,7 @@ TYPED_TEST(Slide, slide_works_with_transform) {
   iota(dv_in, 0);          // 0,1,2,3,4,5,6,7,8,9
   dv_in.halo().exchange();
 
-  xhp::transform(xhp::views::sliding(dv_in), rng::begin(dv_out) + 2,
+  xhp::transform(xhp::views::sliding(dv_in, 5), rng::begin(dv_out) + 2,
                  [](auto &&r) { return rng::accumulate(r, 0); });
 
   EXPECT_EQ(0, dv_out[0]);
@@ -134,7 +134,7 @@ TYPED_TEST(Slide, two_slides_can_be_zipped_and_read_by_foreach) {
   dv_2.halo().exchange();
 
   xhp::for_each(
-      xhp::zip_view(xhp::views::sliding(dv_1), xhp::views::sliding(dv_2)),
+      xhp::zip_view(xhp::views::sliding(dv_1, 3), xhp::views::sliding(dv_2, 3)),
       [](auto &&zr) {
         auto &[first, second] = zr;
 // SYCL kernel cannot use exceptions
@@ -164,16 +164,33 @@ TYPED_TEST(Slide, two_slides_can_be_zipped_and_read_by_foreach) {
   EXPECT_EQ(25, dv_2[5]);
 }
 
-// rest of tests is in the Slide3 suite
+// TODO: slide doesn't work on transformed range, working on it
 
-// TYPED_TEST(Slide, slide_works_with_transform) {
-//   TypeParam *dv_in = nullptr, *dv_out [[maybe_unused]]= nullptr;
+// TYPED_TEST(Slide, slide_works_on_transformed_range) {
+//   TypeParam dv(6, dr::mhp::distribution().halo(1));
+//   iota(dv, 10); // 10,11,12,13,14,15
+//   dv.halo().exchange();
 //
-//   static_assert(dr::ranges::is_localizable<decltype(rng::begin(*dv_in))>);
-//   static_assert(dr::ranges::is_localizable<typename
-//   decltype(rng::begin(xhp::views::sliding(*dv_in)))::value_type>);
+//   auto transformed_dv = dv | xhp::views::transform([](auto && e){ return e*2;
+//   });
 //
-////  xhp::for_each(xhp::views::sliding(*dv_in), [](auto &&) {});
-//  xhp::transform(xhp::views::sliding(*dv_in), rng::begin(*dv_out),
-//                 [](auto &&r) { return rng::accumulate(r, 0); });
-//}
+//   xhp::for_each(xhp::views::sliding(transformed_dv, 3), [](auto && r) {
+//   // SYCL kernel cannot use exceptions
+// #ifndef SYCL_LANGUAGE_VERSION
+//     EXPECT_EQ(3, rng::size(r));
+// #endif
+//     // watch out that when you use r[0] you get already changed value (or not
+//     if
+//     // halo)
+//     r[1] += r[2];
+//   });
+//
+//   EXPECT_EQ(10, dv[0]);
+//   EXPECT_EQ(22 + 24, dv[1]);
+//   EXPECT_EQ(24 + 26, dv[2]);
+//   EXPECT_EQ(26 + 28, dv[3]);
+//   EXPECT_EQ(28 + 30, dv[4]);
+//   EXPECT_EQ(15, dv[5]);
+// }
+
+// rest of tests is in the Slide3 suite
