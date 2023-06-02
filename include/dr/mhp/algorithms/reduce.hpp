@@ -89,7 +89,12 @@ T reduce(std::size_t root, bool root_provided, DR &&dr, T init,
   return binary_op(init, reduce(root, root_provided, dr, binary_op));
 }
 
-inline void __attribute__((optimize(0))) no_optimize(auto x) {}
+inline void
+#if defined(__GNUC__) && !defined(__clang__)
+    __attribute__((optimize(0)))
+#endif
+    no_optimize(auto x) {
+}
 
 }; // namespace dr::mhp::__detail
 
