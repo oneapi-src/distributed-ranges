@@ -32,8 +32,8 @@ void dr_init() {
   if (options.count("sycl")) {
     sycl::queue q;
     if (comm_rank == 0) {
-      fmt::print("  run on sycl device: {}\n",
-                 q.get_device().get_info<sycl::info::device::name>());
+      fmt::print("  SYCL device:\n");
+      show_device(q.get_device());
     }
     dr::mhp::init(q);
     return;
@@ -41,7 +41,7 @@ void dr_init() {
 #endif
 
   if (comm_rank == 0) {
-    fmt::print("  run on CPU\n");
+    fmt::print("  run on: CPU\n");
   }
   dr::mhp::init();
 }
@@ -104,8 +104,9 @@ int main(int argc, char *argv[]) {
   if (comm_rank == 0) {
     fmt::print("Configuration:\n"
                "  default vector size: {}\n"
-               "  default repetitions: {}\n",
-               default_vector_size, default_repetitions);
+               "  default repetitions: {}\n"
+               "  ranks: {}\n",
+               default_vector_size, default_repetitions, comm_size);
   }
 
   dr_init();

@@ -32,9 +32,9 @@ TYPED_TEST(Copy, Iterator) {
 TYPED_TEST(Copy, IteratorOffset) {
   Ops2<TypeParam> ops(10);
 
-  std::copy(ops.vec0.begin() + 1, ops.vec0.end() - 1, ops.vec1.begin() + 2);
+  std::copy(ops.vec0.begin() + 1, ops.vec0.end() - 1, ops.vec1.begin() + 1);
   xhp::copy(ops.dist_vec0.begin() + 1, ops.dist_vec0.end() - 1,
-            ops.dist_vec1.begin() + 2);
+            ops.dist_vec1.begin() + 1);
   EXPECT_EQ(ops.vec0, ops.dist_vec0);
   EXPECT_EQ(ops.vec1, ops.dist_vec1);
 }

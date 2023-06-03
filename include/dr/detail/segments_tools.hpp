@@ -14,23 +14,6 @@ namespace dr {
 
 namespace __detail {
 
-// count the number of segments necessary to cover n elements,
-// returning the index last segment and its remainder
-template <typename R>
-void n_segs_remainder(R &&segments, std::size_t n, auto &last_seg,
-                      auto &remainder) {
-  last_seg = 0;
-  remainder = n;
-
-  for (auto &&seg : segments) {
-    if (seg.size() >= remainder) {
-      break;
-    }
-    remainder -= seg.size();
-    last_seg++;
-  }
-}
-
 // Take all elements up to and including segment `segment_id` at index
 // `local_id`
 template <typename R>
@@ -144,11 +127,10 @@ auto segments_(V &&v) {
 
 template <rng::range V>
   requires(dr::is_subrange_view_v<std::remove_cvref_t<V>> &&
-           dr::distributed_iterator<decltype(std::declval<V>().begin())>)
+           dr::distributed_iterator<rng::iterator_t<V>>)
 auto segments_(V &&v) {
   auto first = rng::begin(v);
   auto last = rng::end(v);
-
   auto size = rng::distance(first, last);
 
   return dr::__detail::take_segments(dr::ranges::segments(first), size);
