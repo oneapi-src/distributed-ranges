@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   fmt::print("Configuration:\n"
              "  default vector size: {}\n"
              "  default repetitions: {}\n"
-             "  number of devices requested: {}"
+             "  number of devices requested: {}\n"
              "  devices:\n",
              default_vector_size, default_repetitions, num_devices);
 
