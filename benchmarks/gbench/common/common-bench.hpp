@@ -20,7 +20,7 @@ extern std::size_t default_vector_size;
 extern std::size_t default_repetitions;
 
 inline void memory_bandwidth(benchmark::State &state, std::size_t bytes) {
-  state.counters["Memory"] =
+  state.counters["Memory BW"] =
       benchmark::Counter(bytes, benchmark::Counter::kIsIterationInvariantRate,
                          benchmark::Counter::kIs1024);
 }
@@ -28,8 +28,8 @@ inline void memory_bandwidth(benchmark::State &state, std::size_t bytes) {
 #ifdef SYCL_LANGUAGE_VERSION
 
 inline void show_device(sycl::device device) {
-  fmt::print("  name: {}\n"
-             "    max compute units: {}\n",
+  fmt::print("    {}\n"
+             "      max compute units: {}\n",
              device.get_info<sycl::info::device::name>(),
              device.get_info<sycl::info::device::max_compute_units>());
 }

@@ -15,7 +15,7 @@ using T = double;
 
 static const T init_val = 1;
 
-static void Chunk_1DLoop_Std(benchmark::State &state) {
+static void Chunk_1DLoop_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
   for (auto _ : state) {
@@ -24,9 +24,9 @@ static void Chunk_1DLoop_Std(benchmark::State &state) {
     }
   }
 }
-BENCHMARK(Chunk_1DLoop_Std)->UseRealTime();
+BENCHMARK(Chunk_1DLoop_Serial)->UseRealTime();
 
-static void Chunk_2DLoop_Std(benchmark::State &state) {
+static void Chunk_2DLoop_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -39,9 +39,9 @@ static void Chunk_2DLoop_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DLoop_Std)->UseRealTime();
+BENCHMARK(Chunk_2DLoop_Serial)->UseRealTime();
 
-static void Chunk_2DIndex_Std(benchmark::State &state) {
+static void Chunk_2DIndex_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -58,9 +58,9 @@ static void Chunk_2DIndex_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DIndex_Std)->UseRealTime();
+BENCHMARK(Chunk_2DIndex_Serial)->UseRealTime();
 
-static void Chunk_2DIters_Std(benchmark::State &state) {
+static void Chunk_2DIters_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -74,9 +74,9 @@ static void Chunk_2DIters_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DIters_Std)->UseRealTime();
+BENCHMARK(Chunk_2DIters_Serial)->UseRealTime();
 
-static void ChunkFlattened_1DIters_Std(benchmark::State &state) {
+static void ChunkFlattened_1DIters_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -90,9 +90,9 @@ static void ChunkFlattened_1DIters_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkFlattened_1DIters_Std)->UseRealTime();
+BENCHMARK(ChunkFlattened_1DIters_Serial)->UseRealTime();
 
-static void ChunkFlattened_ForEach_Std(benchmark::State &state) {
+static void ChunkFlattened_ForEach_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -104,9 +104,9 @@ static void ChunkFlattened_ForEach_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkFlattened_ForEach_Std)->UseRealTime();
+BENCHMARK(ChunkFlattened_ForEach_Serial)->UseRealTime();
 
-static void ChunkTransformFlatten_ForEach_Std(benchmark::State &state) {
+static void ChunkTransformFlatten_ForEach_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
   std::vector<T> a(size, init_val), b(size, init_val);
 
@@ -124,4 +124,4 @@ static void ChunkTransformFlatten_ForEach_Std(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkTransformFlatten_ForEach_Std)->UseRealTime();
+BENCHMARK(ChunkTransformFlatten_ForEach_Serial)->UseRealTime();

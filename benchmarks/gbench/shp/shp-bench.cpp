@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) {
   fmt::print("Configuration:\n"
              "  default vector size: {}\n"
              "  default repetitions: {}\n"
-             "  number of devices requested: {}\n",
+             "  number of devices requested: {}"
+             "  devices:\n",
              default_vector_size, default_repetitions, num_devices);
 
   auto available_devices = dr::shp::get_numa_devices(sycl::default_selector_v);

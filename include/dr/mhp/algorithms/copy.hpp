@@ -14,27 +14,18 @@ void copy(dr::distributed_range auto &&in, dr::distributed_iterator auto out) {
     return;
   }
 
-  if (aligned(in, out)) {
-    dr::drlog.debug("copy: parallel execution\n");
-    for (const auto &&[in_seg, out_seg] :
-         rng::views::zip(local_segments(in), local_segments(out))) {
-      rng::copy(in_seg, rng::begin(out_seg));
-    }
-    barrier();
-  } else {
-    dr::drlog.debug("copy: serial execution\n");
-    rng::copy(in, out);
-    fence();
-  }
+  auto copy = [](auto &&v) { std::get<1>(v) = std::get<0>(v); };
+
+  for_each(views::zip(in, views::counted(out, rng::size(in))), copy);
 }
 
 /// Copy
 template <dr::distributed_iterator DI_IN>
 void copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out) {
-  mhp::copy(rng::subrange(first, last), out);
+  copy(rng::subrange(first, last), out);
 }
 
-/// Copy
+/// Copy distributed to local
 void copy(std::size_t root, dr::distributed_contiguous_range auto &&in,
           std::contiguous_iterator auto out) {
   if (default_comm().rank() == root) {
@@ -47,7 +38,7 @@ void copy(std::size_t root, dr::distributed_contiguous_range auto &&in,
   barrier();
 }
 
-/// Copy
+/// Copy local to distributed
 void copy(std::size_t root, rng::contiguous_range auto &&in,
           dr::distributed_contiguous_iterator auto out) {
   if (default_comm().rank() == root) {

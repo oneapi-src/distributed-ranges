@@ -27,7 +27,7 @@ static void Fill_DR(benchmark::State &state) {
 
 BENCHMARK(Fill_DR)->UseRealTime();
 
-static void Fill_Local(benchmark::State &state) {
+static void Fill_Serial(benchmark::State &state) {
   T init = 0;
   std::vector<T> vec(default_vector_size, init);
   for (auto _ : state) {
@@ -39,7 +39,7 @@ static void Fill_Local(benchmark::State &state) {
                    default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Fill_Local)->UseRealTime();
+BENCHMARK(Fill_Serial)->UseRealTime();
 
 #ifdef SYCL_LANGUAGE_VERSION
 
@@ -74,6 +74,43 @@ static void Fill_ParallelFor_SYCL(benchmark::State &state) {
 }
 
 BENCHMARK(Fill_ParallelFor_SYCL)->UseRealTime();
+
+static void Copy_ParallelFor_SYCL(benchmark::State &state) {
+  sycl::queue q;
+  T init = 0;
+  auto src = sycl::malloc_device<T>(default_vector_size, q);
+  auto dst = sycl::malloc_device<T>(default_vector_size, q);
+  q.fill(src, init, default_vector_size).wait();
+  q.fill(dst, init, default_vector_size).wait();
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      q.parallel_for(default_vector_size, [=](auto index) {
+         dst[index] = src[index];
+       }).wait();
+    }
+  }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
+}
+
+BENCHMARK(Copy_ParallelFor_SYCL)->UseRealTime();
+
+static void Copy_QueueCopy_SYCL(benchmark::State &state) {
+  sycl::queue q;
+  T init = 0;
+  auto src = sycl::malloc_device<T>(default_vector_size, q);
+  auto dst = sycl::malloc_device<T>(default_vector_size, q);
+  q.fill(src, init, default_vector_size).wait();
+  q.fill(dst, init, default_vector_size).wait();
+  for (auto _ : state) {
+    q.copy(dst, src, default_vector_size).wait();
+  }
+  memory_bandwidth(state,
+                   2 * default_repetitions * default_vector_size * sizeof(T));
+}
+
+BENCHMARK(Copy_QueueCopy_SYCL)->UseRealTime();
+
 #endif
 
 #ifndef BENCH_SHP
@@ -94,7 +131,7 @@ static void Copy_DR(benchmark::State &state) {
 BENCHMARK(Copy_DR)->UseRealTime();
 #endif
 
-static void Copy_Local(benchmark::State &state) {
+static void Copy_Serial(benchmark::State &state) {
   std::vector<T> src(default_vector_size);
   std::vector<T> dst(default_vector_size);
   for (auto _ : state) {
@@ -106,7 +143,7 @@ static void Copy_Local(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Copy_Local)->UseRealTime();
+BENCHMARK(Copy_Serial)->UseRealTime();
 
 static void Reduce_DR(benchmark::State &state) {
   xhp::distributed_vector<T> src(default_vector_size);
@@ -122,7 +159,7 @@ static void Reduce_DR(benchmark::State &state) {
 
 BENCHMARK(Reduce_DR)->UseRealTime();
 
-static void Reduce_Local(benchmark::State &state) {
+static void Reduce_Serial(benchmark::State &state) {
   std::vector<T> src(default_vector_size);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
@@ -134,7 +171,7 @@ static void Reduce_Local(benchmark::State &state) {
                    default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Reduce_Local)->UseRealTime();
+BENCHMARK(Reduce_Serial)->UseRealTime();
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void Reduce_DPL(benchmark::State &state) {
@@ -168,7 +205,7 @@ static void TransformIdentity_DR(benchmark::State &state) {
 
 BENCHMARK(TransformIdentity_DR)->UseRealTime();
 
-static void TransformIdentity_Local(benchmark::State &state) {
+static void TransformIdentity_Serial(benchmark::State &state) {
   std::vector<T> src(default_vector_size);
   std::vector<T> dst(default_vector_size);
   for (auto _ : state) {
@@ -180,7 +217,7 @@ static void TransformIdentity_Local(benchmark::State &state) {
                    2 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(TransformIdentity_Local)->UseRealTime();
+BENCHMARK(TransformIdentity_Serial)->UseRealTime();
 
 #ifndef BENCH_SHP
 // segfault
@@ -205,7 +242,7 @@ static void Mul_DR(benchmark::State &state) {
 BENCHMARK(Mul_DR)->UseRealTime();
 #endif
 
-static void Mul_Local(benchmark::State &state) {
+static void Mul_Serial(benchmark::State &state) {
   std::vector<T> a(default_vector_size);
   std::vector<T> b(default_vector_size);
   std::vector<T> c(default_vector_size);
@@ -220,4 +257,4 @@ static void Mul_Local(benchmark::State &state) {
                    3 * default_repetitions * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Mul_Local)->UseRealTime();
+BENCHMARK(Mul_Serial)->UseRealTime();
