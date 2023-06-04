@@ -9,12 +9,14 @@ add_executable(
   mhp-bench.cpp
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
-  chunk.cpp
-  mpi.cpp
+  ../common/stream.cpp
   rooted.cpp
   stencil_1d.cpp
   stencil_2d.cpp
+  chunk.cpp
+  mpi.cpp
 )
+target_compile_definitions(mhp-bench PRIVATE BENCH_MHP)
 target_link_libraries(
   mhp-bench
   benchmark::benchmark

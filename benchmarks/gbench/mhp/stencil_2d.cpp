@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
@@ -126,6 +126,7 @@ static void Stencil2D_Loop_Serial(benchmark::State &state) {
   }
   std::vector<T> a(rows * cols, init_val);
   std::vector<T> b(rows * cols, init_val);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   auto in = a.data();
   auto out = b.data();
@@ -133,6 +134,7 @@ static void Stencil2D_Loop_Serial(benchmark::State &state) {
   Checker checker;
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
+      stats.rep();
       for (std::size_t i = 1; i < rows - 1; i++) {
         for (std::size_t j = 1; j < cols - 1; j++) {
           stencil_1darray_op(in, out, cols, i, j);
@@ -143,10 +145,9 @@ static void Stencil2D_Loop_Serial(benchmark::State &state) {
 
     checker.check(rng::span(in, rows * cols));
   }
-  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_Loop_Serial)->UseRealTime();
+DR_BENCHMARK(Stencil2D_Loop_Serial);
 
 auto stencil_foreach_stdArray_op = [](auto &&v) {
   auto &[in_row, out_row] = v;
@@ -172,6 +173,7 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   auto dist = dr::mhp::distribution().halo(1);
   dr::mhp::distributed_vector<Row> a(rows, dist);
   dr::mhp::distributed_vector<Row> b(rows, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   auto fill_row = [](auto &row) {
     std::fill(row.begin(), row.end(), init_val);
@@ -184,6 +186,7 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
       dr::mhp::halo(in).exchange();
       dr::mhp::for_each(dr::mhp::views::zip(in, out),
                         stencil_foreach_stdArray_op);
@@ -191,10 +194,9 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
     }
     checker.check_array(stencil_steps % 2 ? b : a);
   }
-  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_ForeachStdArray_DR)->UseRealTime();
+DR_BENCHMARK(Stencil2D_ForeachStdArray_DR);
 
 //
 // Distributed vector of floats. Granularity ensures segments contain
@@ -209,6 +211,7 @@ static void Stencil2D_NocollectiveCPU_DR(benchmark::State &state) {
   auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
   dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
   dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   Checker checker;
   auto in =
@@ -220,6 +223,7 @@ static void Stencil2D_NocollectiveCPU_DR(benchmark::State &state) {
   auto row_slice = size / cols;
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
       dr::mhp::halo(stencil_steps % 2 ? b : a).exchange();
       for (std::size_t i = 0; i < row_slice; i++) {
         for (std::size_t j = 1; j < cols - 1; j++) {
@@ -230,10 +234,9 @@ static void Stencil2D_NocollectiveCPU_DR(benchmark::State &state) {
     }
     checker.check(stencil_steps % 2 ? b : a);
   }
-  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_NocollectiveCPU_DR)->UseRealTime();
+DR_BENCHMARK(Stencil2D_NocollectiveCPU_DR);
 
 // Under construction
 #if 0
@@ -283,7 +286,7 @@ static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_1DArrayTransform_DR)->UseRealTime();
+DR_BENCHMARK(Stencil2D_1DArrayTransform_DR);
 #endif
 
 //
@@ -303,6 +306,7 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
 
   auto in = sycl::malloc_device<T>(rows * cols, q);
   auto out = sycl::malloc_device<T>(rows * cols, q);
+  Stats stats(state, sizeof(T) * rows * cols, sizeof(T) * rows * cols);
   q.fill(in, init_val, rows * cols);
   q.fill(out, init_val, rows * cols);
   q.wait();
@@ -310,6 +314,7 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
   Checker checker;
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
       auto op = [=](auto it) {
         stencil_1darray_op(in, out, cols, it[0] + 1, it[1] + 1);
       };
@@ -318,10 +323,9 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
     }
     checker.check_device(q, in);
   }
-  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_Basic_SYCL)->UseRealTime();
+DR_BENCHMARK(Stencil2D_Basic_SYCL);
 
 //
 // Distributed vector of floats. Granularity ensures segments contain
@@ -338,6 +342,7 @@ static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
   auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
   dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
   dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   Checker checker;
   auto in =
@@ -353,6 +358,7 @@ static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
 
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
       auto op = [=](auto it) {
         stencil_1darray_op(in, out, cols, it[0], it[1] + 1);
       };
@@ -362,9 +368,8 @@ static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
     }
     checker.check(stencil_steps % 2 ? b : a);
   }
-  memory_bandwidth(state, 2 * stencil_steps * rows * cols * sizeof(T));
 }
 
-BENCHMARK(Stencil2D_NocollectiveSYCL_DR)->UseRealTime();
+DR_BENCHMARK(Stencil2D_NocollectiveSYCL_DR);
 
 #endif
