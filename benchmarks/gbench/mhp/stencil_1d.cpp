@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
@@ -20,6 +20,7 @@ auto stencil1d_slide_op = [](auto win) { return win[0] + win[1] + win[2]; };
 static void Stencil1D_Slide_Std(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
   std::vector<T> b(default_vector_size, init_val);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   // Input is a window
   auto in_curr = rng::views::sliding(a, 3);
@@ -31,15 +32,15 @@ static void Stencil1D_Slide_Std(benchmark::State &state) {
 
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
+      stats.rep();
       rng::transform(in_curr, out_curr.begin(), stencil1d_slide_op);
       std::swap(in_curr, in_prev);
       std::swap(out_curr, out_prev);
     }
   }
-  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Slide_Std)->UseRealTime();
+DR_BENCHMARK(Stencil1D_Slide_Std);
 
 auto stencil1d_subrange_op = [](auto &center) {
   auto win = &center;
@@ -49,40 +50,42 @@ auto stencil1d_subrange_op = [](auto &center) {
 static void Stencil1D_Subrange_Std(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
   std::vector<T> b(default_vector_size, init_val);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
 
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
+      stats.rep();
       rng::transform(in, out.begin(), stencil1d_subrange_op);
       std::swap(in, out);
     }
   }
-  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Subrange_Std)->UseRealTime();
+DR_BENCHMARK(Stencil1D_Subrange_Std);
 
 static void Stencil1D_Subrange_DR(benchmark::State &state) {
   auto dist = dr::mhp::distribution().halo(1);
   xhp::distributed_vector<T> a(default_vector_size, init_val, dist);
   xhp::distributed_vector<T> b(default_vector_size, init_val, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
 
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
+      stats.rep();
       xhp::halo(in).exchange();
       xhp::transform(in, out.begin(), stencil1d_subrange_op);
       std::swap(in, out);
     }
   }
-  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Subrange_DR)->UseRealTime();
+DR_BENCHMARK(Stencil1D_Subrange_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void Stencil1D_Subrange_DPL(benchmark::State &state) {
@@ -91,19 +94,21 @@ static void Stencil1D_Subrange_DPL(benchmark::State &state) {
 
   auto in = sycl::malloc_device<T>(default_vector_size, q);
   auto out = sycl::malloc_device<T>(default_vector_size, q);
+  Stats stats(state, sizeof(T) * default_vector_size,
+              sizeof(T) * default_vector_size);
   q.fill(in, init_val, default_vector_size);
   q.fill(out, init_val, default_vector_size);
   q.wait();
 
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
+      stats.rep();
       std::transform(policy, in + 1, in + default_vector_size - 1, out + 1,
                      stencil1d_subrange_op);
       std::swap(in, out);
     }
   }
-  memory_bandwidth(state, 2 * stencil_steps * default_vector_size * sizeof(T));
 }
 
-BENCHMARK(Stencil1D_Subrange_DPL)->UseRealTime();
+DR_BENCHMARK(Stencil1D_Subrange_DPL);
 #endif

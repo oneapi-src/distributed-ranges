@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
@@ -24,7 +24,7 @@ static void Chunk_1DLoop_Serial(benchmark::State &state) {
     }
   }
 }
-BENCHMARK(Chunk_1DLoop_Serial)->UseRealTime();
+DR_BENCHMARK(Chunk_1DLoop_Serial);
 
 static void Chunk_2DLoop_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -39,7 +39,7 @@ static void Chunk_2DLoop_Serial(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DLoop_Serial)->UseRealTime();
+DR_BENCHMARK(Chunk_2DLoop_Serial);
 
 static void Chunk_2DIndex_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -58,7 +58,7 @@ static void Chunk_2DIndex_Serial(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DIndex_Serial)->UseRealTime();
+DR_BENCHMARK(Chunk_2DIndex_Serial);
 
 static void Chunk_2DIters_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -74,7 +74,7 @@ static void Chunk_2DIters_Serial(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Chunk_2DIters_Serial)->UseRealTime();
+DR_BENCHMARK(Chunk_2DIters_Serial);
 
 static void ChunkFlattened_1DIters_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -90,7 +90,7 @@ static void ChunkFlattened_1DIters_Serial(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkFlattened_1DIters_Serial)->UseRealTime();
+DR_BENCHMARK(ChunkFlattened_1DIters_Serial);
 
 static void ChunkFlattened_ForEach_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -104,7 +104,7 @@ static void ChunkFlattened_ForEach_Serial(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkFlattened_ForEach_Serial)->UseRealTime();
+DR_BENCHMARK(ChunkFlattened_ForEach_Serial);
 
 static void ChunkTransformFlatten_ForEach_Serial(benchmark::State &state) {
   auto size = num_rows * num_columns;
@@ -124,4 +124,4 @@ static void ChunkTransformFlatten_ForEach_Serial(benchmark::State &state) {
   }
 }
 
-BENCHMARK(ChunkTransformFlatten_ForEach_Serial)->UseRealTime();
+DR_BENCHMARK(ChunkTransformFlatten_ForEach_Serial);

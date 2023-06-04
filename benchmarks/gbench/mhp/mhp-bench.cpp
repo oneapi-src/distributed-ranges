@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 MPI_Comm comm;
 std::size_t comm_rank;
-std::size_t comm_size;
+std::size_t ranks;
 
 std::size_t default_vector_size;
 std::size_t default_repetitions;
@@ -33,7 +33,7 @@ void dr_init() {
     sycl::queue q;
     if (comm_rank == 0) {
       fmt::print("  SYCL device:\n");
-      show_device(q.get_device());
+      benchmark::AddCustomContext("device", device_info(q.get_device()));
     }
     dr::mhp::init(q);
     return;
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
   comm_rank = rank;
-  comm_size = size;
+  ranks = size;
 
   benchmark::Initialize(&argc, argv);
 
@@ -102,11 +102,8 @@ int main(int argc, char *argv[]) {
   check_results = options.count("check");
 
   if (comm_rank == 0) {
-    fmt::print("Configuration:\n"
-               "  default vector size: {}\n"
-               "  default repetitions: {}\n"
-               "  ranks: {}\n",
-               default_vector_size, default_repetitions, comm_size);
+    benchmark::AddCustomContext("model", "mhp");
+    add_configuration();
   }
 
   dr_init();

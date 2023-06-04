@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 std::size_t default_vector_size;
 std::size_t default_repetitions;
 
 std::size_t comm_rank = 0;
 std::size_t comm_size = 1;
+std::size_t ranks = 0;
 
 cxxopts::ParseResult options;
 
@@ -40,23 +41,21 @@ int main(int argc, char *argv[]) {
 
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
-  std::size_t num_devices = options["num-devices"].as<std::size_t>();
-  fmt::print("Configuration:\n"
-             "  default vector size: {}\n"
-             "  default repetitions: {}\n"
-             "  number of devices requested: {}\n"
-             "  devices:\n",
-             default_vector_size, default_repetitions, num_devices);
+  ranks = options["num-devices"].as<std::size_t>();
 
   auto available_devices = dr::shp::get_numa_devices(sycl::default_selector_v);
-  if (num_devices == 0) {
-    num_devices = available_devices.size();
+  if (ranks == 0) {
+    ranks = available_devices.size();
   }
 
+  benchmark::AddCustomContext("model", "shp");
+  add_configuration();
+
   std::vector<sycl::device> devices;
-  for (std::size_t i = 0; i < num_devices; i++) {
+  for (std::size_t i = 0; i < ranks; i++) {
     devices.push_back(available_devices[i % available_devices.size()]);
-    show_device(devices.back());
+    benchmark::AddCustomContext("device" + std::to_string(i),
+                                device_info(devices.back()));
   }
 
   dr::shp::init(devices);
