@@ -20,4 +20,4 @@ target_link_libraries(
 )
 
 target_compile_options(shp-bench PRIVATE -fsycl)
-add_test(NAME shp-bench COMMAND ./shp-bench)
+add_test(NAME shp-bench COMMAND ./shp-bench --vector-size 20000 --rows 100 --columns 100)
