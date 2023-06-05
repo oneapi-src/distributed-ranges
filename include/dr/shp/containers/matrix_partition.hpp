@@ -90,8 +90,8 @@ private:
   dr::shp::index<> grid_shape_;
 };
 
-std::vector<block_cyclic> partition_matmul(std::size_t m, std::size_t n,
-                                           std::size_t k) {
+inline std::vector<block_cyclic> partition_matmul(std::size_t m, std::size_t n,
+                                                  std::size_t k) {
   dr::shp::index<> c_pgrid = detail::factor(shp::nprocs());
 
   block_cyclic c_block({dr::shp::tile::div, dr::shp::tile::div},
