@@ -28,7 +28,11 @@ template <typename R> auto local_segments(R &&dr) {
 template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
   auto segments = dr::mhp::local_segments(std::forward<R>(r));
 
-  // Should be error, not assert
+  if (rng::empty(segments)) {
+    return rng::range_value_t<decltype(segments)>{};
+  }
+
+  // Should be error, not assert. Or we could join all the segments
   assert(rng::distance(segments) == 1);
 
   return *rng::begin(segments);

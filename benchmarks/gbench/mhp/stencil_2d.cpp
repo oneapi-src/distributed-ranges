@@ -26,6 +26,16 @@ static auto shape() {
   return std::pair(rows, cols_static);
 }
 
+static auto shape(auto &state) {
+  auto [rows, cols] = shape();
+  if (rows < 3) {
+    state.SkipWithError(fmt::format("Vector size must be >= 3 * {}", cols));
+    std::size_t empty = 0;
+    return std::pair(empty, empty);
+  }
+  return shape();
+}
+
 void print_matrix(rng::forward_range auto &&actual) {
   auto [rows, cols] = shape();
   auto m = rng::views::chunk(actual, cols);
@@ -120,7 +130,7 @@ static void stencil_1darray_op(auto in, auto out, auto cols, auto i, auto j) {
 // Serial baseline
 //
 static void Stencil2D_Loop_Serial(benchmark::State &state) {
-  auto [rows, cols] = shape();
+  auto [rows, cols] = shape(state);
   if (rows == 0) {
     return;
   }
@@ -161,7 +171,7 @@ auto stencil_foreach_stdArray_op = [](auto &&v) {
 // Distributed vector of std::array
 //
 static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
-  auto [rows, cols] = shape();
+  auto [rows, cols] = shape(state);
 
   if (rows == 0) {
     return;
@@ -203,11 +213,12 @@ DR_BENCHMARK(Stencil2D_ForeachStdArray_DR);
 // whole rows. Explicitly process segments SPMD-style.
 //
 static void Stencil2D_NocollectiveCPU_DR(benchmark::State &state) {
-  auto [rows, cols] = shape();
+  auto [rows, cols] = shape(state);
   if (rows == 0) {
     return;
   }
 
+  fmt::print("Rows: {}, Cols: {}\n", rows, cols);
   auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
   dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
   dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
@@ -253,7 +264,7 @@ auto nslice(auto &&r, cols) {
 // Slice implemented by views. Use for_each on flat representation
 //
 static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
-  auto v = shape();
+  auto v = shape(state);
   auto rows = std::get<0>(v);
   auto cols = std::get<0>(v);
 
@@ -294,7 +305,7 @@ DR_BENCHMARK(Stencil2D_1DArrayTransform_DR);
 //
 #ifdef SYCL_LANGUAGE_VERSION
 static void Stencil2D_Basic_SYCL(benchmark::State &state) {
-  auto s = shape();
+  auto s = shape(state);
   auto rows = std::get<0>(s);
   auto cols = std::get<1>(s);
 
@@ -332,7 +343,7 @@ DR_BENCHMARK(Stencil2D_Basic_SYCL);
 // whole rows. Explicitly process segments SPMD-style with SYCL
 //
 static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
-  auto v = shape();
+  auto v = shape(state);
   auto rows = std::get<0>(v);
   auto cols = std::get<1>(v);
   if (rows == 0) {
