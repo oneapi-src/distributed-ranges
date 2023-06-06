@@ -169,4 +169,52 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
   return d_first + (last - first);
 }
 
+// Copy from distributed range to distributed range
+template <dr::distributed_iterator InputIt, dr::distributed_iterator OutputIt>
+  requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
+                                        std::iter_value_t<OutputIt>>
+sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
+  auto dist = rng::distance(first, last);
+  auto segments =
+      dr::__detail::take_segments(dr::ranges::segments(first), dist);
+
+  std::vector<sycl::event> events;
+
+  for (auto &&segment : segments) {
+    auto size = rng::distance(segment);
+
+    events.emplace_back(
+        dr::shp::copy_async(rng::begin(segment), rng::end(segment), d_first));
+
+    rng::advance(d_first, size);
+  }
+
+  return dr::shp::__detail::combine_events(events);
+}
+
+template <dr::distributed_iterator InputIt, dr::distributed_iterator OutputIt>
+  requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
+                                        std::iter_value_t<OutputIt>>
+OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
+  copy_async(first, last, d_first).wait();
+  return d_first + (last - first);
+}
+
+// Ranges versions
+
+// Distributed to distributed
+template <dr::distributed_range R, dr::distributed_iterator O>
+  requires __detail::is_syclmemcopyable<rng::range_value_t<R>,
+                                        std::iter_value_t<O>>
+sycl::event copy_async(R &&r, O result) {
+  return copy_async(rng::begin(r), rng::end(r), result);
+}
+
+template <dr::distributed_range R, dr::distributed_iterator O>
+  requires __detail::is_syclmemcopyable<rng::range_value_t<R>,
+                                        std::iter_value_t<O>>
+O copy(R &&r, O result) {
+  return copy(rng::begin(r), rng::end(r), result);
+}
+
 } // namespace dr::shp
