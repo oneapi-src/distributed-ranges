@@ -47,7 +47,7 @@ int stencil(auto n, auto steps) {
 
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
-    dr::mhp::transform(dr::mhp::views::sliding(in), out.begin() + 1,
+    dr::mhp::transform(dr::mhp::views::sliding(in, 3), out.begin() + 1,
                        stencil_op);
 
     std::swap(in, out);

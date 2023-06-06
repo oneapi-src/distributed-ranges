@@ -202,8 +202,6 @@ TYPED_TEST(Slide, slide_works_on_transformed_range) {
   auto transformed_dv = dv | xhp::views::transform([](auto && e){ return e*2;
   });
 
-  auto slide_of_transformed = xhp::views::sliding(transformed_dv, 3);
-
   xhp::for_each(xhp::views::sliding(transformed_dv, 3), [](auto && r) {
     // SYCL kernel cannot use exceptions
 #ifndef SYCL_LANGUAGE_VERSION

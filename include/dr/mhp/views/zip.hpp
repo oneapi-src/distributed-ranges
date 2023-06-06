@@ -86,6 +86,7 @@ template <typename Base> auto base_to_segments(Base &&base) {
 } // namespace __detail
 
 template <std::random_access_iterator RngIter,
+          std::random_access_iterator RngIterLocal,
           std::random_access_iterator... BaseIters>
 class zip_iterator {
 public:
@@ -95,12 +96,13 @@ public:
   using iterator_category = std::random_access_iterator_tag;
 
   zip_iterator() {}
-  zip_iterator(RngIter rng_iter, BaseIters... base_iters)
-      : rng_iter_(rng_iter), base_(base_iters...) {}
+  zip_iterator(RngIter rng_iter, RngIterLocal rng_iter_local, BaseIters... base_iters)
+      : rng_iter_(rng_iter), rng_iter_local_(rng_iter_local), base_(base_iters...) {}
 
   auto operator+(difference_type n) const {
     auto iter(*this);
     iter.rng_iter_ += n;
+    iter.rng_iter_local_ += n;
     iter.offset_ += n;
     return iter;
   }
@@ -110,6 +112,7 @@ public:
   auto operator-(difference_type n) const {
     auto iter(*this);
     iter.rng_iter_ -= n;
+    iter.rng_iter_local_ -= n;
     iter.offset_ -= n;
     return iter;
   }
@@ -119,33 +122,39 @@ public:
 
   auto &operator+=(difference_type n) {
     rng_iter_ += n;
+    rng_iter_local_ += n;
     offset_ += n;
     return *this;
   }
   auto &operator-=(difference_type n) {
     rng_iter_ -= n;
+    rng_iter_local_ -= n;
     offset_ -= n;
     return *this;
   }
   auto &operator++() {
     rng_iter_++;
+    rng_iter_local_++;
     offset_++;
     return *this;
   }
   auto operator++(int) {
     auto iter(*this);
     rng_iter_++;
+    rng_iter_local_++;
     offset_++;
     return iter;
   }
   auto &operator--() {
     rng_iter_--;
+    rng_iter_local_--;
     offset_--;
     return *this;
   }
   auto operator--(int) {
     auto iter(*this);
     rng_iter_--;
+    rng_iter_local_--;
     offset_--;
     return iter;
   }
@@ -177,25 +186,44 @@ public:
     return dr::ranges::rank(std::get<0>(base_));
   }
 
+  auto local() const
+  {
+    return rng_iter_local_;
+  }
+
 private:
   RngIter rng_iter_;
+  RngIterLocal rng_iter_local_;
   std::tuple<BaseIters...> base_;
   difference_type offset_ = 0;
 };
 
 template <__detail::zipable... Rs> class zip_view : public rng::view_base {
 private:
+
+  static auto make_local(std::tuple<rng::views::all_t<Rs>...> b)
+  {
+    auto zip = []<typename... Vs>(Vs &&...bases) {
+      return rng::views::zip(dr::ranges::local(std::forward<Vs>(bases))...);
+    };
+    return std::apply(zip, b);
+  }
+
   using rng_zip = rng::zip_view<Rs...>;
+  using rng_zip_local = decltype(make_local(std::declval<std::tuple<rng::views::all_t<Rs>...>>()));
   using rng_zip_iterator = rng::iterator_t<rng_zip>;
   using difference_type = std::iter_difference_t<rng_zip_iterator>;
 
 public:
   zip_view(Rs... rs)
-      : rng_zip_(rng::views::all(rs)...), base_(rng::views::all(rs)...) {}
+      : rng_zip_(rng::views::all(rs)...),
+        base_(rng::views::all(rs)...),
+        rng_zip_local_(make_local(base_))
+  {}
 
   auto begin() const {
     auto make_begin = [this](auto &&...bases) {
-      return zip_iterator(rng::begin(this->rng_zip_), rng::begin(bases)...);
+      return zip_iterator(rng::begin(this->rng_zip_), rng::begin(this->rng_zip_local_), rng::begin(bases)...);
     };
     return std::apply(make_begin, base_);
   }
@@ -203,7 +231,7 @@ public:
     requires(rng::common_range<rng_zip>)
   {
     auto make_end = [this](auto &&...bases) {
-      return zip_iterator(rng::end(this->rng_zip_), rng::end(bases)...);
+      return zip_iterator(rng::end(this->rng_zip_), rng::end(this->rng_zip_local_), rng::end(bases)...);
     };
     return std::apply(make_end, base_);
   }
@@ -227,19 +255,10 @@ public:
     return dr::ranges::rank(std::get<0>(base_));
   }
 
-  auto local() const
-    requires(remote_range<Rs> || ...)
-  {
-    auto zip = []<typename... Vs>(Vs &&...bases) {
-      return rng::views::zip(dr::ranges::local(std::forward<Vs>(bases))...);
-    };
-
-    return std::apply(zip, base_);
-  }
-
 private:
   rng_zip rng_zip_;
   std::tuple<rng::views::all_t<Rs>...> base_;
+  rng_zip_local rng_zip_local_;
 };
 
 template <typename... Rs>

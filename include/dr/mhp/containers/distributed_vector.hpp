@@ -174,11 +174,13 @@ public:
     }
 
     if (my_process_segment_index == segment_index_ + 1) {
+      dr::drlog.debug("ASS ss:{} - idx:{} <= hal:{}, si:{}\n", dv_->segment_size_, - index_, dv_->distribution_.halo().prev, segment_index_);
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
       return dv_->data_ + dv_->distribution_.halo().prev + index_ -
              dv_->segment_size_;
     }
 
+    dr::drlog.debug("ASS false ss:{} idx:{} si:{}\n", dv_->segment_size_, index_, segment_index_);
     assert(false); // trying to read non-owned memory
   }
 
@@ -313,6 +315,7 @@ public:
 
     auto local() {
       auto segment_size = parent_->segment_size_;
+      dr::drlog.debug("get local offset:{} seg_size:{}\n", offset_, segment_size);
       return (parent_->segments()[offset_ / segment_size].begin() +
               offset_ % segment_size)
           .local();
