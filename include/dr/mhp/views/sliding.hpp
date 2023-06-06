@@ -36,16 +36,40 @@ namespace DR_RANGES_NAMESPACE {
 template <rng::range V>
   requires(dr::is_sliding_view_v<V>)
 auto segments_(V &&v) {
-  const auto sliding_view_size = rng::size(v);
-  // TODO: this code assumes that halo is symetric (sliding_view_size/2)
-  assert(sliding_view_size % 2 == 1);
-  auto first = rng::begin(v.base());
-  rng::advance(first, sliding_view_size / 2);
+
+  auto base_segments = dr::ranges::segments(v.base());
+  auto elements_to_skip_in_base = rng::size(v.base());
+  auto elements_to_take = 0;
+  if (!rng::empty(v)) {
+    // need to reverse engineer `n` which was passed to sliding_view
+    elements_to_take = rng::size(v);
+    const auto slide_size = elements_to_skip_in_base - elements_to_take + 1;
+    // TODO: this code assumes that halo is symmetric, thus odd (center + 2n)
+    // note, it is not an assertion preventing all wrong use cases
+    // other ones are caught by assert during attempt to read outside halo
+    assert(slide_size % 2 == 1);
+    elements_to_skip_in_base = slide_size / 2;
+  }
 
   return dr::mhp::views::segmented(
-      v, dr::__detail::take_segments(dr::ranges::segments(first),
-                                     sliding_view_size));
+      v, dr::__detail::take_segments(
+          dr::__detail::drop_segments(base_segments, elements_to_skip_in_base), elements_to_take));
+//  return dr::mhp::views::segmented(
+//      v, dr::__detail::take_segments(dr::ranges::segments(first),
+//                                     sliding_view_size));
 }
+
+//template <rng::range V>
+//  requires(dr::is_subrange_view_v<V>)
+//auto segments_(V &&v) {
+//
+//
+//  return dr::mhp::views::segmented(v, dr::ranges::segments(views::counted(first, sliding_view_size)));
+//  //  return dr::mhp::views::segmented(
+//  //      v, dr::__detail::take_segments(dr::ranges::segments(first),
+//  //                                     sliding_view_size));
+//}
+
 
 // TODO: add support for dr::mhp::halo(dr::mhp::views::sliding(r)).exchange()
 

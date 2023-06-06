@@ -19,7 +19,10 @@ template <typename R> auto local_segments(R &&dr) {
   return dr::ranges::segments(std::forward<R>(dr)) |
          rng::views::filter(is_local) |
          rng::views::transform(
-             [](const auto &segment) { return dr::ranges::local(segment); });
+             [](const auto &segment) {
+               int x [[maybe_unused]] = 1;
+               return dr::ranges::local(segment);
+             });
 }
 
 template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {

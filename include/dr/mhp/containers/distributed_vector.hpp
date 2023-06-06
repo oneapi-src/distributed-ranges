@@ -373,6 +373,15 @@ public:
 
   auto segments() const { return rng::views::all(segments_); }
 
+  void dump_to_log(std::string desc = "") const {
+    dr::drlog.debug("DV {}, dataAddr:{}", desc,
+                    static_cast<void *>(this->data_));
+    for (std::size_t idx = 0; idx < data_size_; ++idx)
+      dr::drlog.debug(" - idx:{} val:{} addr:{}", idx, this->data_[idx],
+                      static_cast<void *>(this->data_ + idx));
+    dr::drlog.debug("\n");
+  }
+
 private:
   void init(auto size, auto dist, const auto &allocator) {
     allocator_ = allocator;
