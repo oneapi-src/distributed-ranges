@@ -204,14 +204,6 @@ TYPED_TEST(Slide, slide_works_on_transformed_range) {
 
   auto slide_of_transformed = xhp::views::sliding(transformed_dv, 3);
 
-  for (auto && x : dr::ranges::segments(slide_of_transformed))
-  {
-    //static_assert(dr::ranges::is_localizable< decltype(x)>);
-    //static_assert(dr::ranges::is_localizable< rng::iterator_t<decltype(x)>>);
-    //static_assert(dr::ranges::is_localizable< typename rng::iterator_t<decltype(x)>::value_type>);
-    static_assert(dr::ranges::is_localizable< typename rng::iterator_t<typename rng::iterator_t<decltype(x)>::value_type>::value_type >);
-  }
-
   xhp::for_each(xhp::views::sliding(transformed_dv, 3), [](auto && r) {
     // SYCL kernel cannot use exceptions
 #ifndef SYCL_LANGUAGE_VERSION
@@ -231,7 +223,4 @@ TYPED_TEST(Slide, slide_works_on_transformed_range) {
   });
 }
 
-#if 0
-
 // rest of tests is in the Slide3 suite
-#endif

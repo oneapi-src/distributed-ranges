@@ -8,28 +8,28 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_executable(
   mhp-tests
   mhp-tests.cpp
-#  ../common/all.cpp
-#  ../common/copy.cpp
-#  ../common/counted.cpp
-#  ../common/distributed_vector.cpp
-#  ../common/drop.cpp
-#  ../common/enumerate.cpp
-#  ../common/fill.cpp
-#  ../common/for_each.cpp
-#  ../common/iota.cpp
-#  ../common/reduce.cpp
-#  ../common/subrange.cpp
-#  ../common/take.cpp
-#  ../common/transform.cpp
+  ../common/all.cpp
+  ../common/copy.cpp
+  ../common/counted.cpp
+  ../common/distributed_vector.cpp
+  ../common/drop.cpp
+  ../common/enumerate.cpp
+  ../common/fill.cpp
+  ../common/for_each.cpp
+  ../common/iota.cpp
+  ../common/reduce.cpp
+  ../common/subrange.cpp
+  ../common/take.cpp
+  ../common/transform.cpp
   ../common/transform_view.cpp
-#  ../common/zip.cpp
-#  ../common/zip_local.cpp
-#  alignment.cpp
-#  copy.cpp
-#  distributed_vector.cpp
-#  reduce.cpp
-#  stencil.cpp
-#  segments.cpp
+  ../common/zip.cpp
+  ../common/zip_local.cpp
+  alignment.cpp
+  copy.cpp
+  distributed_vector.cpp
+  reduce.cpp
+  stencil.cpp
+  segments.cpp
   slide_view.cpp
 )
 

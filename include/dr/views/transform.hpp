@@ -110,15 +110,64 @@ namespace dr {
 //  F fn_;
 //};
 
+template <typename Iter, typename LocalIter> struct cursor_over_local_and_remote_transform {
+  struct mixin;
+
+  Iter iter;
+  LocalIter local_iter;
+  auto read() const { return *iter; }
+  bool equal(const cursor_over_local_and_remote_transform &other) const {
+    return iter == other.iter;
+  }
+  void next() {
+    ++iter;
+    ++local_iter;
+  }
+  void prev() {
+    --iter;
+    --local_iter;
+  }
+  void advance(std::ptrdiff_t n) {
+    this->iter += n;
+    this->local_iter += n;
+  }
+  std::ptrdiff_t
+  distance_to(const cursor_over_local_and_remote_transform &other) const {
+    return other.iter - this->iter;
+  }
+  cursor_over_local_and_remote_transform() = default;
+  cursor_over_local_and_remote_transform(Iter iter, LocalIter local_iter)
+      : iter(iter), local_iter(local_iter) {}
+};
+
+// inject "local()" method into iterator
+template <typename Iter, typename LocalIter>
+struct cursor_over_local_and_remote_transform<Iter, LocalIter>::mixin : rng::basic_mixin<cursor_over_local_and_remote_transform<Iter, LocalIter>>
+{
+  using rng::basic_mixin<cursor_over_local_and_remote_transform<Iter, LocalIter>>::basic_mixin;
+
+  mixin(Iter iter, LocalIter local_iter)
+      : mixin{ cursor_over_local_and_remote_transform(iter, local_iter) }
+  {}
+
+  LocalIter local()
+  {
+    return this->get().local_iter;
+  }
+};
+
 template <rng::random_access_range V, std::copy_constructible F>
 class transform_view : public rng::view_interface<transform_view<V, F>> {
 public:
   template <rng::viewable_range R>
-  transform_view(R &&r, F fn)
-      : trans_view(std::forward<R>(r), fn), fn_(fn) {}
+  transform_view(R &&r, F fn) :
+      trans_view(std::forward<R>(r), fn),
+      local_trans_view(rng::views::transform(dr::ranges::local(trans_view.base()), fn)),
+      fn_(fn)
+  {}
 
-  auto begin() const { return rng::begin(trans_view); }
-  auto end() const { return rng::end(trans_view); }
+  auto begin() const { return rng::basic_iterator<cursor_over_local_and_remote_transform<decltype(rng::begin(trans_view)), decltype(rng::begin(local_trans_view))>>(rng::begin(trans_view), rng::begin(local_trans_view)); }
+  auto end() const { return rng::basic_iterator<cursor_over_local_and_remote_transform<decltype(rng::end(trans_view)), decltype(rng::end(local_trans_view))>>(rng::end(trans_view), rng::end(local_trans_view));  }
 
   auto size() const
     requires(rng::sized_range<V>)
@@ -137,14 +186,6 @@ public:
            });
   }
 
-  auto local() const
-    requires(dr::ranges::__detail::has_local<V>)
-  {
-    return rng::views::transform(dr::ranges::local(trans_view.base()), fn_);
-//    auto iter = dr::ranges::__detail::local(iter_);
-//    return transform_iterator<decltype(iter), F>(iter, fn_);
-  }
-
   auto rank() const
     requires(dr::remote_range<V>)
   {
@@ -155,6 +196,7 @@ public:
 
 private:
   rng::transform_view<V, F> trans_view;
+  rng::transform_view< decltype(dr::ranges::local(trans_view.base())), F> local_trans_view;
   F fn_;
 };
 
