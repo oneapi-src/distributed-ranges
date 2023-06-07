@@ -8,7 +8,6 @@ add_executable(
   shp-tests
   shp-tests.cpp
   ../common/all.cpp
-  # need to implement same API as MHP
   ../common/copy.cpp
   ../common/counted.cpp
   ../common/distributed_vector.cpp
