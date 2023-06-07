@@ -17,8 +17,8 @@
 
 namespace dr::mhp {
 
-void transform(dr::distributed_range auto &&in,
-               dr::distributed_iterator auto out, auto op) {
+void transform(rng::forward_range auto &&in, dr::distributed_iterator auto out,
+               auto op) {
   assert(aligned(in, out));
 
   auto zip = mhp::views::zip(in, rng::subrange(out, out + rng::size(in)));
@@ -29,7 +29,8 @@ void transform(dr::distributed_range auto &&in,
   for_each(zip, transform_op);
 }
 
-template <dr::distributed_iterator DI_IN>
+template <typename DI_IN>
+  requires(std::forward_iterator<DI_IN>)
 void transform(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out,
                auto op) {
   mhp::transform(rng::subrange(first, last), out, op);

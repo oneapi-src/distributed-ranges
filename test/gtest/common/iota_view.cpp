@@ -16,8 +16,8 @@ TYPED_TEST(IotaView, ZipWithDR) {
   int ref = 1;
 
   auto z = xhp::views::zip(dv, v);
-  for (auto itr = z.begin(); itr != z.end(); itr++) {
-    auto [dve, ve] = *itr;
+  for (auto v : z) {
+    auto [dve, ve] = v;
     dve = ve;
     EXPECT_EQ(dv[ref - 1], ref);
     ref++;
@@ -28,9 +28,10 @@ TYPED_TEST(IotaView, Copy) {
   TypeParam dv(10);
   auto v = dr::views::iota(1, 11);
 
-  rng::copy(v, dv.begin());
+  xhp::copy(0, v, dv.begin());
 
-  EXPECT_TRUE(equal(dv, std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+  barrier();
+  EXPECT_TRUE(equal(std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, dv));
 }
 
 TYPED_TEST(IotaView, Transform) {
@@ -38,7 +39,7 @@ TYPED_TEST(IotaView, Transform) {
   auto v = dr::views::iota(1, 11);
   auto negate = [](auto v) { return -v; };
 
-  rng::transform(v, dv.begin(), negate);
+  xhp::transform(v, dv.begin(), negate);
 
   EXPECT_TRUE(
       equal(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
@@ -55,7 +56,7 @@ TYPED_TEST(IotaView, ForEach) {
 
   auto z = xhp::views::zip(v, dv);
 
-  rng::for_each(z, negate);
+  xhp::for_each(z, negate);
 
   EXPECT_TRUE(
       equal(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
