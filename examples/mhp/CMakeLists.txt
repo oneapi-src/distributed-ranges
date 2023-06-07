@@ -16,25 +16,21 @@ add_executable(vector-add vector-add.cpp)
 target_link_libraries(vector-add DR::mpi)
 add_mpi_test(vector-add vector-add 2)
 
-add_executable(stencil-1d stencil-1d.cpp)
-target_link_libraries(
-  stencil-1d
-  cxxopts
-  DR::mpi)
-add_mpi_test(stencil-1d stencil-1d 2)
+function(add_mhp_example example_name)
+  add_executable(${example_name} ${example_name}.cpp)
+  target_link_libraries(
+          ${example_name}
+          cxxopts
+          DR::mpi)
+  add_mpi_test(${example_name} ${example_name} 2)
+  if (ENABLE_SYCL)
+    target_compile_options(${example_name} PRIVATE -fsycl)
+  endif ()
+endfunction()
 
-add_executable(stencil-1d-array stencil-1d-array.cpp)
-target_link_libraries(
-  stencil-1d-array
-  cxxopts
-  DR::mpi)
-add_mpi_test(stencil-1d-array stencil-1d-array 2)
-
-if (ENABLE_SYCL)
-  target_compile_options(stencil-1d PRIVATE -fsycl)
-  target_compile_options(stencil-1d-array PRIVATE -fsycl)
-endif ()
-
+add_mhp_example(stencil-1d)
+add_mhp_example(stencil-1d-array)
+add_mhp_example(stencil-1d-pointer)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)

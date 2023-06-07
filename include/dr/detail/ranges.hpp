@@ -141,9 +141,9 @@ struct is_localizable_helper<T> : std::true_type {};
 
 template <rng::forward_iterator Iter>
   requires(not iter_has_local_method<Iter> && not has_local_adl<Iter>) &&
-          requires() { typename Iter::value_type; }
+          requires() { std::iter_value_t<Iter>(); }
 struct is_localizable_helper<Iter>
-    : is_localizable_helper<typename Iter::value_type> {};
+    : is_localizable_helper<std::iter_value_t<Iter>> {};
 
 template <rng::forward_range R>
 struct is_localizable_helper<R> : is_localizable_helper<rng::iterator_t<R>> {};
