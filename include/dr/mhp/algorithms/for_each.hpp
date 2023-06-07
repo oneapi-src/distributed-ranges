@@ -20,6 +20,9 @@ namespace dr::mhp {
 /// Collective for_each on distributed range
 void for_each(dr::distributed_range auto &&dr, auto op) {
   dr::drlog.debug("for_each: parallel execution\n");
+  if (rng::empty(dr)) {
+    return;
+  }
   assert(aligned(dr));
 
   for (const auto &s : local_segments(dr)) {

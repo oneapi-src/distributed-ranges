@@ -230,6 +230,8 @@ public:
     return std::apply(make_end, base_);
   }
   auto size() const { return rng::size(rng_zip_); }
+  auto empty() const { return begin() == end(); }
+
   auto operator[](difference_type n) const { return rng_zip_[n]; }
 
   auto base() const { return base_; }

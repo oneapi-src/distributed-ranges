@@ -19,6 +19,9 @@ namespace dr::mhp {
 
 void transform(rng::forward_range auto &&in, dr::distributed_iterator auto out,
                auto op) {
+  if (rng::empty(in)) {
+    return;
+  }
   assert(aligned(in, out));
 
   auto zip = mhp::views::zip(in, rng::subrange(out, out + rng::size(in)));
