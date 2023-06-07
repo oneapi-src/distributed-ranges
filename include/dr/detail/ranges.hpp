@@ -158,26 +158,24 @@ concept segment_has_local_method =
 
 struct local_fn_ {
 
-  template <std::forward_iterator Iter>
-    requires(has_local_adl<Iter> || iter_has_local_method<Iter> ||
-             std::contiguous_iterator<Iter>)
-  auto operator()(Iter iter) const {
-    if constexpr (iter_has_local_method<Iter>) {
-      return iter.local();
-    } else if constexpr (has_local_adl<Iter>) {
-      return local_(iter);
-    } else if constexpr (std::contiguous_iterator<Iter>) {
-      return iter;
-    }
-  }
-
   // based on https://ericniebler.github.io/range-v3/#autotoc_md30  "Create
   // custom iterators"
-  template <typename Iter> struct cursor_over_local_ranges {
+  template <typename Iter>
+  requires rng::forward_range<typename Iter::value_type>
+  struct cursor_over_local_ranges {
     Iter iter;
     auto read() const {
-      return rng::views::counted(local_fn_{}(rng::begin(*iter)),
-                                 rng::size(*iter));
+      if constexpr (iter_has_local_method<rng::iterator_t<typename Iter::value_type>>)
+      {
+        return rng::views::counted(rng::begin(*iter).local(), rng::size(*iter));
+      }
+      else
+      {
+        return rng::views::counted(
+            rng::basic_iterator<cursor_over_local_ranges<rng::iterator_t<typename Iter::value_type>>>(
+                rng::begin(*iter)),
+            rng::size(*iter));
+      }
     }
     bool equal(const cursor_over_local_ranges &other) const {
       return iter == other.iter;
@@ -191,6 +189,21 @@ struct local_fn_ {
     cursor_over_local_ranges() = default;
     cursor_over_local_ranges(Iter iter) : iter(iter) {}
   };
+
+  template <std::forward_iterator Iter>
+    requires(has_local_adl<Iter> || iter_has_local_method<Iter> ||
+             std::contiguous_iterator<Iter> || is_localizable<Iter>)
+  auto operator()(Iter iter) const {
+    if constexpr (iter_has_local_method<Iter>) {
+      return iter.local();
+    } else if constexpr (has_local_adl<Iter>) {
+      return local_(iter);
+    } else if constexpr (is_localizable<Iter>) {
+      return rng::basic_iterator<cursor_over_local_ranges<Iter>>(iter);
+    } else if constexpr (std::contiguous_iterator<Iter>) {
+      return iter;
+    }
+  }
 
   template <rng::forward_range R> auto operator()(R &&r) const {
     if constexpr (segment_has_local_method<R>) {
