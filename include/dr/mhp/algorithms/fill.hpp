@@ -18,17 +18,16 @@
 namespace dr::mhp {
 
 /// Collective fill on distributed range
-void fill(dr::distributed_contiguous_range auto &&dr, auto value) {
-  for (const auto &s : local_segments(dr)) {
-    rng::fill(s, value);
-  }
-  barrier();
+auto fill(dr::distributed_contiguous_range auto &&dr, auto value) {
+  for_each(dr, [=](auto &v) { v = value; });
+  return rng::end(dr);
 }
 
 /// Collective fill on iterator/sentinel for a distributed range
 template <dr::distributed_iterator DI>
-void fill(DI first, DI last, auto value) {
+auto fill(DI first, DI last, auto value) {
   mhp::fill(rng::subrange(first, last), value);
+  return last;
 }
 
 } // namespace dr::mhp

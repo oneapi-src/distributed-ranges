@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
@@ -32,6 +32,7 @@ void check_dp(auto actual, const nostd::source_location location =
 static void DotProduct_ZipReduce_DR(benchmark::State &state) {
   xhp::distributed_vector<T> a(default_vector_size, init_val);
   xhp::distributed_vector<T> b(default_vector_size, init_val);
+  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
   auto mul = [](auto v) {
     auto [a, b] = v;
     return a * b;
@@ -39,6 +40,7 @@ static void DotProduct_ZipReduce_DR(benchmark::State &state) {
   T res = 0;
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
       res = xhp::reduce(xhp::views::zip(a, b) | xhp::views::transform(mul));
       benchmark::DoNotOptimize(res);
     }
@@ -46,9 +48,9 @@ static void DotProduct_ZipReduce_DR(benchmark::State &state) {
   check_dp(res);
 }
 
-BENCHMARK(DotProduct_ZipReduce_DR);
+DR_BENCHMARK(DotProduct_ZipReduce_DR);
 
-static void DotProduct_ZipReduce_Std(benchmark::State &state) {
+static void DotProduct_ZipReduce_Serial(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
   std::vector<T> b(default_vector_size, init_val);
   auto mul = [](auto v) {
@@ -57,9 +59,11 @@ static void DotProduct_ZipReduce_Std(benchmark::State &state) {
   };
   auto &&m = rng::views::zip(a, b) | rng::views::transform(mul);
 
+  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
   T res = 0;
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
       res = std::reduce(std::execution::par_unseq, m.begin(), m.end());
       benchmark::DoNotOptimize(res);
     }
@@ -67,16 +71,18 @@ static void DotProduct_ZipReduce_Std(benchmark::State &state) {
   check_dp(res);
 }
 
-BENCHMARK(DotProduct_ZipReduce_Std);
+DR_BENCHMARK(DotProduct_ZipReduce_Serial);
 
-static void DotProduct_TransformReduce_Std(benchmark::State &state) {
+static void DotProduct_TransformReduce_Serial(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
   std::vector<T> b(default_vector_size, init_val);
+  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
   auto mul = [](auto a, auto b) { return a * b; };
 
   T res = 0;
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
       res = std::transform_reduce(std::execution::par_unseq, a.begin(), a.end(),
                                   b.begin(), T(0), std::plus(), mul);
       benchmark::DoNotOptimize(res);
@@ -85,24 +91,28 @@ static void DotProduct_TransformReduce_Std(benchmark::State &state) {
   check_dp(res);
 }
 
-BENCHMARK(DotProduct_TransformReduce_Std);
+DR_BENCHMARK(DotProduct_TransformReduce_Serial);
 
-static void DotProduct_Loop_Std(benchmark::State &state) {
+static void DotProduct_Loop_Serial(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);
   std::vector<T> b(default_vector_size, init_val);
+  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
   T res = 0;
 
   for (auto _ : state) {
-    res = 0;
-    for (std::size_t i = 0; i < default_vector_size; i++) {
-      res += a[i] * b[i];
+    for (std::size_t rep = 0; rep < default_repetitions; rep++) {
+      res = 0;
+      stats.rep();
+      for (std::size_t i = 0; i < default_vector_size; i++) {
+        res += a[i] * b[i];
+      }
+      benchmark::DoNotOptimize(res);
     }
-    benchmark::DoNotOptimize(res);
   }
   check_dp(res);
 }
 
-BENCHMARK(DotProduct_Loop_Std);
+DR_BENCHMARK(DotProduct_Loop_Serial);
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
@@ -117,9 +127,11 @@ static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
   q.fill(a, init_val, default_vector_size);
   q.fill(b, init_val, default_vector_size);
   q.wait();
+  Stats stats(state, sizeof(T) * 2 * default_vector_size, 0);
 
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
       res = std::transform_reduce(policy, a, a + default_vector_size, b, T(0),
                                   std::plus(), mul);
       benchmark::DoNotOptimize(res);
@@ -128,5 +140,5 @@ static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
   check_dp(res);
 }
 
-BENCHMARK(DotProduct_TransformReduce_DPL);
+DR_BENCHMARK(DotProduct_TransformReduce_DPL);
 #endif

@@ -114,6 +114,10 @@ include_rules = [
         'use rng::size()',
     ),
     (
+        r'\.empty\(\)',
+        'use rng::empty()',
+    ),
+    (
         r'std::begin\(',
         'use rng::begin()',
     ),

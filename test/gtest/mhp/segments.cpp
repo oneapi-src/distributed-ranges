@@ -38,3 +38,9 @@ TYPED_TEST(SegmentUtils, LocalSegment) {
   auto segments = dr::mhp::local_segments(ops.dist_vec);
   EXPECT_EQ(dr::mhp::local_segment(ops.dist_vec), *rng::begin(segments));
 }
+
+TYPED_TEST(SegmentUtils, OnlyRank0Data) {
+  // Only first rank gets data
+  TypeParam dist(10, dr::mhp::distribution().granularity(10));
+  EXPECT_EQ(dr::mhp::local_segment(dist).empty(), comm_rank != 0);
+}

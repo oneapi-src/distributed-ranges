@@ -56,6 +56,11 @@ TEST_F(ZipLocal, Begin) {
   EXPECT_EQ(*r.begin(), *z.begin());
 }
 
+TEST_F(ZipLocal, Empty) {
+  EXPECT_FALSE(test_zip(ops[0]).empty());
+  EXPECT_TRUE(test_zip(rng::views::take(ops[0], 0)).empty());
+}
+
 TEST_F(ZipLocal, End) {
   auto z = test_zip(ops[0], ops[1]);
   auto r = rng::views::zip(ops[0], ops[1]);
