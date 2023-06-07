@@ -106,7 +106,9 @@ template <typename T, typename Iter>
 using dense_matrix_view_iterator =
     dr::iterator_adaptor<dense_matrix_view_accessor<T, Iter>>;
 
-template <typename T, typename Iter = T *> class dense_matrix_view {
+template <typename T, typename Iter = T *>
+class dense_matrix_view
+    : public rng::view_interface<dense_matrix_view<T, Iter>> {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -175,6 +177,12 @@ public:
   std::size_t rank() const { return rank_; }
 
   size_type ld() const { return ld_; }
+
+  auto local() const {
+    auto local_data = __detail::local(data_);
+    return dense_matrix_view<T, decltype(local_data)>(
+        local_data, shape_, idx_offset_, ld(), rank());
+  }
 
 private:
   Iter data_;
