@@ -45,7 +45,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  ../common/all.cpp
+  slide_view.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)

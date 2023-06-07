@@ -208,4 +208,50 @@ TYPED_TEST(Slide, slide_works_on_transformed_range) {
   });
 }
 
+TEST(ComplexSlide, transform_works_between_vectors_of_arrays) {
+  using Row = std::array<int, 6>;
+  using DV = xhp::distributed_vector<Row>;
+
+  DV dv_in(6, dr::mhp::distribution().halo(1));
+  DV dv_out(6);
+
+  if (dr::mhp::default_comm().rank() == 0) {
+    dv_in[0] = Row{11, 12, 13, 14, 15, 16};
+    dv_in[1] = Row{21, 22, 23, 24, 25, 26};
+    dv_in[2] = Row{31, 32, 33, 34, 35, 36};
+    dv_in[3] = Row{41, 42, 43, 44, 45, 46};
+    dv_in[4] = Row{51, 52, 53, 54, 55, 56};
+    dv_in[5] = Row{61, 62, 63, 64, 65, 66};
+  }
+  fence();
+  dv_in.halo().exchange();
+
+  xhp::for_each(dv_out, [](auto &&row) { rng::fill(row, 0); });
+
+  auto stencil_op = [](auto &&three_rows) {
+    auto ret_val = Row{0, 0, 0, 0, 0, 0};
+    for (std::size_t i = 1; i < 5; ++i)
+      ret_val[i] = three_rows[0][i] + three_rows[1][i - 1] + three_rows[1][i] +
+                   three_rows[1][i + 1] + three_rows[2][i];
+    return ret_val;
+  };
+
+  xhp::transform(xhp::views::sliding(dv_in, 3), rng::begin(dv_out) + 1,
+                 stencil_op);
+
+  // computes expected sum of stencil_op when center has given value
+  auto c = [](int v) { return v + (v - 10) + (v + 10) + (v - 1) + (v + 1); };
+
+  EXPECT_EQ(static_cast<Row>(dv_out[0]), (Row{0, 0, 0, 0, 0, 0}));
+  EXPECT_EQ(static_cast<Row>(dv_out[1]),
+            (Row{0, c(22), c(23), c(24), c(25), 0}));
+  EXPECT_EQ(static_cast<Row>(dv_out[2]),
+            (Row{0, c(32), c(33), c(34), c(35), 0}));
+  EXPECT_EQ(static_cast<Row>(dv_out[3]),
+            (Row{0, c(42), c(43), c(44), c(45), 0}));
+  EXPECT_EQ(static_cast<Row>(dv_out[4]),
+            (Row{0, c(52), c(53), c(54), c(55), 0}));
+  EXPECT_EQ(static_cast<Row>(dv_out[5]), (Row{0, 0, 0, 0, 0, 0}));
+}
+
 // rest of tests is in the Slide3 suite
