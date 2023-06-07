@@ -13,173 +13,132 @@
 
 namespace dr {
 
-//template <std::random_access_iterator Iter, std::copy_constructible F>
-//class transform_iterator {
-//public:
-//  using value_type = std::invoke_result_t<F, std::iter_value_t<Iter>>;
-//  using difference_type = std::iter_difference_t<Iter>;
-//  using iterator = transform_iterator<Iter, F>;
-//  using reference = value_type;
-//
-//  using pointer = iterator;
-//
-//  using iterator_category = std::random_access_iterator_tag;
-//
-//  transform_iterator(Iter iter, F fn) noexcept : iter_(iter) {}
-//  transform_iterator() noexcept = default;
-//  ~transform_iterator() noexcept = default;
-//  transform_iterator(const transform_iterator &) noexcept = default;
-//  transform_iterator &operator=(const transform_iterator &) noexcept = default;
-//
-//  bool operator==(const transform_iterator &other) const noexcept {
-//    return iter_ == other.iter_;
-//  }
-//
-//  bool operator!=(const transform_iterator &other) const noexcept {
-//    return iter_ != other.iter_;
-//  }
-//
-//  iterator operator+(difference_type offset) const noexcept {
-//    return iterator(iter_ + offset, fn_);
-//  }
-//
-//  iterator operator-(difference_type offset) const noexcept {
-//    return iterator(iter_ - offset, fn_);
-//  }
-//
-//  difference_type operator-(iterator other) const noexcept {
-//    return iter_ - other.iter_;
-//  }
-//
-//  bool operator<(iterator other) const noexcept { return iter_ < other.iter_; }
-//
-//  bool operator>(iterator other) const noexcept { return iter_ > iter_; }
-//
-//  bool operator<=(iterator other) const noexcept {
-//    return iter_ <= other.iter_;
-//  }
-//
-//  bool operator>=(iterator other) const noexcept {
-//    return iter_ >= other.iter_;
-//  }
-//
-//  iterator &operator++() noexcept {
-//    ++iter_;
-//    return *this;
-//  }
-//
-//  iterator operator++(int) noexcept {
-//    iterator other = *this;
-//    ++(*this);
-//    return other;
-//  }
-//
-//  iterator &operator--() noexcept {
-//    --iter_;
-//    return *this;
-//  }
-//
-//  iterator operator--(int) noexcept {
-//    iterator other = *this;
-//    --(*this);
-//    return other;
-//  }
-//
-//  iterator &operator+=(difference_type offset) noexcept {
-//    iter_ += offset;
-//    return *this;
-//  }
-//
-//  iterator &operator-=(difference_type offset) noexcept {
-//    iter_ -= offset;
-//    return *this;
-//  }
-//
-//  reference operator*() const noexcept { return fn_(*iter_); }
-//
-//  reference operator[](difference_type offset) const noexcept {
-//    return *(*this + offset);
-//  }
-//
-//  friend iterator operator+(difference_type n, iterator iter) {
-//    return iter.iter_ + n;
-//  }
-//
-//private:
-//  Iter iter_;
-//  F fn_;
-//};
+template <std::random_access_iterator Iter, std::copy_constructible F>
+class transform_iterator {
+public:
+  using value_type = std::invoke_result_t<F, std::iter_value_t<Iter>>;
+  using difference_type = std::iter_difference_t<Iter>;
+  using iterator = transform_iterator<Iter, F>;
+  using reference = value_type;
 
-template <typename Iter, typename LocalIter> struct cursor_over_local_and_remote_transform {
-  struct mixin;
+  using pointer = iterator;
 
-  Iter iter;
-  LocalIter local_iter;
-  auto read() const { return *iter; }
-  bool equal(const cursor_over_local_and_remote_transform &other) const {
-    return iter == other.iter;
-  }
-  void next() {
-    ++iter;
-    ++local_iter;
-  }
-  void prev() {
-    --iter;
-    --local_iter;
-  }
-  void advance(std::ptrdiff_t n) {
-    this->iter += n;
-    this->local_iter += n;
-  }
-  std::ptrdiff_t
-  distance_to(const cursor_over_local_and_remote_transform &other) const {
-    return other.iter - this->iter;
-  }
-  cursor_over_local_and_remote_transform() = default;
-  cursor_over_local_and_remote_transform(Iter iter, LocalIter local_iter)
-      : iter(iter), local_iter(local_iter) {}
-};
+  using iterator_category = std::random_access_iterator_tag;
 
-// inject "local()" method into iterator
-template <typename Iter, typename LocalIter>
-struct cursor_over_local_and_remote_transform<Iter, LocalIter>::mixin : rng::basic_mixin<cursor_over_local_and_remote_transform<Iter, LocalIter>>
-{
-  using rng::basic_mixin<cursor_over_local_and_remote_transform<Iter, LocalIter>>::basic_mixin;
+  transform_iterator(Iter iter, F fn) noexcept : iter_(iter) {}
+  transform_iterator() noexcept = default;
+  ~transform_iterator() noexcept = default;
+  transform_iterator(const transform_iterator &) noexcept = default;
+  transform_iterator &operator=(const transform_iterator &) noexcept = default;
 
-  mixin(Iter iter, LocalIter local_iter)
-      : mixin{ cursor_over_local_and_remote_transform(iter, local_iter) }
-  {}
+  bool operator==(const transform_iterator &other) const noexcept {
+    return iter_ == other.iter_;
+  }
 
-  LocalIter local()
+  bool operator!=(const transform_iterator &other) const noexcept {
+    return iter_ != other.iter_;
+  }
+
+  iterator operator+(difference_type offset) const noexcept {
+    return iterator(iter_ + offset, fn_);
+  }
+
+  iterator operator-(difference_type offset) const noexcept {
+    return iterator(iter_ - offset, fn_);
+  }
+
+  difference_type operator-(iterator other) const noexcept {
+    return iter_ - other.iter_;
+  }
+
+  bool operator<(iterator other) const noexcept { return iter_ < other.iter_; }
+
+  bool operator>(iterator other) const noexcept { return iter_ > iter_; }
+
+  bool operator<=(iterator other) const noexcept {
+    return iter_ <= other.iter_;
+  }
+
+  bool operator>=(iterator other) const noexcept {
+    return iter_ >= other.iter_;
+  }
+
+  iterator &operator++() noexcept {
+    ++iter_;
+    return *this;
+  }
+
+  iterator operator++(int) noexcept {
+    iterator other = *this;
+    ++(*this);
+    return other;
+  }
+
+  iterator &operator--() noexcept {
+    --iter_;
+    return *this;
+  }
+
+  iterator operator--(int) noexcept {
+    iterator other = *this;
+    --(*this);
+    return other;
+  }
+
+  iterator &operator+=(difference_type offset) noexcept {
+    iter_ += offset;
+    return *this;
+  }
+
+  iterator &operator-=(difference_type offset) noexcept {
+    iter_ -= offset;
+    return *this;
+  }
+
+  reference operator*() const noexcept { return fn_(*iter_); }
+
+  reference operator[](difference_type offset) const noexcept {
+    return *(*this + offset);
+  }
+
+  friend iterator operator+(difference_type n, iterator iter) {
+    return iter.iter_ + n;
+  }
+
+  auto local() const
+    requires(dr::ranges::__detail::has_local<Iter>)
   {
-    return this->get().local_iter;
+    auto iter = dr::ranges::__detail::local(iter_);
+    return transform_iterator<decltype(iter), F>(iter, fn_);
   }
+
+private:
+  Iter iter_;
+  F fn_;
 };
 
 template <rng::random_access_range V, std::copy_constructible F>
 class transform_view : public rng::view_interface<transform_view<V, F>> {
 public:
   template <rng::viewable_range R>
-  transform_view(R &&r, F fn) :
-      trans_view(std::forward<R>(r), fn),
-      local_trans_view(rng::views::transform(dr::ranges::local(trans_view.base()), fn)),
-      fn_(fn)
-  {}
+  transform_view(R &&r, F fn)
+      : base_(rng::views::all(std::forward<R>(r))), fn_(fn) {}
 
-  auto begin() const { return rng::basic_iterator<cursor_over_local_and_remote_transform<decltype(rng::begin(trans_view)), decltype(rng::begin(local_trans_view))>>(rng::begin(trans_view), rng::begin(local_trans_view)); }
-  auto end() const { return rng::basic_iterator<cursor_over_local_and_remote_transform<decltype(rng::end(trans_view)), decltype(rng::end(local_trans_view))>>(rng::end(trans_view), rng::end(local_trans_view));  }
+  auto begin() const { return transform_iterator(rng::begin(base_), fn_); }
+
+  auto end() const { return transform_iterator(rng::end(base_), fn_); }
 
   auto size() const
     requires(rng::sized_range<V>)
   {
-    return rng::size(trans_view.base());
+    return rng::size(base_);
   }
 
   auto segments() const
     requires(dr::distributed_range<V>)
   {
     auto fn = fn_;
-    return dr::ranges::segments(trans_view.base()) |
+    return dr::ranges::segments(base_) |
            rng::views::transform([fn]<typename T>(T &&segment) {
              return transform_view<rng::views::all_t<decltype(segment)>, F>(
                  std::forward<T>(segment), fn);
@@ -189,14 +148,13 @@ public:
   auto rank() const
     requires(dr::remote_range<V>)
   {
-    return dr::ranges::rank(trans_view.base());
+    return dr::ranges::rank(base_);
   }
 
-  V base() const { return trans_view.base(); }
+  V base() const { return base_; }
 
 private:
-  rng::transform_view<V, F> trans_view;
-  rng::transform_view< decltype(dr::ranges::local(trans_view.base())), F> local_trans_view;
+  V base_;
   F fn_;
 };
 

@@ -142,10 +142,6 @@ TYPED_TEST(Slide, slide_works_with_transform_view)
 
   EXPECT_EQ(rng::size(slided_and_transformed_view), 8);
 
-  //for (auto x : slided_and_transformed_view) {
-    //dr::drlog.debug("slided_and_transformed {}\n", x);
-  //}
-
   xhp::for_each(slided_and_transformed_view, [](auto && v) {
     // nothing complex can be done without output, just reading value
     typename TypeParam::value_type x [[maybe_unused]] = v;
@@ -174,8 +170,6 @@ TYPED_TEST(Slide, two_slides_can_be_zipped_and_read_by_foreach) {
         EXPECT_EQ(3, rng::size(first));
         EXPECT_EQ(3, rng::size(second));
 #endif
-        //dr::drlog.debug("w firsta[1]:{} o addr:{} wpisuje sume second[0]:{} i second[2]:{}\n", first[1], static_cast<void*>(&first[1]), second[0], second[2]);
-        //dr::drlog.debug("w second[1]:{} o addr:{} wpisuje sume first[0]:{} i first[2]:{}\n", second[1], static_cast<void*>(&second[1]), first[0], first[2]);
         first[1] = second[0] + second[2];
       });
 
