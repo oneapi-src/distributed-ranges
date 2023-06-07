@@ -160,22 +160,22 @@ struct local_fn_ {
 
   // based on https://ericniebler.github.io/range-v3/#autotoc_md30  "Create
   // custom iterators"
+  // TODO: rewrite using iterator_interface from
+  //  https://github.com/boostorg/stl_interfaces
   template <typename Iter>
   requires rng::forward_range<typename Iter::value_type>
   struct cursor_over_local_ranges {
     Iter iter;
-    auto read() const {
+    auto make_begin_for_counted() const
+    {
       if constexpr (iter_has_local_method<rng::iterator_t<typename Iter::value_type>>)
-      {
-        return rng::views::counted(rng::begin(*iter).local(), rng::size(*iter));
-      }
+        return rng::begin(*iter).local();
       else
-      {
-        return rng::views::counted(
-            rng::basic_iterator<cursor_over_local_ranges<rng::iterator_t<typename Iter::value_type>>>(
-                rng::begin(*iter)),
-            rng::size(*iter));
-      }
+        return rng::basic_iterator<cursor_over_local_ranges<rng::iterator_t<typename Iter::value_type>>>(
+            rng::begin(*iter));
+    }
+    auto read() const {
+        return rng::views::counted(make_begin_for_counted(), rng::size(*iter));
     }
     bool equal(const cursor_over_local_ranges &other) const {
       return iter == other.iter;

@@ -158,9 +158,6 @@ TYPED_TEST(Slide, two_slides_can_be_zipped_and_read_by_foreach) {
   iota(dv_2, 20); // 20,21,22,23,24,25
   dv_2.halo().exchange();
 
-  dv_1.dump_to_log("dv1 po iota");
-  dv_2.dump_to_log("dv2 po iota");
-
   xhp::for_each(
       xhp::zip_view(xhp::views::sliding(dv_1, 3), xhp::views::sliding(dv_2, 3)),
       [](auto &&zr) {
@@ -174,11 +171,7 @@ TYPED_TEST(Slide, two_slides_can_be_zipped_and_read_by_foreach) {
       });
 
   dv_1.halo().exchange();
-  //dv_2.halo().exchange();
   fence();
-
-  dv_1.dump_to_log("dv1 po foreach");
-  dv_2.dump_to_log("dv2 po foreach");
 
   EXPECT_EQ(10, dv_1[0]);
   EXPECT_EQ(20 + 22, dv_1[1]);

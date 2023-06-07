@@ -178,7 +178,7 @@ public:
   }
 
   auto local() const
-    requires(remote_iterator<BaseIters> || ...)
+    requires(dr::ranges::__detail::has_local<BaseIters> || ...)
   {
     // Create a temporary zip_view and return the iterator. This code
     // assumes the iterator is valid even if the underlying zip_view
