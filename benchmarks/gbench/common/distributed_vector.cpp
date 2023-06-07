@@ -115,9 +115,6 @@ DR_BENCHMARK(Copy_QueueCopy_SYCL);
 
 #endif
 
-#ifndef BENCH_SHP
-// Not defined?
-
 static void Copy_DR(benchmark::State &state) {
   xhp::distributed_vector<T> src(default_vector_size);
   xhp::distributed_vector<T> dst(default_vector_size);
@@ -131,7 +128,6 @@ static void Copy_DR(benchmark::State &state) {
 }
 
 DR_BENCHMARK(Copy_DR);
-#endif
 
 static void Copy_Serial(benchmark::State &state) {
   std::vector<T> src(default_vector_size);
