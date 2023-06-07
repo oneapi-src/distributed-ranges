@@ -205,7 +205,13 @@ struct local_fn_ {
     }
   }
 
-  template <rng::forward_range R> auto operator()(R &&r) const {
+  template <rng::forward_range R>
+  requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
+      segment_has_local_method<R> ||
+      std::contiguous_iterator<rng::iterator_t<R>> ||
+      is_localizable<R> || rng::contiguous_range<R>)
+  auto operator()(R &&r) const
+  {
     if constexpr (segment_has_local_method<R>) {
       return r.local();
     } else if constexpr (iter_has_local_method<rng::iterator_t<R>>) {
@@ -219,8 +225,6 @@ struct local_fn_ {
           rng::size(r));
     } else if constexpr (std::contiguous_iterator<rng::iterator_t<R>>) {
       return std::span(rng::begin(r), rng::size(r));
-    } else {
-      return rng::views::all(r);
     }
   }
 };

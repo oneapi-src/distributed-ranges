@@ -54,23 +54,7 @@ auto segments_(V &&v) {
   return dr::mhp::views::segmented(
       v, dr::__detail::take_segments(
           dr::__detail::drop_segments(base_segments, elements_to_skip_in_base), elements_to_take));
-//  return dr::mhp::views::segmented(
-//      v, dr::__detail::take_segments(dr::ranges::segments(first),
-//                                     sliding_view_size));
 }
 
-//template <rng::range V>
-//  requires(dr::is_subrange_view_v<V>)
-//auto segments_(V &&v) {
-//
-//
-//  return dr::mhp::views::segmented(v, dr::ranges::segments(views::counted(first, sliding_view_size)));
-//  //  return dr::mhp::views::segmented(
-//  //      v, dr::__detail::take_segments(dr::ranges::segments(first),
-//  //                                     sliding_view_size));
-//}
-
-
 // TODO: add support for dr::mhp::halo(dr::mhp::views::sliding(r)).exchange()
-
 } // namespace DR_RANGES_NAMESPACE
