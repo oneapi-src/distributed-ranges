@@ -22,8 +22,7 @@ template <typename R> auto local_segments(R &&dr) {
     return rng::subrange(b, b + rng::distance(segment));
   };
   return dr::ranges::segments(std::forward<R>(dr)) |
-         rng::views::filter(is_local) |
-         rng::views::transform(local_iter);
+         rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
 template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {

@@ -52,8 +52,10 @@ auto segments_(V &&v) {
   }
 
   return dr::mhp::views::segmented(
-      v, dr::__detail::take_segments(
-          dr::__detail::drop_segments(base_segments, elements_to_skip_in_base), elements_to_take));
+      v,
+      dr::__detail::take_segments(
+          dr::__detail::drop_segments(base_segments, elements_to_skip_in_base),
+          elements_to_take));
 }
 
 // TODO: add support for dr::mhp::halo(dr::mhp::views::sliding(r)).exchange()

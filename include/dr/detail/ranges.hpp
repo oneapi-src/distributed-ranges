@@ -163,19 +163,19 @@ struct local_fn_ {
   // TODO: rewrite using iterator_interface from
   //  https://github.com/boostorg/stl_interfaces
   template <typename Iter>
-  requires rng::forward_range<typename Iter::value_type>
+    requires rng::forward_range<typename Iter::value_type>
   struct cursor_over_local_ranges {
     Iter iter;
-    auto make_begin_for_counted() const
-    {
-      if constexpr (iter_has_local_method<rng::iterator_t<typename Iter::value_type>>)
+    auto make_begin_for_counted() const {
+      if constexpr (iter_has_local_method<
+                        rng::iterator_t<typename Iter::value_type>>)
         return rng::begin(*iter).local();
       else
-        return rng::basic_iterator<cursor_over_local_ranges<rng::iterator_t<typename Iter::value_type>>>(
-            rng::begin(*iter));
+        return rng::basic_iterator<cursor_over_local_ranges<
+            rng::iterator_t<typename Iter::value_type>>>(rng::begin(*iter));
     }
     auto read() const {
-        return rng::views::counted(make_begin_for_counted(), rng::size(*iter));
+      return rng::views::counted(make_begin_for_counted(), rng::size(*iter));
     }
     bool equal(const cursor_over_local_ranges &other) const {
       return iter == other.iter;
@@ -206,12 +206,11 @@ struct local_fn_ {
   }
 
   template <rng::forward_range R>
-  requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
-      segment_has_local_method<R> ||
-      std::contiguous_iterator<rng::iterator_t<R>> ||
-      is_localizable<R> || rng::contiguous_range<R>)
-  auto operator()(R &&r) const
-  {
+    requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
+             segment_has_local_method<R> ||
+             std::contiguous_iterator<rng::iterator_t<R>> ||
+             is_localizable<R> || rng::contiguous_range<R>)
+  auto operator()(R &&r) const {
     if constexpr (segment_has_local_method<R>) {
       return r.local();
     } else if constexpr (iter_has_local_method<rng::iterator_t<R>>) {

@@ -161,6 +161,5 @@ TYPED_TEST(
   }
 }
 
-
 // halo exchange has some bug when having different prev/next
 // add more tests with different sides once halo is fixed

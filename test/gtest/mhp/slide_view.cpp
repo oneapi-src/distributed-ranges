@@ -125,8 +125,7 @@ TYPED_TEST(Slide, slide_works_with_transform_algorithm) {
   EXPECT_EQ(0, dv_out[9]);
 }
 
-TYPED_TEST(Slide, slide_works_with_transform_view)
-{
+TYPED_TEST(Slide, slide_works_with_transform_view) {
   TypeParam dv(10, dr::mhp::distribution().halo(1));
   iota(dv, 0); // 0,1,2,3,4,5,6,7,8,9
   dv.halo().exchange();
@@ -134,15 +133,15 @@ TYPED_TEST(Slide, slide_works_with_transform_view)
   auto sv = xhp::views::sliding(dv, 3);
   EXPECT_EQ(rng::size(sv), 8);
 
-  auto slided_and_transformed_view = xhp::views::transform(sv, [](auto && r){
+  auto slided_and_transformed_view = xhp::views::transform(sv, [](auto &&r) {
     // change 3-element range into prefix sum
-    //r = r * 2;
+    // r = r * 2;
     return rng::accumulate(r, 0);
   });
 
   EXPECT_EQ(rng::size(slided_and_transformed_view), 8);
 
-  xhp::for_each(slided_and_transformed_view, [](auto && v) {
+  xhp::for_each(slided_and_transformed_view, [](auto &&v) {
     // nothing complex can be done without output, just reading value
     typename TypeParam::value_type x [[maybe_unused]] = v;
     x = x + 1;
@@ -186,24 +185,25 @@ TYPED_TEST(Slide, slide_works_on_transformed_range) {
   iota(dv, 10); // 10,11,12,13,14,15
   dv.halo().exchange();
 
-  auto transformed_dv = dv | xhp::views::transform([](auto && e){ return e*2;
-  });
+  auto transformed_dv =
+      dv | xhp::views::transform([](auto &&e) { return e * 2; });
 
-  xhp::for_each(xhp::views::sliding(transformed_dv, 3), [](auto && r) {
-    // SYCL kernel cannot use exceptions
+  xhp::for_each(xhp::views::sliding(transformed_dv, 3), [](auto &&r) {
+  // SYCL kernel cannot use exceptions
 #ifndef SYCL_LANGUAGE_VERSION
     EXPECT_EQ(3, rng::size(r));
     // checking that transform indeed happened when we see sliding_view element
-    EXPECT_EQ(r[0]%2, 0);
-    EXPECT_EQ(r[1]%2, 0);
-    EXPECT_EQ(r[2]%2, 0);
+    EXPECT_EQ(r[0] % 2, 0);
+    EXPECT_EQ(r[1] % 2, 0);
+    EXPECT_EQ(r[2] % 2, 0);
     EXPECT_TRUE(r[0] >= 20 && r[0] <= 30);
     EXPECT_TRUE(r[1] >= 20 && r[1] <= 30);
     EXPECT_TRUE(r[2] >= 20 && r[2] <= 30);
 #endif
     // nothing sensible without second dv can be done as r is read-only here
-    // just test reading these values so icpx -sycl will fail if read is a non-local operation
-    typename TypeParam::value_type x [[maybe_unused]] = r[0]+r[2];
+    // just test reading these values so icpx -sycl will fail if read is a
+    // non-local operation
+    typename TypeParam::value_type x [[maybe_unused]] = r[0] + r[2];
     x = x + 1;
   });
 }
