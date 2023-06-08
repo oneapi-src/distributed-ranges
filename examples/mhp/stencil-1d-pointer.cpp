@@ -7,7 +7,10 @@
 
 #include "dr/mhp.hpp"
 
-auto stencil_op = [](auto &&r) { return r[0] + r[1] + r[2]; };
+auto stencil_op = [](auto &&v) {
+  auto p = &v;
+  return p[-1] + p[0] + p[+1];
+};
 
 int check(auto dv, auto n, auto steps) {
   // Serial stencil
@@ -15,11 +18,11 @@ int check(auto dv, auto n, auto steps) {
   rng::iota(a, 100);
   rng::fill(b, 0);
 
-  auto in = rng::ref_view(a);
-  auto out = rng::ref_view(b);
+  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
+  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
 
   for (std::size_t s = 0; s < steps; s++) {
-    rng::transform(rng::views::sliding(in, 3), out.begin() + 1, stencil_op);
+    rng::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
   }
 
@@ -42,13 +45,12 @@ int stencil(auto n, auto steps) {
   dr::mhp::iota(a, 100);
   dr::mhp::fill(b, 0);
 
-  auto in = rng::ref_view(a);
-  auto out = rng::ref_view(b);
+  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
+  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
 
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
-    dr::mhp::transform(dr::mhp::views::sliding(in, 3), out.begin() + 1,
-                       stencil_op);
+    dr::mhp::transform(in, out.begin(), stencil_op);
 
     std::swap(in, out);
   }

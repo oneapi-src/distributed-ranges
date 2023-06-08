@@ -34,7 +34,6 @@ template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
 
   // Should be error, not assert. Or we could join all the segments
   assert(rng::distance(segments) == 1);
-
   return *rng::begin(segments);
 }
 

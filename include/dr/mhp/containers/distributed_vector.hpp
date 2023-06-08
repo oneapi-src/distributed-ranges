@@ -46,24 +46,34 @@ public:
     index_ = index;
   }
 
-  // Comparison
-  bool operator==(const dv_segment_iterator &other) const noexcept {
-    return index_ == other.index_ && dv_ == other.dv_;
-  }
   auto operator<=>(const dv_segment_iterator &other) const noexcept {
-    return index_ <=> other.index_;
+    // assertion below checks against compare dereferenceable iterator to a
+    // singular iterator and against attempt to compare iterators from different
+    // sequences like _Safe_iterator<gnu_cxx::normal_iterator> does
+    assert(dv_ == other.dv_);
+    return segment_index_ == other.segment_index_
+               ? index_ <=> other.index_
+               : segment_index_ <=> other.segment_index_;
   }
 
-  // Only these arithmetics manipulate internal state
-  auto &operator-=(difference_type n) {
-    index_ -= n;
-    return *this;
+  // Comparison
+  bool operator==(const dv_segment_iterator &other) const noexcept {
+    return (*this <=> other) == 0;
   }
+
+  // Only this arithmetic manipulate internal state
   auto &operator+=(difference_type n) {
+    assert(dv_ != nullptr);
+    assert(n >= 0 || static_cast<difference_type>(index_) >= -n);
     index_ += n;
     return *this;
   }
+
+  auto &operator-=(difference_type n) { return *this += (-n); }
+
   difference_type operator-(const dv_segment_iterator &other) const noexcept {
+    assert(dv_ != nullptr && dv_ == other.dv_);
+    assert(index_ >= other.index_);
     return index_ - other.index_;
   }
 
@@ -106,10 +116,18 @@ public:
   }
 
   // dereference
-  auto operator*() const { return dv_segment_reference<DV>{*this}; }
-  auto operator[](difference_type n) const { return *(*this + n); }
+  auto operator*() const {
+    assert(dv_ != nullptr);
+    return dv_segment_reference<DV>{*this};
+  }
+  auto operator[](difference_type n) const {
+    assert(dv_ != nullptr);
+    return *(*this + n);
+  }
 
   void get(value_type *dst, std::size_t size) const {
+    assert(dv_ != nullptr);
+    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dv_->win_.get(dst, size * sizeof(*dst), segment_index_,
                   segment_offset * sizeof(*dst));
@@ -122,6 +140,8 @@ public:
   }
 
   void put(const value_type *dst, std::size_t size) const {
+    assert(dv_ != nullptr);
+    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
@@ -131,19 +151,66 @@ public:
 
   void put(const value_type &value) const { put(&value, 1); }
 
-  auto rank() const { return segment_index_; }
-  auto local() const {
-    return dv_->data_ + index_ + dv_->distribution_.halo().prev;
+  auto rank() const {
+    assert(dv_ != nullptr);
+    return segment_index_;
   }
+
+  auto local() const {
+#ifndef SYCL_LANGUAGE_VERSION
+    assert(dv_ != nullptr);
+#endif
+    const auto my_process_segment_index = dv_->win_.communicator().rank();
+
+    if (my_process_segment_index == segment_index_)
+      return dv_->data_ + index_ + dv_->distribution_.halo().prev;
+#ifndef SYCL_LANGUAGE_VERSION
+    assert(!dv_->distribution_.halo().periodic); // not implemented
+#endif
+    // sliding view needs local iterators that point to the halo
+    if (my_process_segment_index + 1 == segment_index_) {
+#ifndef SYCL_LANGUAGE_VERSION
+      assert(index_ <= dv_->distribution_.halo()
+                           .next); // <= instead of < to cover end() case
+#endif
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ +
+             dv_->segment_size_;
+    }
+
+    if (my_process_segment_index == segment_index_ + 1) {
+#ifndef SYCL_LANGUAGE_VERSION
+      assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
+#endif
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ -
+             dv_->segment_size_;
+    }
+
+#ifndef SYCL_LANGUAGE_VERSION
+    assert(false); // trying to read non-owned memory
+#endif
+    return static_cast<decltype(dv_->data_)>(nullptr);
+  }
+
   auto segments() const {
+    assert(dv_ != nullptr);
     return dr::__detail::drop_segments(dv_->segments(), segment_index_, index_);
   }
-  auto &halo() const { return dv_->halo(); }
+
+  auto &halo() const {
+    assert(dv_ != nullptr);
+    return dv_->halo();
+  }
+  auto halo_bounds() const {
+    assert(dv_ != nullptr);
+    return dv_->distribution_.halo();
+  }
 
 private:
+  // all fields need to be initialized by default ctor so every default
+  // constructed iter is equal to any other default constructed iter
   DV *dv_ = nullptr;
-  std::size_t segment_index_;
-  std::size_t index_;
+  std::size_t segment_index_ = 0;
+  std::size_t index_ = 0;
 }; // dv_segment_iterator
 
 template <typename DV> class dv_segment {
@@ -157,9 +224,13 @@ public:
     dv_ = dv;
     segment_index_ = segment_index;
     size_ = size;
+    assert(dv_ != nullptr);
   }
 
-  auto size() const { return size_; }
+  auto size() const {
+    assert(dv_ != nullptr);
+    return size_;
+  }
 
   auto begin() const { return iterator(dv_, segment_index_, 0); }
   auto end() const { return begin() + size(); }
@@ -248,6 +319,13 @@ public:
           ->segments()[offset_ / segment_size][offset_ % segment_size];
     }
     auto operator[](difference_type n) const { return *(*this + n); }
+
+    auto local() {
+      auto segment_size = parent_->segment_size_;
+      return (parent_->segments()[offset_ / segment_size].begin() +
+              offset_ % segment_size)
+          .local();
+    }
 
     //
     // Support for distributed ranges

@@ -30,6 +30,7 @@ add_executable(
   reduce.cpp
   stencil.cpp
   segments.cpp
+  slide_view.cpp
 )
 
 add_executable(
@@ -44,7 +45,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  segments.cpp
+  slide_view.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
