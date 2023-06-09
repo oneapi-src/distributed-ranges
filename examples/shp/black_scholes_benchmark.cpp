@@ -108,15 +108,25 @@ template <typename T, rng::range RS, rng::range RX, rng::range RT,
 void black_scholes_functional(T r, T sig, RS &&s0, RX &&x, RT &&t, RC &&vcall,
                               RP &&vput) {
 
-  auto black_scholes = [=](auto &&e) {
-    auto &&[s0, x, t, vcall, vput] = e;
-    T d1 = (std::log(s0 / x) + (r + T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
-    T d2 = (std::log(s0 / x) + (r - T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
+  auto black_scholes = [=](auto &&tuple) {
+    auto &&[s0, x, t, vcall, vput] = tuple;
+    T a = std::log(s0 / x);
+    T b = t * -r;
+    T z = t * sig * sig * 2;
 
-    vcall = s0 * normalCDF(d1) - std::exp(-r * t) * x * normalCDF(d2);
-    vput = std::exp(-r * t) * x * normalCDF(-d2) - s0 * normalCDF(-d1);
+    T c = T(0.25) * z;
+    T e = std::exp(b);
+    T y = 1 / std::sqrt(z);
+
+    T w1 = (a - b + c) * y;
+    T w2 = (a - b - c) * y;
+    T d1 = std::erf(w1);
+    T d2 = std::erf(w2);
+    d1 = T(0.5) + T(0.5) * d1;
+    d2 = T(0.5) + T(0.5) * d2;
+
+    vcall = s0 * d1 - x * e * d2;
+    vput = vcall - s0 + x * e;
   };
 
   auto zipped_view = rng::views::zip(s0, x, t, vcall, vput);
@@ -129,15 +139,25 @@ template <typename Policy, typename T, rng::range RS, rng::range RX,
 void black_scholes_onedpl(Policy &&policy, T r, T sig, RS &&s0, RX &&x, RT &&t,
                           RC &&vcall, RP &&vput) {
 
-  auto black_scholes = [=](auto &&e) {
-    auto &&[s0, x, t, vcall, vput] = e;
-    T d1 = (std::log(s0 / x) + (r + T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
-    T d2 = (std::log(s0 / x) + (r - T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
+  auto black_scholes = [=](auto &&tuple) {
+    auto &&[s0, x, t, vcall, vput] = tuple;
+    T a = std::log(s0 / x);
+    T b = t * -r;
+    T z = t * sig * sig * 2;
 
-    vcall = s0 * normalCDF(d1) - std::exp(-r * t) * x * normalCDF(d2);
-    vput = std::exp(-r * t) * x * normalCDF(-d2) - s0 * normalCDF(-d1);
+    T c = T(0.25) * z;
+    T e = std::exp(b);
+    T y = 1 / std::sqrt(z);
+
+    T w1 = (a - b + c) * y;
+    T w2 = (a - b - c) * y;
+    T d1 = std::erf(w1);
+    T d2 = std::erf(w2);
+    d1 = T(0.5) + T(0.5) * d1;
+    d2 = T(0.5) + T(0.5) * d2;
+
+    vcall = s0 * d1 - x * e * d2;
+    vput = vcall - s0 + x * e;
   };
 
   auto zipped_view = rng::views::zip(s0, x, t, vcall, vput);
@@ -160,15 +180,25 @@ template <typename T, dr::distributed_range RS, dr::distributed_range RX,
 void black_scholes_distributed(T r, T sig, RS &&s0, RX &&x, RT &&t, RC &&vcall,
                                RP &&vput) {
 
-  auto black_scholes = [=](auto &&e) {
-    auto &&[s0, x, t, vcall, vput] = e;
-    T d1 = (std::log(s0 / x) + (r + T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
-    T d2 = (std::log(s0 / x) + (r - T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
+  auto black_scholes = [=](auto &&tuple) {
+    auto &&[s0, x, t, vcall, vput] = tuple;
+    T a = std::log(s0 / x);
+    T b = t * -r;
+    T z = t * sig * sig * 2;
 
-    vcall = s0 * normalCDF(d1) - std::exp(-r * t) * x * normalCDF(d2);
-    vput = std::exp(-r * t) * x * normalCDF(-d2) - s0 * normalCDF(-d1);
+    T c = T(0.25) * z;
+    T e = std::exp(b);
+    T y = 1 / std::sqrt(z);
+
+    T w1 = (a - b + c) * y;
+    T w2 = (a - b - c) * y;
+    T d1 = std::erf(w1);
+    T d2 = std::erf(w2);
+    d1 = T(0.5) + T(0.5) * d1;
+    d2 = T(0.5) + T(0.5) * d2;
+
+    vcall = s0 * d1 - x * e * d2;
+    vput = vcall - s0 + x * e;
   };
 
   auto zipped_view = shp::views::zip(s0, x, t, vcall, vput);
@@ -179,7 +209,7 @@ void black_scholes_distributed(T r, T sig, RS &&s0, RX &&x, RT &&t, RC &&vcall,
 int main(int argc, char **argv) {
   shp::init(sycl::gpu_selector_v);
 
-  std::size_t n = 2ll * 1024 * 1024 * 1024;
+  std::size_t n = 2ll * 1000 * 1000 * 1000;
   using T = float;
 
   // Risk-free rate
@@ -302,7 +332,6 @@ int main(int argc, char **argv) {
       double duration = std::chrono::duration<double>(end - begin).count();
 
       sum += oneapi::dpl::reduce(policy, p_vcall, p_vcall + n);
-      // fmt::print("Sum 22...\n");
       sum += oneapi::dpl::reduce(policy, p_vput, p_vput + n);
       durations.push_back(duration);
     }
