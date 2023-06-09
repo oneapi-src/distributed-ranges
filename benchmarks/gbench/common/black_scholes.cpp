@@ -22,7 +22,7 @@ static void Black_Scholes(benchmark::State &state) {
   xhp::distributed_vector<T> vcall(default_vector_size, scalar);
   xhp::distributed_vector<T> vput(default_vector_size, scalar);
 
-  Stats stats(state, sizeof(T) * (s0.size() + x.size()), sizeof(T) * (vcall.size() + vput.size()));
+  Stats stats(state, sizeof(T) * (s0.size() + x.size() + t.size()), sizeof(T) * (vcall.size() + vput.size()));
 
   auto black_scholes =
     [=](auto&& e) {
