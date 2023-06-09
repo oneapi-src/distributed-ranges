@@ -10,6 +10,7 @@ add_executable(
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
   ../common/stream.cpp
+  ../common/black_scholes.cpp
   rooted.cpp
   stencil_1d.cpp
   stencil_2d.cpp

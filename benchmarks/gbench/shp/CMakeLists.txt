@@ -10,6 +10,7 @@ add_executable(
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
   ../common/stream.cpp
+  ../common/black_scholes.cpp
 )
 target_compile_definitions(shp-bench PRIVATE BENCH_SHP)
 target_link_libraries(
