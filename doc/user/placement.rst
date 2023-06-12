@@ -14,21 +14,24 @@ the desired number of sockets and GPUs.  Each process should be bound to a
 dedicated core and a SYCL device should be bound to a dedicated tile
 or a dedicated CPU socket.
 
-For a single process distributed ranges program, all available SYCL
-devices are used for computation. Each SYCL device should be bound to
-a dedicated tile or dedicated CPU socket.
+For a single process distributed ranges program, all available compute
+units (hardware threads for CPU, EU's for GPU) in the SYCL devices are
+used for computation. Each SYCL device should be bound to a dedicated
+tile or dedicated CPU socket.
 
 For flexibilty and ease of development, programs should rely on
 external mechanisms to control placement. MPI can control the
 placement of processes to cores/sockets and binding a specific GPU to
-a process. See `GPU Pinning`_ for more information. SYCL runtime can
-control the mapping of SYCL devices to GPU or CPU, and the number of
-devices available. See `ONEAPI_DEVICE_SELECTOR`_ for more
-information. When using a SYCL CPU device, the OpenMP runtime can
-control the mapping of threads to cores.
+a process. See `CPU Pinning`_ and `GPU Pinning`_ for more
+information. SYCL runtime can control the mapping of SYCL devices to
+GPU or CPU, and the number of devices available. See
+`ONEAPI_DEVICE_SELECTOR`_ for more information. When using a SYCL CPU
+device, the OpenMP runtime can control the mapping of threads to
+cores.
 
 .. _`ONEAPI_DEVICE_SELECTOR`: https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#oneapi_device_selector
 .. _`GPU Pinning`: https://www.intel.com/content/www/us/en/docs/mpi-library/developer-reference-linux/2021-8/gpu-pinning.html
+.. _`CPU Pinning`: https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library-pinning-simulator.html#gs.10glno
 
 MHP/CPU
 =======
