@@ -349,11 +349,11 @@ private:
     std::vector<group_type> owned;
     drlog.debug(nostd::source_location::current(),
                 "owned groups {}/{} first/last\n", comm.first(), comm.last());
-    if (hb.prev > 0 && (hb.periodic || !comm.first())) {
+    if (hb.next > 0 && (hb.periodic || !comm.first())) {
       owned.emplace_back(span.subspan(hb.next, hb.next), comm.prev(),
                          communicator::tag::halo_reverse);
     }
-    if (hb.next > 0 && (hb.periodic || !comm.last())) {
+    if (hb.prev > 0 && (hb.periodic || !comm.last())) {
       owned.emplace_back(span.subspan(rng::size(span) - 2 * hb.prev, hb.prev),
                          comm.next(), communicator::tag::halo_forward);
     }

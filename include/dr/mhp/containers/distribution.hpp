@@ -22,11 +22,6 @@ public:
     return *this;
   }
 
-  distribution &halo(std::size_t prev, std::size_t next) {
-    halo_bounds_ = halo_bounds(prev, next);
-    return *this;
-  }
-
   auto halo() const { return halo_bounds_; }
 
   distribution &periodic(bool periodic) {
