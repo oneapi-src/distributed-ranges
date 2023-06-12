@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
@@ -24,6 +24,16 @@ using Row = std::array<T, cols_static>;
 static auto shape() {
   std::size_t rows = default_vector_size / cols_static;
   return std::pair(rows, cols_static);
+}
+
+static auto shape(auto &state) {
+  auto [rows, cols] = shape();
+  if (rows < 3) {
+    state.SkipWithError(fmt::format("Vector size must be >= 3 * {}", cols));
+    std::size_t empty = 0;
+    return std::pair(empty, empty);
+  }
+  return shape();
 }
 
 void print_matrix(rng::forward_range auto &&actual) {
@@ -120,12 +130,13 @@ static void stencil_1darray_op(auto in, auto out, auto cols, auto i, auto j) {
 // Serial baseline
 //
 static void Stencil2D_Loop_Serial(benchmark::State &state) {
-  auto [rows, cols] = shape();
+  auto [rows, cols] = shape(state);
   if (rows == 0) {
     return;
   }
   std::vector<T> a(rows * cols, init_val);
   std::vector<T> b(rows * cols, init_val);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   auto in = a.data();
   auto out = b.data();
@@ -133,6 +144,7 @@ static void Stencil2D_Loop_Serial(benchmark::State &state) {
   Checker checker;
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
+      stats.rep();
       for (std::size_t i = 1; i < rows - 1; i++) {
         for (std::size_t j = 1; j < cols - 1; j++) {
           stencil_1darray_op(in, out, cols, i, j);
@@ -145,7 +157,7 @@ static void Stencil2D_Loop_Serial(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_Loop_Serial);
+DR_BENCHMARK(Stencil2D_Loop_Serial);
 
 auto stencil_foreach_stdArray_op = [](auto &&v) {
   auto &[in_row, out_row] = v;
@@ -159,7 +171,7 @@ auto stencil_foreach_stdArray_op = [](auto &&v) {
 // Distributed vector of std::array
 //
 static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
-  auto [rows, cols] = shape();
+  auto [rows, cols] = shape(state);
 
   if (rows == 0) {
     return;
@@ -171,6 +183,7 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   auto dist = dr::mhp::distribution().halo(1);
   dr::mhp::distributed_vector<Row> a(rows, dist);
   dr::mhp::distributed_vector<Row> b(rows, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   auto fill_row = [](auto &row) {
     std::fill(row.begin(), row.end(), init_val);
@@ -183,6 +196,7 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   auto out = rng::subrange(b.begin() + 1, b.end() - 1);
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
       dr::mhp::halo(in).exchange();
       dr::mhp::for_each(dr::mhp::views::zip(in, out),
                         stencil_foreach_stdArray_op);
@@ -192,21 +206,23 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_ForeachStdArray_DR);
+DR_BENCHMARK(Stencil2D_ForeachStdArray_DR);
 
 //
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style.
 //
-static void Stencil2D_Nocollective_DR(benchmark::State &state) {
-  auto [rows, cols] = shape();
+static void Stencil2D_NocollectiveCPU_DR(benchmark::State &state) {
+  auto [rows, cols] = shape(state);
   if (rows == 0) {
     return;
   }
 
+  fmt::print("Rows: {}, Cols: {}\n", rows, cols);
   auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
   dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
   dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   Checker checker;
   auto in =
@@ -218,6 +234,7 @@ static void Stencil2D_Nocollective_DR(benchmark::State &state) {
   auto row_slice = size / cols;
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
       dr::mhp::halo(stencil_steps % 2 ? b : a).exchange();
       for (std::size_t i = 0; i < row_slice; i++) {
         for (std::size_t j = 1; j < cols - 1; j++) {
@@ -230,7 +247,7 @@ static void Stencil2D_Nocollective_DR(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_Nocollective_DR);
+DR_BENCHMARK(Stencil2D_NocollectiveCPU_DR);
 
 // Under construction
 #if 0
@@ -247,7 +264,7 @@ auto nslice(auto &&r, cols) {
 // Slice implemented by views. Use for_each on flat representation
 //
 static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
-  auto v = shape();
+  auto v = shape(state);
   auto rows = std::get<0>(v);
   auto cols = std::get<0>(v);
 
@@ -280,7 +297,7 @@ static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_1DArrayTransform_DR);
+DR_BENCHMARK(Stencil2D_1DArrayTransform_DR);
 #endif
 
 //
@@ -288,7 +305,7 @@ BENCHMARK(Stencil2D_1DArrayTransform_DR);
 //
 #ifdef SYCL_LANGUAGE_VERSION
 static void Stencil2D_Basic_SYCL(benchmark::State &state) {
-  auto s = shape();
+  auto s = shape(state);
   auto rows = std::get<0>(s);
   auto cols = std::get<1>(s);
 
@@ -296,10 +313,11 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
     return;
   }
 
-  sycl::queue q;
+  sycl::queue q = dr::mhp::sycl_queue();
 
   auto in = sycl::malloc_device<T>(rows * cols, q);
   auto out = sycl::malloc_device<T>(rows * cols, q);
+  Stats stats(state, sizeof(T) * rows * cols, sizeof(T) * rows * cols);
   q.fill(in, init_val, rows * cols);
   q.fill(out, init_val, rows * cols);
   q.wait();
@@ -307,6 +325,7 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
   Checker checker;
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
       auto op = [=](auto it) {
         stencil_1darray_op(in, out, cols, it[0] + 1, it[1] + 1);
       };
@@ -317,5 +336,51 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Stencil2D_Basic_SYCL);
+DR_BENCHMARK(Stencil2D_Basic_SYCL);
+
+//
+// Distributed vector of floats. Granularity ensures segments contain
+// whole rows. Explicitly process segments SPMD-style with SYCL
+//
+static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
+  auto v = shape(state);
+  auto rows = std::get<0>(v);
+  auto cols = std::get<1>(v);
+  if (rows == 0) {
+    return;
+  }
+
+  auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
+  dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
+  dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
+
+  Checker checker;
+  auto in =
+      dr::mhp::local_segment(rng::subrange(a.begin() + cols, a.end() - cols));
+  auto out =
+      dr::mhp::local_segment(rng::subrange(b.begin() + cols, b.end() - cols));
+  auto size = rng::size(in);
+  assert(size % cols == 0);
+  auto row_slice = size / cols;
+
+  auto q = dr::mhp::sycl_queue();
+  sycl::range global(row_slice, cols - 2);
+
+  for (auto _ : state) {
+    for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
+      auto op = [=](auto it) {
+        stencil_1darray_op(in, out, cols, it[0], it[1] + 1);
+      };
+      dr::mhp::halo(stencil_steps % 2 ? b : a).exchange();
+      q.parallel_for(sycl::range(row_slice, cols - 2), op).wait();
+      std::swap(in, out);
+    }
+    checker.check(stencil_steps % 2 ? b : a);
+  }
+}
+
+DR_BENCHMARK(Stencil2D_NocollectiveSYCL_DR);
+
 #endif

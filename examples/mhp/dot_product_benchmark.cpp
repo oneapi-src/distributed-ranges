@@ -91,7 +91,7 @@ void time_summary(auto &durations, auto &sum) {
 
   fmt::print("Median duration: {} ms\n", median_duration * 1000);
   fmt::print("Memory bandwidth: {:.6} MB/s\n",
-             n * 3 * sizeof(T) / (median_duration * 1000 * 1000));
+             n * 2 * sizeof(T) / (median_duration * 1000 * 1000));
 }
 
 void stats(auto &durations, auto &sum, auto v_serial, auto &x_local,

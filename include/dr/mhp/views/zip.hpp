@@ -178,7 +178,7 @@ public:
   }
 
   auto local() const
-    requires(remote_iterator<BaseIters> || ...)
+    requires(dr::ranges::__detail::has_local<BaseIters> || ...)
   {
     // Create a temporary zip_view and return the iterator. This code
     // assumes the iterator is valid even if the underlying zip_view
@@ -196,7 +196,7 @@ private:
   // If it is not a remote iterator, assume it is a local iterator
   auto static base_local(auto iter) { return iter; }
 
-  auto static base_local(dr::remote_iterator auto iter) {
+  auto static base_local(dr::ranges::__detail::has_local auto iter) {
     return dr::ranges::local(iter);
   }
 
@@ -230,6 +230,8 @@ public:
     return std::apply(make_end, base_);
   }
   auto size() const { return rng::size(rng_zip_); }
+  auto empty() const { return begin() == end(); }
+
   auto operator[](difference_type n) const { return rng_zip_[n]; }
 
   auto base() const { return base_; }
