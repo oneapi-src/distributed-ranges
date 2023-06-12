@@ -78,7 +78,6 @@ if (ENABLE_SYCL)
     # MPI_Win_create fails for communicator with size 1
     add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl)
   endif()
-  # TODO fix sycl Take issues
   add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl)
   add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl)
   add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl)
