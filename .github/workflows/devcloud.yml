@@ -26,4 +26,5 @@ jobs:
     - name: Build
       run: srun -p pvc-shared scripts/devcloud-build.sh
     - name: PVC1
-      run: srun -p pvc-shared scripts/devcloud-run.sh
+      # mpi does not like the way SLURM sets environment variables
+      run: srun -p pvc-shared /usr/bin/env -i scripts/devcloud-run.sh
