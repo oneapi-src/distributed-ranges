@@ -4,6 +4,9 @@
 
 #include <dr/shp.hpp>
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 namespace shp = dr::shp;
 
 template <typename T>
