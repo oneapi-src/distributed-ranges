@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include <dr/detail/owning_view.hpp>
 #include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
@@ -236,9 +237,7 @@ public:
     return views_;
   }
 
-  std::vector<dense_matrix_view<T, rng::iterator_t<dr::shp::device_vector<
-                                       T, dr::shp::device_allocator<T>>>>>
-  segments() {
+  auto segments() {
     std::vector<dense_matrix_view<T, rng::iterator_t<dr::shp::device_vector<
                                          T, dr::shp::device_allocator<T>>>>>
         views_;
@@ -260,7 +259,7 @@ public:
                             tiles_[i * grid_shape_[1] + j].rank());
       }
     }
-    return views_;
+    return dr::__detail::owning_view(std::move(views_));
   }
 
 private:
