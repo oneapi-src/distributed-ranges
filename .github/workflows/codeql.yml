@@ -21,9 +21,9 @@ on:
   schedule:
     - cron: '32 5 * * 0'
   # disabling: never finds anything
-  pull_request:
+  # pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+    # branches: [ "main" ]
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
