@@ -84,12 +84,13 @@ template <typename T> auto sum_matrix(shp::dense_matrix<T> &m) {
 }
 
 int main(int argc, char **argv) {
-  auto devices = dr::shp::get_duplicated_devices(sycl::default_selector_v, 16);
+  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
+  fmt::print("Initiating with {} devices\n", devices.size());
   dr::shp::init(devices);
 
-  std::size_t m = 500;
-  std::size_t n = 500;
-  std::size_t k = 500;
+  std::size_t m = 32 * 1024;
+  std::size_t n = 32 * 1024;
+  std::size_t k = 32 * 1024;
 
   auto partitions = shp::partition_matmul(m, n, k);
 
@@ -125,21 +126,24 @@ int main(int argc, char **argv) {
 
   fmt::print("Sum: {}\n", single_sum);
 
-  auto c_serial = serial_test<T>(m, n, k);
+  if (m <= 200 && n <= 200) {
+    auto c_serial = serial_test<T>(m, n, k);
 
-  assert(c.shape() == c_serial.shape());
-
-  for (std::size_t i = 0; i < m; i++) {
-    for (std::size_t j = 0; j < n; j++) {
-      if (!is_equal<T>(c_serial[{i, j}], c[{i, j}])) {
-        // fmt::print("{}, {}: {} != {}\n", i, j, c_serial[{i, j}], c[{i, j}]);
-        fmt::print("Not equal!\n");
+    assert(c.shape() == c_serial.shape());
+    for (std::size_t i = 0; i < m; i++) {
+      for (std::size_t j = 0; j < n; j++) {
+        if (!is_equal<T>(c_serial[{i, j}], c[{i, j}])) {
+          // fmt::print("{}, {}: {} != {}\n", i, j, c_serial[{i, j}], c[{i,
+          // j}]);
+          fmt::print("Not equal!\n");
+        }
+        assert(is_equal<T>(c_serial[{i, j}], c[{i, j}]));
       }
-      assert(is_equal<T>(c_serial[{i, j}], c[{i, j}]));
     }
+    delete[] c_serial.data();
+  } else {
+    fmt::print("Matrix too large, not performing correctness check.\n");
   }
-
-  delete[] c_serial.data();
 
   T total_sum(0);
 
@@ -174,12 +178,14 @@ int main(int argc, char **argv) {
 
   fmt::print("Median duration: {}\n", median_duration);
 
-  std::size_t nflops = 3 * m * n * k + 2 * m * n;
+  std::size_t nflops = 2 * m * n * k + 3 * m * n;
 
   double flop_rate = nflops / median_duration;
   double gflop_rate = flop_rate * 1e-9;
+  double tflop_rate = gflop_rate * 1e-3;
 
   fmt::print("{} GFLOPs\n", gflop_rate);
+  fmt::print("{} TFLOPs\n", tflop_rate);
 
   return 0;
 }
