@@ -72,7 +72,7 @@ bool is_equal(A &&a, B &&b) {
   return true;
 }
 
-template <typename T> auto sum_matrix(shp::dense_matrix<T> &m) {
+template <typename T> auto sum_matrix(shp::distributed_dense_matrix<T> &m) {
   auto view = m | shp::views::transform([](auto &&e) {
                 auto &&[_, v] = e;
                 return v;
@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
 
   using T = float;
 
-  dr::shp::dense_matrix<T> a({m, k}, partitions[0]);
-  dr::shp::dense_matrix<T> b({k, n}, partitions[1]);
-  dr::shp::dense_matrix<T> c({m, n}, partitions[2]);
+  dr::shp::distributed_dense_matrix<T> a({m, k}, partitions[0]);
+  dr::shp::distributed_dense_matrix<T> b({k, n}, partitions[1]);
+  dr::shp::distributed_dense_matrix<T> c({m, n}, partitions[2]);
 
   auto shape = a.shape();
   dr::shp::for_each(dr::shp::par_unseq, a, [=](auto &&entry) {

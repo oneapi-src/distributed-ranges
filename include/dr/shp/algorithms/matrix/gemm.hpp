@@ -5,12 +5,13 @@
 #pragma once
 
 #include <dr/shp/algorithms/matrix/local_gemm.hpp>
-#include <dr/shp/containers/dense_matrix.hpp>
+#include <dr/shp/containers/distributed_dense_matrix.hpp>
 
 namespace dr::shp {
 
 template <typename T>
-void gemm(dense_matrix<T> &a, dense_matrix<T> &b, dense_matrix<T> &c) {
+void gemm(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b,
+          distributed_dense_matrix<T> &c) {
   // Matrix dimensions must match (algorithm requirement)
   assert(c.shape()[0] == a.shape()[0]);
   assert(c.shape()[1] == b.shape()[1]);

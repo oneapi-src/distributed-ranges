@@ -15,7 +15,7 @@
 
 namespace dr::shp {
 
-template <typename T, typename L> class dense_matrix_accessor {
+template <typename T, typename L> class distributed_dense_matrix_accessor {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -29,7 +29,7 @@ public:
 
   using iterator_category = std::random_access_iterator_tag;
 
-  using iterator_accessor = dense_matrix_accessor;
+  using iterator_accessor = distributed_dense_matrix_accessor;
   using const_iterator_accessor = iterator_accessor;
   using nonconst_iterator_accessor = iterator_accessor;
 
@@ -37,21 +37,21 @@ public:
 
   using key_type = dr::shp::index<>;
 
-  constexpr dense_matrix_accessor() noexcept = default;
-  constexpr ~dense_matrix_accessor() noexcept = default;
-  constexpr dense_matrix_accessor(const dense_matrix_accessor &) noexcept =
+  constexpr distributed_dense_matrix_accessor() noexcept = default;
+  constexpr ~distributed_dense_matrix_accessor() noexcept = default;
+  constexpr distributed_dense_matrix_accessor(const distributed_dense_matrix_accessor &) noexcept =
       default;
-  constexpr dense_matrix_accessor &
-  operator=(const dense_matrix_accessor &) noexcept = default;
+  constexpr distributed_dense_matrix_accessor &
+  operator=(const distributed_dense_matrix_accessor &) noexcept = default;
 
-  constexpr dense_matrix_accessor(std::span<tile_type> tiles, key_type grid_idx,
+  constexpr distributed_dense_matrix_accessor(std::span<tile_type> tiles, key_type grid_idx,
                                   key_type tile_idx, key_type grid_shape,
                                   key_type tile_shape,
                                   key_type matrix_shape) noexcept
       : grid_idx_(grid_idx), tile_idx_(tile_idx), grid_shape_(grid_shape),
         tile_shape_(tile_shape), matrix_shape_(matrix_shape), tiles_(tiles) {}
 
-  constexpr dense_matrix_accessor &operator+=(difference_type offset) noexcept {
+  constexpr distributed_dense_matrix_accessor &operator+=(difference_type offset) noexcept {
     std::size_t new_global_idx_ = get_global_idx_() + offset;
     key_type new_global_idx = {new_global_idx_ / matrix_shape_[1],
                                new_global_idx_ % matrix_shape_[1]};
@@ -128,9 +128,9 @@ private:
 };
 
 template <typename T, typename L>
-using dense_matrix_iterator = dr::iterator_adaptor<dense_matrix_accessor<T, L>>;
+using distributed_dense_matrix_iterator = dr::iterator_adaptor<distributed_dense_matrix_accessor<T, L>>;
 
-template <typename T> class dense_matrix {
+template <typename T> class distributed_dense_matrix {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -147,15 +147,15 @@ public:
 
   using key_type = dr::shp::index<>;
 
-  using iterator = dense_matrix_iterator<
+  using iterator = distributed_dense_matrix_iterator<
       T, dr::shp::device_vector<T, dr::shp::device_allocator<T>>>;
 
-  dense_matrix(key_type shape)
+  distributed_dense_matrix(key_type shape)
       : shape_(shape), partition_(new dr::shp::block_cyclic()) {
     init_();
   }
 
-  dense_matrix(key_type shape, const matrix_partition &partition)
+  distributed_dense_matrix(key_type shape, const matrix_partition &partition)
       : shape_(shape), partition_(partition.clone()) {
     init_();
   }
