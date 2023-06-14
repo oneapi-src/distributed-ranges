@@ -2,13 +2,15 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-name: Tests
+name: "CPU Tests"
 
 on:
   push:
     branches:
       - main
-  pull_request:
+
+  # Disabling PR testingHas not found any issues
+  # pull_request:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
