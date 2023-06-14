@@ -9,8 +9,8 @@ on:
     branches:
       - main
 
-  # Disabling PR testingHas not found any issues
-  # pull_request:
+  # Disabling PR testing because it has not found any issues
+  #pull_request:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
