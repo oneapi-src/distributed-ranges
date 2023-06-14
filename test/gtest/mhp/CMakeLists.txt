@@ -16,6 +16,7 @@ add_executable(
   ../common/enumerate.cpp
   ../common/fill.cpp
   ../common/for_each.cpp
+  ../common/inclusive_scan.cpp
   ../common/iota.cpp
   ../common/reduce.cpp
   ../common/subrange.cpp
