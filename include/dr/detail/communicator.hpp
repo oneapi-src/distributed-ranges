@@ -43,6 +43,12 @@ public:
     MPI_Scatter(src, size, MPI_BYTE, dst, size, MPI_BYTE, root, mpi_comm_);
   }
 
+  template <typename T>
+  void scatter(const std::vector<T> &src, T &dst, std::size_t root) const {
+    assert(src.size() >= size());
+    scatter(src.data(), &dst, sizeof(T), root);
+  }
+
   void scatterv(const void *src, int *counts, int *offsets, void *dst,
                 int dst_count, std::size_t root) const {
     assert(counts == nullptr || counts[rank()] == dst_count);

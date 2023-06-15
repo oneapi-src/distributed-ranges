@@ -11,48 +11,138 @@ public:
 
 TYPED_TEST_SUITE(InclusiveScan, AllTypes);
 
-// TYPED_TEST(InclusiveScan, Basic) {
-//     TypeParam dv(5);
-//     xhp::iota(dv, 1);
-//     TypeParam dv_expected_result(5) = {1, 3, 6, 10, 15};
-//     xhp::inclusive_scan(dv.begin(), dv.end(), dv.begin());
-//     EXPECT_EQ(dv, dv_expected_result);
-// }
+TYPED_TEST(InclusiveScan, whole_range) {
+  TypeParam dv_in(6);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(6, 0);
 
-// TYPED_TEST(InclusiveScan, BinaryOperationPlus) {
-//     TypeParam dv(5);
-//     xhp::iota(dv, 1);
-//     TypeParam dv_expected_result(5) = {1, 3, 6, 10, 15};
-//     xhp::inclusive_scan(dv.begin(), dv.end(), dv.begin(), std::plus<>());
-//     EXPECT_EQ(dv, dv_expected_result);
-// }
+  xhp::inclusive_scan(dv_in, dv_out, std::plus<>());
+  EXPECT_EQ(1, dv_out[0]);
+  EXPECT_EQ(1 + 2, dv_out[1]);
+  EXPECT_EQ(1 + 2 + 3, dv_out[2]);
+  EXPECT_EQ(1 + 2 + 3 + 4, dv_out[3]);
+  EXPECT_EQ(1 + 2 + 3 + 4 + 5, dv_out[4]);
+  EXPECT_EQ(1 + 2 + 3 + 4 + 5 + 6, dv_out[5]);
+}
 
-// TYPED_TEST(InclusiveScan, BinaryOperationMinus) {
-//     std::vector<int> v = {}
-//     TypeParam dv(10) = {45, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-//     TypeParam dv_expected_result(10) = {45, 44, 42, 39, 35, 30, 24, 17, 9, 0};
-//     xhp::inclusive_scan(dv.begin(), dv.end(), dv.begin(), std::minus<>());
-//     EXPECT_EQ(dv, dv_expected_result);
-// }
+TYPED_TEST(InclusiveScan, whole_range_with_init_value) {
+  TypeParam dv_in(5);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(5, 0);
 
-// TYPED_TEST(InclusiveScan, BinaryOperationMultiplies) {
-//     TypeParam dv(5);
-//     xhp::iota(dv, 1);
-//     TypeParam dv_expected_result(5) = {1, 2, 6, 24, 120};
-//     xhp::inclusive_scan(dv.begin(), dv.end(), dv.begin(), std::multiplies<>());
-//     EXPECT_EQ(dv, dv_expected_result);
-// }
+  xhp::inclusive_scan(dv_in, dv_out, std::plus<>(), 10);
+  EXPECT_EQ(10 + 1, dv_out[0]);
+  EXPECT_EQ(10 + 1 + 2, dv_out[1]);
+  EXPECT_EQ(10 + 1 + 2 + 3, dv_out[2]);
+  EXPECT_EQ(10 + 1 + 2 + 3 + 4, dv_out[3]);
+  EXPECT_EQ(10 + 1 + 2 + 3 + 4 + 5, dv_out[4]);
+}
 
+TYPED_TEST(InclusiveScan, empty) {
+  TypeParam dv_in(3, 1);
+  TypeParam dv_out(3, 0);
+  xhp::inclusive_scan(rng::begin(dv_in), rng::begin(dv_in),
+                          rng::begin(dv_out));
+  EXPECT_EQ(0, dv_out[0]);
+  EXPECT_EQ(0, dv_out[1]);
+  EXPECT_EQ(0, dv_out[2]);
+}
 
-TYPED_TEST(InclusiveScan, InclusiveScanSegments) {
-    std::vector<int> v = {1, 3, 6, 10, 15, 21};
-    TypeParam dv(10);
-    xhp::iota(dv, 1);
-    auto seg_num = dr::ranges::segments(dv);
-    TypeParam dv_expected_result(6);
-    xhp::copy(v.begin(), v.end(), dv_expected_result.begin());
-    dr::mhp::inclusive_scan(dv.begin(), dv.end(), dv.begin(), std::plus<>());
-    // EXPECT_EQ(dv, dv_expected_result);
-    EXPECT_EQ(dv, dv_expected_result);
+TYPED_TEST(InclusiveScan, one_element) {
+  TypeParam dv_in(3, 1);
+  TypeParam dv_out(3, 0);
+  xhp::inclusive_scan(rng::begin(dv_in), ++rng::begin(dv_in),
+                          rng::begin(dv_out));
+  EXPECT_EQ(1, dv_out[0]);
+  EXPECT_EQ(0, dv_out[1]);
+  EXPECT_EQ(0, dv_out[2]);
+}
+
+TYPED_TEST(InclusiveScan, multiply) {
+  TypeParam dv_in(5);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(5, 0);
+
+  xhp::inclusive_scan(dv_in, dv_out, std::multiplies<>());
+  EXPECT_EQ(1, dv_out[0]);
+  EXPECT_EQ(1 * 2, dv_out[1]);
+  EXPECT_EQ(1 * 2 * 3, dv_out[2]);
+  EXPECT_EQ(1 * 2 * 3 * 4, dv_out[3]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5, dv_out[4]);
+}
+
+TYPED_TEST(InclusiveScan, touching_first_segment) {
+  TypeParam dv_in(6);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(6, 0);
+
+  xhp::inclusive_scan(rng::begin(dv_in), ++(++rng::begin(dv_in)),
+                          rng::begin(dv_out), std::plus<>());
+  EXPECT_EQ(1, dv_out[0]);
+  EXPECT_EQ(1 + 2, dv_out[1]);
+  EXPECT_EQ(0, dv_out[2]);
+  EXPECT_EQ(0, dv_out[3]);
+  EXPECT_EQ(0, dv_out[4]);
+  EXPECT_EQ(0, dv_out[5]);
+}
+
+TYPED_TEST(InclusiveScan, touching_last_segment) {
+  TypeParam dv_in(6);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(6, 0);
+
+  xhp::inclusive_scan(--(--rng::end(dv_in)), rng::end(dv_in),
+                          --(--rng::end(dv_out)));
+  EXPECT_EQ(0, dv_out[0]);
+  EXPECT_EQ(0, dv_out[1]);
+  EXPECT_EQ(0, dv_out[2]);
+  EXPECT_EQ(0, dv_out[3]);
+  EXPECT_EQ(5, dv_out[4]);
+  EXPECT_EQ(5 + 6, dv_out[5]);
+}
+
+TYPED_TEST(InclusiveScan, without_last_element) {
+  TypeParam dv_in(6);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(6, 0);
+
+  xhp::inclusive_scan(rng::begin(dv_in), --rng::end(dv_in),
+                          rng::begin(dv_out));
+  EXPECT_EQ(1, dv_out[0]);
+  EXPECT_EQ(1 + 2, dv_out[1]);
+  EXPECT_EQ(1 + 2 + 3, dv_out[2]);
+  EXPECT_EQ(1 + 2 + 3 + 4, dv_out[3]);
+  EXPECT_EQ(1 + 2 + 3 + 4 + 5, dv_out[4]);
+  EXPECT_EQ(0, dv_out[5]);
+}
+
+TYPED_TEST(InclusiveScan, without_first_element) {
+  TypeParam dv_in(6);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(6, 0);
+
+  xhp::inclusive_scan(++rng::begin(dv_in), rng::end(dv_in),
+                      ++rng::begin(dv_out));
+  EXPECT_EQ(0, dv_out[0]);
+  EXPECT_EQ(2, dv_out[1]);
+  EXPECT_EQ(2 + 3, dv_out[2]);
+  EXPECT_EQ(2 + 3 + 4, dv_out[3]);
+  EXPECT_EQ(2 + 3 + 4 + 5, dv_out[4]);
+  EXPECT_EQ(2+3+4+5+6, dv_out[5]);
+}
+
+TYPED_TEST(InclusiveScan, without_first_and_last_elements) {
+  TypeParam dv_in(6);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(6, 0);
+
+  xhp::inclusive_scan(++rng::begin(dv_in), --rng::end(dv_in),
+                      ++rng::begin(dv_out));
+  EXPECT_EQ(0, dv_out[0]);
+  EXPECT_EQ(2, dv_out[1]);
+  EXPECT_EQ(2 + 3, dv_out[2]);
+  EXPECT_EQ(2 + 3 + 4, dv_out[3]);
+  EXPECT_EQ(2 + 3 + 4 + 5, dv_out[4]);
+  EXPECT_EQ(0, dv_out[5]);
 }
 

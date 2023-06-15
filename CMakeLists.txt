@@ -162,6 +162,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-error=unknown-pragmas)
   endif()
 
+  if(ENABLE_CUDA)
+    add_compile_options(-Wno-unknown-cuda-version)
+  endif ()
+
   if(ENABLE_SYCL)
     # disables rng::detail::box_compress::coalesce which causes rng::box to use global non-const variable, which can not
     # be used in SYCL kernels
