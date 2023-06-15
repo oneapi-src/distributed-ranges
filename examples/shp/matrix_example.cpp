@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   dr::shp::init(devices);
 
   auto partition = dr::shp::block_cyclic();
-  dr::shp::dense_matrix<float> x({10, 10}, partition);
+  dr::shp::distributed_dense_matrix<float> x({10, 10}, partition);
 
   x[{2, 3}] = 12;
   x[{5, 7}] = 42;
