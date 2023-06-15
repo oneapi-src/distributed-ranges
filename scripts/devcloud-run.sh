@@ -6,5 +6,4 @@
 
 set -xe
 source /opt/intel/oneapi/setvars.sh
-make -C build/test/gtest/shp test
-make -C build/test/gtest/mhp test
+make -C build test
