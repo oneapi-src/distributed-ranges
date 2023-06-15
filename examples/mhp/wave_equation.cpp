@@ -6,8 +6,13 @@
 #include "mpi.h"
 #include <chrono>
 #include <iomanip>
+#include "cxxopts.hpp"
 
 using T = double;
+
+MPI_Comm comm;
+int comm_rank;
+int comm_size;
 
 // gravitational acceleration
 constexpr double g = 9.81;
@@ -49,35 +54,29 @@ void rhs(dr::mhp::distributed_dense_matrix<T> &u,
    * Evaluate right hand side of the equations
    */
 
-  // u without boundary values (nx-1, ny)
-  // auto u_interior = dr::mhp::subrange(u, {1, u.shape()[0] - 1}, {0,
-  // u.shape()[1]}); v without boundary values (nx, ny-1) auto v_interior =
-  // dr::mhp::subrange(v, {0, v.shape()[0]}, {1, v.shape()[1] - 1});
-
   auto upx = dr::mhp::subrange(u, {1, u.shape()[0]}, {0, u.shape()[1]});
-  auto vpy = dr::mhp::subrange(v, {0, v.shape()[0]}, {1, v.shape()[1]});
-  auto epx = dr::mhp::subrange(e, {1, e.shape()[0]}, {0, e.shape()[1]});
-  auto epy = dr::mhp::subrange(e, {0, e.shape()[0]}, {1, e.shape()[1]});
+  auto vpy = dr::mhp::subrange(v, {1, v.shape()[0]}, {1, v.shape()[1]});
+  auto epx = dr::mhp::subrange(e, {1, e.shape()[0]-1}, {0, e.shape()[1]});
+  auto epy = dr::mhp::subrange(e, {1, e.shape()[0]}, {0, e.shape()[1]-1});
 
   auto dudx_view =
-      dr::mhp::subrange(dudx, {0, dudx.shape()[0]}, {0, dudx.shape()[1]});
+      dr::mhp::subrange(dudx, {1, dudx.shape()[0]}, {0, dudx.shape()[1]});
   auto dvdy_view =
-      dr::mhp::subrange(dvdy, {0, dvdy.shape()[0]}, {0, dvdy.shape()[1]});
+      dr::mhp::subrange(dvdy, {1, dvdy.shape()[0]}, {0, dvdy.shape()[1]});
 
   auto dudt_interior =
-      dr::mhp::subrange(dudt, {1, u.shape()[0] - 1}, {0, dudt.shape()[1]});
+      dr::mhp::subrange(dudt, {1, dudt.shape()[0] - 1}, {0, dudt.shape()[1]});
   auto dvdt_interior =
-      dr::mhp::subrange(dvdt, {0, u.shape()[0]}, {1, dvdt.shape()[1] - 1});
+      dr::mhp::subrange(dvdt, {1, dvdt.shape()[0]}, {1, dvdt.shape()[1] - 1});
 
   // -dt * g * d(e)/dx
   auto rhs_dedx = [=](auto &e) {
-    // FIXME indices are (col, row) ??
-    return -dt * g * (e[{0, 0}] - e[{-1, 0}]) * dx_inv;
+    return -dt * g * (e[{1, 0}] - e[{0, 0}]) * dx_inv;
   };
 
   // -dt * g * d(e)/dy
   auto rhs_dedy = [=](auto &e) {
-    return -dt * g * (e[{0, 0}] - e[{0, -1}]) * dy_inv;
+    return -dt * g * (e[{0, 1}] - e[{0, 0}]) * dy_inv;
   };
 
   // -dt * h * d(u)/dx
@@ -112,21 +111,7 @@ void rhs(dr::mhp::distributed_dense_matrix<T> &u,
   // rhs_divhuv);
 };
 
-int main(int argc, char *argv[]) {
-
-  MPI_Comm comm;
-  int comm_rank;
-  int comm_size;
-
-  MPI_Init(&argc, &argv);
-  comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &comm_rank);
-  MPI_Comm_size(comm, &comm_size);
-  dr::mhp::init();
-
-  if (comm_rank == 0) {
-    std::cout << "Using backend: dr" << std::endl;
-  }
+int run(int n, bool benchmark_mode) {
 
   // Arakava C grid
   //
@@ -143,8 +128,8 @@ int main(int argc, char *argv[]) {
   //   f---v---f---v---f---v---f---v---f-
 
   // number of cells in x, y direction
-  std::size_t nx = 128;
-  std::size_t ny = 128;
+  std::size_t nx = n;
+  std::size_t ny = n;
   const double xmin = -1, xmax = 1;
   const double ymin = -1, ymax = 1;
   const double lx = xmax - xmin;
@@ -154,7 +139,9 @@ int main(int argc, char *argv[]) {
   const double dx_inv = 1.0 / dx;
   const double dy_inv = 1.0 / dy;
   dr::halo_bounds hb(1);
+
   if (comm_rank == 0) {
+    std::cout << "Using backend: dr" << std::endl;
     std::cout << "Grid size: " << nx << " x " << ny << std::endl;
     std::cout << "Elevation DOFs: " << nx * ny << std::endl;
     std::cout << "Velocity  DOFs: " << (nx + 1) * ny + nx * (ny + 1)
@@ -172,37 +159,17 @@ int main(int argc, char *argv[]) {
   double dt = alpha * dx / c;
   dt = t_export / static_cast<int>(ceil(t_export / dt));
   std::size_t nt = static_cast<int>(ceil(t_end / dt));
+  if (benchmark_mode) {
+    nt = 100;
+    dt = 1e-5;
+    t_export = 25*dt;
+    t_end = nt*dt;
+  }
   if (comm_rank == 0) {
     std::cout << "Time step: " << dt << " s" << std::endl;
     std::cout << "Total run time: " << std::fixed << std::setprecision(1);
-    std::cout << "Total run time: " << std::fixed << std::setprecision(1);
     std::cout << t_end << " s, ";
     std::cout << nt << " time steps" << std::endl;
-  }
-
-  // coordinates at cell centers (T points)
-  dr::mhp::distributed_dense_matrix<T> x_t(nx, ny, -1, hb), y_t(nx, ny, -1, hb);
-
-  for (auto r : x_t.rows()) {
-    if (r.segment()->is_local()) {
-      auto i = r.idx();
-      // std::size_t j = 0;
-      for (auto &v : r) {
-        v = xmin + dx / 2 + i * dx;
-        // j++;
-      }
-    }
-  }
-
-  for (auto r : y_t.rows()) {
-    if (r.segment()->is_local()) {
-      // auto i = r.idx();
-      std::size_t j = 0;
-      for (auto &v : r) {
-        v = ymin + dy / 2 + j * dy;
-        j++;
-      }
-    }
   }
 
   // state variables
@@ -220,10 +187,6 @@ int main(int argc, char *argv[]) {
   dr::mhp::distributed_dense_matrix<T> e2(nx + 1, ny, 0, hb);
   dr::mhp::distributed_dense_matrix<T> u2(nx + 1, ny, 0, hb);
   dr::mhp::distributed_dense_matrix<T> v2(nx + 1, ny + 1, 0, hb);
-  // FIXME remove stage 3 arrays
-  dr::mhp::distributed_dense_matrix<T> e3(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> u3(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> v3(nx + 1, ny + 1, 0, hb);
 
   // time tendencies
   dr::mhp::distributed_dense_matrix<T> dedt(nx + 1, ny, 0, hb);
@@ -242,9 +205,13 @@ int main(int argc, char *argv[]) {
       auto i = r.idx();
       std::size_t j = 0;
       for (auto &v : r) {
-        T x = xmin + dx / 2 + i * dx;
+        T x = xmin + dx / 2 + (i-1) * dx;
         T y = ymin + dy / 2 + j * dy;
-        v = initial_elev(x, y, lx, ly);
+        if (i > 0) {
+          v = initial_elev(x, y, lx, ly);
+        } else {
+          v = 0;
+        }
         j++;
       }
     }
@@ -323,23 +290,9 @@ int main(int argc, char *argv[]) {
 
     // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
     rhs(u2, v2, e2, dudx, dvdy, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
-    // FIXME write directly to u instead of u3
-#if 0
-    dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u3.begin(),
-                       rk_update3);
-    dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v3.begin(),
-                       rk_update3);
-    dr::mhp::transform(dr::mhp::views::zip(e, e2, dedt), e3.begin(),
-                       rk_update3);
-    dr::mhp::copy(u3, u.begin());
-    dr::mhp::copy(v3, v.begin());
-    dr::mhp::copy(e3, e.begin());
-
-#else
     dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(), rk_update3);
     dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
     dr::mhp::transform(dr::mhp::views::zip(e, e2, dedt), e.begin(), rk_update3);
-#endif
     dr::mhp::halo(u).exchange();
     dr::mhp::halo(v).exchange();
     dr::mhp::halo(e).exchange();
@@ -352,16 +305,20 @@ int main(int argc, char *argv[]) {
   }
 
   // Compute error against exact solution
-  dr::mhp::distributed_dense_matrix<T> e_exact(nx, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> error(nx, ny, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> e_exact(nx + 1, ny, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> error(nx + 1, ny, 0, hb);
   for (auto r : e_exact.rows()) {
     if (r.segment()->is_local()) {
       auto i = r.idx();
       std::size_t j = 0;
       for (auto &v : r) {
-        T x = xmin + dx / 2 + i * dx;
+        T x = xmin + dx / 2 + (i-1) * dx;
         T y = ymin + dy / 2 + j * dy;
-        v = exact_elev(x, y, t, lx, ly);
+        if (i > 0) {
+          v = exact_elev(x, y, t, lx, ly);
+        } else {
+          v = 0;
+        }
         j++;
       }
     }
@@ -380,12 +337,15 @@ int main(int argc, char *argv[]) {
     std::cout << std::setprecision(5) << err_L2 << std::endl;
   }
 
-  if (nx < 128 or ny < 128) {
+  if (benchmark_mode) {
+    return 0;
+  }
+  if (nx < 128 || ny < 128) {
     if (comm_rank == 0) {
       std::cout << "Skipping correctness test due to small problem size."
                 << std::endl;
     }
-  } else if (nx == 128 and ny == 128) {
+  } else if (nx == 128 && ny == 128) {
     double expected_L2 = 0.007224068445111;
     double rel_tolerance = 1e-6;
     double rel_err = err_L2 / expected_L2 - 1.0;
@@ -411,6 +371,37 @@ int main(int argc, char *argv[]) {
     std::cout << "SUCCESS" << std::endl;
   }
 
-  // MPI_Finalize();
   return 0;
+}
+
+int main(int argc, char *argv[]) {
+
+  MPI_Init(&argc, &argv);
+  comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &comm_rank);
+  MPI_Comm_size(comm, &comm_size);
+  dr::mhp::init();
+
+  cxxopts::Options options_spec(argv[0], "wave equation");
+  // clang-format off
+  options_spec.add_options()
+    ("n", "Grid size", cxxopts::value<std::size_t>()->default_value("128"))
+    ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
+    ("h,help", "Print help");
+  // clang-format on
+
+  cxxopts::ParseResult options;
+  try {
+    options = options_spec.parse(argc, argv);
+  } catch (const cxxopts::OptionParseException &e) {
+    std::cout << options_spec.help() << "\n";
+    exit(1);
+  }
+
+  std::size_t n = options["n"].as<std::size_t>();
+  bool benchmark_mode = options["t"].as<bool>();
+
+  auto error = run(n, benchmark_mode);
+  MPI_Finalize();
+  return error;
 }
