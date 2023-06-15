@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-name: Devcloud
+name: "GPU Tests"
 
 on:
   push:
@@ -19,7 +19,7 @@ env:
   CC: icx
 
 jobs:
-  build:
+  devcloud:
     runs-on: devcloud
     steps:
     - uses: actions/checkout@v3

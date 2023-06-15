@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-name: Tests
+name: "CPU Tests"
 
 on:
   push:
     branches:
       - main
+
   pull_request:
 
 env:
