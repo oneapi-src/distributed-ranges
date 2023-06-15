@@ -39,19 +39,19 @@ public:
 
   constexpr distributed_dense_matrix_accessor() noexcept = default;
   constexpr ~distributed_dense_matrix_accessor() noexcept = default;
-  constexpr distributed_dense_matrix_accessor(const distributed_dense_matrix_accessor &) noexcept =
-      default;
+  constexpr distributed_dense_matrix_accessor(
+      const distributed_dense_matrix_accessor &) noexcept = default;
   constexpr distributed_dense_matrix_accessor &
   operator=(const distributed_dense_matrix_accessor &) noexcept = default;
 
-  constexpr distributed_dense_matrix_accessor(std::span<tile_type> tiles, key_type grid_idx,
-                                  key_type tile_idx, key_type grid_shape,
-                                  key_type tile_shape,
-                                  key_type matrix_shape) noexcept
+  constexpr distributed_dense_matrix_accessor(
+      std::span<tile_type> tiles, key_type grid_idx, key_type tile_idx,
+      key_type grid_shape, key_type tile_shape, key_type matrix_shape) noexcept
       : grid_idx_(grid_idx), tile_idx_(tile_idx), grid_shape_(grid_shape),
         tile_shape_(tile_shape), matrix_shape_(matrix_shape), tiles_(tiles) {}
 
-  constexpr distributed_dense_matrix_accessor &operator+=(difference_type offset) noexcept {
+  constexpr distributed_dense_matrix_accessor &
+  operator+=(difference_type offset) noexcept {
     std::size_t new_global_idx_ = get_global_idx_() + offset;
     key_type new_global_idx = {new_global_idx_ / matrix_shape_[1],
                                new_global_idx_ % matrix_shape_[1]};
@@ -128,7 +128,8 @@ private:
 };
 
 template <typename T, typename L>
-using distributed_dense_matrix_iterator = dr::iterator_adaptor<distributed_dense_matrix_accessor<T, L>>;
+using distributed_dense_matrix_iterator =
+    dr::iterator_adaptor<distributed_dense_matrix_accessor<T, L>>;
 
 template <typename T> class distributed_dense_matrix {
 public:
