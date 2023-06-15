@@ -52,3 +52,21 @@ TEST(Alignment, Iota2) {
   Ops1<DV> ops(10);
   EXPECT_TRUE(dr::mhp::aligned(ops.dist_vec, rng::views::iota(100)));
 }
+
+TEST(Alignment, ZipAligned) {
+  Ops2<DV> ops(10);
+  EXPECT_TRUE(
+      dr::mhp::aligned(dr::mhp::views::zip(ops.dist_vec0, ops.dist_vec1)));
+}
+
+TEST(Alignment, ZipMisaligned) {
+  Ops2<DV> ops(10);
+  auto is_aligned = dr::mhp::aligned(dr::mhp::views::zip(
+      dr::mhp::views::drop(ops.dist_vec0, 1), ops.dist_vec1));
+  if (comm_size == 1) {
+    // If there is a single segment, then it is aligned
+    EXPECT_TRUE(is_aligned);
+  } else {
+    EXPECT_FALSE(is_aligned);
+  }
+}

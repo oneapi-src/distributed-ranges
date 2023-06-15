@@ -7,16 +7,7 @@
 
 #include "dr/mhp.hpp"
 
-MPI_Comm comm;
-int comm_rank;
-int comm_size;
-
-cxxopts::ParseResult options;
-
-auto stencil_op = [](auto &&v) {
-  auto p = &v;
-  return p[-1] + p[0] + p[+1];
-};
+auto stencil_op = [](auto &&r) { return r[0] + r[1] + r[2]; };
 
 int check(auto dv, auto n, auto steps) {
   // Serial stencil
@@ -24,10 +15,11 @@ int check(auto dv, auto n, auto steps) {
   rng::iota(a, 100);
   rng::fill(b, 0);
 
-  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
-  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
+  auto in = rng::ref_view(a);
+  auto out = rng::ref_view(b);
+
   for (std::size_t s = 0; s < steps; s++) {
-    rng::transform(in, out.begin(), stencil_op);
+    rng::transform(rng::views::sliding(in, 3), out.begin() + 1, stencil_op);
     std::swap(in, out);
   }
 
@@ -45,19 +37,24 @@ int check(auto dv, auto n, auto steps) {
 }
 
 int stencil(auto n, auto steps) {
-  dr::halo_bounds hb(1);
-  dr::mhp::distributed_vector<int> a(n, hb), b(n, hb);
+  auto dist = dr::mhp::distribution().halo(1);
+  dr::mhp::distributed_vector<int> a(n, dist), b(n, dist);
   dr::mhp::iota(a, 100);
   dr::mhp::fill(b, 0);
 
-  auto in = rng::subrange(a.begin() + 1, a.end() - 1);
-  auto out = rng::subrange(b.begin() + 1, b.end() - 1);
+  auto in = rng::ref_view(a);
+  auto out = rng::ref_view(b);
+
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
-    dr::mhp::transform(in, out.begin(), stencil_op);
+    dr::mhp::transform(dr::mhp::views::sliding(in, 3), out.begin() + 1,
+                       stencil_op);
+
     std::swap(in, out);
   }
 
+  int comm_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
   if (comm_rank == 0) {
     return check(in, n, steps);
   } else {
@@ -66,11 +63,6 @@ int stencil(auto n, auto steps) {
 }
 
 int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-  comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &comm_rank);
-  MPI_Comm_size(comm, &comm_size);
-  dr::mhp::init();
 
   cxxopts::Options options_spec(argv[0], "stencil 1d");
   // clang-format off
@@ -80,12 +72,21 @@ int main(int argc, char *argv[]) {
     ("help", "Print help");
   // clang-format on
 
+  cxxopts::ParseResult options;
   try {
     options = options_spec.parse(argc, argv);
   } catch (const cxxopts::OptionParseException &e) {
     std::cout << options_spec.help() << "\n";
     exit(1);
   }
+
+  if (options.count("help")) {
+    std::cout << options_spec.help() << "\n";
+    return 0;
+  }
+
+  MPI_Init(&argc, &argv);
+  dr::mhp::init();
 
   auto error =
       stencil(options["n"].as<std::size_t>(), options["s"].as<std::size_t>());

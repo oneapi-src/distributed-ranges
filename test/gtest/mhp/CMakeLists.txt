@@ -10,6 +10,7 @@ add_executable(
   mhp-tests.cpp
   ../common/all.cpp
   ../common/copy.cpp
+  ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
   ../common/enumerate.cpp
@@ -19,36 +20,47 @@ add_executable(
   ../common/reduce.cpp
   ../common/subrange.cpp
   ../common/take.cpp
+  ../common/transform.cpp
   ../common/transform_view.cpp
   ../common/zip.cpp
   ../common/zip_local.cpp
   alignment.cpp
+  copy.cpp
   distributed_vector.cpp
   reduce.cpp
   stencil.cpp
-  segmented.cpp
-)
-target_link_libraries(
-  mhp-tests
-  GTest::gtest_main
-  cxxopts
-  DR::mpi
+  segments.cpp
+  slide_view.cpp
 )
 
-# skeleton for rapid builds of individual tests, feel free to change
-# this
 add_executable(
-  quick-test
+  mhp-tests-3
   mhp-tests.cpp
-  ../common/zip.cpp
+  slide_view-3.cpp
 )
-target_link_libraries(
-  quick-test
-  GTest::gtest_main
-  cxxopts
-  DR::mpi
+
+# mhp-quick-test is a skeleton for rapid builds of individual tests,
+# feel free to change this
+
+add_executable(
+  mhp-quick-test
+  mhp-tests.cpp
+  slide_view.cpp
 )
-target_compile_definitions(quick-test PRIVATE QUICK_TEST)
+
+target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
+
+foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
+  target_link_libraries(
+    ${test-exec}
+    GTest::gtest_main
+    cxxopts
+    DR::mpi
+  )
+  if (ENABLE_SYCL)
+    target_compile_options(${test-exec} PRIVATE -fsycl)
+  endif()
+endforeach()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
@@ -59,28 +71,16 @@ endif()
 add_mpi_test(mhp-tests-2 mhp-tests 2)
 add_mpi_test(mhp-tests-3 mhp-tests 3)
 add_mpi_test(mhp-tests-4 mhp-tests 4)
+add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
 
 if (ENABLE_SYCL)
-  add_executable(
-    mhp-sycl-tests
-
-    # pulls in the common test
-    mhp-tests.cpp
-    )
-  target_compile_definitions(mhp-sycl-tests PRIVATE TEST_MHP_SYCL)
-  target_compile_options(mhp-sycl-tests PRIVATE -fsycl)
-  target_link_libraries(
-    mhp-sycl-tests
-    GTest::gtest_main
-    cxxopts
-    DR::mpi
-    )
-
   if (NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mpi_test(mhp-sycl-tests-1 mhp-sycl-tests 1)
+    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)
   endif()
-  add_mpi_test(mhp-sycl-tests-2 mhp-sycl-tests 2)
-  add_mpi_test(mhp-sycl-tests-3 mhp-sycl-tests 3)
-  add_mpi_test(mhp-sycl-tests-4 mhp-sycl-tests 4)
+  #TODO: fix sycl Slide issues, see https://github.com/oneapi-src/distributed-ranges/issues/322
+  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl --gtest_filter=-*Slide*)
 endif()

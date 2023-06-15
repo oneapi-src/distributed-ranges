@@ -90,4 +90,27 @@ private:
   dr::index<> grid_shape_;
 };
 
+inline std::vector<block_cyclic> partition_matmul(std::size_t m, std::size_t n,
+                                                  std::size_t k) {
+  dr::shp::index<> c_pgrid = detail::factor(shp::nprocs());
+
+  block_cyclic c_block({dr::shp::tile::div, dr::shp::tile::div},
+                       {c_pgrid[0], c_pgrid[1]});
+
+  std::size_t k_block;
+
+  if (m * k >= k * n) {
+    k_block = (shp::nprocs() + c_pgrid[0] - 1) / c_pgrid[0];
+  } else {
+    k_block = (shp::nprocs() + c_pgrid[1] - 1) / c_pgrid[1];
+  }
+
+  block_cyclic a_block({dr::shp::tile::div, dr::shp::tile::div},
+                       {c_pgrid[0], k_block});
+  block_cyclic b_block({dr::shp::tile::div, dr::shp::tile::div},
+                       {k_block, c_pgrid[1]});
+
+  return {a_block, b_block, c_block};
+}
+
 } // namespace dr::shp

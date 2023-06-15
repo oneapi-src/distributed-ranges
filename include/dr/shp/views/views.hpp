@@ -13,6 +13,8 @@ namespace dr::shp::views {
 
 inline constexpr auto all = rng::views::all;
 
+inline constexpr auto counted = rng::views::counted;
+
 inline constexpr auto drop = rng::views::drop;
 
 inline constexpr auto iota = dr::views::iota;

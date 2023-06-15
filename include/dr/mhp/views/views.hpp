@@ -25,11 +25,24 @@ template <typename R> auto local_segments(R &&dr) {
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
+template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
+  auto segments = dr::mhp::local_segments(std::forward<R>(r));
+
+  if (rng::empty(segments)) {
+    return rng::range_value_t<decltype(segments)>{};
+  }
+
+  // Should be error, not assert. Or we could join all the segments
+  assert(rng::distance(segments) == 1);
+  return *rng::begin(segments);
+}
+
 } // namespace dr::mhp
 
 namespace dr::mhp::views {
 
 inline constexpr auto all = rng::views::all;
+inline constexpr auto counted = rng::views::counted;
 inline constexpr auto drop = rng::views::drop;
 inline constexpr auto iota = dr::views::iota;
 inline constexpr auto take = rng::views::take;

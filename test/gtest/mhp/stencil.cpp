@@ -9,12 +9,13 @@ using V = std::vector<T>;
 using DV = dr::mhp::distributed_vector<T>;
 using DVI = typename DV::iterator;
 
-std::size_t radius = 4;
-std::size_t n = 10;
+const std::size_t radius = 4;
+const std::size_t n = 10;
 
 TEST(MhpTests, Stencil) {
-  DV dv_in(n, dr::halo_bounds(radius));
-  DV dv_out(n, dr::halo_bounds(radius));
+  auto dist = dr::mhp::distribution().halo(radius);
+  DV dv_in(n, dist);
+  DV dv_out(n, dist);
   V v_in(n);
 
   dr::mhp::iota(dv_in, 10);

@@ -14,29 +14,10 @@ namespace dr {
 
 namespace __detail {
 
-// count the number of segments necessary to cover n elements,
-// returning the index of the last segment and its remainder
-template <typename R>
-void n_segs_remainder(R &&segments, std::size_t n, auto &last_seg,
-                      auto &remainder) {
-  last_seg = 0;
-  remainder = n;
-
-  for (auto &&seg : segments) {
-    if (seg.size() >= remainder) {
-      break;
-    }
-    remainder -= seg.size();
-
-    last_seg++;
-  }
-}
-
 // Take all elements up to and including segment `segment_id` at index
 // `local_id`
 template <typename R>
-auto take_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
-  auto last_seg = segment_id;
+auto take_segments(R &&segments, std::size_t last_seg, std::size_t local_id) {
   auto remainder = local_id;
 
   auto take_partial = [=](auto &&v) {
@@ -57,21 +38,28 @@ auto take_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
 
 // Take the first n elements
 template <typename R> auto take_segments(R &&segments, std::size_t n) {
-  std::size_t last_seg, remainder;
-  n_segs_remainder(segments, n, last_seg, remainder);
+  std::size_t last_seg = 0;
+  std::size_t remainder = n;
+
+  for (auto &&seg : segments) {
+    if (seg.size() >= remainder) {
+      break;
+    }
+    remainder -= seg.size();
+    last_seg++;
+  }
 
   return take_segments(std::forward<R>(segments), last_seg, remainder);
 }
 
 // Drop all elements up to segment `segment_id` and index `local_id`
 template <typename R>
-auto drop_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
-  auto last_seg = segment_id;
+auto drop_segments(R &&segments, std::size_t first_seg, std::size_t local_id) {
   auto remainder = local_id;
 
   auto drop_partial = [=](auto &&v) {
     auto &&[i, segment] = v;
-    if (i == last_seg) {
+    if (i == first_seg) {
       auto first = rng::begin(segment);
       rng::advance(first, remainder);
       auto last = rng::end(segment);
@@ -81,16 +69,24 @@ auto drop_segments(R &&segments, std::size_t segment_id, std::size_t local_id) {
     }
   };
 
-  return enumerate(segments) | rng::views::drop(last_seg) |
+  return enumerate(segments) | rng::views::drop(first_seg) |
          rng::views::transform(std::move(drop_partial));
 }
 
 // Drop the first n elements
 template <typename R> auto drop_segments(R &&segments, std::size_t n) {
-  std::size_t last_seg, remainder;
-  n_segs_remainder(segments, n, last_seg, remainder);
+  std::size_t first_seg = 0;
+  std::size_t remainder = n;
 
-  return drop_segments(std::forward<R>(segments), last_seg, remainder);
+  for (auto &&seg : segments) {
+    if (seg.size() > remainder) {
+      break;
+    }
+    remainder -= seg.size();
+    first_seg++;
+  }
+
+  return drop_segments(std::forward<R>(segments), first_seg, remainder);
 }
 
 } // namespace __detail
@@ -131,11 +127,10 @@ auto segments_(V &&v) {
 
 template <rng::range V>
   requires(dr::is_subrange_view_v<std::remove_cvref_t<V>> &&
-           dr::distributed_iterator<decltype(std::declval<V>().begin())>)
+           dr::distributed_iterator<rng::iterator_t<V>>)
 auto segments_(V &&v) {
   auto first = rng::begin(v);
   auto last = rng::end(v);
-
   auto size = rng::distance(first, last);
 
   return dr::__detail::take_segments(dr::ranges::segments(first), size);

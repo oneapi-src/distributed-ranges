@@ -55,6 +55,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g -ggdb")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb")
+  # When we define NDEBUG, ranges-v3 uses printf, which is not ok in
+  # sycl kernels. When we do not define NDEBUG, google bench warns
+  # about timing error. Need to investigate if there is another way to
+  # stop ranges-v3 from using printf
+  #
+  # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+  # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
   set(CMAKE_C_FLAGS_RELEASE "-O3")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
@@ -77,6 +84,22 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
+  #
+  # Google test
+  #
+  set(BENCHMARK_ENABLE_TESTING off)
+  set(BENCHMARK_ENABLE_WERROR off)
+  FetchContent_Declare(
+    googlebench
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG v1.8.0
+  )
+  FetchContent_MakeAvailable(googlebench)
+
+
+  #
+  # Command-line options parser
+  #
   FetchContent_Declare(
     cxxopts
     GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
@@ -136,17 +159,24 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-tautological-constant-compare)
     # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel stl
     add_compile_options(-Wno-error=pass-failed)
+    add_compile_options(-Wno-error=unknown-pragmas)
   endif()
 
   if(ENABLE_SYCL)
+    # disables rng::detail::box_compress::coalesce which causes rng::box to use global non-const variable, which can not
+    # be used in SYCL kernels
+    add_compile_definitions(RANGES_WORKAROUND_MSVC_249830)
+
     add_subdirectory(examples/shp)
     add_subdirectory(test/gtest/shp)
+    add_subdirectory(benchmarks/gbench/shp)
   endif()
 
   add_subdirectory(examples/serial)
   add_subdirectory(test/gtest/serial)
   add_subdirectory(examples/mhp)
   add_subdirectory(test/gtest/mhp)
+  add_subdirectory(benchmarks/gbench/mhp)
 
   # Requires clang, icpx/llvm nightly do not support the tools
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ENABLE_SYCL)

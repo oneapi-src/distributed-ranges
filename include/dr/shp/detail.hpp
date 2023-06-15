@@ -62,6 +62,29 @@ sycl::queue &get_queue_for_pointers(InputIt iter, OutputIt iter2) {
   }
 }
 
+inline sycl::event combine_events(sycl::queue &q,
+                                  const std::vector<sycl::event> &events) {
+  auto e = q.submit([&](auto &&h) {
+    h.depends_on(events);
+    h.host_task([] {});
+  });
+
+  return e;
+}
+
+inline sycl::event combine_events(const std::vector<sycl::event> &events) {
+  auto &&q = __detail::queue(0);
+  return combine_events(q, events);
+}
+
+inline void wait(sycl::event &event) { event.wait(); }
+
+inline void wait(sycl::event &&event) { event.wait(); }
+
+inline void wait(const std::vector<sycl::event> &events) {
+  sycl::event::wait(events);
+}
+
 } // namespace __detail
 
 } // namespace dr::shp

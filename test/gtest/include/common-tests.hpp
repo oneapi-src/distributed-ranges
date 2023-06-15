@@ -126,17 +126,31 @@ std::string unary_check_message(rng::range auto &&in, rng::range auto &&ref,
   }
 }
 
-std::string check_segments_message(rng::range auto &&r) {
-  auto &&segments = dr::ranges::segments(r);
-  auto &&flat = rng::views::join(segments);
-  if (is_equal(r, flat)) {
-    return "";
+bool contains_empty(auto &&r) {
+  if (rng::distance(r) == 1) {
+    return false;
   }
-  return fmt::format("\n"
-                     "    Segments does not match distributed range\n"
-                     "      range:    {}\n"
-                     "      segments: {}\n  ",
-                     rng::views::all(r), rng::views::all(segments));
+
+  for (auto &&x : r) {
+    if (rng::empty(x)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+std::string check_segments_message(auto &&r) {
+  auto segments = dr::ranges::segments(r);
+  auto flat = rng::views::join(segments);
+  if (contains_empty(segments) || !is_equal(r, flat)) {
+    return fmt::format("\n"
+                       "    Segment error\n"
+                       "      range:    {}\n"
+                       "      segments: {}\n  ",
+                       rng::views::all(r), rng::views::all(segments));
+  }
+  return "";
 }
 
 auto check_view_message(rng::range auto &&ref, rng::range auto &&actual) {
@@ -182,6 +196,13 @@ auto equal(rng::range auto &&ref, rng::range auto &&actual,
   return gtest_result(equal_message(ref, actual, title));
 }
 
+template <rng::range Rng>
+auto equal(std::initializer_list<rng::range_value_t<Rng>> ref, Rng &&actual,
+           std::string title = " ") {
+  return gtest_result(
+      equal_message(std::vector<rng::range_value_t<Rng>>(ref), actual, title));
+}
+
 auto check_unary_op(rng::range auto &&in, rng::range auto &&ref,
                     rng::range auto &&tst, std::string title = "") {
   return gtest_result(unary_check_message(in, ref, tst, title));
@@ -200,16 +221,17 @@ auto check_binary_check_op(rng::range auto &&a, rng::range auto &&b,
 }
 
 auto check_segments(std::forward_iterator auto di) {
-  const auto &segments = dr::ranges::segments(di);
-  const auto &flat = rng::join_view(segments);
-  if (is_equal(di, flat)) {
+  auto segments = dr::ranges::segments(di);
+  auto flat = rng::join_view(segments);
+  if (contains_empty(segments) || !is_equal(di, flat)) {
+    return testing::AssertionFailure()
+           << fmt::format("\n    segments: {}\n  ", segments);
+  } else {
     return testing::AssertionSuccess();
   }
-  return testing::AssertionFailure()
-         << fmt::format("\n    segments: {}\n  ", segments);
 }
 
-auto check_segments(rng::range auto &&dr) {
+auto check_segments(rng::forward_range auto &&dr) {
   return gtest_result(check_segments_message(dr));
 }
 
@@ -306,8 +328,7 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
 
 namespace DR_RANGES_NAMESPACE {
 
-template <rng::forward_range R1, rng::forward_range R2>
-bool operator==(R1 &&r1, R2 &&r2) {
+template <rng::range R1, rng::range R2> bool operator==(R1 &&r1, R2 &&r2) {
   return is_equal(std::forward<R1>(r1), std::forward<R2>(r2));
 }
 

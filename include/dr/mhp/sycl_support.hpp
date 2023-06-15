@@ -2,9 +2,14 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
 namespace dr::mhp {
 
 #ifdef SYCL_LANGUAGE_VERSION
+
+sycl::queue sycl_queue();
+
 namespace _detail {
 
 template <typename T, std::size_t Alignment>

@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace dr {
+#pragma once
+
+namespace dr::mhp {
 
 template <typename Group> class halo_impl {
   using T = typename Group::element_type;
@@ -22,8 +24,8 @@ public:
       : comm_(comm), halo_groups_(halo_groups), owned_groups_(owned_groups),
         memory_(memory) {
     drlog.debug(nostd::source_location::current(),
-                "Halo constructed with {}/{} owned/halo\n", owned_groups.size(),
-                halo_groups.size());
+                "Halo constructed with {}/{} owned/halo\n",
+                rng::size(owned_groups), rng::size(halo_groups));
     buffer_size_ = 0;
     std::size_t i = 0;
     std::vector<std::size_t> buffer_index;
@@ -77,9 +79,9 @@ public:
 
   /// Complete a halo reduction
   void reduce_finalize(const auto &op) {
-    for (int pending = requests_.size(); pending > 0; pending--) {
+    for (int pending = rng::size(requests_); pending > 0; pending--) {
       int completed;
-      MPI_Waitany(requests_.size(), requests_.data(), &completed,
+      MPI_Waitany(rng::size(requests_), requests_.data(), &completed,
                   MPI_STATUS_IGNORE);
       drlog.debug("Completed: {}\n", completed);
       auto &g = *map_[completed];
@@ -159,10 +161,10 @@ public:
               const std::vector<std::size_t> &indices, const Memory &memory)
       : memory_(memory), data_(data), rank_(rank) {
     buffered = false;
-    for (std::size_t i = 0; i < indices.size() - 1; i++) {
+    for (std::size_t i = 0; i < rng::size(indices) - 1; i++) {
       buffered = buffered || (indices[i + 1] - indices[i] != 1);
     }
-    indices_size_ = indices.size();
+    indices_size_ = rng::size(indices);
     indices_ = memory_.template allocate<std::size_t>(indices_size_);
     assert(indices_ != nullptr);
     memory_.memcpy(indices_, indices.data(),
@@ -287,7 +289,7 @@ public:
       : data_(data), rank_(rank), tag_(tag) {}
 
   void unpack(const auto &op) {
-    for (std::size_t i = 0; i < data_.size(); i++) {
+    for (std::size_t i = 0; i < rng::size(data_); i++) {
       drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
       data_[i] = op(data_[i], buffer[i]);
       drlog.debug("       after {}\n", data_[i]);
@@ -295,9 +297,9 @@ public:
   }
 
   void pack() { std::copy(data_.begin(), data_.end(), buffer); }
-  std::size_t buffer_size() { return data_.size(); }
+  std::size_t buffer_size() { return rng::size(data_); }
 
-  std::size_t data_size() { return data_.size(); }
+  std::size_t data_size() { return rng::size(data_); }
   T *data_pointer() { return buffer; }
 
   std::size_t rank() { return rank_; }
@@ -313,21 +315,8 @@ private:
 };
 
 struct halo_bounds {
-  /// Constructor
-  halo_bounds(std::size_t radius = 0, bool per = false) {
-    prev = radius;
-    next = radius;
-    periodic = per;
-  }
-  /// Constructor
-  halo_bounds(std::size_t prv, std::size_t nxt, bool per = false) {
-    prev = prv;
-    next = nxt;
-    periodic = per;
-  }
-
-  std::size_t prev, next;
-  bool periodic;
+  std::size_t prev = 0, next = 0;
+  bool periodic = false;
 };
 
 template <typename T, typename Memory>
@@ -365,7 +354,7 @@ private:
                          communicator::tag::halo_reverse);
     }
     if (hb.next > 0 && (hb.periodic || !comm.last())) {
-      owned.emplace_back(span.subspan(span.size() - 2 * hb.next, hb.next),
+      owned.emplace_back(span.subspan(rng::size(span) - 2 * hb.next, hb.next),
                          comm.next(), communicator::tag::halo_forward);
     }
     return owned;
@@ -386,13 +375,14 @@ private:
   }
 };
 
-} // namespace dr
+} // namespace dr::mhp
 
 #ifdef DR_FORMAT
 
-template <> struct fmt::formatter<dr::halo_bounds> : formatter<string_view> {
+template <>
+struct fmt::formatter<dr::mhp::halo_bounds> : formatter<string_view> {
   template <typename FmtContext>
-  auto format(dr::halo_bounds hb, FmtContext &ctx) {
+  auto format(dr::mhp::halo_bounds hb, FmtContext &ctx) {
     return format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
   }
 };

@@ -4,8 +4,8 @@
 
 FetchContent_Declare(
   dpl
-  GIT_REPOSITORY https://github.com/rscohn2/oneDPL.git
-  GIT_TAG patch-1
+  GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
+  GIT_TAG oneDPL-2022.1.0-rc3
   )
 FetchContent_MakeAvailable(dpl)
 

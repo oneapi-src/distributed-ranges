@@ -8,8 +8,8 @@ add_executable(
   shp-tests
   shp-tests.cpp
   ../common/all.cpp
-  # need to implement same API as MHP
-  #../common/copy.cpp
+  ../common/copy.cpp
+  ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
   ../common/enumerate.cpp
@@ -19,6 +19,7 @@ add_executable(
   ../common/reduce.cpp
   ../common/subrange.cpp
   ../common/take.cpp
+  ../common/transform.cpp
   ../common/transform_view.cpp
   ../common/zip.cpp
   ../common/zip_local.cpp
@@ -37,7 +38,16 @@ add_executable(
   copy-3.cpp
 )
 
-foreach(test-exec IN ITEMS shp-tests shp-tests-3)
+# skeleton for rapid builds of individual tests, feel free to change
+# this
+add_executable(
+  shp-quick-test
+  shp-tests.cpp
+  ../common/transform.cpp
+)
+target_compile_definitions(shp-quick-test PRIVATE QUICK_TEST)
+
+foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)
   target_link_libraries(
     ${test-exec}
     GTest::gtest_main

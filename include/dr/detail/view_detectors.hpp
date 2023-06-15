@@ -41,6 +41,13 @@ struct is_subrange_view<rng::subrange<T>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_subrange_view_v = is_subrange_view<T>::value;
 
+template <typename T> struct is_sliding_view : std::false_type {};
+template <typename T>
+struct is_sliding_view<rng::sliding_view<T>> : std::true_type {};
+template <typename T>
+inline constexpr bool is_sliding_view_v =
+    is_sliding_view<std::remove_cvref_t<T>>::value;
+
 template <typename T> struct is_zip_view : std::false_type {};
 
 template <typename... Views>

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <dr/shp/algorithms/execution_policy.hpp>
+#include <dr/shp/util.hpp>
 #include <oneapi/dpl/execution>
 
 namespace dr::shp {
@@ -63,6 +64,14 @@ inline void init(R &&devices)
   par_unseq = device_policy(__detail::devices_);
 }
 
+template <__detail::sycl_device_selector Selector>
+inline void init(Selector &&selector) {
+  auto devices = get_numa_devices(selector);
+  init(devices);
+}
+
+inline void init() { init(sycl::default_selector_v); }
+
 inline void finalize() {
   __detail::dpl_policies_.clear();
   __detail::queues_.clear();
@@ -82,6 +91,8 @@ inline sycl::queue &queue(const sycl::device &device) {
     }
   }
   assert(false);
+  // Reaches here with -DNDEBUG
+  return queue(0);
 }
 
 inline sycl::queue &default_queue() { return queue(0); }
