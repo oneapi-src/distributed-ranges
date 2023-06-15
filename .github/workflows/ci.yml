@@ -134,6 +134,8 @@ jobs:
 
   devcloud:
     runs-on: devcloud
+    env:
+      CXX: icpx
     steps:
     - uses: actions/checkout@v3
     - name: Build
