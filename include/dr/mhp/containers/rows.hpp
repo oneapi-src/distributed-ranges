@@ -27,8 +27,6 @@ public:
   const dsegment *segment() { return segment_; }
   signed long idx() { return index_; }
 
-  // T &operator[](int index) { return *(std::span<T>::begin() + index); }
-
   dm_row<T> operator=(rng::range auto other) {
     assert(rng::distance(*this) == rng::distance(other));
 
@@ -80,19 +78,6 @@ public:
     }
     assert(0);
   }
-
-  // value_type get() const {
-  //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
-  //   auto value = dm_->win_.template get<value_type>(rank_, segment_offset);
-  //   dr::drlog.debug("get {} =  ({}:{})\n", value, rank_, segment_offset);
-  //   return value;
-  // }
-
-  // void put(const value_type &value) const {
-  //   auto segment_offset = index_ + dm_->halo_bounds_.prev;
-  //   dr::drlog.debug("put ({}:{}) = {}\n", rank_, segment_offset, value);
-  //   dm_->win_.put(value, rank_, segment_offset);
-  // }
 
   // Comparison
   bool operator==(const dm_rows_iterator &other) const noexcept {
@@ -153,10 +138,7 @@ public:
     return other + n;
   }
 
-  auto segments() {
-    // return dr::__details__::drop_segments(dm_->segments(), row_idx_);
-    return dm_->segments();
-  }
+  auto segments() { return dm_->segments(); }
   auto rank() const { return (*this).rank(); }
   auto &halo() const { return dm_->halo(); }
 
@@ -182,8 +164,6 @@ public:
 
   auto segments() const { return dm_->segments(); }
   auto &halo() { return dm_->halo(); }
-
-  // DM *dm() { return dm_; }
 
 private:
   DM *dm_ = nullptr;

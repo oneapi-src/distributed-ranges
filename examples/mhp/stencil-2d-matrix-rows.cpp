@@ -4,6 +4,7 @@
 
 #include <algorithm>
 
+#include "../include/data-utils.hpp"
 #include "cxxopts.hpp"
 #include "mpi.h"
 
@@ -11,9 +12,7 @@
 
 using T = float;
 
-MPI_Comm comm;
 int comm_rank;
-int comm_size;
 
 cxxopts::ParseResult options;
 
@@ -22,25 +21,8 @@ std::size_t nr = 0;
 std::size_t steps = 0;
 
 //
-//  debug and verification functions
+//  verification
 //
-
-template <std::integral T> bool is_equal(T a, T b) { return a == b; }
-
-template <std::floating_point Tp>
-bool is_equal(Tp a, Tp b,
-              Tp epsilon = 128 * std::numeric_limits<Tp>::epsilon()) {
-  if (a == b) {
-    return true;
-  }
-  auto abs_th = std::numeric_limits<Tp>::min();
-  auto diff = std::abs(a - b);
-  auto norm =
-      std::min(std::abs(a) + std::abs(b), std::numeric_limits<Tp>::max());
-
-  return diff < std::max(abs_th, epsilon * norm);
-}
-
 int matrix_compare(std::string label, dr::mhp::distributed_dense_matrix<T> &dm,
                    std::vector<std::vector<T>> &vv) {
   int res = 0;
@@ -66,8 +48,7 @@ T calculate(T arg1, T arg2, T arg3, T arg4, T arg5) {
 //
 // verification of results
 //
-
-auto stencil_op_verify(std::vector<std::vector<T>> &va,
+void stencil_op_verify(std::vector<std::vector<T>> &va,
                        std::vector<std::vector<T>> &vb) {
   for (std::size_t i = 1; i < va.size() - 1; i++) {
     for (std::size_t j = 1; j < va[i].size() - 1; j++)
@@ -81,14 +62,14 @@ int stencil_check(dr::mhp::distributed_dense_matrix<T> &a,
 
   std::vector<std::vector<T>> va(nr), vb(nr);
 
-  for (auto r = va.begin(); r != va.end(); r++) {
-    (*r).resize(nc);
-    rng::iota(*r, 10);
+  for (auto &r : va) {
+    r.resize(nc);
+    rng::iota(r, 10);
   }
 
-  for (auto r = vb.begin(); r != vb.end(); r++) {
-    (*r).resize(nc);
-    rng::iota(*r, 10);
+  for (auto &r : vb) {
+    r.resize(nc);
+    rng::iota(r, 10);
   }
 
   for (std::size_t s = 0; s < steps; s++) {
@@ -104,12 +85,6 @@ int stencil_check(dr::mhp::distributed_dense_matrix<T> &a,
 // stencil
 //
 
-//
-// for call by transform - working, but:
-// - requires std::vector hack inside
-// - requires custom version of transform
-// -> should be abandoned
-//
 auto stencil_op = [](auto &&p) {
   std::vector<T> out_row((*p).size());
 
@@ -129,8 +104,7 @@ int stencil() {
   // the same operation on every row
   dr::mhp::for_each(a.rows(), [](auto row) { rng::iota(row, 10); });
 
-  // different operation on every row is posiible - user must be aware
-  // of rows distribution
+  // different operation on every row is posiible by access to the row (*r)
   for (auto r = b.rows().begin(); r != b.rows().end(); r++) {
     if (r.is_local())
       rng::iota(*r, 10);
@@ -140,7 +114,6 @@ int stencil() {
   auto in = rng::subrange(a.rows().begin() + 1, a.rows().end() - 1);
   auto out = rng::subrange(b.rows().begin() + 1, b.rows().end() - 1);
 
-  // version 1 - transform of the subranges above
   for (std::size_t s = 0; s < steps; s++) {
     dr::mhp::halo(in).exchange();
     dr::mhp::transform(in, out.begin(), stencil_op);
@@ -164,11 +137,6 @@ int stencil() {
 }
 
 int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-  comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &comm_rank);
-  MPI_Comm_size(comm, &comm_size);
-  dr::mhp::init();
 
   cxxopts::Options options_spec(argv[0], "stencil 2d");
   // clang-format off
@@ -187,6 +155,11 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
+  if (options.count("help")) {
+    std::cout << options_spec.help() << std::endl;
+    exit(0);
+  }
+
   nr = options["rows"].as<std::size_t>();
   nc = options["cols"].as<std::size_t>();
   steps = options["steps"].as<std::size_t>();
@@ -197,7 +170,12 @@ int main(int argc, char *argv[]) {
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);
 
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  dr::mhp::init();
+
   auto error = stencil();
+
   MPI_Finalize();
   return error;
 }

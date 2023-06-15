@@ -2,44 +2,29 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <algorithm>
+#include "../include/data-utils.hpp"
 
 #include "cxxopts.hpp"
+#include "dr/mhp.hpp"
 #include "mpi.h"
 
-#include "dr/mhp.hpp"
+#include <algorithm>
 
 using T = float;
 
-MPI_Comm comm;
 int comm_rank;
 int comm_size;
 
 cxxopts::ParseResult options;
 
-std::size_t nc = 0;
-std::size_t nr = 0;
-std::size_t steps = 0;
+std::size_t nc;
+std::size_t nr;
+std::size_t steps;
+std::size_t stencil_choice;
 
 //
 //  debug and verification functions
 //
-
-template <std::integral T> bool is_equal(T a, T b) { return a == b; }
-
-template <std::floating_point Tp>
-bool is_equal(Tp a, Tp b,
-              Tp epsilon = 128 * std::numeric_limits<Tp>::epsilon()) {
-  if (a == b) {
-    return true;
-  }
-  auto abs_th = std::numeric_limits<Tp>::min();
-  auto diff = std::abs(a - b);
-  auto norm =
-      std::min(std::abs(a) + std::abs(b), std::numeric_limits<Tp>::max());
-
-  return diff < std::max(abs_th, epsilon * norm);
-}
 
 int matrix_compare(std::string label, dr::mhp::distributed_dense_matrix<T> &dm,
                    std::vector<std::vector<T>> &vv) {
@@ -104,25 +89,27 @@ int stencil_check(dr::mhp::distributed_dense_matrix<T> &a,
 // stencil
 //
 
-auto stencil_op = [](auto &p) {
-/* Two notations possible, performance to be verified */
-#if 1
-  return calculate(p[{-1, 0}], p[{0, 0}], p[{+1, 0}], p[{0, -1}], p[{0, +1}]);
-#else
+/* first access a row, then element in row */
+auto stencil_op_two_step_access = [](auto &p) {
   return calculate(p[-1][0], p[0][0], p[+1][0], p[0][-1], p[0][+1]);
-#endif
 };
 
-int stencil() {
+/* access element at once, with 2 coordinates */
+auto stencil_op_one_step_access = [](auto &p) {
+  return calculate(p[{-1, 0}], p[{0, 0}], p[{+1, 0}], p[{0, -1}], p[{0, +1}]);
+};
+
+int stencil(auto stencil_op) {
   dr::halo_bounds hb(1); // 1 row
   dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, hb), b(nr, nc, -1, hb);
 
-  // different operation on every row - user must be aware of rows distribution
+  // 1st approach - different operation for each row is possible here
   for (auto r = a.rows().begin(); r != a.rows().end(); r++) {
     if (r.is_local())
       rng::iota(*r, 10);
   }
 
+  // 2nd approach - the same operation for each row
   dr::mhp::for_each(b.rows(), [](auto row) { rng::iota(row, 10); });
 
   // rectgangular subrange of 2d matrix
@@ -136,14 +123,15 @@ int stencil() {
     std::swap(in, out);
   }
 
-  dr::mhp::fence();
-  MPI_Barrier(MPI_COMM_WORLD);
+  dr::mhp::barrier();
 
   if (comm_rank == 0) {
     if (0 == stencil_check(a, b)) {
-      fmt::print("stencil-2d-matrix: check OK!\n");
+      fmt::print("stencil-2d-matrix ({}-step stencil): check OK!\n",
+                 stencil_choice);
     } else {
-      fmt::print("stencil-2d-matrix: check failed\n");
+      fmt::print("stencil-2d-matrix ({}-step stencil): check failed\n",
+                 stencil_choice);
       return 1;
     }
   }
@@ -151,19 +139,16 @@ int stencil() {
 }
 
 int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-  comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &comm_rank);
-  MPI_Comm_size(comm, &comm_size);
-  dr::mhp::init();
 
-  cxxopts::Options options_spec(argv[0], "stencil 2d");
+  cxxopts::Options options_spec(argv[0], "stencil-2d-matrix");
+
   // clang-format off
   options_spec.add_options()
     ("log", "Enable logging")
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("20"))
     ("cols", "Number of columns", cxxopts::value<std::size_t>()->default_value("10"))
     ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("3"))
+    ("stencil", "Choice of stencil, 1-step or 2-step", cxxopts::value<std::size_t>()->default_value("1"))
     ("help", "Print help");
   // clang-format on
 
@@ -174,9 +159,16 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
+  if (options.count("help")) {
+    std::cout << options_spec.help() << std::endl;
+    exit(0);
+  }
+
   nr = options["rows"].as<std::size_t>();
   nc = options["cols"].as<std::size_t>();
   steps = options["steps"].as<std::size_t>();
+  stencil_choice = options["stencil"].as<std::size_t>();
+
   std::ofstream *logfile = nullptr;
   if (options.count("log")) {
     logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
@@ -184,7 +176,26 @@ int main(int argc, char *argv[]) {
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);
 
-  auto error = stencil();
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  dr::mhp::init();
+
+  int error = -1;
+  switch (stencil_choice) {
+  case 1:
+    error = stencil(stencil_op_one_step_access);
+    break;
+  case 2:
+    error = stencil(stencil_op_two_step_access);
+    break;
+  default:
+    fmt::print("Error: stencil arg should be 1 for 1-step stencil or 2 for "
+               "2-step stencil\n");
+    error = -1;
+    break;
+  }
+
   MPI_Finalize();
   return error;
 }

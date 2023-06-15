@@ -167,8 +167,6 @@ public:
   auto &halo() { return *halo_; }
   dr::halo_bounds &halo_bounds() { return halo_bounds_; }
 
-  std::pair<int, int> local_rows_indices() { return local_rows_ind_; }
-
   // Given a tile index, return a dense matrix view of that tile.
   // dense_matrix_view is a view of a dense tile.
   auto tile(key_type tile_index) { return tile_view_impl_(tile_index); }
@@ -195,7 +193,7 @@ public:
   }
 
   // for debug only
-#if 1
+#if 0
   void dump_matrix(std::string msg) {
     std::stringstream s;
     s << default_comm().rank() << ": " << msg << " :\n";
@@ -419,6 +417,7 @@ private:
 
 //
 // for_each, but iterator is passed to lambda
+// FIXME: enable sycl
 //
 template <typename T>
 auto for_each(dm_rows<distributed_dense_matrix<T>> &rows, auto op) {
@@ -429,27 +428,24 @@ auto for_each(dm_rows<distributed_dense_matrix<T>> &rows, auto op) {
   }
 };
 
+#if 0 // temporary disabled, to be fixed
 template <typename T>
 concept has_segment = requires(T t) { (*(t.begin())).segment(); };
 
 template <typename T1, typename T2>
   requires(has_segment<T1> && has_segment<T2>)
 auto for_each(zip_view<T1, T2> &v, auto op) {
-  fmt::print("{}: inside for_each \n", default_comm().rank());
   for (auto itr = rng::begin(v); itr != rng::end(v); itr++) {
-    fmt::print("{}: inside for \n", default_comm().rank());
     auto [in, out] = *itr;
     if (in.segment()->is_local()) {
       assert(out.segment()->is_local());
-      fmt::print("{}: is_local \n", default_comm().rank());
       op(*itr);
     }
   }
 };
-
+#endif
 //
-// transform, but iterator pointing at element is passed to lambda instead of
-// element
+// transform, iterator pointing at element is passed to lambda
 //
 template <typename DM>
 void transform(dr::mhp::subrange<DM> &in, subrange_iterator<DM> out, auto op) {
