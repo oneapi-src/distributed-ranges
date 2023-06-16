@@ -11,6 +11,14 @@ namespace dr::shp {
 
 namespace __detail {
 
+// With the ND-range workaround, the maximum kernel size is
+// `std::numeric_limits<std::int32_t>::max()` rounded down to
+// the nearest multiple of the block size.
+inline std::size_t max_kernel_size_(std::size_t block_size = 128) {
+  std::size_t max_kernel_size = std::numeric_limits<std::int32_t>::max();
+  return (max_kernel_size / block_size) * block_size;
+}
+
 // This is a workaround to avoid performance degradation
 // in DPC++ for odd range sizes.
 template <typename Fn>
@@ -33,7 +41,8 @@ sycl::event parallel_for_workaround(sycl::queue &q, sycl::range<1> numWorkItems,
 template <typename Fn>
 sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
                                Fn &&fn) {
-  std::size_t max_kernel_size = std::numeric_limits<std::int32_t>::max();
+  std::size_t block_size = 128;
+  std::size_t max_kernel_size = max_kernel_size_(block_size);
 
   std::vector<sycl::event> events;
   for (std::size_t base_idx = 0; base_idx < numWorkItems.size();
@@ -41,10 +50,13 @@ sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
     std::size_t launch_size =
         std::min(numWorkItems.size() - base_idx, max_kernel_size);
 
-    auto e = parallel_for_workaround(q, launch_size, [=](sycl::id<1> idx_) {
-      sycl::id<1> idx(base_idx + idx_);
-      fn(idx);
-    });
+    auto e = parallel_for_workaround(
+        q, launch_size,
+        [=](sycl::id<1> idx_) {
+          sycl::id<1> idx(base_idx + idx_);
+          fn(idx);
+        },
+        block_size);
 
     events.push_back(e);
   }
@@ -60,10 +72,12 @@ sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
 
 template <typename Fn>
 sycl::event parallel_for(sycl::queue &q, sycl::range<1> numWorkItems, Fn &&fn) {
-  std::size_t max_kernel_size = std::numeric_limits<std::int32_t>::max();
+  std::size_t block_size = 128;
+  std::size_t max_kernel_size = max_kernel_size_();
 
   if (numWorkItems.size() < max_kernel_size) {
-    return parallel_for_workaround(q, numWorkItems, std::forward<Fn>(fn));
+    return parallel_for_workaround(q, numWorkItems, std::forward<Fn>(fn),
+                                   block_size);
   } else {
     return parallel_for_64bit(q, numWorkItems, std::forward<Fn>(fn));
   }
