@@ -87,6 +87,8 @@ public:
         data_[idx_[0] * ld_ + idx_[1]]);
   }
 
+  Iter data() const noexcept { return data_; }
+
 private:
   size_type get_global_idx() const noexcept {
     return idx_[0] * matrix_shape_[1] + idx_[1];

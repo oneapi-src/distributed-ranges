@@ -10,6 +10,7 @@
 #include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
+#include <dr/shp/containers/sequential/dense_matrix.hpp>
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/views/dense_matrix_view.hpp>
 
@@ -238,6 +239,17 @@ public:
     return views_;
   }
 
+  auto get_tile(key_type tile_index) {
+    std::size_t nrows = get_tile_shape_(tile_index)[0];
+    std::size_t ld = tile_shape_[1];
+    std::size_t tile_size = nrows * ld;
+    dense_matrix<T> local_tile(get_tile_shape_(tile_index), ld);
+    auto remote_tile = tile(tile_index);
+    shp::copy(remote_tile.data(), remote_tile.data() + tile_size,
+              local_tile.data());
+    return local_tile;
+  }
+
   auto segments() {
     std::vector<dense_matrix_view<T, rng::iterator_t<dr::shp::device_vector<
                                          T, dr::shp::device_allocator<T>>>>>
@@ -282,6 +294,13 @@ private:
         tiles_.emplace_back(tile_size, alloc, rank);
       }
     }
+  }
+
+  key_type get_tile_shape_(key_type tile_index) {
+    auto &&[i, j] = tile_index;
+    std::size_t tm = std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
+    std::size_t tn = std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
+    return key_type{tm, tn};
   }
 
 private:
