@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
   {
 
-    dr::halo_bounds hb(1); // 1 row
+    dr::mhp::halo_bounds hb(1); // 1 row
     dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, hb);
 
     // different operation on every row - user must be aware of rows

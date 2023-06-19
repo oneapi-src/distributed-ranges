@@ -9,7 +9,10 @@
 #include <dr/mhp/containers/subrange.hpp>
 
 #include <dr/detail/owning_view.hpp>
+#ifdef SYCL_LANGUAGE_VERSION
+#include <dr/shp/detail.hpp>
 #include <dr/shp/views/dense_matrix_view.hpp>
+#endif
 
 namespace dr::mhp {
 
@@ -23,12 +26,12 @@ public:
   using key_type = index<>;
 
   distributed_dense_matrix(std::size_t rows, std::size_t cols,
-                           dr::halo_bounds hb = dr::halo_bounds(),
+                           halo_bounds hb = halo_bounds(),
                            Allocator allocator = Allocator())
       : distributed_dense_matrix(key_type(rows, cols), hb, allocator){};
 
   distributed_dense_matrix(std::size_t rows, std::size_t cols, T fillval,
-                           dr::halo_bounds hb = dr::halo_bounds(),
+                           halo_bounds hb = halo_bounds(),
                            Allocator allocator = Allocator())
       : distributed_dense_matrix(key_type(rows, cols), hb, allocator) {
 
@@ -36,8 +39,7 @@ public:
       data_[_i] = fillval;
   };
 
-  distributed_dense_matrix(key_type shape,
-                           dr::halo_bounds hb = dr::halo_bounds(),
+  distributed_dense_matrix(key_type shape, halo_bounds hb = halo_bounds(),
                            Allocator allocator = Allocator())
       : shape_(shape), dm_rows_(this), dm_halo_p_rows_(this),
         dm_halo_n_rows_(this) {
@@ -165,7 +167,9 @@ public:
   key_type segment_shape() const noexcept { return segment_shape_; }
 
   auto &halo() { return *halo_; }
-  dr::halo_bounds &halo_bounds() { return halo_bounds_; }
+  halo_bounds &get_halo_bounds() { return halo_bounds_; }
+
+#ifdef SYCL_LANGUAGE_VERSION
 
   // Given a tile index, return a dense matrix view of that tile.
   // dense_matrix_view is a view of a dense tile.
@@ -191,8 +195,9 @@ public:
 
     return dr::__detail::owning_view(std::move(tiles));
   }
+#endif
 
-  // for debug only
+  // for debug purposes only
 #if 0
   void dump_matrix(std::string msg) {
     std::stringstream s;
@@ -236,16 +241,18 @@ public:
 #endif
 
 private:
+#ifdef SYCL_LANGUAGE_VERSION
+
   // Return a dense_matrix_view of the tile located at
   // tile grid coordinates tile_index[0], tile_index[1].
   //
   // The row indices of each element in the tile will be incremented
   // by idx_offset[0], and the column indices incremneted by idx_offset[1].
   //
-  // When accessing an individual tile, no idx_offset is needed.  (The indices
-  // are with respect to the tile itself.)  When viewing a tile as part of the
-  // overall matrix (e.g. with segments()), an idx_offset is necessary in order
-  // to ensure the correct global indices are observed.
+  // When accessing an individual tile, no idx_offset is needed.  (The
+  // indices are with respect to the tile itself.)  When viewing a tile as
+  // part of the overall matrix (e.g. with segments()), an idx_offset is
+  // necessary in order to ensure the correct global indices are observed.
   auto tile_view_impl_(key_type tile_index, key_type idx_offset = {0, 0}) {
     assert(tile_index[1] == 0);
 
@@ -265,8 +272,9 @@ private:
     return dr::shp::dense_matrix_view<T, Iter>(data, tile_shape, idx_offset, ld,
                                                dr::ranges::rank(segment));
   }
+#endif
 
-  void init_(dr::halo_bounds hb, auto allocator) {
+  void init_(halo_bounds hb, auto allocator) {
 
     auto grid_size_ = default_comm().size(); // dr-style ignore
     assert(shape_[0] > grid_size_);
@@ -289,10 +297,10 @@ private:
 
     halo_bounds_ = hb;
 
-    halo_ = new dr::span_halo<T>(default_comm(), data_, data_size_, hb);
+    halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
 
     // prepare sizes and segments
-    // one dv_segment per node, 1-d arrangement of segments
+    // one d_segment per node, 1-d arrangement of segments
 
     segments_.reserve(grid_size_);
 
@@ -383,7 +391,7 @@ private:
   }
 
 private:
-  friend dv_segment_iterator<distributed_dense_matrix>;
+  friend d_segment_iterator<distributed_dense_matrix>;
   friend dm_rows<distributed_dense_matrix>;
   friend dm_rows_iterator<distributed_dense_matrix>;
   friend subrange_iterator<distributed_dense_matrix>;
@@ -396,11 +404,11 @@ private:
 
   T *data_ = nullptr; // data ptr
 
-  dr::span_halo<T> *halo_ = nullptr;
+  span_halo<T> *halo_ = nullptr;
   // halo boundaries counted in cells and rows
-  dr::halo_bounds halo_bounds_, halo_bounds_rows_;
+  halo_bounds halo_bounds_, halo_bounds_rows_;
 
-  std::vector<dv_segment<distributed_dense_matrix>> segments_;
+  std::vector<d_segment<distributed_dense_matrix>> segments_;
 
   // vector of "regular" rows in segment
   dm_rows<distributed_dense_matrix> dm_rows_;
@@ -484,5 +492,5 @@ inline constexpr bool rng::enable_borrowed_range<
 
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<
-    std::vector<dr::mhp::dv_segment<dr::mhp::distributed_dense_matrix<T>>>> =
+    std::vector<dr::mhp::d_segment<dr::mhp::distributed_dense_matrix<T>>>> =
     true;

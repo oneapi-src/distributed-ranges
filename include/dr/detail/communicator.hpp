@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
 namespace dr {
 
 class communicator {
@@ -114,6 +116,7 @@ private:
 class rma_window {
 public:
   void create(communicator comm, void *data, std::size_t size) {
+    communicator_ = comm;
     drlog.debug("win create:: size: {}\n", size);
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
@@ -160,9 +163,11 @@ public:
     MPI_Win_flush(rank, win_);
   }
 
+  const auto &communicator() const { return communicator_; }
   auto mpi_win() { return win_; }
 
 private:
+  dr::communicator communicator_;
   MPI_Win win_ = MPI_WIN_NULL;
 };
 

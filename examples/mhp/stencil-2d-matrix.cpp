@@ -100,7 +100,7 @@ auto stencil_op_one_step_access = [](auto &p) {
 };
 
 int stencil(auto stencil_op) {
-  dr::halo_bounds hb(1); // 1 row
+  dr::mhp::halo_bounds hb(1); // 1 row
   dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, hb), b(nr, nc, -1, hb);
 
   // 1st approach - different operation for each row is possible here

@@ -23,3 +23,11 @@ When running::
 
 To verify that you are using 48 cores, run ``top`` in another
 window. The stream process should show 4800 in the ``%CPU`` column.
+
+Google Benchmarks
+=================
+
+Micro-benchmark framework for measuring primitive operations. See
+`gbench README`_.
+
+.. _`gbench README`: gbench/README.rst

@@ -106,7 +106,7 @@ public:
   }
 
   auto local() const
-    requires(dr::remote_iterator<Iter> && dr::ranges::__detail::has_local<Iter>)
+    requires(dr::ranges::__detail::has_local<Iter>)
   {
     auto iter = dr::ranges::__detail::local(iter_);
     return transform_iterator<decltype(iter), F>(iter, fn_);

@@ -115,3 +115,16 @@ TEST(MhpTests, DistributedVectorAllocator) {
   }
 }
 #endif
+
+TEST(MhpTests, DistributedVectorGranularity) {
+  std::size_t gran = 3;
+  std::size_t n = gran * 6;
+  auto dist = dr::mhp::distribution().granularity(gran);
+  DV dv(n, dist);
+
+  std::size_t previous_size = gran;
+  for (auto &segment : dr::ranges::segments(dv)) {
+    EXPECT_EQ(previous_size % gran, 0);
+    previous_size = segment.size();
+  }
+}

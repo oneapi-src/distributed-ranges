@@ -98,7 +98,7 @@ auto stencil_op = [](auto &&p) {
 };
 
 int stencil() {
-  dr::halo_bounds hb(1); // 1 row
+  dr::mhp::halo_bounds hb(1); // 1 row
   dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, hb), b(nr, nc, -1, hb);
 
   // the same operation on every row

@@ -32,7 +32,7 @@ TEST(MhpTests, DM_CreateFill) {
 
 TEST(MhpTests, DM_Rows_For) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(3, 1, false); // 1 row
+  dr::mhp::halo_bounds hb(3, 1, false); // 1 row
   DM a(rows, cols, -1, hb);
 
   // different operation on every row - user must be aware of rows distribution
@@ -53,7 +53,7 @@ TEST(MhpTests, DM_Rows_For) {
 
 TEST(MhpTests, DM_Rows_ForEach) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(3, 1, false);
+  dr::mhp::halo_bounds hb(3, 1, false);
   DM a(rows, cols, -1, hb);
 
   dr::mhp::for_each(a.rows(), [](auto row) { rng::iota(row, 10); });
@@ -75,7 +75,7 @@ TEST(MhpTests, DM_Rows_ForEach) {
 
 TEST(MhpTests, DM_Transform) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(3, 1, false);
+  dr::mhp::halo_bounds hb(3, 1, false);
   DM a(rows, cols, -1, hb), b(rows, cols, -1, hb);
 
   auto negate = [](auto v) { return -v; };
@@ -89,7 +89,7 @@ TEST(MhpTests, DM_Transform) {
 
 TEST(MhpTests, DM_with_std_array) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(2);
+  dr::mhp::halo_bounds hb(2);
 
   std::array<int, 5> ref = std::array<int, 5>({1, 2, 3, 4, 5});
 
@@ -102,19 +102,19 @@ TEST(MhpTests, DM_with_std_array) {
 
 TEST(MhpTests3, DM_Halo_Exchange) {
   const int rows = 12, cols = 12;
-  dr::halo_bounds hb(1, 2, false);
+  dr::mhp::halo_bounds hb(1, 2, false);
   DM a(rows, cols, 121, hb);
 
   a.halo().exchange();
 
   if (dr::mhp::default_comm().rank() == 0) {
-    EXPECT_EQ((*(a.data() + a.halo_bounds().prev + a.segment_size())),
+    EXPECT_EQ((*(a.data() + a.get_halo_bounds().prev + a.segment_size())),
               121); // halo_bound.next area
   } else if (dr::mhp::default_comm().rank() ==
              dr::mhp::default_comm().size() - 1) {
     EXPECT_EQ((*(a.data())), 121); // halo_bound.prev area
   } else {
     EXPECT_EQ((*(a.data())), 121);
-    EXPECT_EQ((*(a.data() + a.halo_bounds().prev + a.segment_size())), 121);
+    EXPECT_EQ((*(a.data() + a.get_halo_bounds().prev + a.segment_size())), 121);
   }
 }

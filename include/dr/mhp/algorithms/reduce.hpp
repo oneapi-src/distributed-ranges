@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#pragma once
+
 namespace dr::mhp::__detail {
 
 inline auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
@@ -34,11 +36,16 @@ auto reduce(std::size_t root, bool root_provided, DR &&dr, auto &&binary_op) {
   using value_type = rng::range_value_t<DR>;
   auto comm = default_comm();
 
+  if (rng::empty(dr)) {
+    return rng::range_value_t<DR>{};
+  }
+
   if (aligned(dr)) {
     dr::drlog.debug("Parallel reduce\n");
 
     // Reduce the local segments
     auto reduce = [=](auto &&r) {
+      assert(rng::size(r) > 0);
       if (mhp::use_sycl()) {
         dr::drlog.debug("  with DPL\n");
         return dpl_reduce(r, binary_op);
@@ -82,6 +89,13 @@ T reduce(std::size_t root, bool root_provided, DR &&dr, T init,
   return binary_op(init, reduce(root, root_provided, dr, binary_op));
 }
 
+inline void
+#if defined(__GNUC__) && !defined(__clang__)
+    __attribute__((optimize(0)))
+#endif
+    no_optimize(auto x) {
+}
+
 }; // namespace dr::mhp::__detail
 
 namespace dr::mhp {
@@ -122,9 +136,20 @@ template <typename T, dr::distributed_range DR> auto reduce(DR &&dr, T init) {
 template <dr::distributed_range DR> auto reduce(std::size_t root, DR &&dr) {
   return __detail::reduce(root, true, std::forward<DR>(dr), std::plus<>{});
 }
+
 /// Collective reduction on a distributed range
 template <dr::distributed_range DR> auto reduce(DR &&dr) {
-  return __detail::reduce(0, false, std::forward<DR>(dr), std::plus<>{});
+  auto x = __detail::reduce(0, false, std::forward<DR>(dr), std::plus<>{});
+
+  // The code below avoids an issue where DotProduct_ZipReduce_DR
+  // fails with gcc11.  From debugging, I can see that the call to
+  // __detail::reduce above computes the correct value, but this
+  // function returns a bad value. My theory is that the problem is
+  // related to tail call optimization and the function below disables
+  // the optimization.
+  __detail::no_optimize(x);
+
+  return x;
 }
 
 //

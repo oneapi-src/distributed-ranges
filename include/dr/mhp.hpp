@@ -50,18 +50,19 @@ namespace fmt {}
 #include <dr/detail/normal_distributed_iterator.hpp>
 #include <dr/detail/memory.hpp>
 #include <dr/detail/communicator.hpp>
-#include <dr/detail/halo.hpp>
 #include <dr/detail/index.hpp>
 
 #include <dr/views/views.hpp>
 #include <dr/views/transform.hpp>
 
+#include <dr/mhp/halo.hpp>
 #include <dr/mhp/global.hpp>
 #include <dr/mhp/sycl_support.hpp>
 #include <dr/mhp/alignment.hpp>
 #include <dr/mhp/views/views.hpp>
 #include <dr/mhp/views/zip.hpp>
 #include <dr/mhp/views/enumerate.hpp>
+#include <dr/mhp/views/sliding.hpp>
 #include <dr/mhp/algorithms/copy.hpp>
 #include <dr/mhp/algorithms/fill.hpp>
 #include <dr/mhp/algorithms/for_each.hpp>

@@ -2,15 +2,18 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-bench.hpp"
+#include "../common/dr_bench.hpp"
 
 MPI_Comm comm;
 std::size_t comm_rank;
-std::size_t comm_size;
+std::size_t ranks;
 
 std::size_t default_vector_size;
 std::size_t default_repetitions;
 std::size_t stencil_steps;
+std::size_t num_rows;
+std::size_t num_columns;
+bool check_results;
 
 cxxopts::ParseResult options;
 
@@ -29,8 +32,8 @@ void dr_init() {
   if (options.count("sycl")) {
     sycl::queue q;
     if (comm_rank == 0) {
-      fmt::print("  run on sycl device: {}\n",
-                 q.get_device().get_info<sycl::info::device::name>());
+      fmt::print("  SYCL device:\n");
+      benchmark::AddCustomContext("device", device_info(q.get_device()));
     }
     dr::mhp::init(q);
     return;
@@ -38,7 +41,7 @@ void dr_init() {
 #endif
 
   if (comm_rank == 0) {
-    fmt::print("  run on CPU\n");
+    fmt::print("  run on: CPU\n");
   }
   dr::mhp::init();
 }
@@ -50,7 +53,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
   comm_rank = rank;
-  comm_size = size;
+  ranks = size;
 
   benchmark::Initialize(&argc, argv);
 
@@ -58,12 +61,15 @@ int main(int argc, char *argv[]) {
 
   // clang-format off
   options_spec.add_options()
+    ("check", "Check results")
+    ("columns", "Number of columns", cxxopts::value<std::size_t>()->default_value("10000"))
     ("drhelp", "Print help")
     ("log", "Enable logging")
 #ifdef SYCL_LANGUAGE_VERSION
     ("sycl", "Execute on SYCL device")
 #endif
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
+    ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10000"))
     ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("100"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ;
@@ -91,11 +97,13 @@ int main(int argc, char *argv[]) {
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
   stencil_steps = options["stencil-steps"].as<std::size_t>();
+  num_rows = options["rows"].as<std::size_t>();
+  num_columns = options["columns"].as<std::size_t>();
+  check_results = options.count("check");
+
   if (comm_rank == 0) {
-    fmt::print("Configuration:\n"
-               "  default vector size: {}\n"
-               "  default repetitions: {}\n",
-               default_vector_size, default_repetitions);
+    benchmark::AddCustomContext("model", "mhp");
+    add_configuration();
   }
 
   dr_init();

@@ -163,6 +163,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   endif()
 
   if(ENABLE_SYCL)
+    # disables rng::detail::box_compress::coalesce which causes rng::box to use global non-const variable, which can not
+    # be used in SYCL kernels
+    add_compile_definitions(RANGES_WORKAROUND_MSVC_249830)
+
     add_subdirectory(examples/shp)
     add_subdirectory(test/gtest/shp)
     add_subdirectory(benchmarks/gbench/shp)

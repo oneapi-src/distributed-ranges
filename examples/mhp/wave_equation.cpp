@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "cxxopts.hpp"
 #include "dr/mhp.hpp"
 #include "mpi.h"
 #include <chrono>
 #include <iomanip>
-#include "cxxopts.hpp"
 
 using T = double;
 
@@ -56,8 +56,8 @@ void rhs(dr::mhp::distributed_dense_matrix<T> &u,
 
   auto upx = dr::mhp::subrange(u, {1, u.shape()[0]}, {0, u.shape()[1]});
   auto vpy = dr::mhp::subrange(v, {1, v.shape()[0]}, {1, v.shape()[1]});
-  auto epx = dr::mhp::subrange(e, {1, e.shape()[0]-1}, {0, e.shape()[1]});
-  auto epy = dr::mhp::subrange(e, {1, e.shape()[0]}, {0, e.shape()[1]-1});
+  auto epx = dr::mhp::subrange(e, {1, e.shape()[0] - 1}, {0, e.shape()[1]});
+  auto epy = dr::mhp::subrange(e, {1, e.shape()[0]}, {0, e.shape()[1] - 1});
 
   auto dudx_view =
       dr::mhp::subrange(dudx, {1, dudx.shape()[0]}, {0, dudx.shape()[1]});
@@ -138,7 +138,7 @@ int run(int n, bool benchmark_mode) {
   const double dy = ly / ny;
   const double dx_inv = 1.0 / dx;
   const double dy_inv = 1.0 / dy;
-  dr::halo_bounds hb(1);
+  dr::mhp::halo_bounds hb(1);
 
   if (comm_rank == 0) {
     std::cout << "Using backend: dr" << std::endl;
@@ -162,8 +162,8 @@ int run(int n, bool benchmark_mode) {
   if (benchmark_mode) {
     nt = 100;
     dt = 1e-5;
-    t_export = 25*dt;
-    t_end = nt*dt;
+    t_export = 25 * dt;
+    t_end = nt * dt;
   }
   if (comm_rank == 0) {
     std::cout << "Time step: " << dt << " s" << std::endl;
@@ -205,7 +205,7 @@ int run(int n, bool benchmark_mode) {
       auto i = r.idx();
       std::size_t j = 0;
       for (auto &v : r) {
-        T x = xmin + dx / 2 + (i-1) * dx;
+        T x = xmin + dx / 2 + (i - 1) * dx;
         T y = ymin + dy / 2 + j * dy;
         if (i > 0) {
           v = initial_elev(x, y, lx, ly);
@@ -312,7 +312,7 @@ int run(int n, bool benchmark_mode) {
       auto i = r.idx();
       std::size_t j = 0;
       for (auto &v : r) {
-        T x = xmin + dx / 2 + (i-1) * dx;
+        T x = xmin + dx / 2 + (i - 1) * dx;
         T y = ymin + dy / 2 + j * dy;
         if (i > 0) {
           v = exact_elev(x, y, t, lx, ly);

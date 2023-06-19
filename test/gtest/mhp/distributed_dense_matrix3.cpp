@@ -91,7 +91,7 @@ TEST(MhpTests3, DM_Fill) {
 
 TEST(MhpTests3, DM_Fill_HB) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(2, 3, false);
+  dr::mhp::halo_bounds hb(2, 3, false);
   DM a(rows, cols, -13, hb);
 
   dr::mhp::fill(a, 5);
@@ -161,7 +161,7 @@ TEST(MhpTests3, DM_Iota_3_args) {
 
 TEST(MhpTests3, DM_Iota_HB) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(3, 2, false);
+  dr::mhp::halo_bounds hb(3, 2, false);
   DM a(rows, cols, -13, hb);
 
   dr::mhp::iota(a, 0);
@@ -187,7 +187,7 @@ TEST(MhpTests3, DM_Iota_HB) {
 
 TEST(MhpTests3, DM_Copy_HB) {
   const int rows = 11, cols = 11;
-  dr::halo_bounds hb(3, 2, false);
+  dr::mhp::halo_bounds hb(3, 2, false);
   DM a(rows, cols, -13, hb);
   DM b(rows, cols, -1, hb);
 

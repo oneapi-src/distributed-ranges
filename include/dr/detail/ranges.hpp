@@ -132,6 +132,25 @@ concept iter_has_local_method =
       { iter.local() } -> std::forward_iterator;
     };
 
+template <typename T> struct is_localizable_helper : std::false_type {};
+
+template <has_local_adl T> struct is_localizable_helper<T> : std::true_type {};
+
+template <iter_has_local_method T>
+struct is_localizable_helper<T> : std::true_type {};
+
+template <rng::forward_iterator Iter>
+  requires(not iter_has_local_method<Iter> && not has_local_adl<Iter>) &&
+          requires() { std::iter_value_t<Iter>(); }
+struct is_localizable_helper<Iter>
+    : is_localizable_helper<std::iter_value_t<Iter>> {};
+
+template <rng::forward_range R>
+struct is_localizable_helper<R> : is_localizable_helper<rng::iterator_t<R>> {};
+
+template <typename T>
+concept is_localizable = is_localizable_helper<T>::value;
+
 template <typename Segment>
 concept segment_has_local_method =
     rng::forward_range<Segment> && requires(Segment segment) {
@@ -140,14 +159,48 @@ concept segment_has_local_method =
 
 struct local_fn_ {
 
+  // based on https://ericniebler.github.io/range-v3/#autotoc_md30  "Create
+  // custom iterators"
+  // TODO: rewrite using iterator_interface from
+  //  https://github.com/boostorg/stl_interfaces
+  template <typename Iter>
+    requires rng::forward_range<typename Iter::value_type>
+  struct cursor_over_local_ranges {
+    Iter iter;
+    auto make_begin_for_counted() const {
+      if constexpr (iter_has_local_method<
+                        rng::iterator_t<typename Iter::value_type>>)
+        return rng::begin(*iter).local();
+      else
+        return rng::basic_iterator<cursor_over_local_ranges<
+            rng::iterator_t<typename Iter::value_type>>>(rng::begin(*iter));
+    }
+    auto read() const {
+      return rng::views::counted(make_begin_for_counted(), rng::size(*iter));
+    }
+    bool equal(const cursor_over_local_ranges &other) const {
+      return iter == other.iter;
+    }
+    void next() { ++iter; }
+    void prev() { --iter; }
+    void advance(std::ptrdiff_t n) { this->iter += n; }
+    std::ptrdiff_t distance_to(const cursor_over_local_ranges &other) const {
+      return other.iter - this->iter;
+    }
+    cursor_over_local_ranges() = default;
+    cursor_over_local_ranges(Iter iter) : iter(iter) {}
+  };
+
   template <std::forward_iterator Iter>
     requires(has_local_adl<Iter> || iter_has_local_method<Iter> ||
-             std::contiguous_iterator<Iter>)
+             std::contiguous_iterator<Iter> || is_localizable<Iter>)
   auto operator()(Iter iter) const {
     if constexpr (iter_has_local_method<Iter>) {
       return iter.local();
     } else if constexpr (has_local_adl<Iter>) {
       return local_(iter);
+    } else if constexpr (is_localizable<Iter>) {
+      return rng::basic_iterator<cursor_over_local_ranges<Iter>>(iter);
     } else if constexpr (std::contiguous_iterator<Iter>) {
       return iter;
     }
@@ -157,7 +210,7 @@ struct local_fn_ {
     requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
              segment_has_local_method<R> ||
              std::contiguous_iterator<rng::iterator_t<R>> ||
-             rng::contiguous_range<R>)
+             is_localizable<R> || rng::contiguous_range<R>)
   auto operator()(R &&r) const {
     if constexpr (segment_has_local_method<R>) {
       return r.local();
@@ -165,6 +218,11 @@ struct local_fn_ {
       return rng::views::counted(rng::begin(r).local(), rng::size(r));
     } else if constexpr (has_local_adl<R>) {
       return local_(std::forward<R>(r));
+    } else if constexpr (is_localizable<R>) {
+      return rng::views::counted(
+          rng::basic_iterator<cursor_over_local_ranges<rng::iterator_t<R>>>(
+              rng::begin(r)),
+          rng::size(r));
     } else if constexpr (std::contiguous_iterator<rng::iterator_t<R>>) {
       return std::span(rng::begin(r), rng::size(r));
     }

@@ -10,6 +10,7 @@ add_executable(
   mhp-tests.cpp
   ../common/all.cpp
   ../common/copy.cpp
+  ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
   ../common/enumerate.cpp
@@ -29,7 +30,8 @@ add_executable(
   distributed_dense_matrix.cpp
   reduce.cpp
   stencil.cpp
-  segmented.cpp
+  segments.cpp
+  slide_view.cpp
 )
 
 add_executable(
@@ -45,7 +47,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  ../common/take.cpp
+  slide_view.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
@@ -76,11 +78,11 @@ add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
 if (ENABLE_SYCL)
   if (NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-Take*)
+    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)
   endif()
-  # TODO fix sycl Take issues
-  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl)
-  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl)
-  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl)
-  add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl)
+  #TODO: fix sycl Slide issues, see https://github.com/oneapi-src/distributed-ranges/issues/322
+  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl --gtest_filter=-*Slide*)
 endif()

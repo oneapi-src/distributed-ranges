@@ -9,6 +9,9 @@
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml
 
+.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml/badge.svg
+   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml
+
 Productivity library for distributed and partitioned memory based on
 C++ Ranges.
 
@@ -163,6 +166,10 @@ See also
 `Testing`_
   Test system maintenance
 
+`Security`_
+  Security policy
+
+.. _`Security`: SECURITY.md
 .. _`Testing`: doc/developer/testing
 .. _`pre-commit`: doc/developer/testing/pre-commit.rst
 .. _`Spec Editing`: doc/spec/README.rst
