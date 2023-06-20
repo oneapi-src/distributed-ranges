@@ -46,3 +46,12 @@ TEST(Mdspan, Mdindex3D) {
   EXPECT_EQ(17, dist[i * ydim * zdim + j * zdim + k]);
   EXPECT_EQ(17, dmdspan.mdspan()(i, j, k));
 }
+
+TEST(Mdspan, Pipe) {
+  xhp::distributed_vector<T> dist(n2d);
+  auto mdspan = dist | xhp::views::mdspan(extents2d);
+
+  *mdspan.begin() = 17;
+  EXPECT_EQ(17, *mdspan.begin());
+  EXPECT_EQ(17, dist[0]);
+}
