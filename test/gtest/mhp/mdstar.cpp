@@ -55,3 +55,14 @@ TEST(Mdspan, Pipe) {
   EXPECT_EQ(17, *mdspan.begin());
   EXPECT_EQ(17, dist[0]);
 }
+
+TEST(Mdspan, SegmentIndex2D) {
+  xhp::distributed_vector<T> dist(n2d);
+  auto dmdspan = xhp::views::mdspan(dist, extents2d);
+
+  for (auto segment : dr::ranges::segments(dmdspan)) {
+    static_assert(std::same_as<T *, decltype(&segment.mdspan()(0, 1))>);
+    segment.mdspan()(0, 1) = 99;
+    EXPECT_EQ(99, segment[1]);
+  }
+}

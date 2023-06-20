@@ -10,6 +10,26 @@
 namespace dr::mhp {
 
 //
+//
+//
+template <typename BaseSegment, typename Extents,
+          typename Layout = md::layout_right>
+class mdsegment : public BaseSegment {
+public:
+  mdsegment(BaseSegment segment, Extents extents)
+      : BaseSegment(segment), mdspan_(segment_address(segment), extents) {}
+
+  auto mdspan() const { return mdspan_; }
+
+private:
+  static auto segment_address(BaseSegment segment) {
+    return std::to_address(dr::ranges::local(rng::begin(segment)));
+  }
+
+  md::mdspan<rng::range_value_t<BaseSegment>, Extents, Layout> mdspan_;
+};
+
+//
 // Mdspan maps a multi-dimensional index into a linear offset, and
 // then uses this to access the underlying distributed range
 //
@@ -39,23 +59,28 @@ class mdspan_view : public rng::view_interface<mdspan_view<R, Extents>> {
 private:
   using base_type = rng::views::all_t<R>;
   using iterator_type = rng::iterator_t<base_type>;
-  using difference_type = rng::iter_difference_t<iterator_type>;
   using mdspan_type = md::mdspan<iterator_type, Extents, Layout,
                                  distributed_accessor<iterator_type>>;
+  using difference_type = rng::iter_difference_t<iterator_type>;
 
 public:
   mdspan_view(R r, Extents extents)
       : base_(rng::views::all(r)), mdspan_(rng::begin(base_), extents) {}
 
-  // Random access range
+  // Base implements random access range
   auto begin() const { return base_.begin(); }
   auto end() const { return base_.end(); }
   auto operator[](difference_type n) { return base_[n]; }
 
-  // Distributed ranges
-  auto segments() const { return dr::ranges::segments(base_); }
+  // Add a local mdspan to the base segment
+  auto segments() const {
+    auto make_md = [local_extents = mdspan().extents()](auto segment) {
+      return mdsegment(segment, local_extents);
+    };
+    return dr::ranges::segments(base_) | rng::views::transform(make_md);
+  }
 
-  // Mdspan
+  // Mdspan access to base
   auto mdspan() const { return mdspan_; }
 
 private:
