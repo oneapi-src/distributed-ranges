@@ -10,7 +10,8 @@
 namespace dr::mhp {
 
 //
-// Mdspan uses this to access distributed range
+// Mdspan maps a multi-dimensional index into a linear offset, and
+// then uses this to access the underlying distributed range
 //
 template <typename Iter> class distributed_accessor {
 public:
@@ -28,12 +29,17 @@ public:
   }
 };
 
+//
+// Wrap a distributed range, adding an mdspan and adapting the
+// segments to also be mdspans for local access
+//
 template <distributed_contiguous_range R, typename Extents,
           typename Layout = md::layout_right>
 class mdspan_view : public rng::view_interface<mdspan_view<R, Extents>> {
 private:
   using base_type = rng::views::all_t<R>;
   using iterator_type = rng::iterator_t<base_type>;
+  using difference_type = rng::iter_difference_t<iterator_type>;
   using mdspan_type = md::mdspan<iterator_type, Extents, Layout,
                                  distributed_accessor<iterator_type>>;
 
@@ -41,11 +47,15 @@ public:
   mdspan_view(R r, Extents extents)
       : base_(rng::views::all(r)), mdspan_(rng::begin(base_), extents) {}
 
+  // Random access range
   auto begin() const { return base_.begin(); }
   auto end() const { return base_.end(); }
+  auto operator[](difference_type n) { return base_[n]; }
 
+  // Distributed ranges
   auto segments() const { return dr::ranges::segments(base_); }
 
+  // Mdspan
   auto mdspan() const { return mdspan_; }
 
 private:
