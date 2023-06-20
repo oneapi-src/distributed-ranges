@@ -6,16 +6,13 @@
 
 using T = int;
 using DM = dr::mhp::distributed_dense_matrix<T>;
-using A = std::allocator<T>;
-using DMA = dr::mhp::distributed_dense_matrix<T, A>;
-using DMI = typename DM::iterator;
 
 template <typename T> class MhpTests3 : public testing::Test {};
 
 TEST(MhpTests, DM_Create) {
   const int rows = 11, cols = 11;
   DM a(rows, cols);
-  barrier();
+  dr::mhp::barrier();
 
   EXPECT_EQ(a.size(), rows * cols);
 }
@@ -23,7 +20,7 @@ TEST(MhpTests, DM_Create) {
 TEST(MhpTests, DM_CreateFill) {
   const int rows = 11, cols = 11;
   DM a(rows, cols, -1);
-  barrier();
+  dr::mhp::barrier();
 
   EXPECT_EQ(*(a.begin()), -1);
   EXPECT_EQ(*(a.begin() + 13), -1);
@@ -42,7 +39,7 @@ TEST(MhpTests, DM_Rows_For) {
     }
   }
 
-  barrier();
+  dr::mhp::barrier();
 
   EXPECT_EQ(*(a.begin()), 0);
   EXPECT_EQ(*(a.begin() + 13), 12);
@@ -58,7 +55,7 @@ TEST(MhpTests, DM_Rows_ForEach) {
 
   dr::mhp::for_each(a.rows(), [](auto row) { rng::iota(row, 10); });
 
-  barrier();
+  dr::mhp::barrier();
 
   EXPECT_EQ(*(a.begin()), 10);
   EXPECT_EQ(*(a.begin() + 13), 12);

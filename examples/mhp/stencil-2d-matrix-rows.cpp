@@ -84,8 +84,10 @@ int stencil_check(dr::mhp::distributed_dense_matrix<T> &a,
 //
 // stencil
 //
-
 auto stencil_op = [](auto &&p) {
+  /* FixMe: should not return a row, but zipped range of iterators should be
+   * passed to stencil */
+
   std::vector<T> out_row((*p).size());
 
   out_row[0] = p[0][0];
