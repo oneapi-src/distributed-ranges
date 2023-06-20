@@ -82,6 +82,8 @@ TEST(MhpTests, DM_Transform) {
 
   dr::mhp::transform(a.begin(), a.end(), b.begin(), negate);
 
+  dr::mhp::barrier();
+
   EXPECT_EQ(*(b.begin()), 1);
   EXPECT_EQ(*(b.begin() + 13), 1);
   EXPECT_EQ(*(b.end() - 24), 1);
@@ -96,6 +98,8 @@ TEST(MhpTests, DM_with_std_array) {
   dr::mhp::distributed_dense_matrix<std::array<int, 5>> a(rows, cols, ref, hb);
 
   std::array<int, 5> val = *(a.begin() + 13);
+
+  barrier();
 
   EXPECT_EQ(val[3], 4);
 }

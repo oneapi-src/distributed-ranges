@@ -8,7 +8,7 @@ namespace dr::mhp {
 
 using key_type = index<>;
 
-template <typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = dr::mhp::default_allocator<T>>
 class distributed_dense_matrix;
 
 template <typename DM> class d_segment;

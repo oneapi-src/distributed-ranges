@@ -485,12 +485,3 @@ void transform(rng::subrange<dm_rows_iterator<DM>> &in,
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<
     dr::mhp::dm_rows<dr::mhp::distributed_dense_matrix<T>>> = true;
-
-template <typename T>
-inline constexpr bool rng::enable_borrowed_range<
-    dr::mhp::subrange<dr::mhp::distributed_dense_matrix<T>>> = true;
-
-template <typename T>
-inline constexpr bool rng::enable_borrowed_range<
-    std::vector<dr::mhp::d_segment<dr::mhp::distributed_dense_matrix<T>>>> =
-    true;

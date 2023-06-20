@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <dr/detail/ranges_shim.hpp>
+
 namespace dr::mhp {
 
 template <typename DM> class subrange_iterator {
@@ -162,7 +164,8 @@ private:
   std::size_t index_ = 0;
 }; // class subrange_iterator
 
-template <typename DM> class subrange {
+template <typename DM>
+class subrange : public rng::view_interface<subrange<DM>> {
 public:
   using iterator = subrange_iterator<DM>;
   using value_type = typename DM::value_type;
