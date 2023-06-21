@@ -179,9 +179,6 @@ public:
 
     if (my_process_segment_index == segment_index_ + 1) {
 #ifndef SYCL_LANGUAGE_VERSION
-      fmt::print("segment size: {}\n", dv_->segment_size_);
-      fmt::print("index: {}\n", index_);
-      fmt::print("halo prev: {}\n", dv_->distribution_.halo().prev);
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
 #endif
       return dv_->data_ + dv_->distribution_.halo().prev + index_ -
