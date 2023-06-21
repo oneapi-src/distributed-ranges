@@ -13,10 +13,19 @@
 Interface
 =========
 
+MHP
+---
+
+.. doxygenfunction:: dr::mhp::transform(dr::distributed_range auto &&in, dr::distributed_iterator auto out, auto op)
+.. doxygenfunction:: dr::mhp::transform(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out, auto op)
+
 SHP
 ---
 
-.. doxygenfunction:: transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in, dr::distributed_iterator auto out, auto &&fn)
+.. doxygenfunction:: dr::shp::transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in, dr::distributed_iterator auto out, auto &&fn)
+.. doxygenfunction:: dr::shp::transform(R &&in, Iter out, Fn &&fn)
+.. doxygenfunction:: dr::shp::transform(ExecutionPolicy &&policy, Iter1 in_begin, Iter1 in_end, Iter2 out_end, Fn &&fn)
+.. doxygenfunction:: dr::shp::transform(Iter1 in_begin, Iter1 in_end, Iter2 out_end, Fn &&fn)
 
 
 Description
@@ -29,8 +38,6 @@ Description
    `std::ranges::transform`_
      C++ range-based model
    :ref:`reduce`
-     related algorithm
-   :ref:`transform_reduce`
      related algorithm
 
 Usage

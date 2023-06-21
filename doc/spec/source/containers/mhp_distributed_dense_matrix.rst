@@ -4,17 +4,16 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _shp_distributed_vector:
+.. _distributed_dense_matrix:
 
-===============================
-``dr::shp::distributed_vector``
-===============================
+=====================================
+``dr::mhp::distributed_dense_matrix``
+=====================================
 
 Synopsis
 ========
 
-.. doxygenstruct:: dr::shp::distributed_vector
-   :members:
+dr::mhp::distributed_dense_matrix
 
 Description
 ===========

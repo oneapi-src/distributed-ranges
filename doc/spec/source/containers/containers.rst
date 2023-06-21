@@ -15,4 +15,10 @@ processes and can be accessed by any process in the team.
    :maxdepth: 1
 
    mhp_distributed_vector
+   mhp_distributed_dense_matrix
+
+   shp_vector
+   shp_device_vector
    shp_distributed_vector
+   shp_dense_matrix
+   shp_sparse_matrix

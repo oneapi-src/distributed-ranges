@@ -4,16 +4,16 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _shp_distributed_vector:
+.. _shp_sparse_matrix:
 
 ===============================
-``dr::shp::distributed_vector``
+``dr::shp::sparse_matrix``
 ===============================
 
 Synopsis
 ========
 
-.. doxygenstruct:: dr::shp::distributed_vector
+.. doxygenclass:: dr::shp::sparse_matrix
    :members:
 
 Description

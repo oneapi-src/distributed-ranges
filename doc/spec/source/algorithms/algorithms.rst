@@ -12,9 +12,20 @@ Algorithms on distributed ranges.
    :maxdepth: 1
 
    copy
+   exclusive_scan
    fill
    for_each
+   inclusive_scan
    iota
    reduce
+   sort
    transform
-   transform_reduce
+
+#  transform_reduce
+
+Algorithms on shp matrix, dense and sparse.
+
+.. toctree::
+   
+   shp_matrix_gemm
+   shp_matrix_gemv

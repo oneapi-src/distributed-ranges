@@ -4,16 +4,16 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _shp_distributed_vector:
+.. _shp_vector:
 
 ===============================
-``dr::shp::distributed_vector``
+``dr::shp::vector``
 ===============================
 
 Synopsis
 ========
 
-.. doxygenstruct:: dr::shp::distributed_vector
+.. doxygenclass:: dr::shp::vector
    :members:
 
 Description

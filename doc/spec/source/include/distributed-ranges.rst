@@ -13,6 +13,7 @@
 .. _`std::mdspan`: https://en.cppreference.com/w/cpp/container/mdspan
 .. _`std::reduce`: https://en.cppreference.com/w/cpp/algorithm/reduce
 .. _`std::span`: https://en.cppreference.com/w/cpp/container/span
+.. _`std::sort`: https://en.cppreference.com/w/cpp/algorithm/sort
 .. _`std::transform`: https://en.cppreference.com/w/cpp/algorithm/transform
 .. _`std::transform_reduce`: https://en.cppreference.com/w/cpp/algorithm/transform_reduce
 .. _`std::vector`: https://en.cppreference.com/w/cpp/container/vector
@@ -21,6 +22,7 @@
 .. _`std::ranges::fill`: https://en.cppreference.com/w/cpp/algorithm/ranges/fill
 .. _`std::ranges::for_each`: https://en.cppreference.com/w/cpp/algorithm/ranges/for_each
 .. _`std::ranges::iota`: https://en.cppreference.com/w/cpp/algorithm/ranges/iota
+.. _`std::ranges::sort`: https://en.cppreference.com/w/cpp/algorithm/ranges/sort
 .. _`std::ranges::transform`: https://en.cppreference.com/w/cpp/algorithm/ranges/transform
 
 .. _`std::ranges::drop_view`: https://en.cppreference.com/w/cpp/ranges/drop_view

@@ -4,26 +4,19 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _transform_reduce:
+.. _gemm:
 
 ======================
- ``transform_reduce``
+ ``dr::shp::gemm``
 ======================
 
 Interface
 =========
 
+.. doxygenfunction:: dr::shp::gemm(dense_matrix<T> &a, dense_matrix<T> &b, dense_matrix<T> &c)
 
 Description
 ===========
-
-.. seealso::
-
-   `std::transform_reduce`_
-
-   :ref:`reduce`
-
-   :ref:`transform`
 
 
 Examples

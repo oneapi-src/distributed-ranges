@@ -8,10 +8,63 @@
 Concepts
 ========
 
+``remote_iterator``
+===================
+
+# .. doxygenconcept:: dr::remote_iterator
+
+Defined in ``concepts.hpp``
+::
+
+  template <typename I>
+  concept remote_iterator =
+    std::forward_iterator<I> && requires(I &iter) { dr::ranges::rank(iter); };
+
+Requirements
+""""""""""""
+1. ``I`` fulfills ``std::forward_iterator``
+2. ``i`` has a method ``rank`` returning the rank on which the memory
+   ``i`` references is located.
+
+``remote_range``
+================
+
+# .. doxygenconcept:: dr::remote_range
+
+Defined in ``concepts.hpp``
+::
+
+  template <typename R>
+  concept remote_range =
+    rng::forward_range<R> && requires(R &r) { dr::ranges::rank(r); };
+
+Requirements
+""""""""""""
+1. ``R`` fulfills ``rng::forward_range``
+2. ``r`` has a method ``rank`` returning the rank on which the memory
+   ``r`` references is located.
+
+``distributed_range``
+=====================
+
+# .. doxygenconcept:: dr::distributed_range
+
+Defined in ``concepts.hpp``
+::
+
+  template <typename R>
+  concept distributed_range =
+    rng::forward_range<R> && requires(R &r) { dr::ranges::segments(r); };
+
+Requirements
+""""""""""""
+1. ``R`` fulfills ``rng::forward_range``
+2. ``r`` has a method ``segments`` 
+
 ``remote_contiguous_iterator``
 ==============================
 
-.. doxygenconcept:: dr::remote_contiguous_iterator
+# .. doxygenconcept:: dr::remote_contiguous_iterator
 
 A remote contiguous iterator acts as a pointer to some contiguous piece
 of remote memory.
@@ -49,7 +102,7 @@ fulfill ``remote_contiguous_iterator``.
 ``remote_contiguous_range``
 ===========================
 
-.. doxygenconcept:: dr::remote_contiguous_range
+# .. doxygenconcept:: dr::remote_contiguous_range
 
 A remote contiguous range is a range located in a contiguous piece of remote
 memory.
@@ -86,7 +139,7 @@ to express that concisely.
 ``distributed_contiguous_range``
 ================================
 
-.. doxygenconcept:: dr::distributed_contiguous_range
+# .. doxygenconcept:: dr::distributed_contiguous_range
 
 A distributed contiguous range is a range consisting of multiple segments
 distributed over multiple processes, where each each segment is a
