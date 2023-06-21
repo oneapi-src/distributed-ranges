@@ -106,7 +106,7 @@ jobs:
       run: srun -p pvc-shared /usr/bin/env -i scripts/devcloud-run.sh
 
   publish:
-    needs: [checks, clang, gcc, icpx]
+    needs: [checks, clang, devcloud, gcc]
     runs-on: ubuntu-latest
     env:
       SPHINXOPTS: -q -W
