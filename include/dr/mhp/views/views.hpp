@@ -37,6 +37,28 @@ template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
   return *rng::begin(segments);
 }
 
+template <typename R> auto local_mdspans(R &&dr) {
+  return dr::ranges::segments(std::forward<R>(dr))
+         // Select the local segments
+         | rng::views::filter([](auto s) {
+             return dr::ranges::rank(s) == default_comm().rank();
+           })
+         // Extract the mdspan
+         | rng::views::transform([](auto s) { return s.mdspan(); });
+}
+
+template <dr::distributed_contiguous_range R> auto local_mdspan(R &&r) {
+  auto mdspans = dr::mhp::local_mdspans(std::forward<R>(r));
+
+  if (rng::empty(mdspans)) {
+    return rng::range_value_t<decltype(mdspans)>{};
+  }
+
+  // Should be error, not assert. Or we could join all the segments
+  assert(rng::distance(mdspans) == 1);
+  return *rng::begin(mdspans);
+}
+
 } // namespace dr::mhp
 
 namespace dr::mhp::views {

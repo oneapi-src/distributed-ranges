@@ -6,7 +6,7 @@
 
 using T = int;
 
-const std::size_t xdim = 2, ydim = 3, zdim = 2, n2d = xdim * ydim,
+const std::size_t xdim = 4, ydim = 3, zdim = 2, n2d = xdim * ydim,
                   n3d = xdim * ydim * zdim;
 md::extents extents2d(xdim, ydim);
 md::extents extents3d(xdim, ydim, zdim);
@@ -60,8 +60,8 @@ TEST(Mdspan, SegmentIndex2D) {
   xhp::distributed_vector<T> dist(n2d);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
 
-  if (comm_rank == 0) {
-    for (auto segment : dr::ranges::segments(dmdspan)) {
+  for (auto segment : dr::ranges::segments(dmdspan)) {
+    if (comm_rank == 0 && dr::ranges::rank(segment) == 0) {
       static_assert(std::same_as<T *, decltype(&segment.mdspan()(0, 1))>);
       segment.mdspan()(0, 1) = 99;
       EXPECT_EQ(99, segment[1]);
@@ -83,4 +83,22 @@ TEST(Mdspan, SegmentExtents) {
     EXPECT_EQ(extents2d.extent(1), extents.extent(1));
   }
   EXPECT_EQ(extents2d.extent(0), x);
+}
+
+TEST(Mdspan, Subrange) {
+  xhp::distributed_vector<T> dist(n2d);
+  auto inner = rng::subrange(dist.begin() + ydim, dist.end() - ydim);
+  md::extents inner_extents(extents2d.extent(0) - 2, extents2d.extent(1));
+  auto dmdspan = xhp::views::mdspan(inner, inner_extents);
+
+  // Summing up leading dimension size of segments should equal
+  // original minus 2 rows
+  std::size_t x = 0;
+  for (auto segment : dr::ranges::segments(dmdspan)) {
+    auto extents = segment.mdspan().extents();
+    x += extents.extent(0);
+    // Non leading dimension are not changed
+    EXPECT_EQ(extents2d.extent(1), extents.extent(1));
+  }
+  EXPECT_EQ(extents2d.extent(0), x + 2);
 }

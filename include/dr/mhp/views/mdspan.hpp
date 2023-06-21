@@ -22,12 +22,17 @@ public:
   auto mdspan() const { return mdspan_; }
 
 private:
+  using T = rng::range_value_t<BaseSegment>;
+
   static auto local_mdspan(BaseSegment segment, Extents local_extents) {
-    return md::mdspan(std::to_address(dr::ranges::local(rng::begin(segment))),
-                      local_extents);
+    // Undefined behavior if the segments is not local
+    T *ptr = dr::ranges::rank(segment) == default_comm().rank()
+                 ? std::to_address(dr::ranges::local(rng::begin(segment)))
+                 : nullptr;
+    return md::mdspan(ptr, local_extents);
   }
 
-  md::mdspan<rng::range_value_t<BaseSegment>, Extents, Layout> mdspan_;
+  md::mdspan<T, Extents, Layout> mdspan_;
 };
 
 //
@@ -66,7 +71,10 @@ private:
 
 public:
   mdspan_view(R r, Extents extents)
-      : base_(rng::views::all(r)), mdspan_(rng::begin(base_), extents) {}
+      : base_(rng::views::all(r)), mdspan_(rng::begin(base_), extents) {
+    // Should be error, not assert
+    assert(rng::size(r) == rng::size(mdspan()));
+  }
 
   // Base implements random access range
   auto begin() const { return base_.begin(); }
@@ -94,8 +102,8 @@ private:
     }
     // Assume decomposition along leading dimension, and divide the first
     // dimension by number of segments
-    local_extents[0] =
-        mdspan_.extents().extent(0) / rng::size(dr::ranges::segments(base_));
+    local_extents[0] = mdspan_.extents().extent(0) /
+                       std::size_t(rng::size(dr::ranges::segments(base_)));
     ;
 
     return Extents(local_extents);
