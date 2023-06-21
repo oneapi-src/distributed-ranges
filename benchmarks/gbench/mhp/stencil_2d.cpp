@@ -248,6 +248,10 @@ static void Stencil2D_Segmented_DR(benchmark::State &state) {
 
 DR_BENCHMARK(Stencil2D_Segmented_DR);
 
+#if __GNUC__ == 10 && __GNUC_MINOR__ == 4
+// mdspan triggers gcc 10 bugs, skip these tests
+#else
+
 //
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style.
@@ -290,6 +294,8 @@ static void Stencil2D_SegmentedMdspan_DR(benchmark::State &state) {
 }
 
 DR_BENCHMARK(Stencil2D_SegmentedMdspan_DR);
+
+#endif // Skip for gcc 10.4
 
 // Under construction
 #if 0

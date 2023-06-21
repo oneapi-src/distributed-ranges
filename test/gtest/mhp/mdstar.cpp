@@ -4,6 +4,10 @@
 
 #include "xhp-tests.hpp"
 
+#if __GNUC__ == 10 && __GNUC_MINOR__ == 4
+// mdspan triggers gcc 10 bugs, skip these tests
+#else
+
 using T = int;
 
 const std::size_t xdim = 4, ydim = 3, zdim = 2, n2d = xdim * ydim,
@@ -105,3 +109,4 @@ TEST(Mdspan, Subrange) {
   }
   EXPECT_EQ(extents2d.extent(0), x + 2);
 }
+#endif // Skip for gcc 10.4
