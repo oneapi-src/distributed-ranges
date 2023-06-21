@@ -10,20 +10,21 @@
 namespace dr::mhp {
 
 //
-//
+// Add a local mdspan to the underlying segment
 //
 template <typename BaseSegment, typename Extents,
           typename Layout = md::layout_right>
 class mdsegment : public BaseSegment {
 public:
-  mdsegment(BaseSegment segment, Extents extents)
-      : BaseSegment(segment), mdspan_(segment_address(segment), extents) {}
+  mdsegment(BaseSegment segment, Extents local_extents)
+      : BaseSegment(segment), mdspan_(local_mdspan(segment, local_extents)) {}
 
   auto mdspan() const { return mdspan_; }
 
 private:
-  static auto segment_address(BaseSegment segment) {
-    return std::to_address(dr::ranges::local(rng::begin(segment)));
+  static auto local_mdspan(BaseSegment segment, Extents local_extents) {
+    return md::mdspan(std::to_address(dr::ranges::local(rng::begin(segment))),
+                      local_extents);
   }
 
   md::mdspan<rng::range_value_t<BaseSegment>, Extents, Layout> mdspan_;
@@ -74,8 +75,8 @@ public:
 
   // Add a local mdspan to the base segment
   auto segments() const {
-    auto make_md = [local_extents = mdspan().extents()](auto segment) {
-      return mdsegment(segment, local_extents);
+    auto make_md = [extents = local_extents()](auto segment) {
+      return mdsegment(segment, extents);
     };
     return dr::ranges::segments(base_) | rng::views::transform(make_md);
   }
@@ -84,6 +85,22 @@ public:
   auto mdspan() const { return mdspan_; }
 
 private:
+  auto local_extents() const {
+    // Copy extents to array so we can modify it
+    std::array<typename Extents::index_type, Extents::rank()> local_extents;
+    std::size_t i = 0;
+    for (auto &e : local_extents) {
+      e = mdspan_.extents().extent(i++);
+    }
+    // Assume decomposition along leading dimension, and divide the first
+    // dimension by number of segments
+    local_extents[0] =
+        mdspan_.extents().extent(0) / rng::size(dr::ranges::segments(base_));
+    ;
+
+    return Extents(local_extents);
+  }
+
   base_type base_;
   mdspan_type mdspan_;
 };

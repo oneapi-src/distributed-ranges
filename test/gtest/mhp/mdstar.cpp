@@ -60,9 +60,27 @@ TEST(Mdspan, SegmentIndex2D) {
   xhp::distributed_vector<T> dist(n2d);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
 
-  for (auto segment : dr::ranges::segments(dmdspan)) {
-    static_assert(std::same_as<T *, decltype(&segment.mdspan()(0, 1))>);
-    segment.mdspan()(0, 1) = 99;
-    EXPECT_EQ(99, segment[1]);
+  if (comm_rank == 0) {
+    for (auto segment : dr::ranges::segments(dmdspan)) {
+      static_assert(std::same_as<T *, decltype(&segment.mdspan()(0, 1))>);
+      segment.mdspan()(0, 1) = 99;
+      EXPECT_EQ(99, segment[1]);
+    }
   }
+}
+
+TEST(Mdspan, SegmentExtents) {
+  xhp::distributed_vector<T> dist(n2d);
+  auto dmdspan = xhp::views::mdspan(dist, extents2d);
+
+  // Summing up leading dimension size of segments should equal
+  // original
+  std::size_t x = 0;
+  for (auto segment : dr::ranges::segments(dmdspan)) {
+    auto extents = segment.mdspan().extents();
+    x += extents.extent(0);
+    // Non leading dimension are not changed
+    EXPECT_EQ(extents2d.extent(1), extents.extent(1));
+  }
+  EXPECT_EQ(extents2d.extent(0), x);
 }
