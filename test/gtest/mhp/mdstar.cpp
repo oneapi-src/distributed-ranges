@@ -11,15 +11,18 @@ const std::size_t xdim = 4, ydim = 3, zdim = 2, n2d = xdim * ydim,
 md::extents extents2d(xdim, ydim);
 md::extents extents3d(xdim, ydim, zdim);
 
+auto dist2d = dr::mhp::distribution().granularity(ydim);
+auto dist3d = dr::mhp::distribution().granularity(ydim * zdim);
+
 TEST(Mdspan, StaticAssert) {
-  xhp::distributed_vector<T> dist(n2d);
+  xhp::distributed_vector<T> dist(n2d, dist2d);
   auto mdspan = xhp::views::mdspan(dist, extents2d);
   static_assert(rng::forward_range<decltype(mdspan)>);
   static_assert(dr::distributed_range<decltype(mdspan)>);
 }
 
 TEST(Mdspan, Iterator) {
-  xhp::distributed_vector<T> dist(n2d);
+  xhp::distributed_vector<T> dist(n2d, dist2d);
   auto mdspan = xhp::views::mdspan(dist, extents2d);
 
   *mdspan.begin() = 17;
@@ -28,7 +31,7 @@ TEST(Mdspan, Iterator) {
 }
 
 TEST(Mdspan, Mdindex2D) {
-  xhp::distributed_vector<T> dist(n2d);
+  xhp::distributed_vector<T> dist(n2d, dist2d);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
 
   std::size_t i = 1, j = 2;
@@ -38,7 +41,7 @@ TEST(Mdspan, Mdindex2D) {
 }
 
 TEST(Mdspan, Mdindex3D) {
-  xhp::distributed_vector<T> dist(n3d);
+  xhp::distributed_vector<T> dist(n3d, dist3d);
   auto dmdspan = xhp::views::mdspan(dist, extents3d);
 
   std::size_t i = 1, j = 2, k = 0;
@@ -48,7 +51,7 @@ TEST(Mdspan, Mdindex3D) {
 }
 
 TEST(Mdspan, Pipe) {
-  xhp::distributed_vector<T> dist(n2d);
+  xhp::distributed_vector<T> dist(n2d, dist2d);
   auto mdspan = dist | xhp::views::mdspan(extents2d);
 
   *mdspan.begin() = 17;
@@ -57,7 +60,7 @@ TEST(Mdspan, Pipe) {
 }
 
 TEST(Mdspan, SegmentIndex2D) {
-  xhp::distributed_vector<T> dist(n2d);
+  xhp::distributed_vector<T> dist(n2d, dist2d);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
 
   for (auto segment : dr::ranges::segments(dmdspan)) {
@@ -70,7 +73,7 @@ TEST(Mdspan, SegmentIndex2D) {
 }
 
 TEST(Mdspan, SegmentExtents) {
-  xhp::distributed_vector<T> dist(n2d);
+  xhp::distributed_vector<T> dist(n2d, dist2d);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
 
   // Summing up leading dimension size of segments should equal
@@ -86,7 +89,7 @@ TEST(Mdspan, SegmentExtents) {
 }
 
 TEST(Mdspan, Subrange) {
-  xhp::distributed_vector<T> dist(n2d);
+  xhp::distributed_vector<T> dist(n2d, dist2d);
   auto inner = rng::subrange(dist.begin() + ydim, dist.end() - ydim);
   md::extents inner_extents(extents2d.extent(0) - 2, extents2d.extent(1));
   auto dmdspan = xhp::views::mdspan(inner, inner_extents);
