@@ -25,8 +25,27 @@ target_link_libraries(
   DR::mpi
 )
 
+# mhp-quick-bench is for development. By reducing the number of source
+# files, it builds much faster. Change the source files to match what
+# you need to test. It is OK to commit changes to the source file
+# list.
+
+add_executable(
+  mhp-quick-bench
+  mhp-bench.cpp
+  stencil_2d.cpp
+)
+target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
+target_link_libraries(
+  mhp-quick-bench
+  benchmark::benchmark
+  cxxopts
+  DR::mpi
+)
+
 if (ENABLE_SYCL)
   target_compile_options(mhp-bench PRIVATE -fsycl)
+  target_compile_options(mhp-quick-bench PRIVATE -fsycl)
 endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
