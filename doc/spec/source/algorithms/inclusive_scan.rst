@@ -47,9 +47,9 @@ Distributed iterator versions
   :outline:
 .. doxygenfunction:: dr::shp::inclusive_scan(Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op, T init)                      
+.. doxygenfunction:: dr::shp::inclusive_scan(Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op, T init)
   :outline:
-          
+
 Description
 ===========
 

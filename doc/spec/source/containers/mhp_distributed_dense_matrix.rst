@@ -10,14 +10,12 @@
 ``dr::mhp::distributed_dense_matrix``
 =====================================
 
-Synopsis
-========
+Interface
+=========
 
-dr::mhp::distributed_dense_matrix
+Not merged yet
 
 Description
 ===========
 
-.. seealso::
-
-   `std::vector`_
+Dense matrix class, distributed over MPI nodes

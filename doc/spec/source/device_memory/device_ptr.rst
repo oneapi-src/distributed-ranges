@@ -11,8 +11,8 @@
 Interface
 =========
 
-#.. doxygenclass:: dr::shp::device_ptr 
-#   :members:
+.. doxygenclass:: dr::shp::device_ptr
+   :members:
 
 Description
 ===========

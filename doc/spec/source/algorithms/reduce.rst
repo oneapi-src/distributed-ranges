@@ -26,17 +26,17 @@ MHP
   :outline:
 .. doxygenfunction:: dr::mhp::reduce(std::size_t root, DR &&dr)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DR &&dr) 
+.. doxygenfunction:: dr::mhp::reduce(DR &&dr)
   :outline:
 .. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DI first, DI last, T init, auto &&binary_op) 
+.. doxygenfunction:: dr::mhp::reduce(DI first, DI last, T init, auto &&binary_op)
   :outline:
 .. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last, T init)
   :outline:
 .. doxygenfunction:: dr::mhp::reduce(DI first, DI last, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last) 
+.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last)
   :outline:
 .. doxygenfunction:: dr::mhp::reduce(DI first, DI last)
   :outline:

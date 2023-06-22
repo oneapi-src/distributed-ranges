@@ -11,7 +11,7 @@ Concepts
 ``remote_iterator``
 ===================
 
-# .. doxygenconcept:: dr::remote_iterator
+.. doxygenconcept:: dr::remote_iterator
 
 Defined in ``concepts.hpp``
 ::
@@ -29,7 +29,7 @@ Requirements
 ``remote_range``
 ================
 
-# .. doxygenconcept:: dr::remote_range
+.. doxygenconcept:: dr::remote_range
 
 Defined in ``concepts.hpp``
 ::
@@ -47,7 +47,7 @@ Requirements
 ``distributed_range``
 =====================
 
-# .. doxygenconcept:: dr::distributed_range
+.. doxygenconcept:: dr::distributed_range
 
 Defined in ``concepts.hpp``
 ::
@@ -59,12 +59,12 @@ Defined in ``concepts.hpp``
 Requirements
 """"""""""""
 1. ``R`` fulfills ``rng::forward_range``
-2. ``r`` has a method ``segments`` 
+2. ``r`` has a method ``segments``
 
 ``remote_contiguous_iterator``
 ==============================
 
-# .. doxygenconcept:: dr::remote_contiguous_iterator
+.. doxygenconcept:: dr::remote_contiguous_iterator
 
 A remote contiguous iterator acts as a pointer to some contiguous piece
 of remote memory.
@@ -102,7 +102,7 @@ fulfill ``remote_contiguous_iterator``.
 ``remote_contiguous_range``
 ===========================
 
-# .. doxygenconcept:: dr::remote_contiguous_range
+.. doxygenconcept:: dr::remote_contiguous_range
 
 A remote contiguous range is a range located in a contiguous piece of remote
 memory.
@@ -139,7 +139,7 @@ to express that concisely.
 ``distributed_contiguous_range``
 ================================
 
-# .. doxygenconcept:: dr::distributed_contiguous_range
+.. doxygenconcept:: dr::distributed_contiguous_range
 
 A distributed contiguous range is a range consisting of multiple segments
 distributed over multiple processes, where each each segment is a

@@ -23,9 +23,9 @@ Algorithms on distributed ranges.
 
 #  transform_reduce
 
-Algorithms on shp matrix, dense and sparse.
+Algorithms on matrices, dense and sparse
 
 .. toctree::
-   
+
    shp_matrix_gemm
    shp_matrix_gemv

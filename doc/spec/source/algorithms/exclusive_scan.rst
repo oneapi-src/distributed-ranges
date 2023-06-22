@@ -28,13 +28,13 @@ SHP
   :outline:
 .. doxygenfunction:: dr::shp::exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, T init, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, T init)                
+.. doxygenfunction:: dr::shp::exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, T init)
   :outline:
 .. doxygenfunction:: dr::shp::exclusive_scan(Iter first, Iter last, OutputIter d_first, T init, BinaryOp &&binary_op)
   :outline:
 .. doxygenfunction:: dr::shp::exclusive_scan(Iter first, Iter last, OutputIter d_first, T init)
   :outline
-          
+
 Description
 ===========
 
