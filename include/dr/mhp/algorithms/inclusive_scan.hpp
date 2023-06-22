@@ -32,7 +32,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   for (auto &&s [[maybe_unused]] : in_segments)
     if (!rng::empty(s))
       ++local_segments_count;
-  dr::drlog.debug("incscan, local segments count:{}\n", local_segments_count);
 
 #ifdef SYCL_LANGUAGE_VERSION
   std::vector<sycl::event> events;
@@ -54,7 +53,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
 
     auto dist = rng::distance(in_segment);
     if (dist == 0) {
-      dr::drlog.debug("incscan, local segment skipped as it is empty\n");
       continue;
     }
 
@@ -62,7 +60,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     auto last = ranges::local(rng::end(in_segment));
     auto s_first = ranges::local(rng::begin(out_segment));
 
-    dr::drlog.debug("incscan, scanning local segment of size:{}\n", dist);
 #ifdef SYCL_LANGUAGE_VERSION
     sycl::event one_segment_scan_event;
     if (mhp::use_sycl()) {
@@ -75,8 +72,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       std::inclusive_scan(std::execution::par_unseq, first, last, s_first,
                           binary_op);
 
-    dr::drlog.debug("incscan, scan ordered now ordering to copy result into "
-                    "local partial sums\n");
     rng::advance(s_first, dist - 1);
 
 #ifdef SYCL_LANGUAGE_VERSION
@@ -94,8 +89,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     ++local_partial_sums_iter;
   }
 
-  dr::drlog.debug("incscan, waiting for local scans\n");
-
 #ifdef SYCL_LANGUAGE_VERSION
   sycl::event::wait(events);
   events.clear(); // events are reused later in this function
@@ -103,10 +96,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
 
   const std::size_t local_partial_sums_count =
       rng::distance(local_partial_sums, local_partial_sums_iter);
-
-  dr::drlog.debug("incscan, local scans finished, ordering local partial sums "
-                  "scan, sums count:{} + 1\n",
-                  local_partial_sums_count);
 
   OVal *local_partial_sums_scanned =
       local_partial_sums_count
@@ -133,25 +122,13 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       local_partial_sums_count
           ? local_partial_sums_scanned[local_partial_sums_count - 1]
           : std::optional<OVal>();
-  dr::drlog.debug("incscan, local partial sums scan finished, calling gather "
-                  "with our sum being eq {}\n",
-                  local_partial_sum.value_or(OVal()));
 
   // below vector is used on 0 rank only but who cares
   std::vector<std::optional<OVal>> partial_sums(comm.size()); // dr-style ignore
 
   comm.gather(local_partial_sum, partial_sums, 0);
-  dr::drlog.debug(
-      "incscan, gather finished, gathered partial sums, scanning them\n");
 
   if (comm.rank() == 0) {
-    for (auto &&x : partial_sums) {
-      if (x.has_value())
-        dr::drlog.debug("gathered partial sum element : {}\n", x.value());
-      else
-        dr::drlog.debug("gathered partial sum element EMPTY\n");
-    }
-
     std::optional<OVal> next_v = init;
     rng::for_each(partial_sums, [&next_v, binary_op](std::optional<OVal> &v) {
       if (v.has_value()) {
@@ -160,26 +137,11 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           next_v = binary_op(v.value(), next_v.value());
       }
     });
-    for (auto &&x : partial_sums) {
-      if (x.has_value())
-        dr::drlog.debug("partial sum element : {}\n", x.value());
-      else
-        dr::drlog.debug("partial sum element EMPTY\n");
-    }
   }
-
-  dr::drlog.debug(
-      "incscan, scanned partial sums (including init:{}), scattering them\n",
-      init.value_or(OVal()));
 
   // scatter partial_sums_scanned
   std::optional<OVal> sum_of_all_guys_before_my_rank;
   comm.scatter(partial_sums, sum_of_all_guys_before_my_rank, 0);
-
-  dr::drlog.debug("incscan, scattered sum of guys before my rank is:{}, adding "
-                  "it to local_partial_sums_scanned:...\n",
-                  sum_of_all_guys_before_my_rank.value_or(
-                      OVal())); // , local_partial_sums_scanned
 
   if (local_partial_sums_count && sum_of_all_guys_before_my_rank.has_value()) {
     const OVal sum_of_all_guys_before_my_rank_value =
@@ -201,24 +163,17 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
                       x = binary_op(sum_of_all_guys_before_my_rank_value, x);
                     });
   }
-  dr::drlog.debug("incscan, sum of guys before my rank:{} was added it to "
-                  "local_partial_sums_scanned:..., modify out segments\n",
-                  sum_of_all_guys_before_my_rank.value_or(
-                      OVal())); //  local_partial_sums_scanned
 
   std::size_t local_partial_sum_idx = 0;
   bool nonempty_out_segment_already_found = false;
   for (auto &&out_seg : out_segments) {
     if (rng::empty(out_seg)) {
-      dr::drlog.debug("out segment skipped as being empty\n");
       continue;
     }
 
     auto first = ranges::local(rng::begin(out_seg));
     auto last = ranges::local(rng::end(out_seg));
 
-    dr::drlog.debug("incscan, order to modify out segment by adding {}\n",
-                    local_partial_sums_scanned[local_partial_sum_idx]);
     if (nonempty_out_segment_already_found ||
         sum_of_all_guys_before_my_rank.has_value()) {
       const OVal sum_of_all_guys_before_my_segment =
@@ -242,13 +197,9 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     nonempty_out_segment_already_found = true;
   }
 
-  dr::drlog.debug("incscan, waiting for out segments modification\n");
-
 #ifdef SYCL_LANGUAGE_VERSION
   sycl::event::wait(events);
 #endif
-
-  dr::drlog.debug("incscan, all out segments modified\n");
 
   if (local_partial_sums_count)
     default_allocator<OVal>().deallocate(local_partial_sums,
