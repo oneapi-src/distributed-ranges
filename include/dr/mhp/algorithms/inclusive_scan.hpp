@@ -201,11 +201,12 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   sycl::event::wait(events);
 #endif
 
-  if (local_partial_sums_count)
+  if (local_partial_sums_count) {
     default_allocator<OVal>().deallocate(local_partial_sums,
                                          local_segments_count);
-  default_allocator<OVal>().deallocate(local_partial_sums_scanned,
-                                       local_partial_sums_count);
+    default_allocator<OVal>().deallocate(local_partial_sums_scanned,
+                                         local_partial_sums_count);
+  }
   return d_last;
 }
 
