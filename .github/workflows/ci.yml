@@ -93,7 +93,7 @@ jobs:
         name: log-gcc-${{ env.CXX }}
         path: build/Testing
 
-  devcloud:
+  icpx:
     runs-on: devcloud
     env:
       CXX: icpx
@@ -106,7 +106,7 @@ jobs:
       run: srun -p pvc-shared /usr/bin/env -i scripts/devcloud-run.sh
 
   publish:
-    needs: [checks, clang, devcloud, gcc]
+    needs: [checks, clang, gcc, icpx]
     runs-on: ubuntu-latest
     env:
       SPHINXOPTS: -q -W
