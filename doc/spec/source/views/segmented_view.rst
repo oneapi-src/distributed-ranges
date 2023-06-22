@@ -2,19 +2,29 @@
 ..
 .. SPDX-License-Identifier: BSD-3-Clause
 
+
 .. include:: ../include/distributed-ranges.rst
 
-.. _shp_sparse_matrix:
+.. _segmented_view:
 
-===============================
-``dr::shp::sparse_matrix``
-===============================
+===============
+ segmented_view
+===============
 
 Interface
 =========
 
-.. doxygenclass:: dr::shp::sparse_matrix
+MHP
+---
+
+.. doxygenclass:: dr::mhp::segmented_view
    :members:
+.. doxygenfunction:: dr::mhp::views::segmented
+   :outline:
+
+SHP
+---
 
 Description
 ===========
+

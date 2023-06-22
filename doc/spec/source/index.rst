@@ -18,11 +18,9 @@ Welcome to the Distributed Ranges Specification.
    intro
    arch
    concepts
-   device_memory/device_memory
    containers/containers
    views/views
    algorithms/algorithms
-   communication/communication
 
 
 Indices and tables

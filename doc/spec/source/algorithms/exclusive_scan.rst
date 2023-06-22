@@ -7,7 +7,7 @@
 .. _exclusive_scan:
 
 ============================
- ``dr::shp::exclusive_scan``
+ ``exclusive_scan``
 ============================
 
 Interface
@@ -37,6 +37,10 @@ SHP
 
 Description
 ===========
+
+.. seealso::
+
+  'std::exclusive_scan'_
 
 Examples
 ========

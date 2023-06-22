@@ -7,7 +7,7 @@
 .. _inclusive_scan:
 
 ============================
- ``dr::shp::inclusive_scan``
+ ``inclusive_scan``
 ============================
 
 Interface
@@ -53,6 +53,9 @@ Distributed iterator versions
 Description
 ===========
 
+.. seealso::
+
+  'std::inclusive_scan'_
 
 Examples
 ========

@@ -4,17 +4,23 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _shp_sparse_matrix:
+.. _take_view:
 
-===============================
-``dr::shp::sparse_matrix``
-===============================
+===========
+ take_view
+===========
 
 Interface
 =========
 
-.. doxygenclass:: dr::shp::sparse_matrix
-   :members:
+
+Use `std::ranges::views::take`_.
+
 
 Description
 ===========
+
+.. seealso::
+
+   `std::ranges::views::take`_
+     Standard C++ view

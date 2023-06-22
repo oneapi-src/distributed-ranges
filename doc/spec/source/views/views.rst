@@ -11,5 +11,12 @@ Views can reference collections of objects but do not own the storage.
 .. toctree::
    :maxdepth: 1
 
+   all_view
+   counted_view
    drop_view
+   iota_view
+   take_view
+   segmented_view
+   sliding_view
+   transform_view
    zip_view

@@ -4,21 +4,22 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _drop_view:
+.. _transform_view:
 
-===========
- drop_view
-===========
+===============
+ transform_view
+===============
 
 Interface
 =========
 
-Use `std::ranges::views::drop`_.
+.. doxygenclass:: dr::transform_view
+  :members:
 
 Description
 ===========
 
 .. seealso::
 
-   `std::ranges::views::drop`_
+   `std::ranges::views::transform`_
      Standard C++ view

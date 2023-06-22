@@ -4,17 +4,21 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _shp_sparse_matrix:
+.. _iota_view:
 
-===============================
-``dr::shp::sparse_matrix``
-===============================
+===========
+ iota_view
+===========
 
 Interface
 =========
 
-.. doxygenclass:: dr::shp::sparse_matrix
-   :members:
+.. doxygenvariable:: dr::mhp::views::iota
 
 Description
 ===========
+
+.. seealso::
+
+   `std::ranges::views::iota`_
+     Standard C++ view

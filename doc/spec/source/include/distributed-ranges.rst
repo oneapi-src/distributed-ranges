@@ -7,8 +7,10 @@
 .. _`C++ execution policies`: https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t
 
 .. _`std::copy`: https://en.cppreference.com/w/cpp/algorithm/copy
+.. _`std::exclusive_scan`: https://en.cppreference.com/w/cpp/algorithm/exclusive_scan
 .. _`std::fill`: https://en.cppreference.com/w/cpp/algorithm/fill
 .. _`std::for_each`: https://en.cppreference.com/w/cpp/algorithm/for_each
+.. _`std::inclusive_scan`: https://en.cppreference.com/w/cpp/algorithm/inclusive_scan
 .. _`std::iota`: https://en.cppreference.com/w/cpp/algorithm/iota
 .. _`std::mdspan`: https://en.cppreference.com/w/cpp/container/mdspan
 .. _`std::reduce`: https://en.cppreference.com/w/cpp/algorithm/reduce
@@ -25,8 +27,13 @@
 .. _`std::ranges::sort`: https://en.cppreference.com/w/cpp/algorithm/ranges/sort
 .. _`std::ranges::transform`: https://en.cppreference.com/w/cpp/algorithm/ranges/transform
 
-.. _`std::ranges::drop_view`: https://en.cppreference.com/w/cpp/ranges/drop_view
-.. _`std::ranges::zip_view`: https://en.cppreference.com/w/cpp/ranges/zip_view
+.. _`std::ranges::views::all`: https://en.cppreference.com/w/cpp/ranges/all_view
+.. _`std::ranges::views::counted`: https://en.cppreference.com/w/cpp/ranges/view_counted
+.. _`std::ranges::views::drop`: https://en.cppreference.com/w/cpp/ranges/drop_view
+.. _`std::ranges::views::iota`: https://en.cppreference.com/w/cpp/ranges/iota_view
+.. _`std::ranges::views::take`: https://en.cppreference.com/w/cpp/ranges/take_view
+.. _`std::ranges::views::transform`: https://en.cppreference.com/w/cpp/ranges/transform_view
+.. _`std::ranges::views::zip`: https://en.cppreference.com/w/cpp/ranges/zip_view
 
 .. C++ paper links
 

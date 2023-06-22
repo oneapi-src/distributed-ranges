@@ -10,8 +10,8 @@
 ``dr::shp::dense_matrix``
 ===============================
 
-Synopsis
-========
+Interface
+=========
 
 .. doxygenclass:: dr::shp::dense_matrix
    :members:

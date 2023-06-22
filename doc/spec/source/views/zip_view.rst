@@ -11,19 +11,22 @@
  Zip_view
 ==========
 
-Synopsis
-========
+Interface
+=========
 
 MHP
 ---
 
-Use `std::ranges::zip_view`_
+.. doxygenclass:: dr::mhp::zip_view
+   :members:
+.. doxygenfunction:: dr::mhp::views::zip
+   :outline:
 
 SHP
 ---
 
 .. doxygenclass:: dr::shp::zip_view
-   :outline:
+   :members:
 .. doxygenfunction:: dr::shp::views::zip
    :outline:
 
@@ -32,5 +35,5 @@ Description
 
 .. seealso::
 
-   `std::ranges::zip_view`_
+   `std::ranges::views::zip`_
      Standard C++ view

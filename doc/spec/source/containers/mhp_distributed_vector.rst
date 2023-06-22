@@ -10,14 +10,17 @@
 ``dr::mhp::distributed_vector``
 ===============================
 
-Synopsis
-========
+Interface
+=========
 
 .. doxygenclass:: dr::mhp::distributed_vector
    :members:
 
 Description
 ===========
+
+Vector distributed among MPI nodes, with support
+for data exchange at segment edges (halo)
 
 .. seealso::
 
