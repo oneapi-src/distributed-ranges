@@ -60,7 +60,7 @@ auto reduce(std::size_t root, bool root_provided, DR &&dr, auto &&binary_op) {
     std::vector<value_type> all(comm.size()); // dr-style ignore
     if (root_provided) {
       // Everyone gathers to root, only root reduces
-      comm.gather(local, all, root);
+      comm.gather(local, std::span{all}, root);
       if (root == comm.rank()) {
         return std_reduce(all, binary_op);
       } else {

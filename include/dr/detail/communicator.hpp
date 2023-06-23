@@ -44,7 +44,7 @@ public:
   }
 
   template <typename T>
-  void scatter(const std::vector<T> &src, T &dst, std::size_t root) const {
+  void scatter(const std::span<T> src, T &dst, std::size_t root) const {
     assert(src.size() >= size());
     scatter(src.data(), &dst, sizeof(T), root);
   }
@@ -62,7 +62,7 @@ public:
   }
 
   template <typename T>
-  void gather(const T &src, std::vector<T> &dst, std::size_t root) const {
+  void gather(const T &src, std::span<T> dst, std::size_t root) const {
     assert(dst.size() >= size());
     gather(&src, dst.data(), sizeof(T), root);
   }

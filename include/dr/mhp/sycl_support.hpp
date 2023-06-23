@@ -33,9 +33,14 @@ struct device_policy {
   decltype(oneapi::dpl::execution::make_device_policy(queue)) dpl_policy;
 };
 
+using Event = sycl::event;
+
 #else // !SYCL_LANGUAGE_VERSION
 
 struct device_policy {};
+struct Event {
+  void wait(){};
+};
 
 #endif // SYCL_LANGUAGE_VERSION
 
