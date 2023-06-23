@@ -10,22 +10,10 @@
 #include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/views/dense_column_view.hpp>
+#include <dr/shp/views/dense_matrix_iterator.hpp>
 #include <dr/shp/views/dense_row_view.hpp>
 
-/*
-  - `vector` same as `std::vector`, except it supports non-language reference
-  types
-  - `device_vector`, `vector`, but has a rank associated with it (should it be
-  `remote_vector`?)
-
-  - `dense_matrix` - simply stores a dense matrix, no rank information (unless
-  perhaps iterator has rank)
-*/
-
 namespace dr::shp {
-
-template <typename T, typename Iter>
-using dense_matrix_iterator = dense_matrix_view_iterator<T, Iter>;
 
 template <typename T, typename Allocator = std::allocator<T>>
 class dense_matrix {
@@ -51,7 +39,13 @@ public:
   }
 
   dense_matrix(key_type shape, std::size_t ld)
+    requires(std::is_default_constructible_v<Allocator>)
       : allocator_(Allocator()), shape_(shape), ld_(ld) {
+    data_ = allocator_.allocate(shape_[0] * ld_);
+  }
+
+  dense_matrix(key_type shape, std::size_t ld, const Allocator &alloc)
+      : allocator_(alloc), shape_(shape), ld_(ld) {
     data_ = allocator_.allocate(shape_[0] * ld_);
   }
 

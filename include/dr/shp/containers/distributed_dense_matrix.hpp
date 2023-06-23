@@ -12,6 +12,7 @@
 #include <dr/shp/containers/matrix_partition.hpp>
 #include <dr/shp/containers/sequential/dense_matrix.hpp>
 #include <dr/shp/device_vector.hpp>
+#include <dr/shp/future.hpp>
 #include <dr/shp/views/dense_matrix_view.hpp>
 
 namespace dr::shp {
@@ -239,15 +240,31 @@ public:
     return views_;
   }
 
-  auto get_tile(key_type tile_index) {
+  template <typename Allocator = std::allocator<T>>
+  auto get_tile(key_type tile_index, const Allocator &alloc = Allocator{}) {
     std::size_t nrows = get_tile_shape_(tile_index)[0];
     std::size_t ld = tile_shape_[1];
     std::size_t tile_size = nrows * ld;
-    dense_matrix<T> local_tile(get_tile_shape_(tile_index), ld);
+    dense_matrix<T, Allocator> local_tile(get_tile_shape_(tile_index), ld,
+                                          alloc);
     auto remote_tile = tile(tile_index);
     shp::copy(remote_tile.data(), remote_tile.data() + tile_size,
               local_tile.data());
     return local_tile;
+  }
+
+  template <typename Allocator = std::allocator<T>>
+  auto get_tile_async(key_type tile_index,
+                      const Allocator &alloc = Allocator{}) {
+    std::size_t nrows = get_tile_shape_(tile_index)[0];
+    std::size_t ld = tile_shape_[1];
+    std::size_t tile_size = nrows * ld;
+    dense_matrix<T, Allocator> local_tile(get_tile_shape_(tile_index), ld,
+                                          alloc);
+    auto remote_tile = tile(tile_index);
+    auto event = shp::copy_async(
+        remote_tile.data(), remote_tile.data() + tile_size, local_tile.data());
+    return future(std::move(local_tile), {event});
   }
 
   auto segments() {
