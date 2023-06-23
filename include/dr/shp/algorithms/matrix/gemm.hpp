@@ -85,37 +85,45 @@ void gemm_spmd(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b,
       auto &&q = __detail::queue(dr::ranges::rank(c_local));
 
       threads.emplace_back([c_local, i, j, &q, &a, &b, &c] {
-        dr::shp::device_allocator<T> allocator(q);
-        std::size_t k_offset = i + j;
+        try {
+          dr::shp::device_allocator<T> allocator(q);
+          std::size_t k_offset = i + j;
 
-        auto a_f = a.get_tile_async({i, k_offset % a.grid_shape()[1]});
-        auto b_f = b.get_tile_async({k_offset % a.grid_shape()[1], j});
+          auto a_f =
+              a.get_tile_async({i, k_offset % a.grid_shape()[1]}, allocator);
+          auto b_f =
+              b.get_tile_async({k_offset % a.grid_shape()[1], j}, allocator);
 
-        for (std::size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
-          std::size_t k = (k_ + k_offset) % a.grid_shape()[1];
+          for (std::size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
+            std::size_t k = (k_ + k_offset) % a.grid_shape()[1];
 
-          auto a_tile = a_f.get();
-          auto b_tile = b_f.get();
+            auto a_tile = a_f.get();
+            auto b_tile = b_f.get();
 
-          fmt::print("Multiplying a[{}, {}] x b[{}, {}]. Dimensions {} x {}, "
-                     "{} x {}\n",
-                     i, k, k, j, a_tile.shape()[0], a_tile.shape()[1],
-                     b_tile.shape()[0], b_tile.shape()[1]);
+            fmt::print("Multiplying a[{}, {}] x b[{}, {}]. Dimensions {} x {}, "
+                       "{} x {}\n",
+                       i, k, k, j, a_tile.shape()[0], a_tile.shape()[1],
+                       b_tile.shape()[0], b_tile.shape()[1]);
 
-          dr::shp::dense_matrix_view a_local(a_tile);
-          dr::shp::dense_matrix_view b_local(b_tile);
+            dr::shp::dense_matrix_view a_local(a_tile);
+            dr::shp::dense_matrix_view b_local(b_tile);
 
-          if (k_ + 1 < a.grid_shape()[1]) {
-            a_f = a.get_tile_async({i, (k + 1) % a.grid_shape()[1]});
-            b_f = b.get_tile_async({(k + 1) % a.grid_shape()[1], j});
+            if (k_ + 1 < a.grid_shape()[1]) {
+              a_f =
+                  a.get_tile_async({i, (k + 1) % a.grid_shape()[1]}, allocator);
+              b_f =
+                  b.get_tile_async({(k + 1) % a.grid_shape()[1], j}, allocator);
+            }
+
+            fmt::print("Calling local_gemm...\n");
+            __detail::local_gemm(q, __detail::local(a_local),
+                                 __detail::local(b_local),
+                                 __detail::local(c_local))
+                .wait();
+            fmt::print("After local_gemm...\n");
           }
-
-          fmt::print("Calling local_gemm...\n");
-          __detail::local_gemm(q, __detail::local(a_local),
-                               __detail::local(b_local),
-                               __detail::local(c_local))
-              .wait();
-          fmt::print("After local_gemm...\n");
+        } catch (...) {
+          fmt::print("Exception!\n");
         }
       });
     }
