@@ -12,8 +12,8 @@ using T = int;
 
 const std::size_t xdim = 4, ydim = 3, zdim = 2, n2d = xdim * ydim,
                   n3d = xdim * ydim * zdim;
-md::extents extents2d(xdim, ydim);
-md::extents extents3d(xdim, ydim, zdim);
+std::array extents2d = {xdim, ydim};
+std::array extents3d = {xdim, ydim, zdim};
 
 auto dist2d = dr::mhp::distribution().granularity(ydim);
 auto dist3d = dr::mhp::distribution().granularity(ydim * zdim);
@@ -87,15 +87,15 @@ TEST(Mdspan, SegmentExtents) {
     auto extents = segment.mdspan().extents();
     x += extents.extent(0);
     // Non leading dimension are not changed
-    EXPECT_EQ(extents2d.extent(1), extents.extent(1));
+    EXPECT_EQ(extents2d[1], extents.extent(1));
   }
-  EXPECT_EQ(extents2d.extent(0), x);
+  EXPECT_EQ(extents2d[0], x);
 }
 
 TEST(Mdspan, Subrange) {
   xhp::distributed_vector<T> dist(n2d, dist2d);
   auto inner = rng::subrange(dist.begin() + ydim, dist.end() - ydim);
-  md::extents inner_extents(extents2d.extent(0) - 2, extents2d.extent(1));
+  std::array<std::size_t, 2> inner_extents({extents2d[0] - 2, extents2d[1]});
   auto dmdspan = xhp::views::mdspan(inner, inner_extents);
 
   // Summing up leading dimension size of segments should equal
@@ -105,8 +105,8 @@ TEST(Mdspan, Subrange) {
     auto extents = segment.mdspan().extents();
     x += extents.extent(0);
     // Non leading dimension are not changed
-    EXPECT_EQ(extents2d.extent(1), extents.extent(1));
+    EXPECT_EQ(extents2d[1], extents.extent(1));
   }
-  EXPECT_EQ(extents2d.extent(0), x + 2);
+  EXPECT_EQ(extents2d[0], x + 2);
 }
 #endif // Skip for gcc 10.4
