@@ -26,6 +26,7 @@ Algorithms on distributed ranges.
 Algorithms on matrices, dense and sparse
 
 .. toctree::
+   :maxdepth: 1
 
    shp_matrix_gemm
    shp_matrix_gemv

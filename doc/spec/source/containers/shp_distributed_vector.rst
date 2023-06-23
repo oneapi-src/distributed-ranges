@@ -19,7 +19,6 @@ Interface
 Description
 ===========
 
-
 .. seealso::
 
    `std::vector`_

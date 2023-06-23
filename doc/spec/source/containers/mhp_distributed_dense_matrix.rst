@@ -13,7 +13,12 @@
 Interface
 =========
 
-Not merged yet
+.. code-block:: cpp
+
+   template <typename T, typename Allocator> class distributed_dense_matrix;
+
+The class will be merged and dokumented soon
+
 
 Description
 ===========

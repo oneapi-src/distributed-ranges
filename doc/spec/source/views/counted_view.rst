@@ -6,19 +6,19 @@
 
 .. _counted_view:
 
-=============
- counted_view
-=============
+=================
+ ``counted_view``
+=================
 
 Interface
 =========
 
-Use `std::ranges::views::counted`_.
+.. code-block:: cpp
 
-Description
-===========
+  dr::mhp::views::counted
+  dr::shp::views::counted
 
-.. seealso::
+For interface, see `std::ranges::views::counted`_
 
-   `std::ranges::views::counted`_
-     Standard C++ view
+
+

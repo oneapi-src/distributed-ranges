@@ -6,20 +6,23 @@
 
 .. _sliding_view:
 
-=============
- sliding_view
-=============
+=================
+ ``sliding_view``
+=================
 
 Interface
 =========
 
 
-.. doxygenvariable:: dr::mhp::views::sliding
+.. code-block:: cpp
+
+  dr::mhp::views::sliding
+  dr::shp::views::sliding
 
 Description
 ===========
 
 .. seealso::
 
-   `std::ranges::views::iota`_
+   `std::ranges::views::slide`_
      Standard C++ view

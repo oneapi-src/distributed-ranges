@@ -6,19 +6,16 @@
 
 .. _drop_view:
 
-===========
- drop_view
-===========
+==============
+ ``drop_view``
+==============
 
 Interface
 =========
 
-Use `std::ranges::views::drop`_.
+.. code-block:: cpp
 
-Description
-===========
+  dr::mhp::views::drop
+  dr::shp::views::drop
 
-.. seealso::
-
-   `std::ranges::views::drop`_
-     Standard C++ view
+For interface, see `std::ranges::views::drop`_

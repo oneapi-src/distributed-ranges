@@ -6,20 +6,16 @@
 
 .. _transform_view:
 
-===============
- transform_view
-===============
+===================
+ ``transform_view``
+===================
 
 Interface
 =========
 
-.. doxygenclass:: dr::transform_view
-  :members:
+.. code-block:: cpp
 
-Description
-===========
+  dr::mhp::views::transform
+  dr::shp::views::transform
 
-.. seealso::
-
-   `std::ranges::views::transform`_
-     Standard C++ view
+For interface, see `std::ranges::views::transform`_

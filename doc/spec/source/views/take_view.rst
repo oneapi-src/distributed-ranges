@@ -6,21 +6,16 @@
 
 .. _take_view:
 
-===========
- take_view
-===========
+==============
+ ``take_view``
+==============
 
 Interface
 =========
 
+.. code-block:: cpp
 
-Use `std::ranges::views::take`_.
+  dr::mhp::views::take
+  dr::shp::views::take
 
-
-Description
-===========
-
-.. seealso::
-
-   `std::ranges::views::take`_
-     Standard C++ view
+For interface, see `std::ranges::views::take`_

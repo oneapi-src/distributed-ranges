@@ -31,6 +31,7 @@
 .. _`std::ranges::views::counted`: https://en.cppreference.com/w/cpp/ranges/view_counted
 .. _`std::ranges::views::drop`: https://en.cppreference.com/w/cpp/ranges/drop_view
 .. _`std::ranges::views::iota`: https://en.cppreference.com/w/cpp/ranges/iota_view
+.. _`std::ranges::views::slide`: https://en.cppreference.com/w/cpp/ranges/slide_view
 .. _`std::ranges::views::take`: https://en.cppreference.com/w/cpp/ranges/take_view
 .. _`std::ranges::views::transform`: https://en.cppreference.com/w/cpp/ranges/transform_view
 .. _`std::ranges::views::zip`: https://en.cppreference.com/w/cpp/ranges/zip_view

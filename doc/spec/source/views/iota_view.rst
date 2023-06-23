@@ -6,19 +6,16 @@
 
 .. _iota_view:
 
-===========
- iota_view
-===========
+==============
+ ``iota_view``
+==============
 
 Interface
 =========
 
-.. doxygenvariable:: dr::mhp::views::iota
+.. code-block:: cpp
 
-Description
-===========
+  dr::mhp::views::all
+  dr::shp::views::all
 
-.. seealso::
-
-   `std::ranges::views::iota`_
-     Standard C++ view
+For interface, see `std::ranges::views::all`_

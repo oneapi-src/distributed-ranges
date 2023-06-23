@@ -6,20 +6,17 @@
 
 .. _all_view:
 
-===========
- all_view
-===========
+=============
+ ``all_view``
+=============
 
 Interface
 =========
 
-Use `std::ranges::views::all`_.
+.. code-block:: cpp
 
+  dr::mhp::views::all
+  dr::shp::views::all
 
-Description
-===========
+For interface, see `std::ranges::views::all`_
 
-.. seealso::
-
-   `std::ranges::views::all`_
-     Standard C++ view

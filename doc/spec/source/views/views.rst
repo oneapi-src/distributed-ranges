@@ -16,7 +16,6 @@ Views can reference collections of objects but do not own the storage.
    drop_view
    iota_view
    take_view
-   segmented_view
    sliding_view
    transform_view
    zip_view
