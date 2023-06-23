@@ -46,13 +46,6 @@ target_link_libraries(
 if (ENABLE_SYCL)
   target_compile_options(mhp-bench PRIVATE -fsycl)
   target_compile_options(mhp-quick-bench PRIVATE -fsycl)
-
-  if(ENABLE_CUDA)
-    target_compile_options(mhp-bench PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
-    target_link_options(mhp-bench PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
-    target_compile_options(mhp-quick-bench PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
-    target_link_options(mhp-quick-bench PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
-  endif()
 endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)

@@ -64,28 +64,6 @@ int stencil(auto n, auto steps) {
   }
 }
 
-void dr_init(cxxopts::ParseResult const &options [[maybe_unused]]) {
-  int comm_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-
-#ifdef SYCL_LANGUAGE_VERSION
-  if (options.count("sycl")) {
-    sycl::queue q;
-    if (comm_rank == 0) {
-      fmt::print("Enable sycl device: {}\n",
-                 q.get_device().get_info<sycl::info::device::name>());
-    }
-    dr::mhp::init(q);
-    return;
-  }
-#endif
-
-  if (comm_rank == 0) {
-    fmt::print("Enable CPU\n");
-  }
-  dr::mhp::init();
-}
-
 int main(int argc, char *argv[]) {
 
   cxxopts::Options options_spec(argv[0], "stencil 1d");
@@ -93,7 +71,6 @@ int main(int argc, char *argv[]) {
   options_spec.add_options()
     ("n", "Size of array", cxxopts::value<std::size_t>()->default_value("10"))
     ("s", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
-    ("sycl", "Execute on SYCL device")
     ("help", "Print help");
   // clang-format on
 
@@ -111,7 +88,7 @@ int main(int argc, char *argv[]) {
   }
 
   MPI_Init(&argc, &argv);
-  dr_init(options);
+  dr::mhp::init();
 
   auto error =
       stencil(options["n"].as<std::size_t>(), options["s"].as<std::size_t>());
