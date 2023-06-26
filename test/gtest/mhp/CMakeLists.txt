@@ -27,6 +27,7 @@ add_executable(
   alignment.cpp
   copy.cpp
   distributed_vector.cpp
+  halo.cpp
   reduce.cpp
   stencil.cpp
   segments.cpp
@@ -36,6 +37,7 @@ add_executable(
 add_executable(
   mhp-tests-3
   mhp-tests.cpp
+  halo-3.cpp
   slide_view-3.cpp
 )
 
