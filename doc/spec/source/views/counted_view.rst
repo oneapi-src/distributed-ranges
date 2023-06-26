@@ -19,6 +19,3 @@ Interface
   dr::shp::views::counted
 
 For interface, see `std::ranges::views::counted`_
-
-
-

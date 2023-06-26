@@ -19,4 +19,3 @@ Interface
   dr::shp::views::all
 
 For interface, see `std::ranges::views::all`_
-

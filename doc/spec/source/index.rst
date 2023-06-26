@@ -19,8 +19,8 @@ Welcome to the Distributed Ranges Specification.
    arch
    concepts
    containers/containers
-   views/views
    algorithms/algorithms
+   views/views
 
 
 Indices and tables
