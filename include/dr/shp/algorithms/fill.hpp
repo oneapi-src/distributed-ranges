@@ -67,8 +67,8 @@ auto fill(R &&r, const T &value) {
   return rng::end(r);
 }
 
-template <typename T, dr::distributed_contiguous_range R>
-sycl::event fill_async(R &&r, const T &value) {
+template <typename T, dr::distributed_contiguous_range DR>
+sycl::event fill_async(DR &&r, const T &value) {
   std::vector<sycl::event> events;
 
   for (auto &&segment : dr::ranges::segments(r)) {
@@ -79,8 +79,8 @@ sycl::event fill_async(R &&r, const T &value) {
   return dr::shp::__detail::combine_events(events);
 }
 
-template <typename T, dr::distributed_contiguous_range R>
-auto fill(R &&r, const T &value) {
+template <typename T, dr::distributed_contiguous_range DR>
+auto fill(DR &&r, const T &value) {
   fill_async(r, value).wait();
   return rng::end(r);
 }

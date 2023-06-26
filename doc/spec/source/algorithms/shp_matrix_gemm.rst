@@ -2,26 +2,22 @@
 ..
 .. SPDX-License-Identifier: BSD-3-Clause
 
-.. _device_ref:
+.. include:: ../include/distributed-ranges.rst
+
+.. _gemm:
 
 ======================
- ``device_ref``
+ ``gemm``
 ======================
 
 Interface
 =========
 
-.. doxygenclass:: dr::shp::device_ref
-   :members:
+.. doxygenfunction:: dr::shp::gemm(dense_matrix<T> &a, dense_matrix<T> &b, dense_matrix<T> &c)
 
 Description
 ===========
 
-``device_ref`` supports reading and writing device memory.
-
-.. seealso::
-
-   :ref:`device_ptr`
 
 Examples
 ========
