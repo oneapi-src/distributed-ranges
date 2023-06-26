@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#include <dr/shp/containers/index.hpp>
+#include <dr/detail/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
 #include <dr/shp/device_vector.hpp>
@@ -34,7 +34,7 @@ public:
 
   using tile_type = L;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
 
   constexpr dense_matrix_accessor() noexcept = default;
   constexpr ~dense_matrix_accessor() noexcept = default;
@@ -144,7 +144,7 @@ public:
   using reference = dr::shp::matrix_ref<T, scalar_reference>;
   using const_reference = dr::shp::matrix_ref<const T, const_scalar_reference>;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
 
   using iterator = dense_matrix_iterator<
       T, dr::shp::device_vector<T, dr::shp::device_allocator<T>>>;
