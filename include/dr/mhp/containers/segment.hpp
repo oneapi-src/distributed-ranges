@@ -240,3 +240,5 @@ private:
   std::size_t segment_index_;
   std::size_t size_;
 }; // dv_segment
+
+} // namespace dr::mhp

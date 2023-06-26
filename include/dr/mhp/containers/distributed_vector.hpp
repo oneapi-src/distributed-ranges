@@ -7,6 +7,8 @@
 #include <dr/mhp/containers/distribution.hpp>
 #include <dr/mhp/containers/segment.hpp>
 
+namespace dr::mhp {
+
 /// distributed vector
 template <typename T, typename Allocator = dr::mhp::default_allocator<T>>
 class distributed_vector {
