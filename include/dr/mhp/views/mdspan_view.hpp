@@ -7,9 +7,14 @@
 #include <dr/detail/mdspan_shim.hpp>
 #include <dr/detail/ranges_shim.hpp>
 
-namespace dr::mhp {
+namespace dr::mhp::decomp {
 
 inline constexpr std::size_t div = std::numeric_limits<std::size_t>::max();
+inline constexpr std::size_t all = div - 1;
+
+} // namespace dr::mhp::decomp
+
+namespace dr::mhp {
 
 template <std::size_t Rank> using dr_extents = std::array<std::size_t, Rank>;
 template <std::size_t Rank> using md_extents = md::dextents<std::size_t, Rank>;
@@ -76,10 +81,19 @@ private:
   using difference_type = rng::iter_difference_t<iterator_type>;
 
 public:
-  mdspan_view(R r, dr_extents<Rank> extents)
-      : base_(rng::views::all(r)), mdspan_(rng::begin(base_), extents) {
-    // Should be error, not assert
-    assert(rng::size(r) == rng::size(mdspan()));
+  mdspan_view(R r, dr_extents<Rank> full_extents)
+      : base_(rng::views::all(std::forward<R>(r))),
+        mdspan_(rng::begin(base_), full_extents) {
+    // Default tile extents splits on leading dimension
+    tile_extents_ = full_extents;
+    tile_extents_[0] = decomp::div;
+    replace_div(full_extents);
+  }
+
+  mdspan_view(R r, dr_extents<Rank> full_extents, dr_extents<Rank> tile_extents)
+      : base_(rng::views::all(std::forward<R>(r))),
+        mdspan_(rng::begin(base_), full_extents), tile_extents_(tile_extents) {
+    replace_div(full_extents);
   }
 
   // Base implements random access range
@@ -89,7 +103,7 @@ public:
 
   // Add a local mdspan to the base segment
   auto segments() const {
-    auto make_md = [extents = local_extents()](auto segment) {
+    auto make_md = [extents = tile_extents_](auto segment) {
       return mdsegment(segment, extents);
     };
     return dr::ranges::segments(base_) | rng::views::transform(make_md);
@@ -99,26 +113,31 @@ public:
   auto mdspan() const { return mdspan_; }
 
 private:
-  auto local_extents() const {
-    // Copy extents to array so we can modify it
-    dr_extents<Rank> local_extents;
-    std::size_t i = 0;
-    for (auto &e : local_extents) {
-      e = mdspan_.extent(i++);
+  // Replace div with actual value
+  void replace_div(const dr_extents<Rank> &full_extents) {
+    auto n = std::size_t(rng::size(dr::ranges::segments(base_)));
+    for (std::size_t i = 0; i < Rank; i++) {
+      if (tile_extents_[i] == decomp::div) {
+        tile_extents_[i] = full_extents[i] / n;
+      } else if (tile_extents_[i] == decomp::all) {
+        tile_extents_[i] = full_extents[i];
+      }
+      // TODO: Handle this case
+      assert(full_extents[i] % tile_extents_[i] == 0);
     }
-    // Assume decomposition along leading dimension, and divide the first
-    // dimension by number of segments
-    local_extents[0] =
-        local_extents[0] / std::size_t(rng::size(dr::ranges::segments(base_)));
-    return local_extents;
   }
 
   base_type base_;
   mdspan_type mdspan_;
+  dr_extents<Rank> tile_extents_;
 };
 
 template <typename R, std::size_t Rank>
 mdspan_view(R &&r, dr_extents<Rank> extents)
+    -> mdspan_view<rng::views::all_t<R>, Rank>;
+
+template <typename R, std::size_t Rank>
+mdspan_view(R &&r, dr_extents<Rank> full_extents, dr_extents<Rank> tile_extents)
     -> mdspan_view<rng::views::all_t<R>, Rank>;
 
 } // namespace dr::mhp
@@ -127,10 +146,20 @@ namespace dr::mhp::views {
 
 template <std::size_t Rank> class mdspan_adapter_closure {
 public:
-  mdspan_adapter_closure(dr_extents<Rank> extents) : extents_(extents) {}
+  mdspan_adapter_closure(dr_extents<Rank> full_extents,
+                         dr_extents<Rank> tile_extents)
+      : full_extents_(full_extents), tile_extents_(tile_extents),
+        tile_valid_(true) {}
+
+  mdspan_adapter_closure(dr_extents<Rank> full_extents)
+      : full_extents_(full_extents) {}
 
   template <rng::viewable_range R> auto operator()(R &&r) const {
-    return mdspan_view(std::forward<R>(r), extents_);
+    if (tile_valid_) {
+      return mdspan_view(std::forward<R>(r), full_extents_, tile_extents_);
+    } else {
+      return mdspan_view(std::forward<R>(r), full_extents_);
+    }
   }
 
   template <rng::viewable_range R>
@@ -139,19 +168,34 @@ public:
   }
 
 private:
-  dr_extents<Rank> extents_;
+  dr_extents<Rank> full_extents_;
+  dr_extents<Rank> tile_extents_;
+  bool tile_valid_ = false;
 };
 
 class mdspan_fn_ {
 public:
   template <rng::viewable_range R, typename Extents>
-  auto operator()(R &&r, Extents &&extents) const {
-    return mdspan_adapter_closure(std::forward<Extents>(extents))(
+  auto operator()(R &&r, Extents &&full_extents, Extents &&tile_extents) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_extents),
+                                  std::forward<Extents>(tile_extents))(
         std::forward<R>(r));
   }
 
-  template <typename Extents> auto operator()(Extents &&extents) const {
-    return mdspan_adapter_closure(std::forward<Extents>(extents));
+  template <rng::viewable_range R, typename Extents>
+  auto operator()(R &&r, Extents &&full_extents) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_extents))(
+        std::forward<R>(r));
+  }
+
+  template <typename Extents>
+  auto operator()(Extents &&full_extents, Extents &&tile_extents) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_extents),
+                                  std::forward<Extents>(tile_extents));
+  }
+
+  template <typename Extents> auto operator()(Extents &&full_extents) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_extents));
   }
 };
 

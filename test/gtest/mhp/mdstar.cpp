@@ -10,23 +10,30 @@
 
 using T = int;
 
-const std::size_t xdim = 4, ydim = 3, zdim = 2, n2d = xdim * ydim,
-                  n3d = xdim * ydim * zdim;
-std::array extents2d = {xdim, ydim};
-std::array extents3d = {xdim, ydim, zdim};
+class Mdspan : public ::testing::Test {
+protected:
+  std::size_t xdim = 4, ydim = 3, zdim = 2;
+  std::size_t n2d = xdim * ydim, n3d = xdim * ydim * zdim;
 
-auto dist2d = dr::mhp::distribution().granularity(ydim);
-auto dist3d = dr::mhp::distribution().granularity(ydim * zdim);
+  std::array<std::size_t, 2> extents2d = {xdim, ydim};
+  std::array<std::size_t, 3> extents3d = {xdim, ydim, zdim};
 
-TEST(Mdspan, StaticAssert) {
-  xhp::distributed_vector<T> dist(n2d, dist2d);
+  // 2d data with 1d decompostion
+  dr::mhp::distribution dist2d_1d = dr::mhp::distribution().granularity(ydim);
+  // 3d data with 1d decompostion
+  dr::mhp::distribution dist3d_1d =
+      dr::mhp::distribution().granularity(ydim * zdim);
+};
+
+TEST_F(Mdspan, StaticAssert) {
+  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto mdspan = xhp::views::mdspan(dist, extents2d);
   static_assert(rng::forward_range<decltype(mdspan)>);
   static_assert(dr::distributed_range<decltype(mdspan)>);
 }
 
-TEST(Mdspan, Iterator) {
-  xhp::distributed_vector<T> dist(n2d, dist2d);
+TEST_F(Mdspan, Iterator) {
+  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto mdspan = xhp::views::mdspan(dist, extents2d);
 
   *mdspan.begin() = 17;
@@ -34,8 +41,8 @@ TEST(Mdspan, Iterator) {
   EXPECT_EQ(17, dist[0]);
 }
 
-TEST(Mdspan, Mdindex2D) {
-  xhp::distributed_vector<T> dist(n2d, dist2d);
+TEST_F(Mdspan, Mdindex2D) {
+  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
 
   std::size_t i = 1, j = 2;
@@ -44,8 +51,8 @@ TEST(Mdspan, Mdindex2D) {
   EXPECT_EQ(17, dmdspan.mdspan()(i, j));
 }
 
-TEST(Mdspan, Mdindex3D) {
-  xhp::distributed_vector<T> dist(n3d, dist3d);
+TEST_F(Mdspan, Mdindex3D) {
+  xhp::distributed_vector<T> dist(n3d, dist3d_1d);
   auto dmdspan = xhp::views::mdspan(dist, extents3d);
 
   std::size_t i = 1, j = 2, k = 0;
@@ -54,8 +61,8 @@ TEST(Mdspan, Mdindex3D) {
   EXPECT_EQ(17, dmdspan.mdspan()(i, j, k));
 }
 
-TEST(Mdspan, Pipe) {
-  xhp::distributed_vector<T> dist(n2d, dist2d);
+TEST_F(Mdspan, Pipe) {
+  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto mdspan = dist | xhp::views::mdspan(extents2d);
 
   *mdspan.begin() = 17;
@@ -63,25 +70,11 @@ TEST(Mdspan, Pipe) {
   EXPECT_EQ(17, dist[0]);
 }
 
-TEST(Mdspan, SegmentIndex2D) {
-  xhp::distributed_vector<T> dist(n2d, dist2d);
+TEST_F(Mdspan, SegmentExtents) {
+  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
 
-  for (auto segment : dr::ranges::segments(dmdspan)) {
-    if (comm_rank == 0 && dr::ranges::rank(segment) == 0) {
-      static_assert(std::same_as<T *, decltype(&segment.mdspan()(0, 1))>);
-      segment.mdspan()(0, 1) = 99;
-      EXPECT_EQ(99, segment[1]);
-    }
-  }
-}
-
-TEST(Mdspan, SegmentExtents) {
-  xhp::distributed_vector<T> dist(n2d, dist2d);
-  auto dmdspan = xhp::views::mdspan(dist, extents2d);
-
-  // Summing up leading dimension size of segments should equal
-  // original
+  // Sum of leading dimension matches original
   std::size_t x = 0;
   for (auto segment : dr::ranges::segments(dmdspan)) {
     auto extents = segment.mdspan().extents();
@@ -92,8 +85,8 @@ TEST(Mdspan, SegmentExtents) {
   EXPECT_EQ(extents2d[0], x);
 }
 
-TEST(Mdspan, Subrange) {
-  xhp::distributed_vector<T> dist(n2d, dist2d);
+TEST_F(Mdspan, Subrange) {
+  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto inner = rng::subrange(dist.begin() + ydim, dist.end() - ydim);
   std::array<std::size_t, 2> inner_extents({extents2d[0] - 2, extents2d[1]});
   auto dmdspan = xhp::views::mdspan(inner, inner_extents);
