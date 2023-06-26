@@ -50,6 +50,7 @@ namespace fmt {}
 #include <dr/detail/normal_distributed_iterator.hpp>
 #include <dr/detail/memory.hpp>
 #include <dr/detail/communicator.hpp>
+#include <dr/detail/index.hpp>
 
 #include <dr/views/views.hpp>
 #include <dr/views/transform.hpp>

@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <dr/detail/index.hpp>
 #include <dr/detail/ranges_shim.hpp>
+
 #include <dr/shp/algorithms/matrix/local_gemv.hpp>
 #include <dr/shp/containers/duplicated_vector.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
@@ -46,7 +48,7 @@ void flat_gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
   }
 
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
-    auto a_tile = a.tile(dr::shp::index<I>(i, 0));
+    auto a_tile = a.tile(dr::index<I>(i, 0));
 
     auto a_iter = a_tile.begin();
     auto b_iter = dr::ranges::local(local_b[i].begin());
@@ -96,7 +98,7 @@ void gemv(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b,
   }
 
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
-    auto a_tile = a.tile(dr::shp::index<I>(i, 0));
+    auto a_tile = a.tile(dr::index<I>(i, 0));
 
     auto b_iter =
         dr::ranges::local(b_duplicated.local_vector(a_tile.rank()).begin());
@@ -134,7 +136,7 @@ void gemv_square(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
     std::size_t k_offset = i;
     for (std::size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
       std::size_t k = (k_ + k_offset) % a.grid_shape()[1];
-      auto a_tile = a.tile(dr::shp::index<I>(i, k));
+      auto a_tile = a.tile(dr::index<I>(i, k));
       auto b_segment = b.segments()[k];
       auto c_segment = c.segments()[i];
 
@@ -174,9 +176,9 @@ void gemv_square_copy(C &&c, dr::shp::sparse_matrix<T, I> &a, B &&b) {
 
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
     dr::shp::device_allocator<T> allocator(
-        dr::shp::context(), devices[a.tile(dr::shp::index<I>(i, 0)).rank()]);
+        dr::shp::context(), devices[a.tile(dr::index<I>(i, 0)).rank()]);
     local_b.emplace_back(b.size(), allocator,
-                         a.tile(dr::shp::index<I>(i, 0)).rank());
+                         a.tile(dr::index<I>(i, 0)).rank());
   }
 
   for (std::size_t i = 0; i < a.grid_shape()[0]; i++) {
