@@ -33,7 +33,7 @@ target_link_libraries(
 add_executable(
   mhp-quick-bench
   mhp-bench.cpp
-  stencil_2d.cpp
+  ../common/distributed_vector.cpp
 )
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
 target_link_libraries(
@@ -46,6 +46,10 @@ target_link_libraries(
 if (ENABLE_SYCL)
   target_compile_options(mhp-bench PRIVATE -fsycl)
   target_compile_options(mhp-quick-bench PRIVATE -fsycl)
+  if(ENABLE_CUDA)
+    target_compile_options(mhp-quick-bench PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
+    target_link_options(mhp-quick-bench PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
+  endif()
 endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)

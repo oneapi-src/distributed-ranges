@@ -11,6 +11,15 @@
 namespace dr::mhp {
 namespace __detail {
 
+template <typename R> bool is_first_nonempty_segment_local(R &&dr) {
+  for (auto &&s : dr::ranges::segments(std::forward<R>(dr))) {
+    if (!rng::empty(s)) {
+      return dr::ranges::rank(s) == default_comm().rank();
+    }
+  }
+  return false;
+}
+
 template <class FunT>
 inline Event for_each_local_async(auto &&first, auto &&last, FunT &&func) {
   Event foreach_event;
@@ -27,42 +36,33 @@ inline Event for_each_local_async(auto &&first, auto &&last, FunT &&func) {
   return foreach_event;
 }
 
-template <class FunT>
+template <class FunT, class... Init>
+inline void inclusive_scan_local_on_cpu(auto &&first, auto &&last,
+                                        auto &&dst_first, FunT &&func,
+                                        Init &&...init) {
+  std::inclusive_scan(std::execution::par_unseq, first, last, dst_first, func,
+                      std::forward<Init>(init)...);
+}
+
+template <class FunT, class... Init>
 inline Event inclusive_scan_local_async(auto &&first, auto &&last,
-                                        auto &&dst_first, FunT &&func) {
+                                        auto &&dst_first, FunT &&func,
+                                        Init &&...init) {
   Event scan_event;
 #ifdef SYCL_LANGUAGE_VERSION
   if (mhp::use_sycl()) {
     scan_event = oneapi::dpl::experimental::inclusive_scan_async(
-        dpl_policy(), first, last, dst_first, func);
+        dpl_policy(), first, last, dst_first, func,
+        std::forward<Init>(init)...);
   } else {
-    std::inclusive_scan(std::execution::par_unseq, first, last, dst_first,
-                        func);
+    inclusive_scan_local_on_cpu(first, last, dst_first, func,
+                                std::forward<Init>(init)...);
   }
 #else
-  std::inclusive_scan(std::execution::par_unseq, first, last, dst_first, func);
+  inclusive_scan_local_on_cpu(first, last, dst_first, func,
+                              std::forward<Init>(init)...);
 #endif
   return scan_event;
-}
-
-template <class T>
-inline Event copy_value_after_event(const T *src, T *dst, Event prerequisite) {
-  Event e;
-#ifdef SYCL_LANGUAGE_VERSION
-  if (mhp::use_sycl()) {
-    e = mhp::sycl_queue().submit([&](auto &&h) {
-      h.depends_on(prerequisite);
-      h.single_task([=]() {
-        T tmp = *src;
-        *dst = tmp;
-      });
-    });
-  } else
-#endif
-  {
-    *dst = *src;
-  }
-  return e;
 }
 
 // move to sycl_support.hpp if need to reuse
@@ -79,16 +79,17 @@ inline void wait_for_events_and_clear(std::vector<Event> &events) {
 // let's sum(X) denote collection of partial sum of range X
 // 1. (offloaded) for each local segment compute partial sum
 //    [..., sum(2.1), sum(2.2), ...]
+//    first non-empty partial sum uses init value
 // 2. get max (that is the last) elements of each local sum and create a vector
 //    of it
 //    [max(sum(2.1), max(sum(2.2)]
-// 3. (offloaded) compute partial sum of above vector
+// 3. compute partial sum of above vector
 //    sum([max(sum(2.1), max(sum(2.2)])
 // 4. send max (that is the last element) of above sum to root process
 //    let's denote above max of process no N as max_N
 // 5. root process collects all maxes in an collection [max_1, max_2, max_3]
-// 6. computes partial sum of it sum([max_1, max_2, max_3]) including init value
-//    of inclusive_scan algorithm. Let's denote this partial sums as a "big sum"
+// 6. computes partial sum of it sum([max_1, max_2, max_3])
+//    Let's denote this partial sums as a "big sum".
 // 7. big sum is scattered to all processes
 // 8. (offloaded) Nth process gets big_sum_N element and adds it to each element
 //    of local partial sums computed in step 3
@@ -109,69 +110,62 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   auto in_segments = local_segments(r);
   auto out_segments = local_segments(rng::subrange(d_first, d_last));
 
-  // rng::size(in_segments) doesn't work and can't count non-empty segments
-  std::size_t local_segments_count = 0;
-  for (auto &&s [[maybe_unused]] : in_segments)
-    if (!rng::empty(s))
-      ++local_segments_count;
-
   std::vector<Event> events;
 
   using OVal = rng::iter_value_t<O>;
-  // how to get allocator used with input and output range? I assume it a
-  // default one probably we should forbid using non-default ones with
-  // distributed_ranges containers (like distributed_vector)
-  auto local_partial_sums =
-      default_allocator<OVal>().allocate_unique(local_segments_count);
-  OVal *local_partial_sums_iter = local_partial_sums.get();
 
+  bool const first_nonempty_segment_is_local =
+      is_first_nonempty_segment_local(r);
+  bool include_init_into_sum =
+      init.has_value() && first_nonempty_segment_is_local;
+
+  // this is step 1
   for (auto &&segs : rng::views::zip(in_segments, out_segments)) {
 
     auto &&[in_segment, out_segment] = segs;
-
-    auto dist = rng::distance(in_segment);
-    if (dist == 0) {
+    if (rng::empty(in_segment))
       continue;
-    }
 
-    auto s_first = ranges::local(rng::begin(out_segment));
+    auto first =
+        dr::__detail::direct_iterator(ranges::local(rng::begin(in_segment)));
+    auto last =
+        dr::__detail::direct_iterator(ranges::local(rng::end(in_segment)));
+    auto s_first =
+        dr::__detail::direct_iterator(ranges::local(rng::begin(out_segment)));
 
-    // this is step 1
-    auto one_segment_scan_event = inclusive_scan_local_async(
-        dr::__detail::direct_iterator(ranges::local(rng::begin(in_segment))),
-        dr::__detail::direct_iterator(ranges::local(rng::end(in_segment))),
-        dr::__detail::direct_iterator(s_first), binary_op);
-
-    rng::advance(s_first, dist - 1);
-
-    // this is step 2
-    events.push_back(copy_value_after_event(s_first, local_partial_sums_iter,
-                                            one_segment_scan_event));
-    ++local_partial_sums_iter;
+    events.push_back(
+        include_init_into_sum
+            ? inclusive_scan_local_async(first, last, s_first, binary_op,
+                                         init.value())
+            : inclusive_scan_local_async(first, last, s_first, binary_op));
+    include_init_into_sum = false;
   }
-
   wait_for_events_and_clear(events);
 
-  const std::size_t local_partial_sums_count =
-      rng::distance(local_partial_sums.get(), local_partial_sums_iter);
+  // this is step 2
+  std::vector<OVal> local_partial_sums;
+  for (auto &&segs : rng::views::zip(in_segments, out_segments)) {
+    auto &&out_segment = std::get<1>(segs);
+    auto dist = rng::distance(out_segment);
+    if (dist == 0)
+      continue;
 
-  auto local_partial_sums_scanned =
-      default_allocator<OVal>().allocate_unique(local_partial_sums_count);
+    auto s_first = ranges::local(rng::begin(out_segment));
+    rng::advance(s_first, dist - 1);
+    local_partial_sums.push_back(*s_first);
+  }
 
   // this is step 3
-  if (local_partial_sums_count) {
-    inclusive_scan_local_async(local_partial_sums.get(),
-                               local_partial_sums.get() +
-                                   local_partial_sums_count,
-                               local_partial_sums_scanned.get(), binary_op)
-        .wait();
-  }
+  std::vector<OVal> local_partial_sums_scanned(rng::size(local_partial_sums));
+  inclusive_scan_local_on_cpu(local_partial_sums.begin(),
+                              local_partial_sums.end(),
+                              local_partial_sums_scanned.begin(), binary_op);
 
   dr::communicator &comm = default_comm();
   std::optional<OVal> local_partial_sum =
-      local_partial_sums_count
-          ? local_partial_sums_scanned.get()[local_partial_sums_count - 1]
-          : std::optional<OVal>();
+      rng::empty(local_partial_sums_scanned)
+          ? std::optional<OVal>()
+          : local_partial_sums_scanned.back();
 
   // below vector is used on 0 rank only but who cares
   std::vector<std::optional<OVal>> partial_sums(comm.size()); // dr-style ignore
@@ -180,36 +174,43 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   comm.gather(local_partial_sum, std::span{partial_sums}, 0);
 
   // this is step 6
+  std::vector<std::optional<OVal>> partial_sums_scanned(comm.size() +
+                                                        1); // dr-style ignore
   if (comm.rank() == 0) {
-    std::optional<OVal> next_v = init;
-    rng::for_each(partial_sums, [&next_v, binary_op](std::optional<OVal> &v) {
-      if (v.has_value()) {
-        std::swap(v, next_v);
-        if (v.has_value()) // mind v was a next line before
-          next_v = binary_op(v.value(), next_v.value());
-      }
-    });
+    inclusive_scan_local_on_cpu(
+        rng::begin(partial_sums), rng::end(partial_sums),
+        rng::begin(partial_sums_scanned) + 1,
+        [binary_op](std::optional<OVal> x, std::optional<OVal> y) {
+          if (x.has_value() && y.has_value()) {
+            return std::make_optional(binary_op(x.value(), y.value()));
+          }
+          if (y.has_value()) {
+            return std::make_optional(y.value());
+          }
+          return std::optional<OVal>();
+        });
   }
+  partial_sums_scanned.pop_back();
 
   // this is step 7
   std::optional<OVal> sum_of_all_guys_before_my_rank;
-  comm.scatter(std::span{partial_sums}, sum_of_all_guys_before_my_rank, 0);
+  comm.scatter(std::span{partial_sums_scanned}, sum_of_all_guys_before_my_rank,
+               0);
 
   // this is step 8
-  if (local_partial_sums_count && sum_of_all_guys_before_my_rank.has_value()) {
-    const OVal sum_of_all_guys_before_my_rank_value =
+  if (!rng::empty(local_partial_sums) && !first_nonempty_segment_is_local) {
+    OVal const sum_of_all_guys_before_my_rank_value =
         sum_of_all_guys_before_my_rank.value();
-    for_each_local_async(
-        local_partial_sums_scanned.get(),
-        local_partial_sums_scanned.get() + local_partial_sums_count,
-        [=](auto &&x) {
-          x = binary_op(sum_of_all_guys_before_my_rank_value, x);
-        })
-        .wait();
+    std::for_each(std::execution::par_unseq,
+                  rng::begin(local_partial_sums_scanned),
+                  rng::end(local_partial_sums_scanned), [=](auto &&x) {
+                    x = binary_op(sum_of_all_guys_before_my_rank_value, x);
+                  });
   }
 
   // this is step 9
-  std::size_t local_partial_sum_idx = 0;
+  auto local_partial_sum_iter = rng::begin(local_partial_sums_scanned);
+  bool skip_nonempty_segment = first_nonempty_segment_is_local;
   bool nonempty_out_segment_already_found = false;
   for (auto &&out_seg : out_segments) {
     if (rng::empty(out_seg)) {
@@ -219,11 +220,12 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     auto first = ranges::local(rng::begin(out_seg));
     auto last = ranges::local(rng::end(out_seg));
 
-    if (nonempty_out_segment_already_found ||
-        sum_of_all_guys_before_my_rank.has_value()) {
+    if (skip_nonempty_segment) {
+      skip_nonempty_segment = false;
+    } else {
       const OVal sum_of_all_guys_before_my_segment =
           nonempty_out_segment_already_found
-              ? local_partial_sums_scanned.get()[local_partial_sum_idx - 1]
+              ? *local_partial_sum_iter
               : sum_of_all_guys_before_my_rank.value();
       events.push_back(for_each_local_async(
           dr::__detail::direct_iterator(first),
@@ -231,8 +233,12 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
             x = binary_op(sum_of_all_guys_before_my_segment, x);
           }));
     }
-    ++local_partial_sum_idx;
-    nonempty_out_segment_already_found = true;
+
+    if (nonempty_out_segment_already_found) {
+      ++local_partial_sum_iter;
+    } else {
+      nonempty_out_segment_already_found = true;
+    }
   }
 
   wait_for_events_and_clear(events);
