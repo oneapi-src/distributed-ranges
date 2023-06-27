@@ -4,24 +4,17 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _mhp_distributed_vector:
+.. _shp_sparse_matrix:
 
 ===============================
-``dr::mhp::distributed_vector``
+``dr::shp::sparse_matrix``
 ===============================
 
 Interface
 =========
 
-.. doxygenclass:: dr::mhp::distributed_vector
+.. doxygenclass:: dr::shp::sparse_matrix
    :members:
 
 Description
 ===========
-
-Vector distributed among MPI nodes, with support
-for data exchange at segment edges (halo)
-
-.. seealso::
-
-   `std::vector`_

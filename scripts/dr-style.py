@@ -110,7 +110,7 @@ include_rules = [
         'use namespace __detail {',
     ),
     (
-        r'\.size\(\)',
+        r'(?<!comm)\.size\(\)',
         'use rng::size()',
     ),
     (

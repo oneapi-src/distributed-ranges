@@ -9,7 +9,7 @@
 #include <limits>
 #include <tuple>
 
-namespace dr::shp {
+namespace dr {
 
 namespace {
 template <typename T, std::size_t I, typename U = std::any>
@@ -96,19 +96,19 @@ public:
   index_type second;
 };
 
-} // namespace dr::shp
+} // namespace dr
 
 namespace std {
 
 template <std::size_t Index, std::integral I>
-struct tuple_element<Index, dr::shp::index<I>>
+struct tuple_element<Index, dr::index<I>>
     : tuple_element<Index, std::tuple<I, I>> {};
 
 template <std::integral I>
-struct tuple_size<dr::shp::index<I>> : integral_constant<std::size_t, 2> {};
+struct tuple_size<dr::index<I>> : integral_constant<std::size_t, 2> {};
 
 template <std::size_t Index, std::integral I>
-inline constexpr I get(dr::shp::index<I> index)
+inline constexpr I get(dr::index<I> index)
   requires(Index <= 1)
 {
   if constexpr (Index == 0) {

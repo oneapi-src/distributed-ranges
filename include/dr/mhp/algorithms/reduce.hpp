@@ -57,7 +57,7 @@ auto reduce(std::size_t root, bool root_provided, DR &&dr, auto &&binary_op) {
     auto locals = rng::views::transform(local_segments(dr), reduce);
     auto local = std_reduce(locals, binary_op);
 
-    std::vector<value_type> all(comm.size()); // dr-style ignore
+    std::vector<value_type> all(comm.size());
     if (root_provided) {
       // Everyone gathers to root, only root reduces
       comm.gather(local, std::span{all}, root);
