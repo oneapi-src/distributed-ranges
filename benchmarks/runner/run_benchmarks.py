@@ -26,7 +26,7 @@ def run_mhp(vec_size:int, reps:int, filter: str, sycl_used:bool, n: int=None, pi
     output, err = process.communicate()
 
 
-def run_shp(vec_size:int, reps:int, d: int, filter: str=None, kmp_aff:str=None):
+def run_shp(vec_size:int, reps:int, d: int, only_fsycl:bool, filter: str=None, kmp_aff:str=None):
     try:
         bench_filter = "BENCHMARK_FILTER="+filter
     except:
@@ -35,7 +35,10 @@ def run_shp(vec_size:int, reps:int, d: int, filter: str=None, kmp_aff:str=None):
         kmp_affinity = "KMP_AFFINITY="+kmp_aff
     except:
         kmp_affinity=""
-    bench_path = "./build/benchmarks/gbench/shp/shp-bench"
+    if only_fsycl:
+        bench_path = "./build/benchmarks/gbench/shp/shp-bench-only-fsycl" 
+    else:
+        bench_path = "./build/benchmarks/gbench/shp/shp-bench"
     command = [bench_filter, kmp_affinity, bench_path, "-d", str(d), "--vector-size", str(vec_size), "--reps", str(reps)]
 
     process = subprocess.Popen(
@@ -60,15 +63,16 @@ def run_all_benchmarks_fsycl_O3():
     reps = 100
     bench_filter = "Stream_"
     kmp_affinity = "compact"
+    only_fsycl = True
 
     # shp
     d = 1
-    run_shp(vec_size, reps, d)
-    run_shp(vec_size, reps, d, bench_filter, kmp_affinity)
+    run_shp(vec_size, reps, d, only_fsycl)
+    run_shp(vec_size, reps, d, only_fsycl, bench_filter, kmp_affinity)
 
     d = 2
-    run_shp(vec_size, reps, d)
-    run_shp(vec_size, reps, d, bench_filter, kmp_affinity)
+    run_shp(vec_size, reps, d, only_fsycl)
+    run_shp(vec_size, reps, d, only_fsycl, bench_filter, kmp_affinity)
 
     # mhp/cpu
     sycl_used = False
