@@ -91,10 +91,10 @@ inline void wait_for_events_and_clear(std::vector<Event> &events) {
 // 6. computes partial sum of it sum([max_1, max_2, max_3])
 //    Let's denote this partial sums as a "big sum".
 // 7. big sum is scattered to all processes
-// 8. (offloaded) Nth process gets big_sum_N element and adds it to each element
-//    of local partial sums computed in step 3
-// 9. each local i-th segment is modified by adding to each element value of
-//    i-th partial sum computed in previous step
+// 8. Nth process gets big_sum_N element and adds it to each element of local
+//    partial sums computed in step 3
+// 9. (offloaded) each local i-th segment is modified by adding to each element
+//    value of i-th partial sum computed in previous step
 template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
           typename BinaryOp, typename U = rng::range_value_t<R>>
 auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
@@ -144,8 +144,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
 
   // this is step 2
   std::vector<OVal> local_partial_sums;
-  for (auto &&segs : rng::views::zip(in_segments, out_segments)) {
-    auto &&out_segment = std::get<1>(segs);
+  for (auto &&out_segment : out_segments) {
     auto dist = rng::distance(out_segment);
     if (dist == 0)
       continue;
@@ -168,14 +167,13 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           : local_partial_sums_scanned.back();
 
   // below vector is used on 0 rank only but who cares
-  std::vector<std::optional<OVal>> partial_sums(comm.size()); // dr-style ignore
+  std::vector<std::optional<OVal>> partial_sums(comm.size());
 
   // this is step 4 and 5
   comm.gather(local_partial_sum, std::span{partial_sums}, 0);
 
   // this is step 6
-  std::vector<std::optional<OVal>> partial_sums_scanned(comm.size() +
-                                                        1); // dr-style ignore
+  std::vector<std::optional<OVal>> partial_sums_scanned(comm.size() + 1);
   if (comm.rank() == 0) {
     inclusive_scan_local_on_cpu(
         rng::begin(partial_sums), rng::end(partial_sums),
