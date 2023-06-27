@@ -22,7 +22,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'distributed-ranges'
-copyright = '2022, Intel'
+copyright = '2022-2023, Intel'
 
 
 # -- General configuration ---------------------------------------------------

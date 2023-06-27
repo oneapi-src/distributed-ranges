@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <dr/detail/segments_tools.hpp>
 #include <dr/detail/index.hpp>
+#include <dr/detail/segments_tools.hpp>
 #include <dr/shp/distributed_span.hpp>
 #include <dr/shp/views/enumerate.hpp>
 #include <dr/shp/zip_view.hpp>

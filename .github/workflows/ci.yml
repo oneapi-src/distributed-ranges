@@ -94,45 +94,6 @@ jobs:
         path: build/Testing
 
   icpx:
-    runs-on: ubuntu-latest
-    env:
-      CC: icx
-      CXX: icpx
-    steps:
-    - uses: actions/checkout@v3
-    - uses: rscohn2/setup-oneapi@v0
-      with:
-        components: |
-          ${{ env.IMPI }}
-          ${{ env.MKL }}
-          ${{ env.ICX }}
-    - name: Patch gcc
-      run: |
-        # workaround for problem with 2023.1.0 finding wrong gcc
-        sudo rm -rf /usr/lib/gcc/x86_64-linux-gnu/{9,10,11}
-    - name: Build
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        cmake -B build -DENABLE_SYCL=on
-        make -j 2 -C build
-    - name: Test
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        make -C build test
-    - name: Run disabled tests
-      if: false
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        cmake -B build -DENABLE_SYCL=on -DDISABLED_TESTS=on
-        # ignore errors
-        make -j 2 -C build all test || true
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: log-icpx-${{ env.CXX }}
-        path: build/Testing
-
-  devcloud:
     runs-on: devcloud
     env:
       CXX: icpx

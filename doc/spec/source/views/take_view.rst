@@ -4,10 +4,10 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _drop_view:
+.. _take_view:
 
 ==============
- ``drop_view``
+ ``take_view``
 ==============
 
 Interface
@@ -15,7 +15,7 @@ Interface
 
 .. code-block:: cpp
 
-  dr::mhp::views::drop
-  dr::shp::views::drop
+  dr::mhp::views::take
+  dr::shp::views::take
 
-For interface, see `std::ranges::views::drop`_
+For interface, see `std::ranges::views::take`_

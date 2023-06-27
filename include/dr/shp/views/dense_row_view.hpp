@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <dr/detail/iterator_adaptor.hpp>
 #include <dr/detail/index.hpp>
+#include <dr/detail/iterator_adaptor.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <iterator>
 

@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <dr/shp/containers/detail.hpp>
 #include <dr/detail/index.hpp>
+#include <dr/shp/containers/detail.hpp>
 #include <dr/shp/init.hpp>
 
 namespace dr::shp {
@@ -34,7 +34,7 @@ public:
 class block_cyclic final : public matrix_partition {
 public:
   block_cyclic(dr::index<> tile_shape = {dr::shp::tile::div,
-                                              dr::shp::tile::div},
+                                         dr::shp::tile::div},
                dr::index<> grid_shape = detail::factor(dr::shp::nprocs()))
       : tile_shape_(tile_shape), grid_shape_(grid_shape) {}
 
@@ -42,10 +42,9 @@ public:
 
   dr::index<> tile_shape() const { return tile_shape_; }
 
-  std::size_t tile_rank(dr::index<> matrix_shape,
-                        dr::index<> tile_id) const {
+  std::size_t tile_rank(dr::index<> matrix_shape, dr::index<> tile_id) const {
     dr::index<> pgrid_idx = {tile_id[0] % grid_shape_[0],
-                                  tile_id[1] % grid_shape_[1]};
+                             tile_id[1] % grid_shape_[1]};
 
     auto pgrid = processor_grid_();
 
@@ -56,7 +55,7 @@ public:
     auto ts = this->tile_shape(matrix_shape);
 
     return dr::index<>((matrix_shape[0] + ts[0] - 1) / ts[0],
-                            (matrix_shape[1] + ts[1] - 1) / ts[1]);
+                       (matrix_shape[1] + ts[1] - 1) / ts[1]);
   }
 
   dr::index<> tile_shape(dr::index<> matrix_shape) const {
@@ -88,11 +87,11 @@ private:
 
   dr::index<> tile_shape_;
   dr::index<> grid_shape_;
-};
+}; // namespace dr::shp
 
 inline std::vector<block_cyclic> partition_matmul(std::size_t m, std::size_t n,
                                                   std::size_t k) {
-  dr::shp::index<> c_pgrid = detail::factor(shp::nprocs());
+  dr::index<> c_pgrid = detail::factor(shp::nprocs());
 
   block_cyclic c_block({dr::shp::tile::div, dr::shp::tile::div},
                        {c_pgrid[0], c_pgrid[1]});

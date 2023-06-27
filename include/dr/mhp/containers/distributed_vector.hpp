@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "segments.hpp"
+#pragma once
+
+#include <dr/mhp/containers/distribution.hpp>
+#include <dr/mhp/containers/segment.hpp>
 
 namespace dr::mhp {
 
