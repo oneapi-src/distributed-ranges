@@ -20,5 +20,4 @@ target_link_libraries(
   DR::mpi
 )
 
-target_compile_options(shp-bench PRIVATE -fsycl)
 add_test(NAME shp-bench COMMAND ./shp-bench --vector-size 20000)

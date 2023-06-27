@@ -60,9 +60,6 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
     cxxopts
     DR::mpi
   )
-  if (ENABLE_SYCL)
-    target_compile_options(${test-exec} PRIVATE -fsycl)
-  endif()
 endforeach()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
