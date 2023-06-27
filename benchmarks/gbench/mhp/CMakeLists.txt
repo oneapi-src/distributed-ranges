@@ -43,11 +43,6 @@ target_link_libraries(
   DR::mpi
 )
 
-if (ENABLE_SYCL)
-  target_compile_options(mhp-bench PRIVATE -fsycl)
-  target_compile_options(mhp-quick-bench PRIVATE -fsycl)
-endif()
-
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if (NOT MPI_IMPL STREQUAL "openmpi")
