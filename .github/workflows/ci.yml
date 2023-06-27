@@ -11,6 +11,9 @@ on:
 
   pull_request:
 
+  schedule:
+    - cron '0 0 * * *'
+
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
   IMPI: impi@2021.9.0
@@ -21,6 +24,7 @@ env:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
     steps:
     - uses: actions/checkout@v3
     - name: Ubuntu dependencies
@@ -35,6 +39,7 @@ jobs:
 
   clang:
     runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
     env:
       CXX: clang++-15
     steps:
@@ -62,6 +67,7 @@ jobs:
 
   gcc:
     runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
     strategy:
       fail-fast: false
       matrix:
@@ -97,6 +103,7 @@ jobs:
 
   icpx:
     runs-on: devcloud
+    if: github.event_name != 'schedule'
     env:
       CXX: icpx
     steps:
@@ -110,6 +117,7 @@ jobs:
   publish:
     needs: [checks, clang, gcc, icpx]
     runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
     env:
       SPHINXOPTS: -q -W
     if: ${{ github.ref == 'refs/heads/main' }}
@@ -145,3 +153,21 @@ jobs:
         # Ignore errors because no updates returns an error status.
         git commit --reset-author --amend -m "Update from github actions"
         git push --force origin gh-pages
+
+  dailyBench:
+    runs-on: devcloud
+    if: github.event_name == 'schedule'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Python setup
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        cache: 'pip'
+    - name: Build
+      run: srun -p pvc scripts/devcloud-build.sh
+    - name: Test
+      # mpi does not like the way SLURM sets environment variables
+      run: srun -p pvc /usr/bin/env -i scripts/devcloud-run.sh
+    - name: Run benchmarks
+      run: srun -p pvc scripts/devcloud-daily.sh
