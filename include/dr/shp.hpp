@@ -5,7 +5,7 @@
 #pragma once
 
 #include <dr/shp/algorithms/algorithms.hpp>
-#include <dr/shp/containers/dense_matrix.hpp>
+#include <dr/shp/containers/distributed_dense_matrix.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>
 #include <dr/shp/detail.hpp>
 #include <dr/shp/distributed_span.hpp>
