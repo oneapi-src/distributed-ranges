@@ -105,7 +105,6 @@ void gemm_buffered(distributed_dense_matrix<T> &a,
         auto &&allocator = buffered_allocator;
 
         std::size_t k_offset = i + j;
-        bool debug_print = false;
 
         auto begin = std::chrono::high_resolution_clock::now();
         auto a_f =

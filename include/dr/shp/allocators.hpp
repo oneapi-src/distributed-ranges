@@ -103,7 +103,6 @@ public:
   using is_always_equal = std::false_type;
 
   pointer allocate(std::size_t size) {
-    double gbytes = sizeof(value_type) * size * 1e-9;
     if (size > buffer_size_ || free_buffers_->empty()) {
       throw std::bad_alloc();
     } else {
