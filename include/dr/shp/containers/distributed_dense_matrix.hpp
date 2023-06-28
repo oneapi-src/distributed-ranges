@@ -6,8 +6,8 @@
 
 #include <memory>
 
-#include <dr/detail/owning_view.hpp>
 #include <dr/detail/index.hpp>
+#include <dr/detail/owning_view.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
 #include <dr/shp/containers/sequential/dense_matrix.hpp>
