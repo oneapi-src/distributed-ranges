@@ -93,7 +93,7 @@ void gemm_buffered(distributed_dense_matrix<T> &a,
 
       auto &&q = __detail::queue(dr::ranges::rank(c_local));
 
-      threads.emplace_back([c_local, i, j, &q, &a, &b, &c, &issue, &sync,
+      threads.emplace_back([c_local, i, j, &q, &a, &b, &issue, &sync,
                             &compute] {
         std::size_t a_elem = a.tile_shape()[0] * a.tile_shape()[1];
         std::size_t b_elem = b.tile_shape()[0] * b.tile_shape()[1];
