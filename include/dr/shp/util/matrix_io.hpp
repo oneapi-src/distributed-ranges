@@ -24,7 +24,7 @@ namespace __detail {
 // 2) `tuples` has shape `shape`
 // 3) `tuples` has `nnz` elements
 template <typename Tuples, typename Allocator>
-auto convert_to_csr(Tuples &&tuples, dr::shp::index<> shape, std::size_t nnz,
+auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
                     Allocator &&allocator) {
   auto &&[index, v] = *tuples.begin();
   auto &&[i, j] = index;
@@ -67,7 +67,7 @@ auto convert_to_csr(Tuples &&tuples, dr::shp::index<> shape, std::size_t nnz,
   }
 
   return csr_matrix_view(values, rowptr, colind,
-                         dr::shp::index<I>(shape[0], shape[1]), nnz, 0);
+                         dr::index<I>(shape[0], shape[1]), nnz, 0);
 }
 
 /// Read in the Matrix Market file at location `file_path` and a return
@@ -232,15 +232,15 @@ auto create_distributed(dr::shp::csr_matrix_view<T, I> local_mat,
   for (I i = 0; i < a.grid_shape()[0]; i++) {
     for (I j = 0; j < a.grid_shape()[1]; j++) {
       auto &&tile = a.tile({i, j});
-      dr::shp::index<I> row_bounds(i * a.tile_shape()[0],
-                                   i * a.tile_shape()[0] + tile.shape()[0]);
-      dr::shp::index<I> column_bounds(j * a.tile_shape()[1],
-                                      j * a.tile_shape()[1] + tile.shape()[1]);
+      dr::index<I> row_bounds(i * a.tile_shape()[0],
+                              i * a.tile_shape()[0] + tile.shape()[0]);
+      dr::index<I> column_bounds(j * a.tile_shape()[1],
+                                 j * a.tile_shape()[1] + tile.shape()[1]);
 
       auto local_submat = local_mat.submatrix(row_bounds, column_bounds);
 
-      auto submatrix_shape = dr::shp::index<I>(
-          row_bounds[1] - row_bounds[0], column_bounds[1] - column_bounds[0]);
+      auto submatrix_shape = dr::index<I>(row_bounds[1] - row_bounds[0],
+                                          column_bounds[1] - column_bounds[0]);
 
       auto copied_submat = __detail::convert_to_csr(
           local_submat, submatrix_shape, rng::distance(local_submat),

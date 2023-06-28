@@ -4,24 +4,17 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _mhp_distributed_vector:
+.. _shp_dense_matrix:
 
 ===============================
-``dr::mhp::distributed_vector``
+``dr::shp::dense_matrix``
 ===============================
 
 Interface
 =========
 
-.. doxygenclass:: dr::mhp::distributed_vector
+.. doxygenclass:: dr::shp::dense_matrix
    :members:
 
 Description
 ===========
-
-Vector distributed among MPI nodes, with support
-for data exchange at segment edges (halo)
-
-.. seealso::
-
-   `std::vector`_

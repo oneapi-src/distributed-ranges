@@ -38,6 +38,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_link_options(--gcc-toolchain=${GCC_TOOLCHAIN})
   endif()
 
+  if(ENABLE_SYCL)
+    add_compile_options(-fsycl)
+    add_link_options(-fsycl)
+  endif()
+
   set(buildTypes Release Debug)
 
   if(NOT CMAKE_BUILD_TYPE)
