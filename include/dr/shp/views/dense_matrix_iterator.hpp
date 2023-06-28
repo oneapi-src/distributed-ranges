@@ -6,8 +6,8 @@
 
 #include <iterator>
 
+#include <dr/detail/index.hpp>
 #include <dr/detail/iterator_adaptor.hpp>
-#include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/views/dense_column_view.hpp>
 #include <dr/shp/views/dense_row_view.hpp>
@@ -32,7 +32,7 @@ public:
   using const_iterator_accessor = iterator_accessor;
   using nonconst_iterator_accessor = iterator_accessor;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
 
   constexpr dense_matrix_accessor() noexcept = default;
   constexpr ~dense_matrix_accessor() noexcept = default;

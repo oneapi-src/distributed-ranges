@@ -158,9 +158,9 @@ void gemm_buffered(distributed_dense_matrix<T> &a,
   bool debug_print = false;
 
   if (debug_print) {
-    fmt::print("sync total: {}\n", (double)sync);
-    fmt::print("issue total: {}\n", (double)issue);
-    fmt::print("compute total: {}\n", (double)compute);
+    std::cout << "sync total: " << (double)sync << std::endl;
+    std::cout << "issue total: " << (double)issue << std::endl;
+    std::cout << "compute total: " << (double)compute << std::endl;
   }
 }
 
