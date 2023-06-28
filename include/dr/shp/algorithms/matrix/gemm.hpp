@@ -12,6 +12,13 @@ namespace dr::shp {
 template <typename T>
 void gemm(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b,
           distributed_dense_matrix<T> &c) {
+  gemm_buffered(a, b, c);
+}
+
+template <typename T>
+void gemm_inplace(distributed_dense_matrix<T> &a,
+                  distributed_dense_matrix<T> &b,
+                  distributed_dense_matrix<T> &c) {
   // Matrix dimensions must match (algorithm requirement)
   assert(c.shape()[0] == a.shape()[0]);
   assert(c.shape()[1] == b.shape()[1]);
@@ -60,8 +67,9 @@ void gemm(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b,
 }
 
 template <typename T>
-void gemm_spmd(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b,
-               distributed_dense_matrix<T> &c) {
+void gemm_buffered(distributed_dense_matrix<T> &a,
+                   distributed_dense_matrix<T> &b,
+                   distributed_dense_matrix<T> &c) {
   // Matrix dimensions must match (algorithm requirement)
   assert(c.shape()[0] == a.shape()[0]);
   assert(c.shape()[1] == b.shape()[1]);
@@ -75,39 +83,69 @@ void gemm_spmd(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b,
 
   std::vector<std::thread> threads;
 
+  std::atomic<double> issue = 0;
+  std::atomic<double> sync = 0;
+  std::atomic<double> compute = 0;
+
   for (std::size_t i = 0; i < c.grid_shape()[0]; i++) {
     for (std::size_t j = 0; j < c.grid_shape()[1]; j++) {
       auto c_local = c.tile({i, j});
 
       auto &&q = __detail::queue(dr::ranges::rank(c_local));
 
-      threads.emplace_back([c_local, i, j, &q, &a, &b, &c] {
-        dr::shp::device_allocator<T> allocator(q);
-        std::size_t k_offset = i + j;
+      threads.emplace_back([c_local, i, j, &q, &a, &b, &c, &issue, &sync,
+                            &compute] {
+        std::size_t a_elem = a.tile_shape()[0] * a.tile_shape()[1];
+        std::size_t b_elem = b.tile_shape()[0] * b.tile_shape()[1];
+        std::size_t buffer_size = std::max(a_elem, b_elem);
 
+        dr::shp::device_allocator<T> gpu_allocator(q);
+        dr::shp::buffered_allocator buffered_allocator(gpu_allocator,
+                                                       buffer_size, 4);
+        auto &&allocator = buffered_allocator;
+
+        std::size_t k_offset = i + j;
+        bool debug_print = false;
+
+        auto begin = std::chrono::high_resolution_clock::now();
         auto a_f =
             a.get_tile_async({i, k_offset % a.grid_shape()[1]}, allocator);
         auto b_f =
             b.get_tile_async({k_offset % a.grid_shape()[1], j}, allocator);
+        auto end = std::chrono::high_resolution_clock::now();
+        double duration = std::chrono::duration<double>(end - begin).count();
+        issue += duration;
 
         for (std::size_t k_ = 0; k_ < a.grid_shape()[1]; k_++) {
           std::size_t k = (k_ + k_offset) % a.grid_shape()[1];
 
+          auto begin = std::chrono::high_resolution_clock::now();
           auto a_tile = a_f.get();
           auto b_tile = b_f.get();
+          auto end = std::chrono::high_resolution_clock::now();
+          double duration = std::chrono::duration<double>(end - begin).count();
+          sync += duration;
 
           dr::shp::dense_matrix_view a_local(a_tile);
           dr::shp::dense_matrix_view b_local(b_tile);
 
           if (k_ + 1 < a.grid_shape()[1]) {
+            begin = std::chrono::high_resolution_clock::now();
             a_f = a.get_tile_async({i, (k + 1) % a.grid_shape()[1]}, allocator);
             b_f = b.get_tile_async({(k + 1) % a.grid_shape()[1], j}, allocator);
+            end = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration<double>(end - begin).count();
+            compute += duration;
           }
 
+          begin = std::chrono::high_resolution_clock::now();
           __detail::local_gemm(q, __detail::local(a_local),
                                __detail::local(b_local),
                                __detail::local(c_local))
               .wait();
+          end = std::chrono::high_resolution_clock::now();
+          duration = std::chrono::duration<double>(end - begin).count();
+          compute += duration;
         }
       });
     }
@@ -115,6 +153,14 @@ void gemm_spmd(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b,
 
   for (auto &&t : threads) {
     t.join();
+  }
+
+  bool debug_print = false;
+
+  if (debug_print) {
+    fmt::print("sync total: {}\n", (double)sync);
+    fmt::print("issue total: {}\n", (double)issue);
+    fmt::print("compute total: {}\n", (double)compute);
   }
 }
 
