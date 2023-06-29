@@ -71,7 +71,7 @@ public:
 //
 template <distributed_contiguous_range R, std::size_t Rank,
           typename Layout = md::layout_right>
-class mdspan_view : public rng::view_interface<mdspan_view<R, Rank>> {
+struct mdspan_view : public rng::view_interface<mdspan_view<R, Rank>> {
 private:
   using base_type = rng::views::all_t<R>;
   using iterator_type = rng::iterator_t<base_type>;
@@ -80,20 +80,37 @@ private:
                                  mdspan_iter_accessor<iterator_type>>;
   using difference_type = rng::iter_difference_t<iterator_type>;
 
+  base_type base_;
+  dr_extents<Rank> full_extents_;
+  dr_extents<Rank> tile_extents_;
+  auto make_segments() {
+    auto make_md = [extents = tile_extents_](auto base_segment) {
+      return mdsegment(base_segment, extents);
+    };
+
+    return dr::ranges::segments(base_) | rng::views::transform(make_md);
+  }
+  using segments_type = decltype(std::declval<mdspan_view>().make_segments());
+
 public:
   mdspan_view(R r, dr_extents<Rank> full_extents)
-      : base_(rng::views::all(std::forward<R>(r))),
-        mdspan_(rng::begin(base_), full_extents) {
+      : base_(rng::views::all(std::forward<R>(r))) {
+    full_extents_ = full_extents;
+
     // Default tile extents splits on leading dimension
     tile_extents_ = full_extents;
     tile_extents_[0] = decomp::div;
-    replace_div(full_extents);
+
+    replace_decomp();
+
+    segments_ = make_segments();
   }
 
   mdspan_view(R r, dr_extents<Rank> full_extents, dr_extents<Rank> tile_extents)
-      : base_(rng::views::all(std::forward<R>(r))),
-        mdspan_(rng::begin(base_), full_extents), tile_extents_(tile_extents) {
-    replace_div(full_extents);
+      : base_(rng::views::all(std::forward<R>(r))), full_extents_(full_extents),
+        tile_extents_(tile_extents) {
+    replace_decomp();
+    segments_ = make_segments();
   }
 
   // Base implements random access range
@@ -102,34 +119,40 @@ public:
   auto operator[](difference_type n) { return base_[n]; }
 
   // Add a local mdspan to the base segment
-  auto segments() const {
-    auto make_md = [extents = tile_extents_](auto segment) {
-      return mdsegment(segment, extents);
-    };
-    return dr::ranges::segments(base_) | rng::views::transform(make_md);
-  }
-
   // Mdspan access to base
-  auto mdspan() const { return mdspan_; }
+  auto mdspan() const { return mdspan_type(rng::begin(base_), full_extents_); }
+
+  auto segments() const { return segments_; }
+
+  // Mdspan access to grid
+  auto grid() {
+    dr_extents<Rank> grid_extents;
+    for (std::size_t i : rng::views::iota(0u, Rank)) {
+      grid_extents[i] = full_extents_[i] / tile_extents_[i];
+      assert(full_extents_[i] % tile_extents_[i] == 0);
+    }
+    using grid_iterator_type = rng::iterator_t<segments_type>;
+    using grid_type = md::mdspan<grid_iterator_type, extents_type, Layout,
+                                 mdspan_iter_accessor<grid_iterator_type>>;
+    return grid_type(rng::begin(segments_), grid_extents);
+  }
 
 private:
   // Replace div with actual value
-  void replace_div(const dr_extents<Rank> &full_extents) {
+  void replace_decomp() {
     auto n = std::size_t(rng::size(dr::ranges::segments(base_)));
     for (std::size_t i = 0; i < Rank; i++) {
       if (tile_extents_[i] == decomp::div) {
-        tile_extents_[i] = full_extents[i] / n;
+        tile_extents_[i] = full_extents_[i] / n;
       } else if (tile_extents_[i] == decomp::all) {
-        tile_extents_[i] = full_extents[i];
+        tile_extents_[i] = full_extents_[i];
       }
       // TODO: Handle this case
-      assert(full_extents[i] % tile_extents_[i] == 0);
+      assert(full_extents_[i] % tile_extents_[i] == 0);
     }
   }
 
-  base_type base_;
-  mdspan_type mdspan_;
-  dr_extents<Rank> tile_extents_;
+  segments_type segments_;
 };
 
 template <typename R, std::size_t Rank>

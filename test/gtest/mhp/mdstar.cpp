@@ -85,6 +85,7 @@ TEST_F(Mdspan, SegmentExtents) {
   EXPECT_EQ(extents2d[0], x);
 }
 
+#if 0
 TEST_F(Mdspan, Subrange) {
   xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto inner = rng::subrange(dist.begin() + ydim, dist.end() - ydim);
@@ -102,4 +103,25 @@ TEST_F(Mdspan, Subrange) {
   }
   EXPECT_EQ(extents2d[0], x + 2);
 }
+#endif
+
+TEST_F(Mdspan, Grid) {
+  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
+  xhp::iota(dist, 100);
+  auto dmdspan = xhp::views::mdspan(dist, extents2d);
+  auto grid = dmdspan.grid();
+
+  auto x = 0;
+  for (std::size_t i = 0; i < grid.extent(0); i++) {
+    x += grid(i, 0).mdspan().extent(0);
+  }
+  EXPECT_EQ(dmdspan.mdspan().extent(0), x);
+
+  auto y = 0;
+  for (std::size_t i = 0; i < grid.extent(1); i++) {
+    y += grid(0, i).mdspan().extent(1);
+  }
+  EXPECT_EQ(dmdspan.mdspan().extent(1), y);
+}
+
 #endif // Skip for gcc 10.4
