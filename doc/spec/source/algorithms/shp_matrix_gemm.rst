@@ -13,7 +13,7 @@
 Interface
 =========
 
-.. doxygenfunction:: dr::shp::gemm(dense_matrix<T> &a, dense_matrix<T> &b, dense_matrix<T> &c)
+.. doxygenfunction:: dr::shp::gemm(distributed_dense_matrix<T> &a, distributed_dense_matrix<T> &b, distributed_dense_matrix<T> &c)
 
 Description
 ===========
