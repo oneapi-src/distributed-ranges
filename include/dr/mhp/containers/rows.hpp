@@ -11,11 +11,11 @@ using key_type = index<>;
 template <typename T, typename Allocator = dr::mhp::default_allocator<T>>
 class distributed_dense_matrix;
 
-template <typename DM> class d_segment;
+template <typename DM> class dv_segment;
 
 template <typename T> class dm_row : public std::span<T> {
   using dmatrix = distributed_dense_matrix<T>;
-  using dsegment = d_segment<dmatrix>;
+  using dsegment = dv_segment<dmatrix>;
 
 public:
   using iterator = typename std::span<T>::iterator;

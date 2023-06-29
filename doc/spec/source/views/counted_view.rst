@@ -4,18 +4,18 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _drop_view:
+.. _counted_view:
 
-==============
- ``drop_view``
-==============
+=================
+ ``counted_view``
+=================
 
 Interface
 =========
 
 .. code-block:: cpp
 
-  dr::mhp::views::drop
-  dr::shp::views::drop
+  dr::mhp::views::counted
+  dr::shp::views::counted
 
-For interface, see `std::ranges::views::drop`_
+For interface, see `std::ranges::views::counted`_

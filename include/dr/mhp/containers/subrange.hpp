@@ -26,7 +26,7 @@ public:
 
   value_type &operator*() const {
 
-    int offset = dm_->get_halo_bounds().prev + find_dm_offset(index_) -
+    int offset = dm_->halo_bounds().prev + find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size();
 
     assert(offset >= 0);
@@ -37,7 +37,7 @@ public:
   dm_row<value_type> operator[](int n) {
     std::size_t rowsize = col_rng_.second - col_rng_.first;
 
-    int offset = dm_->get_halo_bounds().prev +
+    int offset = dm_->halo_bounds().prev +
                  find_dm_offset((int)(index_ + n * rowsize)) -
                  default_comm().rank() * dm_->segment_size();
 
@@ -46,13 +46,13 @@ public:
 
     signed long idx = default_comm().rank() * dm_->segment_shape()[0]; // ??
     value_type *ptr = dm_->data() + offset;
-    const d_segment<DM> *segment = &(dm_->segments()[0]); // comm rank ??
+    const dv_segment<DM> *segment = &(dm_->segments()[0]); // comm rank ??
 
     return dm_row<value_type>(idx, ptr, rowsize, segment);
   }
 
   value_type &operator[](std::pair<int, int> p) {
-    int offset = dm_->halo_bounds_.prev + find_dm_offset(index_) -
+    int offset = dm_->distribution_.halo().prev + find_dm_offset(index_) -
                  default_comm().rank() * dm_->segment_size() +
                  dm_->shape()[1] * p.first + p.second;
 

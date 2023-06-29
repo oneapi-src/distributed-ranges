@@ -138,7 +138,8 @@ int run(int n, bool benchmark_mode) {
   const double dy = ly / ny;
   const double dx_inv = 1.0 / dx;
   const double dy_inv = 1.0 / dy;
-  dr::mhp::halo_bounds hb(1);
+  // dr::mhp::halo_bounds hb(1);
+  auto dist = dr::mhp::distribution().halo(1);
 
   if (comm_rank == 0) {
     std::cout << "Using backend: dr" << std::endl;
@@ -174,29 +175,29 @@ int run(int n, bool benchmark_mode) {
 
   // state variables
   // water elevation at T points
-  dr::mhp::distributed_dense_matrix<T> e(nx + 1, ny, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> e(nx + 1, ny, 0, dist);
   // x velocity at U points
-  dr::mhp::distributed_dense_matrix<T> u(nx + 1, ny, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> u(nx + 1, ny, 0, dist);
   // y velocity at V points
-  dr::mhp::distributed_dense_matrix<T> v(nx + 1, ny + 1, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> v(nx + 1, ny + 1, 0, dist);
 
   // state for RK stages
-  dr::mhp::distributed_dense_matrix<T> e1(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> u1(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> v1(nx + 1, ny + 1, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> e2(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> u2(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> v2(nx + 1, ny + 1, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> e1(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> u1(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> v1(nx + 1, ny + 1, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> e2(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> u2(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> v2(nx + 1, ny + 1, 0, dist);
 
   // time tendencies
-  dr::mhp::distributed_dense_matrix<T> dedt(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> dudt(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> dvdt(nx + 1, ny + 1, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> dedt(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> dudt(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> dvdt(nx + 1, ny + 1, 0, dist);
 
   // temporary arrays
   // FIXME these should not be necessary
-  dr::mhp::distributed_dense_matrix<T> dudx(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> dvdy(nx + 1, ny, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> dudx(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> dvdy(nx + 1, ny, 0, dist);
 
   // initial condition for elevation
   // TODO cleaner interface
@@ -305,8 +306,8 @@ int run(int n, bool benchmark_mode) {
   }
 
   // Compute error against exact solution
-  dr::mhp::distributed_dense_matrix<T> e_exact(nx + 1, ny, 0, hb);
-  dr::mhp::distributed_dense_matrix<T> error(nx + 1, ny, 0, hb);
+  dr::mhp::distributed_dense_matrix<T> e_exact(nx + 1, ny, 0, dist);
+  dr::mhp::distributed_dense_matrix<T> error(nx + 1, ny, 0, dist);
   for (auto r : e_exact.rows()) {
     if (r.segment()->is_local()) {
       auto i = r.idx();

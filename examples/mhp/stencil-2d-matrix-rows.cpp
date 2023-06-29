@@ -100,8 +100,8 @@ auto stencil_op = [](auto &&p) {
 };
 
 int stencil() {
-  dr::mhp::halo_bounds hb(1); // 1 row
-  dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, hb), b(nr, nc, -1, hb);
+  auto dist = dr::mhp::distribution().halo(1); // 1 row
+  dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, dist), b(nr, nc, -1, dist);
 
   // the same operation on every row
   dr::mhp::for_each(a.rows(), [](auto row) { rng::iota(row, 10); });

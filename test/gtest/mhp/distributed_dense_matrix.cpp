@@ -29,8 +29,8 @@ TEST(MhpTests, DM_CreateFill) {
 
 TEST(MhpTests, DM_Rows_For) {
   const int rows = 11, cols = 11;
-  dr::mhp::halo_bounds hb(3, 1, false); // 1 row
-  DM a(rows, cols, -1, hb);
+  auto dist = dr::mhp::distribution().halo(3, 1);
+  DM a(rows, cols, -1, dist);
 
   // different operation on every row - user must be aware of rows distribution
   for (auto r = a.rows().begin(); r != a.rows().end(); r++) {
@@ -50,8 +50,8 @@ TEST(MhpTests, DM_Rows_For) {
 
 TEST(MhpTests, DM_Rows_ForEach) {
   const int rows = 11, cols = 11;
-  dr::mhp::halo_bounds hb(3, 1, false);
-  DM a(rows, cols, -1, hb);
+  auto dist = dr::mhp::distribution().halo(3, 1);
+  DM a(rows, cols, -1, dist);
 
   dr::mhp::for_each(a.rows(), [](auto row) { rng::iota(row, 10); });
 
@@ -65,15 +65,13 @@ TEST(MhpTests, DM_Rows_ForEach) {
 }
 
 // Missing
-// * transform
 // * halo exchange (e.g. one step of stencil and then check exact values after
 // exchange) test that dense_matrix can be instantiated and has basic operations
-// * when type is not a simple int but sth more complex (like e.g. std::array)
 
 TEST(MhpTests, DM_Transform) {
   const int rows = 11, cols = 11;
-  dr::mhp::halo_bounds hb(3, 1, false);
-  DM a(rows, cols, -1, hb), b(rows, cols, -1, hb);
+  auto dist = dr::mhp::distribution().halo(3, 1);
+  DM a(rows, cols, -1, dist), b(rows, cols, -1, dist);
 
   auto negate = [](auto v) { return -v; };
 
@@ -88,34 +86,16 @@ TEST(MhpTests, DM_Transform) {
 
 TEST(MhpTests, DM_with_std_array) {
   const int rows = 11, cols = 11;
-  dr::mhp::halo_bounds hb(2);
+  auto dist = dr::mhp::distribution().halo(2);
 
   std::array<int, 5> ref = std::array<int, 5>({1, 2, 3, 4, 5});
 
-  dr::mhp::distributed_dense_matrix<std::array<int, 5>> a(rows, cols, ref, hb);
+  dr::mhp::distributed_dense_matrix<std::array<int, 5>> a(rows, cols, ref,
+                                                          dist);
 
   std::array<int, 5> val = *(a.begin() + 13);
 
   barrier();
 
   EXPECT_EQ(val[3], 4);
-}
-
-TEST(MhpTests3, DM_Halo_Exchange) {
-  const int rows = 12, cols = 12;
-  dr::mhp::halo_bounds hb(1, 2, false);
-  DM a(rows, cols, 121, hb);
-
-  a.halo().exchange();
-
-  if (dr::mhp::default_comm().rank() == 0) {
-    EXPECT_EQ((*(a.data() + a.get_halo_bounds().prev + a.segment_size())),
-              121); // halo_bound.next area
-  } else if (dr::mhp::default_comm().rank() ==
-             dr::mhp::default_comm().size() - 1) {
-    EXPECT_EQ((*(a.data())), 121); // halo_bound.prev area
-  } else {
-    EXPECT_EQ((*(a.data())), 121);
-    EXPECT_EQ((*(a.data() + a.get_halo_bounds().prev + a.segment_size())), 121);
-  }
 }

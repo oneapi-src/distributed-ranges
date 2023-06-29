@@ -33,7 +33,8 @@ TEST(MhpTests3, DM_Index) {
     EXPECT_EQ(a[15], -1);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), -1);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], -1);
     EXPECT_EQ((a[{10, 10}]), -1);
   }
@@ -59,7 +60,8 @@ TEST(MhpTests3, DM_For) {
     EXPECT_EQ(a[15], 5);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), 5);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], 5);
     EXPECT_EQ((a[{10, 10}]), 5);
   }
@@ -83,7 +85,8 @@ TEST(MhpTests3, DM_Fill) {
     EXPECT_EQ(a[15], 5);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), 5);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], 5);
     EXPECT_EQ((a[{10, 10}]), 5);
   }
@@ -91,8 +94,8 @@ TEST(MhpTests3, DM_Fill) {
 
 TEST(MhpTests3, DM_Fill_HB) {
   const int rows = 11, cols = 11;
-  dr::mhp::halo_bounds hb(2, 3, false);
-  DM a(rows, cols, -13, hb);
+  auto dist = dr::mhp::distribution().halo(2, 3);
+  DM a(rows, cols, -13, dist);
 
   dr::mhp::fill(a, 5);
 
@@ -107,7 +110,8 @@ TEST(MhpTests3, DM_Fill_HB) {
     EXPECT_EQ(a[15], 5);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), 5);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], 5);
     EXPECT_EQ((a[{10, 10}]), 5);
   }
@@ -130,7 +134,8 @@ TEST(MhpTests3, DM_Iota_2_args) {
     EXPECT_EQ(a[15], 15);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), 48);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], 99);
     EXPECT_EQ((a[{10, 10}]), 120);
   }
@@ -153,7 +158,8 @@ TEST(MhpTests3, DM_Iota_3_args) {
     EXPECT_EQ(a[15], 15);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), 48);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], 99);
     EXPECT_EQ((a[{10, 10}]), -13);
   }
@@ -161,8 +167,8 @@ TEST(MhpTests3, DM_Iota_3_args) {
 
 TEST(MhpTests3, DM_Iota_HB) {
   const int rows = 11, cols = 11;
-  dr::mhp::halo_bounds hb(3, 2, false);
-  DM a(rows, cols, -13, hb);
+  auto dist = dr::mhp::distribution().halo(3, 2);
+  DM a(rows, cols, -13, dist);
 
   dr::mhp::iota(a, 0);
 
@@ -179,7 +185,8 @@ TEST(MhpTests3, DM_Iota_HB) {
     EXPECT_EQ(a[15], 15);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), 48);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], 99);
     EXPECT_EQ((a[{10, 10}]), 120);
   }
@@ -187,9 +194,9 @@ TEST(MhpTests3, DM_Iota_HB) {
 
 TEST(MhpTests3, DM_Copy_HB) {
   const int rows = 11, cols = 11;
-  dr::mhp::halo_bounds hb(3, 2, false);
-  DM a(rows, cols, -13, hb);
-  DM b(rows, cols, -1, hb);
+  auto dist = dr::mhp::distribution().halo(3, 2);
+  DM a(rows, cols, -13, dist);
+  DM b(rows, cols, -1, dist);
 
   dr::mhp::iota(b, 0);
   dr::mhp::copy(b, a.begin());
@@ -207,8 +214,28 @@ TEST(MhpTests3, DM_Copy_HB) {
     EXPECT_EQ(a[15], 15);
   } else if (dr::mhp::default_comm().rank() == 1) {
     EXPECT_EQ((a[{4, 4}]), 48);
-  } else /*(dr::mhp::default_comm().rank() == 2) */ {
+  } else {
+    assert(dr::mhp::default_comm().rank() == 2);
     EXPECT_EQ(a[99], 99);
     EXPECT_EQ((a[{10, 10}]), 120);
+  }
+}
+
+TEST(MhpTests3, DM_Halo_Exchange) {
+  const int rows = 12, cols = 12;
+  auto dist = dr::mhp::distribution().halo(1, 2);
+  DM a(rows, cols, 121, dist);
+
+  a.halo().exchange();
+
+  if (dr::mhp::default_comm().rank() == 0) {
+    EXPECT_EQ((*(a.data() + a.halo_bounds().prev + a.segment_size())),
+              121); // halo_bound.next area
+  } else if (dr::mhp::default_comm().rank() ==
+             dr::mhp::default_comm().size() - 1) {
+    EXPECT_EQ((*(a.data())), 121); // halo_bound.prev area
+  } else {
+    EXPECT_EQ((*(a.data())), 121);
+    EXPECT_EQ((*(a.data() + a.halo_bounds().prev + a.segment_size())), 121);
   }
 }

@@ -28,6 +28,7 @@ add_executable(
   copy.cpp
   distributed_vector.cpp
   distributed_dense_matrix.cpp
+  mdstar.cpp
   reduce.cpp
   stencil.cpp
   segments.cpp
@@ -41,13 +42,15 @@ add_executable(
   distributed_dense_matrix3.cpp
 )
 
-# mhp-quick-test is a skeleton for rapid builds of individual tests,
-# feel free to change this
+# mhp-quick-test is for development. By reducing the number of source
+# files, it builds much faster. Change the source files to match what
+# you need to test. It is OK to commit changes to the source file
+# list.
 
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  slide_view.cpp
+  mdstar.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)

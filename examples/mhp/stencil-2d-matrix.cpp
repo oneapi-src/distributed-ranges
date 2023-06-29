@@ -100,8 +100,8 @@ auto stencil_op_one_step_access = [](auto &p) {
 };
 
 int stencil(auto stencil_op) {
-  dr::mhp::halo_bounds hb(1); // 1 row
-  dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, hb), b(nr, nc, -1, hb);
+  auto dist = dr::mhp::distribution().halo(1); // 1 row
+  dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, dist), b(nr, nc, -1, dist);
 
   // 1st approach - different operation for each row is possible here
   for (auto r = a.rows().begin(); r != a.rows().end(); r++) {

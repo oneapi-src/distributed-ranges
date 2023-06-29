@@ -87,7 +87,7 @@ private:
 
   dr::index<> tile_shape_;
   dr::index<> grid_shape_;
-};
+}; // namespace dr::shp
 
 inline std::vector<block_cyclic> partition_matmul(std::size_t m, std::size_t n,
                                                   std::size_t k) {

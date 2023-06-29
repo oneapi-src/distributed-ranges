@@ -315,16 +315,6 @@ private:
 };
 
 struct halo_bounds {
-  halo_bounds(std::size_t bound_ = 0, bool periodic_ = false) {
-    prev = next = bound_;
-    periodic = periodic_;
-  }
-  halo_bounds(std::size_t prev_, std::size_t next_, bool periodic_ = false) {
-    prev = prev_;
-    next = next_;
-    periodic = periodic_;
-  }
-
   std::size_t prev = 0, next = 0;
   bool periodic = false;
 };
