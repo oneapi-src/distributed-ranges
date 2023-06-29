@@ -12,7 +12,7 @@ using DVI = typename DV::iterator;
 const std::size_t radius = 4;
 const std::size_t n = 10;
 
-TEST(MhpTests, Stencil) {
+TEST(Stencil, 1D) {
   auto dist = dr::mhp::distribution().halo(radius);
   DV dv_in(n, dist);
   DV dv_out(n, dist);

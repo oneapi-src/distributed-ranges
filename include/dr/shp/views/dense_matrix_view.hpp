@@ -6,105 +6,15 @@
 
 #include <iterator>
 
+#include <dr/detail/index.hpp>
 #include <dr/detail/iterator_adaptor.hpp>
-#include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
+#include <dr/shp/containers/sequential/dense_matrix.hpp>
 #include <dr/shp/views/dense_column_view.hpp>
+#include <dr/shp/views/dense_matrix_iterator.hpp>
 #include <dr/shp/views/dense_row_view.hpp>
 
 namespace dr::shp {
-
-template <typename T, typename Iter> class dense_matrix_view_accessor {
-public:
-  using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
-
-  using scalar_type = std::iter_value_t<Iter>;
-  using scalar_reference = std::iter_reference_t<Iter>;
-
-  using value_type = dr::shp::matrix_entry<scalar_type, std::size_t>;
-
-  using reference = dr::shp::matrix_ref<T, std::size_t, scalar_reference>;
-
-  using iterator_category = std::random_access_iterator_tag;
-
-  using iterator_accessor = dense_matrix_view_accessor;
-  using const_iterator_accessor = iterator_accessor;
-  using nonconst_iterator_accessor = iterator_accessor;
-
-  using key_type = dr::shp::index<>;
-
-  constexpr dense_matrix_view_accessor() noexcept = default;
-  constexpr ~dense_matrix_view_accessor() noexcept = default;
-  constexpr dense_matrix_view_accessor(
-      const dense_matrix_view_accessor &) noexcept = default;
-  constexpr dense_matrix_view_accessor &
-  operator=(const dense_matrix_view_accessor &) noexcept = default;
-
-  constexpr dense_matrix_view_accessor(Iter data, key_type idx,
-                                       key_type matrix_shape,
-                                       size_type ld) noexcept
-      : data_(data), idx_(idx), matrix_shape_(matrix_shape), ld_(ld),
-        idx_offset_({0, 0}) {}
-
-  constexpr dense_matrix_view_accessor(Iter data, key_type idx,
-                                       key_type idx_offset,
-                                       key_type matrix_shape,
-                                       size_type ld) noexcept
-      : idx_(idx), matrix_shape_(matrix_shape), ld_(ld),
-        idx_offset_(idx_offset), data_(data) {}
-
-  constexpr dense_matrix_view_accessor &
-  operator+=(difference_type offset) noexcept {
-    size_type new_idx = get_global_idx() + offset;
-    idx_ = {new_idx / matrix_shape_[1], new_idx % matrix_shape_[1]};
-
-    return *this;
-  }
-
-  constexpr bool operator==(const iterator_accessor &other) const noexcept {
-    return idx_ == other.idx_;
-  }
-
-  constexpr difference_type
-  operator-(const iterator_accessor &other) const noexcept {
-    return difference_type(get_global_idx()) - other.get_global_idx();
-  }
-
-  constexpr bool operator<(const iterator_accessor &other) const noexcept {
-    if (idx_[0] < other.idx_[0]) {
-      return true;
-    } else if (idx_[0] == other.idx_[0]) {
-      return idx_[1] < other.idx_[1];
-    } else {
-      return false;
-    }
-  }
-
-  constexpr reference operator*() const noexcept {
-    return reference(
-        key_type(idx_[0] + idx_offset_[0], idx_[1] + idx_offset_[1]),
-        data_[idx_[0] * ld_ + idx_[1]]);
-  }
-
-private:
-  size_type get_global_idx() const noexcept {
-    return idx_[0] * matrix_shape_[1] + idx_[1];
-  }
-
-private:
-  key_type idx_;
-  key_type matrix_shape_;
-  size_type ld_;
-
-  key_type idx_offset_;
-
-  Iter data_;
-};
-
-template <typename T, typename Iter>
-using dense_matrix_view_iterator =
-    dr::iterator_adaptor<dense_matrix_view_accessor<T, Iter>>;
 
 template <typename T, typename Iter = T *>
 class dense_matrix_view
@@ -116,7 +26,7 @@ public:
   using scalar_reference = std::iter_reference_t<Iter>;
   using reference = dr::shp::matrix_ref<T, std::size_t, scalar_reference>;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
   using map_type = T;
 
   using iterator = dense_matrix_view_iterator<T, Iter>;
@@ -129,6 +39,13 @@ public:
                     size_type ld, size_type rank)
       : data_(data), shape_(shape), idx_offset_(idx_offset), ld_(ld),
         rank_(rank) {}
+
+  template <typename Allocator>
+    requires(std::is_same_v<typename std::allocator_traits<Allocator>::pointer,
+                            Iter>)
+  dense_matrix_view(dense_matrix<T, Allocator> &m)
+      : data_(m.data()), shape_(m.shape()), idx_offset_(key_type{0, 0}),
+        ld_(m.ld()), rank_(0) {}
 
   key_type shape() const noexcept { return shape_; }
 
@@ -193,11 +110,15 @@ private:
 };
 
 template <std::random_access_iterator Iter>
-dense_matrix_view(Iter, dr::shp::index<>, std::size_t)
+dense_matrix_view(Iter, dr::index<>, std::size_t)
     -> dense_matrix_view<std::iter_value_t<Iter>, Iter>;
 
 template <std::random_access_iterator Iter>
-dense_matrix_view(Iter, dr::shp::index<>)
+dense_matrix_view(Iter, dr::index<>)
     -> dense_matrix_view<std::iter_value_t<Iter>, Iter>;
+
+template <typename T, typename Allocator>
+dense_matrix_view(dense_matrix<T, Allocator> &)
+    -> dense_matrix_view<T, typename std::allocator_traits<Allocator>::pointer>;
 
 } // namespace dr::shp

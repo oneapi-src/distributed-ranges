@@ -247,7 +247,7 @@ struct local_fn_ {
     return dr::ranges::local(t);
   }
 
-  template <typename T> auto operator()(T &&t) const { return t; }
+  template <typename T> decltype(auto) operator()(T &&t) const { return t; }
 };
 
 inline constexpr auto local = local_fn_{};

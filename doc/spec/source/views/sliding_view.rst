@@ -4,27 +4,25 @@
 
 .. include:: ../include/distributed-ranges.rst
 
-.. _transform_reduce:
+.. _sliding_view:
 
-======================
- ``transform_reduce``
-======================
+=================
+ ``sliding_view``
+=================
 
 Interface
 =========
 
+
+.. code-block:: cpp
+
+  dr::mhp::views::sliding
+  dr::shp::views::sliding
 
 Description
 ===========
 
 .. seealso::
 
-   `std::transform_reduce`_
-
-   :ref:`reduce`
-
-   :ref:`transform`
-
-
-Examples
-========
+   `std::ranges::views::slide`_
+     Standard C++ view

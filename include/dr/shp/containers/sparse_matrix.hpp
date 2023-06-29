@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include <dr/detail/index.hpp>
 #include <dr/shp/algorithms/copy.hpp>
-#include <dr/shp/containers/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
 #include <dr/shp/device_vector.hpp>
@@ -138,7 +138,7 @@ public:
   using reference = dr::shp::matrix_ref<T, scalar_reference>;
   using const_reference = dr::shp::matrix_ref<const T, const_scalar_reference>;
 
-  using key_type = dr::shp::index<I>;
+  using key_type = dr::index<I>;
 
   using segment_type = dr::shp::csr_matrix_view<
       T, I,
