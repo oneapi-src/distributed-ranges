@@ -40,8 +40,6 @@ target_include_directories(dr_shp INTERFACE . vendor)
 target_compile_definitions(dr_shp INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
 target_link_libraries(dr_shp INTERFACE range-v3 oneDPL fmt::fmt)
 
-target_compile_options(dr_shp INTERFACE -fsycl)
-
 # For use, see: https://github.com/illuhad/hipSYCL/blob/develop/doc/using-hipsycl.md#using-the-cmake-integration
 # example: cmake .. -DhipSYCL_DIR=</hipsycl/install/lib/cmake/hipSYCL> -DHIPSYCL_TARGETS="<targets>"
 if($(HIPSYCL_TARGETS))

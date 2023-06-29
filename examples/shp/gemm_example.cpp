@@ -4,6 +4,9 @@
 
 #include <dr/shp.hpp>
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 namespace shp = dr::shp;
 
 template <typename T>
@@ -79,9 +82,9 @@ int main(int argc, char **argv) {
 
   auto partitions = shp::partition_matmul(m, n, k);
 
-  dr::shp::dense_matrix<float> a({m, k}, partitions[0]);
-  dr::shp::dense_matrix<float> b({k, n}, partitions[1]);
-  dr::shp::dense_matrix<float> c({m, n}, partitions[2]);
+  dr::shp::distributed_dense_matrix<float> a({m, k}, partitions[0]);
+  dr::shp::distributed_dense_matrix<float> b({k, n}, partitions[1]);
+  dr::shp::distributed_dense_matrix<float> c({m, n}, partitions[2]);
 
   auto shape = a.shape();
   dr::shp::for_each(dr::shp::par_unseq, a, [=](auto &&entry) {
