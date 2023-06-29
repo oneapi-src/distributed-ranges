@@ -350,12 +350,13 @@ private:
     drlog.debug(nostd::source_location::current(),
                 "owned groups {}/{} first/last\n", comm.first(), comm.last());
     if (hb.next > 0 && (hb.periodic || !comm.first())) {
-      owned.emplace_back(span.subspan(hb.next, hb.next), comm.prev(),
+      owned.emplace_back(span.subspan(hb.prev, hb.next), comm.prev(),
                          communicator::tag::halo_reverse);
     }
     if (hb.prev > 0 && (hb.periodic || !comm.last())) {
-      owned.emplace_back(span.subspan(rng::size(span) - 2 * hb.prev, hb.prev),
-                         comm.next(), communicator::tag::halo_forward);
+      owned.emplace_back(
+          span.subspan(rng::size(span) - (hb.prev + hb.next), hb.prev),
+          comm.next(), communicator::tag::halo_forward);
     }
     return owned;
   }
