@@ -25,6 +25,21 @@ template <typename R> auto local_segments(R &&dr) {
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
+template <typename R> auto local_segments_with_idx(R &&dr) {
+  auto is_local = [](const auto &segment_with_idx) {
+    return dr::ranges::rank(std::get<1>(segment_with_idx)) ==
+           default_comm().rank();
+  };
+  // Convert from remote iter to local iter
+  auto local_iter = [](const auto &segment_with_idx) {
+    auto &&[idx, segment] = segment_with_idx;
+    auto b = dr::ranges::local(rng::begin(segment));
+    return std::tuple(idx, rng::subrange(b, b + rng::distance(segment)));
+  };
+  return dr::ranges::segments(std::forward<R>(dr)) | rng::views::enumerate |
+         rng::views::filter(is_local) | rng::views::transform(local_iter);
+}
+
 template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
   auto segments = dr::mhp::local_segments(std::forward<R>(r));
 
