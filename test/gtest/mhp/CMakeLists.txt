@@ -50,7 +50,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  stencil_2d.cpp
+  mdstar.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
