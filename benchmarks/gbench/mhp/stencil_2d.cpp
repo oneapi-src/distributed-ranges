@@ -16,8 +16,8 @@ using T = double;
 static const T init_val = 1;
 
 // For debugging, use  col_static = 10 with --vector-size 100
-const std::size_t cols_static = 10;
-// const std::size_t cols_static = 10000;
+// const std::size_t cols_static = 10;
+const std::size_t cols_static = 10000;
 
 using Row = std::array<T, cols_static>;
 
