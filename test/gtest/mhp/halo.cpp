@@ -1,5 +1,8 @@
+// SPDX-FileCopyrightText: Intel Corporation
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "xhp-tests.hpp"
-#include <dr/mhp/views/sliding.hpp>
 
 template <typename T> class Halo : public testing::Test {};
 

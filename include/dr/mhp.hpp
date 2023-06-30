@@ -50,6 +50,7 @@ namespace fmt {}
 #include <dr/detail/normal_distributed_iterator.hpp>
 #include <dr/detail/memory.hpp>
 #include <dr/detail/communicator.hpp>
+#include <dr/detail/index.hpp>
 
 #include <dr/views/views.hpp>
 #include <dr/views/transform.hpp>
@@ -62,6 +63,7 @@ namespace fmt {}
 #include <dr/mhp/views/zip.hpp>
 #include <dr/mhp/views/enumerate.hpp>
 #include <dr/mhp/views/sliding.hpp>
+#include <dr/mhp/views/mdspan.hpp>
 #include <dr/mhp/algorithms/copy.hpp>
 #include <dr/mhp/algorithms/fill.hpp>
 #include <dr/mhp/algorithms/for_each.hpp>

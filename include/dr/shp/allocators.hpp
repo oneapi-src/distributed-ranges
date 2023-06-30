@@ -71,4 +71,57 @@ private:
   sycl::context context_;
 };
 
+template <typename Allocator> class buffered_allocator {
+public:
+  using value_type = typename std::allocator_traits<Allocator>::value_type;
+  using pointer = typename std::allocator_traits<Allocator>::pointer;
+  using const_pointer =
+      typename std::allocator_traits<Allocator>::const_pointer;
+  using size_type = typename std::allocator_traits<Allocator>::size_type;
+  using difference_type =
+      typename std::allocator_traits<Allocator>::difference_type;
+
+  buffered_allocator(const Allocator &alloc, std::size_t buffer_size,
+                     std::size_t n_buffers)
+      : alloc_(alloc), buffer_size_(buffer_size),
+        free_buffers_(new std::vector<pointer>()),
+        buffers_(new std::vector<pointer>()) {
+    for (std::size_t i = 0; i < n_buffers; i++) {
+      buffers_->push_back(alloc_.allocate(buffer_size_));
+    }
+    free_buffers_->assign(buffers_->begin(), buffers_->end());
+  }
+
+  ~buffered_allocator() {
+    if (buffers_.use_count() == 1) {
+      for (auto &&buffer : *buffers_) {
+        alloc_.deallocate(buffer, buffer_size_);
+      }
+    }
+  }
+
+  using is_always_equal = std::false_type;
+
+  pointer allocate(std::size_t size) {
+    if (size > buffer_size_ || free_buffers_->empty()) {
+      throw std::bad_alloc();
+    } else {
+      pointer buffer = free_buffers_->back();
+      free_buffers_->pop_back();
+      return buffer;
+    }
+  }
+
+  void deallocate(pointer ptr, std::size_t n) { free_buffers_->push_back(ptr); }
+
+  bool operator==(const buffered_allocator &) const = default;
+  bool operator!=(const buffered_allocator &) const = default;
+
+private:
+  Allocator alloc_;
+  std::size_t buffer_size_;
+  std::shared_ptr<std::vector<pointer>> free_buffers_;
+  std::shared_ptr<std::vector<pointer>> buffers_;
+};
+
 } // namespace dr::shp
