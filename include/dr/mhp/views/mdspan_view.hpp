@@ -83,14 +83,15 @@ private:
   base_type base_;
   dr_extents<Rank> full_extents_;
   dr_extents<Rank> tile_extents_;
-  auto make_segments() {
-    auto make_md = [extents = tile_extents_](auto base_segment) {
-      return mdsegment(base_segment, extents);
+  static auto make_segments(auto base, auto tile_extents) {
+    auto make_md = [tile_extents](auto base_segment) {
+      return mdsegment(base_segment, tile_extents);
     };
 
-    return dr::ranges::segments(base_) | rng::views::transform(make_md);
+    return dr::ranges::segments(base) | rng::views::transform(make_md);
   }
-  using segments_type = decltype(std::declval<mdspan_view>().make_segments());
+  using segments_type =
+      decltype(make_segments(std::declval<base_type>(), tile_extents_));
 
 public:
   mdspan_view(R r, dr_extents<Rank> full_extents)
@@ -103,14 +104,14 @@ public:
 
     replace_decomp();
 
-    segments_ = make_segments();
+    segments_ = make_segments(base_, tile_extents_);
   }
 
   mdspan_view(R r, dr_extents<Rank> full_extents, dr_extents<Rank> tile_extents)
       : base_(rng::views::all(std::forward<R>(r))), full_extents_(full_extents),
         tile_extents_(tile_extents) {
     replace_decomp();
-    segments_ = make_segments();
+    segments_ = make_segments(base_, tile_extents_);
   }
 
   // Base implements random access range

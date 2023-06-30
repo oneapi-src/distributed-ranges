@@ -16,8 +16,8 @@ using T = double;
 static const T init_val = 1;
 
 // For debugging, use  col_static = 10 with --vector-size 100
-// const std::size_t cols_static = 10;
-const std::size_t cols_static = 10000;
+const std::size_t cols_static = 10;
+// const std::size_t cols_static = 10000;
 
 using Row = std::array<T, cols_static>;
 
@@ -55,18 +55,17 @@ struct CommonChecker {
         return fabs(n1 - n2) / n2 < .01;
       };
 
-      if (rng::equal(actual, expected, fp_compare)) {
-        return;
+      if (!rng::equal(actual, expected, fp_compare)) {
+        fmt::print("Mismatch\n");
+        fmt::print("Actual size: {}\n", actual.size());
+        if (actual.size() <= 100) {
+          fmt::print("  Expected:\n");
+          print_matrix(expected);
+          fmt::print("  Actual:\n");
+          print_matrix(actual);
+        }
+        exit(1);
       }
-
-      fmt::print("Mismatch\n");
-      if (actual.size() <= 100) {
-        fmt::print("  Expected:\n");
-        print_matrix(expected);
-        fmt::print("  Actual:\n");
-        print_matrix(actual);
-      }
-      exit(1);
     } else {
       auto [rows, cols] = shape();
       expected.resize(rows * cols);
@@ -280,12 +279,12 @@ static void Stencil2D_Tiled_DR(benchmark::State &state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
       stats.rep();
       dr::mhp::halo(stencil_steps % 2 ? b : a).exchange();
-      bool first = 0 + (comm_rank == 0);
-      bool last = in.extent(0) - (comm_rank == (ranks - 1));
+      std::size_t first = 0 + (comm_rank == 0);
+      std::size_t last = in.extent(0) - (comm_rank == (ranks - 1));
       for (std::size_t i = first; i < last; i++) {
         for (std::size_t j = 1; j < in.extent(1) - 1; j++) {
           out(i, j) = (in(i - 1, j) + in(i, j - 1) + in(i, j) + in(i, j + 1) +
-                       in(i - 1, j)) /
+                       in(i + 1, j)) /
                       4;
         }
       }
