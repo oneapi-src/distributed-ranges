@@ -100,7 +100,7 @@ auto stencil_op_one_step_access = [](auto &p) {
 };
 
 int stencil(auto stencil_op) {
-  auto dist = dr::mhp::distribution().halo(1); // 1 row
+  auto dist = dr::mhp::distribution().halo(1, 1); // 1 row
   dr::mhp::distributed_dense_matrix<T> a(nr, nc, -1, dist), b(nr, nc, -1, dist);
 
   // 1st approach - different operation for each row is possible here
@@ -121,6 +121,7 @@ int stencil(auto stencil_op) {
     dr::mhp::halo(in).exchange();
     dr::mhp::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
+    dr::mhp::barrier();
   }
 
   dr::mhp::barrier();
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
     ("log", "Enable logging")
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("20"))
     ("cols", "Number of columns", cxxopts::value<std::size_t>()->default_value("10"))
-    ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("3"))
+    ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
     ("stencil", "Choice of stencil, 1-step or 2-step", cxxopts::value<std::size_t>()->default_value("1"))
     ("help", "Print help");
   // clang-format on
@@ -192,7 +193,6 @@ int main(int argc, char *argv[]) {
   default:
     fmt::print("Error: stencil arg should be 1 for 1-step stencil or 2 for "
                "2-step stencil\n");
-    error = -1;
     break;
   }
 

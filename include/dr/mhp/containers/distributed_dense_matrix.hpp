@@ -166,7 +166,10 @@ public:
   size_type segment_size() const noexcept { return segment_size_; }
   key_type segment_shape() const noexcept { return segment_shape_; }
 
-  auto &halo() { return *halo_; }
+  auto &halo() {
+    assert(halo_ != nullptr);
+    return *halo_;
+  }
   struct halo_bounds halo_bounds() { return distribution_.halo(); }
 
 #ifdef SYCL_LANGUAGE_VERSION
@@ -198,8 +201,8 @@ public:
 #endif
 
   // for debug purposes only
-#if 0
-  void dump_matrix(std::string msg) {
+#if 1
+  void dump(std::string msg) {
     std::stringstream s;
     s << default_comm().rank() << ": " << msg << " :\n";
     s << default_comm().rank() << ": shape [" << shape_[0] << ", " << shape_[1]
@@ -224,7 +227,7 @@ public:
     std::cout << s.str();
   }
 
-  void raw_dump_matrix(std::string msg) {
+  void dump_raw(std::string msg) {
     std::stringstream s;
     s << default_comm().rank() << ": " << msg << " :\n";
     for (std::size_t i = 0; i < segment_shape_[0] + halo_bounds_rows_.prev +
@@ -293,8 +296,8 @@ private:
 
     halo_bounds_rows_ = dist.halo();
 
-    data_size_ = segment_size_ + distribution_.halo().prev * shape_[1] +
-                 distribution_.halo().next * shape_[1];
+    data_size_ =
+        segment_size_ + distribution_.halo().prev + distribution_.halo().next;
 
     data_ = allocator.allocate(data_size_);
 

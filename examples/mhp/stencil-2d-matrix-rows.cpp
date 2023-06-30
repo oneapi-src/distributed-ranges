@@ -120,6 +120,7 @@ int stencil() {
     dr::mhp::halo(in).exchange();
     dr::mhp::transform(in, out.begin(), stencil_op);
     std::swap(in, out);
+    dr::mhp::barrier();
   }
 
   dr::mhp::fence();
