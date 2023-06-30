@@ -9,7 +9,48 @@ template <typename T> class Halo3 : public testing::Test {};
 TYPED_TEST_SUITE(Halo3, AllTypes);
 
 TYPED_TEST(Halo3, suite_works_for_3_processes_only) {
-  EXPECT_EQ(dr::mhp::default_comm().size(), 3); // dr-style ignore
+  EXPECT_EQ(dr::mhp::default_comm().size(), 3);
+}
+
+TYPED_TEST(Halo3, halo_is_visible_after_exchange_not_earlier) {
+  TypeParam dv(3, dr::mhp::distribution().halo(1));
+  fill(dv, 7);
+  dv.halo().exchange();
+
+  fill(dv, 13);
+  switch (dr::mhp::default_comm().rank()) {
+  case 0:
+    EXPECT_EQ(*(dv.begin() + 0).local(), 13);
+    EXPECT_EQ(*(dv.begin() + 1).local(), 7);
+    break;
+  case 1:
+    EXPECT_EQ(*(dv.begin() + 0).local(), 7);
+    EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+    EXPECT_EQ(*(dv.begin() + 2).local(), 7);
+    break;
+  case 2:
+    EXPECT_EQ(*(dv.begin() + 1).local(), 7);
+    EXPECT_EQ(*(dv.begin() + 2).local(), 13);
+    break;
+  }
+
+  dv.halo().exchange();
+
+  switch (dr::mhp::default_comm().rank()) {
+  case 0:
+    EXPECT_EQ(*(dv.begin() + 0).local(), 13);
+    EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+    break;
+  case 1:
+    EXPECT_EQ(*(dv.begin() + 0).local(), 13);
+    EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+    EXPECT_EQ(*(dv.begin() + 2).local(), 13);
+    break;
+  case 2:
+    EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+    EXPECT_EQ(*(dv.begin() + 2).local(), 13);
+    break;
+  }
 }
 
 TYPED_TEST(Halo3, dv_halos_eq) {
@@ -17,7 +58,6 @@ TYPED_TEST(Halo3, dv_halos_eq) {
 
   iota(dv, 1);
   dv.halo().exchange();
-  barrier();
 
   if (dr::mhp::default_comm().rank() == 0) {
 
@@ -58,7 +98,6 @@ TYPED_TEST(Halo3, dv_different_halos_gt_first) {
 
   iota(dv, 1);
   dv.halo().exchange();
-  barrier();
 
   if (dr::mhp::default_comm().rank() == 0) {
 
@@ -99,7 +138,6 @@ TYPED_TEST(Halo3, dv_different_halos_gt_sec) {
 
   iota(dv, 1);
   dv.halo().exchange();
-  barrier();
 
   if (dr::mhp::default_comm().rank() == 0) {
 

@@ -45,6 +45,9 @@ void local_is_accessible_in_halo_region(const int halo_prev,
     first_local_index___ = {X, X, X, X, X, 5};
     first_nonlocal_index = {X, X, X, X, X, 6};
     break;
+  default:
+    first_local_index___ = {X, X, X, X, X, X};
+    first_nonlocal_index = {X, X, X, X, X, X};
   }
 
   const auto c = dr::mhp::default_comm().size() - 1;

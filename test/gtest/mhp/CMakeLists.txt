@@ -28,6 +28,7 @@ add_executable(
   copy.cpp
   distributed_vector.cpp
   halo.cpp
+  mdstar.cpp
   reduce.cpp
   stencil.cpp
   segments.cpp
