@@ -13,7 +13,7 @@ TYPED_TEST(Slide3, suite_works_for_3_processes_only) {
   EXPECT_EQ(dr::mhp::default_comm().size(), 3); // dr-style ignore
 }
 
-// more Slide3 tests are comming, all assume that there are 3 mpi processes
+// all tests in Slide3 assume, that there are 3 mpi processes
 TYPED_TEST(Slide3, no_sides) {
   TypeParam dv(6);
   iota(dv, 1);
