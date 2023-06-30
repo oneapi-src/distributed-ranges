@@ -92,10 +92,10 @@ TEST(MhpTests, DM_with_std_array) {
   dr::mhp::distributed_dense_matrix<std::array<int, 5>> a(rows, cols, ref,
                                                           dist);
 
+  barrier();
+
   std::array<int, 5> val01 = *(a.begin() + 1);
   std::array<int, 5> val10 = *(a.begin() + 10);
-
-  barrier();
 
   EXPECT_EQ(val01[3], 4);
   EXPECT_EQ(val10[1], 2);
