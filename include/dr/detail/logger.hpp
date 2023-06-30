@@ -4,9 +4,7 @@
 
 #pragma once
 
-#if DR_FORMAT
-#include <fmt/core.h>
-#endif
+#include <dr/detail/format_shim.hpp>
 
 #include <vendor/source_location/source_location.hpp>
 

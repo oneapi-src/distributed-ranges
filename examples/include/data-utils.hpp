@@ -4,13 +4,7 @@
 
 #pragma once
 
-#ifdef DR_FORMAT
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-#endif
-
-// Workaround for doxygen warning about internal inconsistency
-namespace fmt {}
+#include <../../include/dr/detail/format_shim.hpp>
 
 inline std::size_t partition_up(std::size_t num, std::size_t multiple) {
   return (num + multiple - 1) / multiple;

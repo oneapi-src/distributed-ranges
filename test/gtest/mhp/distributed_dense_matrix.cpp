@@ -106,11 +106,16 @@ TYPED_TEST(MhpTests, DM_Halo_Exchange) {
   auto dist = dr::mhp::distribution().halo(2, 2);
   TypeParam a(rows, cols, 121, dist);
 
-  auto halo_prev_beg = a.data();
-  auto halo_next_beg = a.data() + a.halo_bounds().prev + a.segment_size();
-
   auto rank = dr::mhp::default_comm().rank();
   auto size = dr::mhp::default_comm().size();
+
+  // no sense to test with 1 node - no exchange takes place
+
+  if (size == 1)
+    return;
+
+  auto halo_prev_beg = a.data();
+  auto halo_next_beg = a.data() + a.halo_bounds().prev + a.segment_size();
 
   dr::mhp::fill(a, -1);
   dr::mhp::barrier();
@@ -151,11 +156,16 @@ TYPED_TEST(MhpTests, DM_Halo_Exchange_assymetric_1_2) {
   auto dist = dr::mhp::distribution().halo(1, 2);
   TypeParam a(rows, cols, 121, dist);
 
-  auto halo_prev_beg = a.data();
-  auto halo_next_beg = a.data() + a.halo_bounds().prev + a.segment_size();
-
   auto rank = dr::mhp::default_comm().rank();
   auto size = dr::mhp::default_comm().size();
+
+  // no sense to test with 1 node - no exchange takes place
+
+  if (size == 1)
+    return;
+
+  auto halo_prev_beg = a.data();
+  auto halo_next_beg = a.data() + a.halo_bounds().prev + a.segment_size();
 
   dr::mhp::fill(a, -1);
   dr::mhp::barrier();
@@ -196,11 +206,16 @@ TYPED_TEST(MhpTests, DM_Halo_Exchange_assymetric_2_1) {
   auto dist = dr::mhp::distribution().halo(2, 1);
   TypeParam a(rows, cols, 121, dist);
 
-  auto halo_prev_beg = a.data();
-  auto halo_next_beg = a.data() + a.halo_bounds().prev + a.segment_size();
-
   auto rank = dr::mhp::default_comm().rank();
   auto size = dr::mhp::default_comm().size();
+
+  // no sense to test with 1 node - no exchange takes place
+
+  if (size == 1)
+    return;
+
+  auto halo_prev_beg = a.data();
+  auto halo_next_beg = a.data() + a.halo_bounds().prev + a.segment_size();
 
   dr::mhp::fill(a, -1);
   dr::mhp::barrier();
