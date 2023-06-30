@@ -28,6 +28,7 @@ add_executable(
   copy.cpp
   distributed_vector.cpp
   distributed_dense_matrix.cpp
+  halo.cpp
   mdstar.cpp
   reduce.cpp
   stencil.cpp
@@ -38,6 +39,7 @@ add_executable(
 add_executable(
   mhp-tests-3
   mhp-tests.cpp
+  halo-3.cpp
   slide_view-3.cpp
   distributed_dense_matrix3.cpp
 )
@@ -50,7 +52,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  mdstar.cpp
+  halo.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
