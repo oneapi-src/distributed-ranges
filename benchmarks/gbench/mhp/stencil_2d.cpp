@@ -102,7 +102,7 @@ struct Checker {
     common.check(local);
     checked = true;
   }
-#endif
+#endif // SYCL_LANGUAGE_VERSION
 
   void check_array(rng::forward_range auto &&actual) {
     if (!check_results || checked) {
@@ -274,7 +274,7 @@ static void Stencil2D_Tiled_DR(benchmark::State &state) {
 
   Checker checker;
   auto in = a_matrix.grid()(comm_rank, 0).mdspan();
-  auto out = a_matrix.grid()(comm_rank, 0).mdspan();
+  auto out = b_matrix.grid()(comm_rank, 0).mdspan();
 
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
@@ -297,7 +297,7 @@ static void Stencil2D_Tiled_DR(benchmark::State &state) {
 
 DR_BENCHMARK(Stencil2D_Tiled_DR);
 
-#endif // Skip for gcc 10.4
+#endif //__GNUC__ == 10 && __GNUC_MINOR__ == 4
 
 //
 // Single process SYCL baseline
@@ -384,4 +384,4 @@ static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
 
 DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
 
-#endif
+#endif // SYCL_LANGUAGE_VERSION
