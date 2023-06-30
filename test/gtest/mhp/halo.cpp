@@ -79,10 +79,10 @@ TYPED_TEST(Halo, local_is_accessible_in_halo_region_halo_11) {
   local_is_accessible_in_halo_region<TypeParam>(1, 1);
 }
 
-TYPED_TEST(Halo, DISABLED_local_is_accessible_in_halo_region_halo_10) {
+TYPED_TEST(Halo, local_is_accessible_in_halo_region_halo_10) {
   local_is_accessible_in_halo_region<TypeParam>(1, 0);
 }
 
-TYPED_TEST(Halo, DISABLED_local_is_accessible_in_halo_region_halo_01) {
+TYPED_TEST(Halo, local_is_accessible_in_halo_region_halo_01) {
   local_is_accessible_in_halo_region<TypeParam>(0, 1);
 }
