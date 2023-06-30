@@ -55,18 +55,17 @@ struct CommonChecker {
         return fabs(n1 - n2) / n2 < .01;
       };
 
-      if (rng::equal(actual, expected, fp_compare)) {
-        return;
+      if (!rng::equal(actual, expected, fp_compare)) {
+        fmt::print("Mismatch\n");
+        fmt::print("Actual size: {}\n", actual.size());
+        if (actual.size() <= 100) {
+          fmt::print("  Expected:\n");
+          print_matrix(expected);
+          fmt::print("  Actual:\n");
+          print_matrix(actual);
+        }
+        exit(1);
       }
-
-      fmt::print("Mismatch\n");
-      if (actual.size() <= 100) {
-        fmt::print("  Expected:\n");
-        print_matrix(expected);
-        fmt::print("  Actual:\n");
-        print_matrix(actual);
-      }
-      exit(1);
     } else {
       auto [rows, cols] = shape();
       expected.resize(rows * cols);
@@ -102,7 +101,7 @@ struct Checker {
     common.check(local);
     checked = true;
   }
-#endif
+#endif // SYCL_LANGUAGE_VERSION
 
   void check_array(rng::forward_range auto &&actual) {
     if (!check_results || checked) {
@@ -256,7 +255,7 @@ DR_BENCHMARK(Stencil2D_Segmented_DR);
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style.
 //
-static void Stencil2D_SegmentedMdspan_DR(benchmark::State &state) {
+static void Stencil2D_Tiled_DR(benchmark::State &state) {
   auto [rows, cols] = shape(state);
   if (rows == 0) {
     return;
@@ -265,25 +264,27 @@ static void Stencil2D_SegmentedMdspan_DR(benchmark::State &state) {
   auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
   dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
   dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
-  auto a_inner = rng::subrange(a.begin() + cols, a.end() - cols);
-  auto b_inner = rng::subrange(b.begin() + cols, b.end() - cols);
+
+  auto extents = std::array{rows, cols};
+  auto a_matrix = xhp::views::mdspan(a, extents);
+  auto b_matrix = xhp::views::mdspan(b, extents);
+
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
-  md::extents extents(rows - 2, cols);
-  auto a_matrix = xhp::views::mdspan(a_inner, extents);
-  auto b_matrix = xhp::views::mdspan(b_inner, extents);
   Checker checker;
-  auto in = dr::mhp::local_mdspan(a_matrix);
-  auto out = dr::mhp::local_mdspan(b_matrix);
+  auto in = a_matrix.grid()(comm_rank, 0).mdspan();
+  auto out = b_matrix.grid()(comm_rank, 0).mdspan();
 
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
       stats.rep();
       dr::mhp::halo(stencil_steps % 2 ? b : a).exchange();
-      for (std::size_t i = 0; i < in.extents().extent(0); i++) {
-        for (std::size_t j = 1; j < cols - 1; j++) {
+      std::size_t first = 0 + (comm_rank == 0);
+      std::size_t last = in.extent(0) - (comm_rank == (ranks - 1));
+      for (std::size_t i = first; i < last; i++) {
+        for (std::size_t j = 1; j < in.extent(1) - 1; j++) {
           out(i, j) = (in(i - 1, j) + in(i, j - 1) + in(i, j) + in(i, j + 1) +
-                       in(i - 1, j)) /
+                       in(i + 1, j)) /
                       4;
         }
       }
@@ -293,60 +294,9 @@ static void Stencil2D_SegmentedMdspan_DR(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Stencil2D_SegmentedMdspan_DR);
+DR_BENCHMARK(Stencil2D_Tiled_DR);
 
-#endif // Skip for gcc 10.4
-
-// Under construction
-#if 0
-auto nslice(auto &&r, cols) {
-  auto slice = [](auto &&chunk) {
-    return rng::subrange(chunk.begin() + 1, chunk.end() - 1);
-  };
-  return r | rng::views::chunk(cols)
-    | rng::views::transform(slice)
-    | rng::views::join;
-}
-
-//
-// Slice implemented by views. Use for_each on flat representation
-//
-static void Stencil2D_1DArrayTransform_DR(benchmark::State &state) {
-  auto v = shape(state);
-  auto rows = std::get<0>(v);
-  auto cols = std::get<0>(v);
-
-  if (rows == 0) {
-    return;
-  }
-
-  auto op = [cols](auto &center) {
-    auto p = &center;
-    return (p[-cols] + p[-1] + p[0] + p[+1] + p[cols]) / 4;
-  }
-
-  auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
-  dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
-  dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
-
-  Checker checker;
-  auto in_global = rng::subrange(a.begin() + cols, a.end() - cols);
-  auto out_global = rng::subrange(b.begin() + cols, b.end() - cols);
-  for (auto _ : state) {
-    for (std::size_t s = 0; s < stencil_steps; s++) {
-      auto in_local = dr::mhp::local_segment(in);
-      auto out_local = dr::mhp::local_segment(out);
-
-      dr::mhp::halo(in_local).exchange();
-      dr::mhp::transform(nslice(in_local, cols), nslice(out_local, cols), op);
-      std::swap(in, out);
-    }
-    checker.check(stencil_steps % 2 ? b : a);
-  }
-}
-
-DR_BENCHMARK(Stencil2D_1DArrayTransform_DR);
-#endif
+#endif //__GNUC__ == 10 && __GNUC_MINOR__ == 4
 
 //
 // Single process SYCL baseline
@@ -390,7 +340,7 @@ DR_BENCHMARK(Stencil2D_Basic_SYCL);
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style with SYCL
 //
-static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
+static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
   auto v = shape(state);
   auto rows = std::get<0>(v);
   auto cols = std::get<1>(v);
@@ -431,6 +381,6 @@ static void Stencil2D_NocollectiveSYCL_DR(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Stencil2D_NocollectiveSYCL_DR);
+DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
 
-#endif
+#endif // SYCL_LANGUAGE_VERSION
