@@ -13,7 +13,8 @@ template <typename T, std::size_t Rank, typename Layout = md::layout_right>
 class distributed_mdarray {
 public:
   distributed_mdarray(dr_extents<Rank> extents)
-      : dv_(dv_size(extents)), md_view_(make_md_view(dv_, extents)) {}
+      : dv_(md_size(extents), dv_dist(extents)),
+        md_view_(make_md_view(dv_, extents)) {}
 
   auto begin() const { return rng::begin(md_view_); }
   auto end() const { return rng::end(md_view_); }
@@ -22,8 +23,11 @@ public:
 
   auto segments() { return dr::ranges::segments(dv_); }
 
+  auto mdspan() { return md_view_.mdspan(); }
+  auto grid() { return md_view_.grid(); }
+
 private:
-  static auto dv_size(auto extents) {
+  static auto md_size(auto extents) {
     std::size_t size = 1;
     for (auto extent : extents) {
       size *= extent;
@@ -31,8 +35,17 @@ private:
     return size;
   }
 
+  static auto dv_dist(auto extents) {
+    // Granularity matches tile size
+    auto tile_extents = extents;
+    // TODO: only supports dist on leading dimension
+    tile_extents[0] = 1;
+    return distribution().granularity(md_size(tile_extents));
+  }
+
+  // This wrapper seems to avoid an issue with template argument
+  // deduction for mdspan_view
   template <typename DV> static auto make_md_view(DV &&dv, auto extents) {
-    // return views::mdspan(rng::views::all(dv), extents);
     return views::mdspan(dv, extents);
   }
 
