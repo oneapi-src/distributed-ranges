@@ -25,6 +25,8 @@ protected:
       dr::mhp::distribution().granularity(ydim * zdim);
 };
 
+using Mdarray = Mdspan;
+
 TEST_F(Mdspan, StaticAssert) {
   xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto mdspan = xhp::views::mdspan(dist, extents2d);
@@ -135,6 +137,70 @@ TEST_F(Mdspan, GridLocalReference) {
   }
   dr::mhp::fence();
   EXPECT_EQ(99, dist[0]);
+}
+
+TEST_F(Mdarray, StaticAssert) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  static_assert(rng::forward_range<decltype(mdarray)>);
+  static_assert(dr::distributed_range<decltype(mdarray)>);
+}
+
+TEST_F(Mdarray, Iterator) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+
+  *mdarray.begin() = 17;
+  EXPECT_EQ(17, *mdarray.begin());
+  EXPECT_EQ(17, mdarray[0]);
+}
+
+TEST_F(Mdarray, Mdindex2D) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+
+  std::size_t i = 1, j = 2;
+  mdarray.mdspan()(i, j) = 17;
+  EXPECT_EQ(17, mdarray[i * ydim + j]);
+  EXPECT_EQ(17, mdarray.mdspan()(i, j));
+}
+
+TEST_F(Mdarray, Mdindex3D) {
+  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+
+  std::size_t i = 1, j = 2, k = 0;
+  mdarray.mdspan()(i, j, k) = 17;
+  EXPECT_EQ(17, mdarray[i * ydim * zdim + j * zdim + k]);
+  EXPECT_EQ(17, mdarray.mdspan()(i, j, k));
+}
+
+TEST_F(Mdarray, GridExtents) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto grid = mdarray.grid();
+
+  auto x = 0;
+  for (std::size_t i = 0; i < grid.extent(0); i++) {
+    x += grid(i, 0).mdspan().extent(0);
+  }
+  EXPECT_EQ(mdarray.mdspan().extent(0), x);
+
+  auto y = 0;
+  for (std::size_t i = 0; i < grid.extent(1); i++) {
+    y += grid(0, i).mdspan().extent(1);
+  }
+  EXPECT_EQ(mdarray.mdspan().extent(1), y);
+}
+
+TEST_F(Mdarray, GridLocalReference) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto grid = mdarray.grid();
+
+  auto tile = grid(0, 0).mdspan();
+  if (comm_rank == 0) {
+    tile(0, 0) = 99;
+    EXPECT_EQ(99, tile(0, 0));
+  }
+  dr::mhp::fence();
+  EXPECT_EQ(99, mdarray[0]);
 }
 
 #endif // Skip for gcc 10.4
