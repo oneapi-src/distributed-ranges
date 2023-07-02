@@ -25,6 +25,8 @@ protected:
       dr::mhp::distribution().granularity(ydim * zdim);
 };
 
+using Mdarray = Mdspan;
+
 TEST_F(Mdspan, StaticAssert) {
   xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto mdspan = xhp::views::mdspan(dist, extents2d);
@@ -135,6 +137,12 @@ TEST_F(Mdspan, GridLocalReference) {
   }
   dr::mhp::fence();
   EXPECT_EQ(99, dist[0]);
+}
+
+TEST_F(Mdarray, StaticAssert) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  static_assert(rng::forward_range<decltype(mdarray)>);
+  static_assert(dr::distributed_range<decltype(mdarray)>);
 }
 
 #endif // Skip for gcc 10.4

@@ -207,3 +207,13 @@ auto &halo(has_halo_method auto &&dr) {
 }
 
 } // namespace dr::mhp
+
+#if !defined(DR_SPEC)
+
+// Needed to satisfy concepts for viewable_range
+template <typename T, typename Allocator>
+inline constexpr bool
+    rng::enable_borrowed_range<dr::mhp::distributed_vector<T, Allocator>> =
+        true;
+
+#endif
