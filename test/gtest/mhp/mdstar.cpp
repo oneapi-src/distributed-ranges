@@ -203,4 +203,19 @@ TEST_F(Mdarray, GridLocalReference) {
   EXPECT_EQ(99, mdarray[0]);
 }
 
+TEST_F(Mdarray, Halo) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d,
+                                         xhp::distribution().halo(1));
+  xhp::iota(mdarray, 100);
+  auto grid = mdarray.grid();
+
+  auto tile = grid(0, 0).mdspan();
+  if (comm_rank == 0) {
+    tile(0, 0) = 99;
+    EXPECT_EQ(99, tile(0, 0));
+  }
+  dr::mhp::fence();
+  EXPECT_EQ(99, mdarray[0]);
+}
+
 #endif // Skip for gcc 10.4

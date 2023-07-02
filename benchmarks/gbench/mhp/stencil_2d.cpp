@@ -23,21 +23,22 @@ using Row = std::array<T, cols_static>;
 
 static auto shape() {
   std::size_t rows = default_vector_size / cols_static;
-  return std::pair(rows, cols_static);
+  return std::array{rows, cols_static};
 }
 
 static auto shape(auto &state) {
-  auto [rows, cols] = shape();
-  if (rows < 3) {
-    state.SkipWithError(fmt::format("Vector size must be >= 3 * {}", cols));
+  auto s = shape();
+  if (s[0] < 3) {
+    state.SkipWithError(fmt::format("Vector size must be >= 3 * {}", s[1]));
     std::size_t empty = 0;
-    return std::pair(empty, empty);
+    return std::array{empty, empty};
   }
-  return shape();
+  return s;
 }
 
 void print_matrix(rng::forward_range auto &&actual) {
-  auto [rows, cols] = shape();
+  auto s = shape();
+  auto cols = s[1];
   auto m = rng::views::chunk(actual, cols);
   for (auto row : m) {
     fmt::print("    ");
@@ -67,7 +68,9 @@ struct CommonChecker {
         exit(1);
       }
     } else {
-      auto [rows, cols] = shape();
+      auto s = shape();
+      auto rows = s[0];
+      auto cols = s[1];
       expected.resize(rows * cols);
       rng::copy(actual, expected.begin());
       init = true;
@@ -94,7 +97,9 @@ struct Checker {
       return;
     }
 
-    auto [rows, cols] = shape();
+    auto s = shape();
+    auto rows = s[0];
+    auto cols = s[1];
     auto sz = rows * cols;
     std::vector<T> local(sz);
     q.copy(p, local.data(), sz).wait();
@@ -110,7 +115,9 @@ struct Checker {
 
     std::vector<Row> local(actual.size());
     dr::mhp::copy(0, actual, local.begin());
-    auto [rows, cols] = shape();
+    auto s = shape();
+    auto rows = s[0];
+    auto cols = s[1];
     common.check(rng::span(&(local[0][0]), rows * cols));
     checked = true;
   }
@@ -129,7 +136,9 @@ static void stencil_1darray_op(auto in, auto out, auto cols, auto i, auto j) {
 // Serial baseline
 //
 static void Stencil2D_Loop_Serial(benchmark::State &state) {
-  auto [rows, cols] = shape(state);
+  auto s = shape();
+  auto rows = s[0];
+  auto cols = s[1];
   if (rows == 0) {
     return;
   }
@@ -170,7 +179,9 @@ auto stencil_foreach_stdArray_op = [](auto &&v) {
 // Distributed vector of std::array
 //
 static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
-  auto [rows, cols] = shape(state);
+  auto s = shape();
+  auto rows = s[0];
+  auto cols = s[1];
 
   if (rows == 0) {
     return;
@@ -212,7 +223,10 @@ DR_BENCHMARK(Stencil2D_ForeachStdArray_DR);
 // whole rows. Explicitly process segments SPMD-style.
 //
 static void Stencil2D_Segmented_DR(benchmark::State &state) {
-  auto [rows, cols] = shape(state);
+  auto s = shape();
+  auto rows = s[0];
+  auto cols = s[1];
+
   if (rows == 0) {
     return;
   }
@@ -256,24 +270,23 @@ DR_BENCHMARK(Stencil2D_Segmented_DR);
 // whole rows. Explicitly process segments SPMD-style.
 //
 static void Stencil2D_Tiled_DR(benchmark::State &state) {
-  auto [rows, cols] = shape(state);
-  if (rows == 0) {
+  auto s = shape();
+
+  if (s[0] == 0) {
     return;
   }
 
-  auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
-  dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
-  dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
-
-  auto extents = std::array{rows, cols};
-  auto a_matrix = xhp::views::mdspan(a, extents);
-  auto b_matrix = xhp::views::mdspan(b, extents);
+  auto dist = dr::mhp::distribution().halo(1);
+  dr::mhp::distributed_mdarray<T, 2> a(s, dist);
+  dr::mhp::distributed_mdarray<T, 2> b(s, dist);
+  xhp::fill(a, init_val);
+  xhp::fill(b, init_val);
 
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   Checker checker;
-  auto in = a_matrix.grid()(comm_rank, 0).mdspan();
-  auto out = b_matrix.grid()(comm_rank, 0).mdspan();
+  auto in = a.grid()(comm_rank, 0).mdspan();
+  auto out = b.grid()(comm_rank, 0).mdspan();
 
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
@@ -303,9 +316,9 @@ DR_BENCHMARK(Stencil2D_Tiled_DR);
 //
 #ifdef SYCL_LANGUAGE_VERSION
 static void Stencil2D_Basic_SYCL(benchmark::State &state) {
-  auto s = shape(state);
-  auto rows = std::get<0>(s);
-  auto cols = std::get<1>(s);
+  auto s = shape();
+  auto rows = s[0];
+  auto cols = s[1];
 
   if (rows == 0) {
     return;
@@ -341,9 +354,10 @@ DR_BENCHMARK(Stencil2D_Basic_SYCL);
 // whole rows. Explicitly process segments SPMD-style with SYCL
 //
 static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
-  auto v = shape(state);
-  auto rows = std::get<0>(v);
-  auto cols = std::get<1>(v);
+  auto s = shape();
+  auto rows = s[0];
+  auto cols = s[1];
+
   if (rows == 0) {
     return;
   }
