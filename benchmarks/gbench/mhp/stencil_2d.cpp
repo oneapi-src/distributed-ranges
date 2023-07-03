@@ -318,7 +318,7 @@ auto mdspan_stencil_op = [](auto v) {
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style.
 //
-static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
+static void Stencil2D_MdspanTuple_DR(benchmark::State &state) {
   auto shape = default_shape();
 
   if (shape[0] == 0) {
@@ -352,6 +352,41 @@ static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
       std::swap(in, out);
     }
     checker.check(stencil_steps % 2 ? b : a);
+  }
+}
+
+DR_BENCHMARK(Stencil2D_MdspanTuple_DR);
+
+//
+// Distributed vector of floats. Granularity ensures segments contain
+// whole rows. Explicitly process segments SPMD-style.
+//
+static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
+  auto shape = default_shape();
+  std::size_t radius = 1;
+  if (shape[0] == 0) {
+    return;
+  }
+  auto dist = dr::mhp::distribution().halo(radius);
+  dr::mhp::distributed_mdarray<T, 2> a(shape, dist);
+  dr::mhp::distributed_mdarray<T, 2> b(shape, dist);
+  xhp::fill(a, init_val);
+  xhp::fill(b, init_val);
+
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
+
+  auto in = &a;
+  auto out = &b;
+
+  Checker checker;
+  for (auto _ : state) {
+    for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
+      dr::mhp::halo(*in).exchange();
+      xhp::stencil_for_each(radius, mdspan_stencil_op, *in, *out);
+      std::swap(in, out);
+    }
+    checker.check(*in);
   }
 }
 
