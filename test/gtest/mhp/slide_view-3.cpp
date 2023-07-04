@@ -13,6 +13,7 @@ TYPED_TEST(Slide3, suite_works_for_3_processes_only) {
   EXPECT_EQ(dr::mhp::default_comm().size(), 3);
 }
 
+// all tests in Slide3 assume, that there are 3 mpi processes
 TYPED_TEST(Slide3, no_sides) {
   TypeParam dv(6);
   iota(dv, 1);
@@ -160,6 +161,3 @@ TYPED_TEST(
     }
   }
 }
-
-// halo exchange has some bug when having different prev/next
-// add more tests with different sides once halo is fixed

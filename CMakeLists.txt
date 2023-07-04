@@ -38,6 +38,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_link_options(--gcc-toolchain=${GCC_TOOLCHAIN})
   endif()
 
+  if(ENABLE_SYCL)
+    add_compile_options(-fsycl)
+    add_link_options(-fsycl)
+    if(ENABLE_CUDA)
+      add_compile_options(-fsycl-targets=nvptx64-nvidia-cuda -Wno-error=unknown-cuda-version)
+      add_link_options(-fsycl-targets=nvptx64-nvidia-cuda -Wno-error=unknown-cuda-version)
+    endif()
+  endif()
+
   set(buildTypes Release Debug)
 
   if(NOT CMAKE_BUILD_TYPE)
@@ -161,10 +170,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-error=pass-failed)
     add_compile_options(-Wno-error=unknown-pragmas)
   endif()
-
-  if(ENABLE_CUDA)
-    add_compile_options(-Wno-unknown-cuda-version)
-  endif ()
 
   if(ENABLE_SYCL)
     # disables rng::detail::box_compress::coalesce which causes rng::box to use global non-const variable, which can not

@@ -28,6 +28,7 @@ add_executable(
   alignment.cpp
   copy.cpp
   distributed_vector.cpp
+  halo.cpp
   mdstar.cpp
   reduce.cpp
   stencil.cpp
@@ -38,6 +39,7 @@ add_executable(
 add_executable(
   mhp-tests-3
   mhp-tests.cpp
+  halo-3.cpp
   slide_view-3.cpp
 )
 
@@ -61,13 +63,6 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
     cxxopts
     DR::mpi
   )
-  if (ENABLE_SYCL)
-    target_compile_options(${test-exec} PRIVATE -fsycl)
-    if(ENABLE_CUDA)
-      target_compile_options(${test-exec} PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
-      target_link_options(${test-exec} PRIVATE -fsycl-targets=nvptx64-nvidia-cuda)
-    endif()
-  endif()
 endforeach()
 
 add_mpi_test(mhp-quick-test-1 mhp-quick-test 1)

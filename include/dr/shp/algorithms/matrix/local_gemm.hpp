@@ -5,7 +5,6 @@
 #pragma once
 
 #include <dr/shp/views/dense_matrix_view.hpp>
-#include <fmt/core.h>
 
 #ifdef USE_MKL
 #include <oneapi/mkl.hpp>
