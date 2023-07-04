@@ -55,11 +55,6 @@ foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)
     fmt::fmt
     cxxopts
   )
-
-  if(ENABLE_CUDA)
-    target_compile_options(${test-exec} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-    target_link_options(${test-exec} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-  endif()
 endforeach()
 
 function(add_shp_test test_name name)
