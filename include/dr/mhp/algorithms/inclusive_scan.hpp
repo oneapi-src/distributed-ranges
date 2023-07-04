@@ -93,18 +93,11 @@ inline WaitCallback reduce_local_segment(auto &&s, auto result_iter,
   auto init = *first++;
 #ifdef SYCL_LANGUAGE_VERSION
   if (mhp::use_sycl()) {
-
-    dr::drlog.debug("calling reduce_async on range:");
-    for (auto &&x : s)
-      dr::drlog.debug(" {}", x);
-    dr::drlog.debug("\n");
-
     auto event = oneapi::dpl::experimental::reduce_async(dpl_policy(), first,
                                                          last, init, func);
     return [event, result_iter] {
       auto e = event;
       *result_iter = e.get();
-      dr::drlog.debug("reduce_async finished, result:{}\n", *result_iter);
     };
   }
 #endif
@@ -188,7 +181,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       continue;
 
     if (in_idx == first_nonempty_segment_idx) {
-      dr::drlog.debug("running scan idx:{}\n", static_cast<int>(in_idx));
       // first segment can be scanned without doing reduce first
       WaitCallback scan_wait_cb =
           init.has_value()
@@ -208,12 +200,9 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
             *local_partial_sums_it = *iter_to_last_out_element;
           });
     } else if (in_idx != last_nonempty_segment_idx) {
-      dr::drlog.debug("running reduce on idx:{}\n", static_cast<int>(in_idx));
       events.push_back(
           reduce_local_segment(in_segment, local_partial_sums_it, binary_op));
       // last segment is not needed to be reduced, all except last&first need to
-    } else {
-      dr::drlog.debug("running nothing idx:{}\n", static_cast<int>(in_idx));
     }
 
     ++local_partial_sums_it;
@@ -232,12 +221,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           ? std::optional<OVal>()
           : local_partial_sums_scanned.back();
 
-  if (local_partial_sum.has_value())
-    dr::drlog.debug("local partial sum computed is {}\n",
-                    local_partial_sum.value());
-  else
-    dr::drlog.debug("no local partial sum\n");
-
   // below vector is used on 0 rank only but who cares
   std::vector<std::optional<OVal>> partial_sums(comm.size());
 
@@ -247,15 +230,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   // this is step 6
   std::vector<std::optional<OVal>> partial_sums_scanned(comm.size() + 1);
   if (comm.rank() == 0) {
-
-    dr::drlog.debug("global rank=0 partial sums:");
-    for (auto &&x : partial_sums)
-      if (x.has_value())
-        dr::drlog.debug(" {}", x.value());
-      else
-        dr::drlog.debug(" EMPTY");
-    dr::drlog.debug("\n");
-
     inclusive_scan_local_on_cpu(
         rng::begin(partial_sums), rng::end(partial_sums),
         rng::begin(partial_sums_scanned) + 1,
@@ -268,14 +242,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           }
           return std::optional<OVal>();
         });
-
-    dr::drlog.debug("global rank=0 partial sums scanned:");
-    for (auto &&x : partial_sums_scanned)
-      if (x.has_value())
-        dr::drlog.debug(" {}", x.value());
-      else
-        dr::drlog.debug(" EMPTY");
-    dr::drlog.debug("\n");
   }
   partial_sums_scanned.pop_back();
 
@@ -283,12 +249,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   std::optional<OVal> sum_of_all_guys_before_my_rank;
   comm.scatter(std::span{partial_sums_scanned}, sum_of_all_guys_before_my_rank,
                0);
-
-  if (sum_of_all_guys_before_my_rank.has_value())
-    dr::drlog.debug("sum_of_all_guys_before_my_rank:{}\n",
-                    sum_of_all_guys_before_my_rank.value());
-  else
-    dr::drlog.debug("sum_of_all_guys_before_my_rank:NONE\n");
 
   // this is step 8
   if (!rng::empty(local_partial_sums) &&
@@ -298,12 +258,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
                   rng::end(local_partial_sums_scanned), [=](auto &&x) {
                     x = binary_op(sum_of_all_guys_before_my_rank.value(), x);
                   });
-    dr::drlog.debug("local partial sums scan:");
-    for (auto &&x : local_partial_sums_scanned)
-      dr::drlog.debug(" {}", x);
-    dr::drlog.debug("\n");
-  } else
-    dr::drlog.debug("local partial sums scan skipped\n");
+  }
 
   // this is step 9
   auto local_partial_sums_scanned_it = rng::begin(local_partial_sums_scanned);
