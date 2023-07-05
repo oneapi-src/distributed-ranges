@@ -94,6 +94,10 @@ inline WaitCallback reduce_local_segment(auto &&s, auto result_iter,
   auto first = direct_local_iter(rng::begin(s));
   auto last = direct_local_iter(rng::end(s));
   auto init = init_opt.has_value() ? init_opt.value() : *first++;
+  if (first == last) {
+    *result_iter = init;
+    return noop_wait_callback();
+  }
 #ifdef SYCL_LANGUAGE_VERSION
   if (mhp::use_sycl()) {
     auto event = oneapi::dpl::experimental::reduce_async(dpl_policy(), first,
