@@ -26,10 +26,13 @@ template <typename BaseSegment, std::size_t Rank,
           typename Layout = md::layout_right>
 class mdsegment : public BaseSegment {
 public:
-  mdsegment(BaseSegment segment, dr_extents<Rank> tile_extents)
-      : BaseSegment(segment), mdspan_(local_tile(segment, tile_extents)) {}
+  mdsegment(std::size_t index, BaseSegment segment,
+            dr_extents<Rank> tile_extents)
+      : BaseSegment(segment), index_(index),
+        mdspan_(local_tile(segment, tile_extents)) {}
 
   auto mdspan() const { return mdspan_; }
+  auto index() const { return index_; }
 
 private:
   using T = rng::range_value_t<BaseSegment>;
@@ -43,6 +46,7 @@ private:
     return md::mdspan(ptr, tile_extents);
   }
 
+  std::size_t index_;
   md::mdspan<T, md_extents<Rank>, Layout> mdspan_;
 };
 
@@ -84,11 +88,13 @@ private:
   dr_extents<Rank> full_extents_;
   dr_extents<Rank> tile_extents_;
   static auto make_segments(auto base, auto tile_extents) {
-    auto make_md = [tile_extents](auto base_segment) {
-      return mdsegment(base_segment, tile_extents);
+    auto make_md = [tile_extents](auto v) {
+      return mdsegment(std::size_t(std::get<0>(v)), std::get<1>(v),
+                       tile_extents);
     };
 
-    return dr::ranges::segments(base) | rng::views::transform(make_md);
+    return rng::views::enumerate(dr::ranges::segments(base)) |
+           rng::views::transform(make_md);
   }
   using segments_type =
       decltype(make_segments(std::declval<base_type>(), tile_extents_));
