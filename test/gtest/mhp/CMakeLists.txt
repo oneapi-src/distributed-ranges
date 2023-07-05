@@ -16,6 +16,7 @@ add_executable(
   ../common/enumerate.cpp
   ../common/fill.cpp
   ../common/for_each.cpp
+  ../common/inclusive_scan.cpp
   ../common/iota.cpp
   ../common/reduce.cpp
   ../common/subrange.cpp
@@ -50,7 +51,7 @@ add_executable(
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  mdstar.cpp
+  ../common/inclusive_scan.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
@@ -63,6 +64,11 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
     DR::mpi
   )
 endforeach()
+
+add_mpi_test(mhp-quick-test-1 mhp-quick-test 1)
+add_mpi_test(mhp-quick-test-2 mhp-quick-test 2)
+add_mpi_test(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl)
+add_mpi_test(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl)
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
