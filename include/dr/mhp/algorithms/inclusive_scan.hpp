@@ -96,11 +96,18 @@ inline WaitCallback reduce_local_segment(auto &&s, auto result_iter,
   auto init = init_opt.has_value() ? init_opt.value() : *first++;
 #ifdef SYCL_LANGUAGE_VERSION
   if (mhp::use_sycl()) {
+
+    dr::drlog.debug("calling reduce_async with init:{} on range:", init);
+    for (auto &&x : s)
+      dr::drlog.debug(" {}", x);
+    dr::drlog.debug("\n");
+
     auto event = oneapi::dpl::experimental::reduce_async(dpl_policy(), first,
                                                          last, init, func);
     return [event, result_iter] {
       auto e = event;
       *result_iter = e.get();
+      dr::drlog.debug("reduce_async finished, result:{}\n", *result_iter);
     };
   }
 #endif
@@ -195,12 +202,15 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       continue;
 
     if (in_idx != last_nonempty_segment_idx) {
+      dr::drlog.debug("running reduce idx:{}\n", static_cast<int>(in_idx));
       events.push_back(reduce_local_segment(
           in_segment, local_partial_sums_it, binary_op,
           init.has_value() && first_nonempty_segment_idx == in_idx
               ? init
               : std::optional<OVal>()));
       // last segment is not needed to be reduced
+    } else {
+      dr::drlog.debug("running nothing idx:{}\n", static_cast<int>(in_idx));
     }
 
     ++local_partial_sums_it;
@@ -219,6 +229,12 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           ? std::optional<OVal>()
           : local_partial_sums_scanned.back();
 
+  if (local_partial_sum.has_value())
+    dr::drlog.debug("local partial sum computed is {}\n",
+                    local_partial_sum.value());
+  else
+    dr::drlog.debug("no local partial sum\n");
+
   // below vector is used on 0 rank only but who cares
   std::vector<std::optional<OVal>> partial_sums(comm.size());
 
@@ -228,6 +244,15 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   // this is step 5
   std::vector<std::optional<OVal>> partial_sums_scanned(comm.size() + 1);
   if (comm.rank() == 0) {
+
+    dr::drlog.debug("global rank=0 partial sums:");
+    for (auto &&x : partial_sums)
+      if (x.has_value())
+        dr::drlog.debug(" {}", x.value());
+      else
+        dr::drlog.debug(" EMPTY");
+    dr::drlog.debug("\n");
+
     inclusive_scan_local_on_cpu(
         rng::begin(partial_sums), rng::end(partial_sums),
         rng::begin(partial_sums_scanned) + 1,
@@ -240,6 +265,15 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           }
           return std::optional<OVal>();
         });
+
+    dr::drlog.debug("global rank=0 partial sums scanned:");
+    for (auto &&x : partial_sums_scanned)
+      if (x.has_value())
+        dr::drlog.debug(" {}", x.value());
+      else
+        dr::drlog.debug(" EMPTY");
+    dr::drlog.debug("\n");
+
   }
   partial_sums_scanned.pop_back();
 
@@ -247,6 +281,12 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   std::optional<OVal> sum_of_all_guys_before_my_rank;
   comm.scatter(std::span{partial_sums_scanned}, sum_of_all_guys_before_my_rank,
                0);
+
+  if (sum_of_all_guys_before_my_rank.has_value())
+    dr::drlog.debug("sum_of_all_guys_before_my_rank:{}\n",
+                    sum_of_all_guys_before_my_rank.value());
+  else
+    dr::drlog.debug("sum_of_all_guys_before_my_rank:NONE\n");
 
   // this is step 7
   if (!rng::empty(local_partial_sums) &&
@@ -271,6 +311,10 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     if (in_idx == first_nonempty_segment_idx && !init.has_value()) {
       events.push_back(
           inclusive_scan_local_async(in_segment, out_segment, binary_op));
+
+      dr::drlog.debug("local inclusize scan without init of:");
+
+
     } else {
       OVal init_of_segment;
       if (in_idx == first_nonempty_segment_idx) {
@@ -283,9 +327,14 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         init_of_segment = *local_partial_sums_scanned_it++;
       }
 
+      dr::drlog.debug("local inclusize scan with init:{} of:", init_of_segment);
       events.push_back(inclusive_scan_local_async(in_segment, out_segment,
                                                   binary_op, init_of_segment));
     }
+
+    for (auto &&x : in_segment)
+      dr::drlog.debug(" {}", x);
+    dr::drlog.debug("\n");
   }
 
   wait_for_events_and_clear(events);
