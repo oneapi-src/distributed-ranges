@@ -305,7 +305,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     auto &&[in_segment_with_idx, out_segment] = segs;
     auto &&[in_idx, in_segment] = in_segment_with_idx;
 
-    if (rng::empty(in_segment) || (in_idx == first_nonempty_segment_idx))
+    if (rng::empty(in_segment))
       continue;
 
     if (in_idx == first_nonempty_segment_idx && !init.has_value()) {
