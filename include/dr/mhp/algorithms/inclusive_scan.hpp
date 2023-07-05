@@ -85,12 +85,15 @@ inline WaitCallback inclusive_scan_local_async(auto &&in_segment,
   return noop_wait_callback();
 }
 
+template <typename InitT>
 inline WaitCallback reduce_local_segment(auto &&s, auto result_iter,
-                                         auto &&func) {
-  // reduce has no BinaryOp without init signature, so we take first as init
+                                         auto &&func,
+                                         std::optional<InitT> init_opt) {
+  // reduce has no BinaryOp without init signature, so we take first as init if
+  // there is no init provided in init_opt
   auto first = direct_local_iter(rng::begin(s));
   auto last = direct_local_iter(rng::end(s));
-  auto init = *first++;
+  auto init = init_opt.has_value() ? init_opt.value() : *first++;
 #ifdef SYCL_LANGUAGE_VERSION
   if (mhp::use_sycl()) {
     auto event = oneapi::dpl::experimental::reduce_async(dpl_policy(), first,
@@ -118,31 +121,24 @@ inline void wait_for_events_and_clear(std::vector<WaitCallback> &events) {
 // let's segments be [1.1, 1.2, 2.1, 2.1, 3.1, 3.2]
 // let's sum(X) denote collection of partial sum of range X
 // let's s(X) denote just one-element sum of range X
-// 1. (offloaded) for the first local segment compute its partial sum
-//    sum(1.1) using initial value if provided
-//    and for all other except last segments compute its one-value sum
-//    rank:0 [s(1.2)]
+// 1. (offloaded) for all segments except last one compute its one-value sum
+//    rank:0 [s(1.1), s(1.2)]
 //    rank:1 [s(2.1), s(2.2)]
 //    rank:2 [s(3.1)]
 //    first non-empty partial sum uses init value
-// 2. get max (that is the last) element of the first local segment and all
-//    prepend it to one-value sums of segments
-//    rank:0 [max(sum(1.1), s(1.2)]
-//    rank:1 [s(2.1), s(2.2)]
-//    rank:2 [s(3.1)]
-// 3. compute partial sum of above vector, e.g. on rank
-//    rank:0 sum([max(sum(1.1), s(1.2)])
+// 2. compute partial sum of above vector, e.g. on rank
+//    rank:0 sum([s(1.1), s(1.2)])
 //    rank:1 sum([s(2.1), s(2.2)])
 //    rank:2 sum([s(3.1)])
-// 4. send max (that is the last element) of above sum to root process
+// 3. send max (that is the last element) of above sum to root process
 //    let's denote above max of process no N as max_N
-// 5. root process collects all maxes in a collection [max_1, max_2, max_3]
-// 6. computes partial sum of it sum([max_1, max_2, max_3])
+// 4. root process collects all maxes in a collection [max_1, max_2, max_3]
+// 5. computes partial sum of it sum([max_1, max_2, max_3])
 //    Let's denote this partial sums as a "big sum".
-// 7. big sum is scattered to all processes
-// 8. Nth process gets big_sum_N element and adds it to each element of local
+// 6. big sum is scattered to all processes
+// 7. Nth process gets big_sum_N element and adds it to each element of local
 //    partial sums computed in step 3
-// 9. (offloaded) each (except very first) local i-th segment is modified by
+// 8. (offloaded) each local i-th in-segment is rewritten to i-th out-segment by
 //    computing partial sum of it with initial value being i-th partial sum
 //    computed in the previous step
 template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
@@ -168,48 +164,50 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   const std::size_t last_nonempty_segment_idx =
       index_of_last_nonempty_segment(r);
 
+  if (first_nonempty_segment_idx == last_nonempty_segment_idx) {
+    // just do one local inclusive scan
+    for (auto &&segs : rng::views::zip(in_segments, out_segments)) {
+
+      auto &&[in_segment_with_idx, out_segment] = segs;
+      auto &&[in_idx, in_segment] = in_segment_with_idx;
+
+      if (rng::empty(in_segment))
+        continue;
+
+      assert(in_idx == first_nonempty_segment_idx);
+      if (init.has_value()) {
+        inclusive_scan_local_async(in_segment, out_segment, binary_op,
+                                   init.value())();
+      } else {
+        inclusive_scan_local_async(in_segment, out_segment, binary_op)();
+      }
+    }
+    return d_last;
+  }
+
   std::vector<OVal> local_partial_sums(non_empty_elements_count(out_segments));
   auto local_partial_sums_it = rng::begin(local_partial_sums);
 
   // this is step 1
-  for (auto &&segs : rng::views::zip(in_segments, out_segments)) {
-
-    auto &&[in_segment_with_idx, out_segment] = segs;
-    auto &&[in_idx, in_segment] = in_segment_with_idx;
+  for (auto &&[in_idx, in_segment] : in_segments) {
 
     if (rng::empty(in_segment))
       continue;
 
-    if (in_idx == first_nonempty_segment_idx) {
-      // first segment can be scanned without doing reduce first
-      WaitCallback scan_wait_cb =
-          init.has_value()
-              ? inclusive_scan_local_async(in_segment, out_segment, binary_op,
-                                           init.value())
-              : inclusive_scan_local_async(in_segment, out_segment, binary_op);
-
-      // save locally its sum from last element of output
-      auto iter_to_last_out_element =
-          direct_local_iter(rng::begin(out_segment));
-      rng::advance(iter_to_last_out_element, rng::distance(in_segment) - 1);
-
-      // this is step 2
-      events.push_back(
-          [scan_wait_cb, iter_to_last_out_element, local_partial_sums_it] {
-            scan_wait_cb();
-            *local_partial_sums_it = *iter_to_last_out_element;
-          });
-    } else if (in_idx != last_nonempty_segment_idx) {
-      events.push_back(
-          reduce_local_segment(in_segment, local_partial_sums_it, binary_op));
-      // last segment is not needed to be reduced, all except last&first need to
+    if (in_idx != last_nonempty_segment_idx) {
+      events.push_back(reduce_local_segment(
+          in_segment, local_partial_sums_it, binary_op,
+          init.has_value() && first_nonempty_segment_idx == in_idx
+              ? init
+              : std::optional<OVal>()));
+      // last segment is not needed to be reduced
     }
 
     ++local_partial_sums_it;
   }
   wait_for_events_and_clear(events);
 
-  // this is step 3
+  // this is step 2
   std::vector<OVal> local_partial_sums_scanned(rng::size(local_partial_sums));
   inclusive_scan_local_on_cpu(rng::begin(local_partial_sums),
                               local_partial_sums_it,
@@ -224,10 +222,10 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   // below vector is used on 0 rank only but who cares
   std::vector<std::optional<OVal>> partial_sums(comm.size());
 
-  // this is step 4 and 5
+  // these are steps 3 and 4
   comm.gather(local_partial_sum, std::span{partial_sums}, 0);
 
-  // this is step 6
+  // this is step 5
   std::vector<std::optional<OVal>> partial_sums_scanned(comm.size() + 1);
   if (comm.rank() == 0) {
     inclusive_scan_local_on_cpu(
@@ -245,12 +243,12 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   }
   partial_sums_scanned.pop_back();
 
-  // this is step 7
+  // this is step 6
   std::optional<OVal> sum_of_all_guys_before_my_rank;
   comm.scatter(std::span{partial_sums_scanned}, sum_of_all_guys_before_my_rank,
                0);
 
-  // this is step 8
+  // this is step 7
   if (!rng::empty(local_partial_sums) &&
       sum_of_all_guys_before_my_rank.has_value()) {
     std::for_each(std::execution::par_unseq,
@@ -260,7 +258,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
                   });
   }
 
-  // this is step 9
+  // this is step 8
   auto local_partial_sums_scanned_it = rng::begin(local_partial_sums_scanned);
   for (auto &&segs : rng::views::zip(in_segments, out_segments)) {
 
@@ -270,15 +268,24 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     if (rng::empty(in_segment) || (in_idx == first_nonempty_segment_idx))
       continue;
 
-    OVal init_of_segment;
-    if (sum_of_all_guys_before_my_rank.has_value()) {
-      init_of_segment = sum_of_all_guys_before_my_rank.value();
-      sum_of_all_guys_before_my_rank = std::optional<OVal>();
+    if (in_idx == first_nonempty_segment_idx && !init.has_value()) {
+      events.push_back(
+          inclusive_scan_local_async(in_segment, out_segment, binary_op));
     } else {
-      init_of_segment = *local_partial_sums_scanned_it++;
+      OVal init_of_segment;
+      if (in_idx == first_nonempty_segment_idx) {
+        init_of_segment = init.value();
+        assert(!sum_of_all_guys_before_my_rank.has_value());
+      } else if (sum_of_all_guys_before_my_rank.has_value()) {
+        init_of_segment = sum_of_all_guys_before_my_rank.value();
+        sum_of_all_guys_before_my_rank = std::optional<OVal>();
+      } else {
+        init_of_segment = *local_partial_sums_scanned_it++;
+      }
+
+      events.push_back(inclusive_scan_local_async(in_segment, out_segment,
+                                                  binary_op, init_of_segment));
     }
-    events.push_back(inclusive_scan_local_async(in_segment, out_segment,
-                                                binary_op, init_of_segment));
   }
 
   wait_for_events_and_clear(events);
