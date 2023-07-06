@@ -27,27 +27,20 @@ def run_mhp(
     if pin_domain is not None:
         os.environ["I_MPI_PIN_DOMAIN"] = pin_domain
     if pin_order is not None:
-        os.environ["I_MPI_PIN_ORDER="] = pin_order
+        os.environ["I_MPI_PIN_ORDER"] = pin_order
     if pin_cell is not None:
-        os.environ["I_MPI_PIN_CELL="] = pin_cell
+        os.environ["I_MPI_PIN_CELL"] = pin_cell
     if only_fsycl:
         bench_path = "./build/benchmarks/gbench/mhp/mhp-bench-only-fsycl"
     else:
         bench_path = "./build/benchmarks/gbench/mhp/mhp-bench"
 
-    time_now = datetime.datetime.now()
-    time_now_string = datetime.datetime(
-        time_now.year,
-        time_now.month,
-        time_now.day,
-        time_now.hour,
-        time_now.minute,
-    ).isoformat()
+    time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
     directory_path = f"build/benchmarks/json_output/mhp"
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     bench_out = f"--benchmark_out={directory_path}/mhp_benchmark_{time_now_string}.json --benchmark_out_format=json"
-    if n == None:
+    if n is None:
         n = ""
     else:
         n = f"-n {str(n)}"
@@ -111,14 +104,7 @@ def run_shp(
         bench_path = "./build/benchmarks/gbench/shp/shp-bench-only-fsycl"
     else:
         bench_path = "./build/benchmarks/gbench/shp/shp-bench"
-    time_now = datetime.datetime.now()
-    time_now_string = datetime.datetime(
-        time_now.year,
-        time_now.month,
-        time_now.day,
-        time_now.hour,
-        time_now.minute,
-    ).isoformat()
+    time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
     directory_path = f"build/benchmarks/json_output/shp"
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)

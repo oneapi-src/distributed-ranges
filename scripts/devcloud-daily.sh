@@ -6,6 +6,7 @@
 set -e
 hostname
 source /opt/intel/oneapi/setvars.sh
+export CXX=icpx 
 cmake -DENABLE_SYCL:BOOL=ON -DENABLE_SYCL_MPI:BOOL=ON -B build -S .
 make -C build -j
 
