@@ -43,7 +43,10 @@ def run_mhp(
         time_now.hour,
         time_now.minute,
     ).isoformat()
-    bench_out = f"--benchmark_out=benchmark_{time_now_string}.json --benchmark_out_format=json"
+    directory_path = f"build/benchmarks/json_output/mhp"
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+    bench_out = f"--benchmark_out={directory_path}/mhp_benchmark_{time_now_string}.json --benchmark_out_format=json"
     if n == None:
         n = ""
     else:
@@ -108,7 +111,18 @@ def run_shp(
         bench_path = "./build/benchmarks/gbench/shp/shp-bench-only-fsycl"
     else:
         bench_path = "./build/benchmarks/gbench/shp/shp-bench"
-    bench_out = "--benchmark_out=test2.json --benchmark_out_format=json"
+    time_now = datetime.datetime.now()
+    time_now_string = datetime.datetime(
+        time_now.year,
+        time_now.month,
+        time_now.day,
+        time_now.hour,
+        time_now.minute,
+    ).isoformat()
+    directory_path = f"build/benchmarks/json_output/shp"
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+    bench_out = f"--benchmark_out={directory_path}/shp_benchmark_{time_now_string}.json --benchmark_out_format=json"
     command = [
         bench_path,
         "-d",
@@ -283,12 +297,15 @@ def run_mhp_test():
         n,
     )
 
+
 def run_shp_test():
     vec_size = 1000000000
     reps = 100
     d = 1
     only_fsycl = True
 
-    run_shp(vec_size, reps, d, only_fsycl)  
+    run_shp(vec_size, reps, d, only_fsycl)
+
 
 run_mhp_test()
+run_shp_test()
