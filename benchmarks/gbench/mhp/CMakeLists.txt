@@ -28,6 +28,9 @@ add_executable(mhp-quick-bench mhp-bench.cpp mdspan.cpp)
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
 target_link_libraries(mhp-quick-bench benchmark::benchmark cxxopts DR::mpi)
 
+target_compile_options(mhp-bench PRIVATE -O3 -qopenmp -qopt-streaming-stores=always -xCORE-AVX512 -qopt-zmm-usage=high)
+target_compile_options(mhp-bench-only-fsycl PRIVATE -O3)
+
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if(NOT MPI_IMPL STREQUAL "openmpi")
