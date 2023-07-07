@@ -72,15 +72,29 @@ bool is_equal(A &&a, B &&b) {
   return true;
 }
 
-template <typename T> auto sum_matrix(shp::distributed_dense_matrix<T> &m) {
-  auto view = m | shp::views::transform([](auto &&e) {
+/*
+template <rng::forward_range R>
+auto values_view(R&& m) {
+  return m | shp::views::transform([](auto &&e) {
                 auto &&[_, v] = e;
                 return v;
               });
+}
+*/
 
+template <typename T> auto sum_matrix(shp::distributed_dense_matrix<T> &m) {
+  auto view = values_view(m);
   auto &&segments = view.segments();
 
   return shp::reduce(view, T(0));
+}
+
+template <typename T, typename U>
+void assign(shp::distributed_dense_matrix<T> &m, const U &value) {
+  dr::shp::for_each(dr::shp::par_unseq, m, [=](auto &&entry) {
+    auto &&[idx, v] = entry;
+    v = value;
+  });
 }
 
 int main(int argc, char **argv) {
@@ -100,6 +114,10 @@ int main(int argc, char **argv) {
   dr::shp::distributed_dense_matrix<T> b({k, n}, partitions[1]);
   dr::shp::distributed_dense_matrix<T> c({m, n}, partitions[2]);
 
+  dr::shp::distributed_dense_matrix<T> c_ref({m, n}, partitions[2]);
+
+  dr::shp::distributed_dense_matrix<T> c_diff({m, n}, partitions[2]);
+
   auto shape = a.shape();
   dr::shp::for_each(dr::shp::par_unseq, a, [=](auto &&entry) {
     auto &&[idx, v] = entry;
@@ -112,17 +130,14 @@ int main(int argc, char **argv) {
     v = static_cast<T>(idx[0] + idx[1]) / shape[0];
   });
 
-  shape = c.shape();
-  dr::shp::for_each(dr::shp::par_unseq, c, [=](auto &&entry) {
-    auto &&[idx, v] = entry;
-    v = 0;
-  });
+  assign(c, 0);
+  assign(c_ref, 0);
 
   fmt::print("Warmup MatMul...\n");
 
-  shp::gemm(a, b, c);
+  shp::gemm_inplace(a, b, c_ref);
 
-  T single_sum = sum_matrix(c);
+  T single_sum = sum_matrix(c_ref);
 
   fmt::print("Sum: {}\n", single_sum);
 
@@ -132,12 +147,12 @@ int main(int argc, char **argv) {
     assert(c.shape() == c_serial.shape());
     for (std::size_t i = 0; i < m; i++) {
       for (std::size_t j = 0; j < n; j++) {
-        if (!is_equal<T>(c_serial[{i, j}], c[{i, j}])) {
-          // fmt::print("{}, {}: {} != {}\n", i, j, c_serial[{i, j}], c[{i,
-          // j}]);
+        if (!is_equal<T>(c_serial[{i, j}], c_ref[{i, j}])) {
+          fmt::print("{}, {}: {} != {}\n", i, j, T(c_serial[{i, j}]),
+                     T(c_ref[{i, j}]));
           fmt::print("Not equal!\n");
         }
-        assert(is_equal<T>(c_serial[{i, j}], c[{i, j}]));
+        assert(is_equal<T>(c_serial[{i, j}], c_ref[{i, j}]));
       }
     }
     delete[] c_serial.data();
@@ -152,10 +167,7 @@ int main(int argc, char **argv) {
   durations.reserve(n_iterations);
 
   for (std::size_t i = 0; i < n_iterations; i++) {
-    dr::shp::for_each(dr::shp::par_unseq, c, [=](auto &&entry) {
-      auto &&[idx, v] = entry;
-      v = 0;
-    });
+    assign(c, 0);
 
     auto begin = std::chrono::high_resolution_clock::now();
     shp::gemm(a, b, c);
@@ -163,12 +175,74 @@ int main(int argc, char **argv) {
     double duration = std::chrono::duration<double>(end - begin).count();
     durations.push_back(duration);
 
-    total_sum += sum_matrix(c);
+    T sum = sum_matrix(c);
+
+    auto sub_view = shp::views::zip(values_view(c), values_view(c_ref)) |
+                    shp::views::transform([](auto &&e) {
+                      auto &&[value, ref] = e;
+
+                      return std::abs(value - ref);
+                    });
+
+    auto max = [](auto a, auto b) {
+      if (a < b) {
+        return b;
+      } else {
+        return a;
+      }
+    };
+
+    // T max_diff = shp::reduce(shp::par_unseq, sub_view, T(0), max);
+    T diff_sum = shp::reduce(shp::par_unseq, sub_view, T(0));
+    fmt::print("Diff sum is {}\n", diff_sum);
+
+    if (!is_equal<T>(diff_sum, T(0))) {
+      for (std::size_t i_ = 0; i_ < c.grid_shape()[0]; i_++) {
+        for (std::size_t j_ = 0; j_ < c.grid_shape()[1]; j_++) {
+          auto c_tile = c.get_tile({i_, j_});
+          auto cr_tile = c_ref.get_tile({i_, j_});
+
+          bool equal = true;
+          for (auto &&e :
+               rng::views::zip(values_view(c_tile), values_view(cr_tile))) {
+            auto &&[cv, rv] = e;
+            if (cv != rv) {
+              equal = false;
+              break;
+            }
+          }
+          if (!equal) {
+            fmt::print("{}, {} not equal.\n", i_, j_);
+            for (auto &&[ce, re] : rng::views::zip(c_tile, cr_tile)) {
+              auto &&[c_idx, c_v] = ce;
+              auto &&[r_idx, r_v] = re;
+              if (c_v != r_v) {
+                fmt::print("{} ({} vs {})\n", c_idx, c_v, r_v);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // fmt::print("Max diff is {}\n", max_diff);
+
+    /*
+        fmt::print("{} vs {}\n", sum, single_sum);
+        assert(is_equal<T>(sum, single_sum));
+        fmt::print("Single sum is equal.\n");
+        */
+
+    total_sum += sum;
   }
 
   fmt::print("Average sum {}\n", total_sum / n_iterations);
 
+  // if (n < 16 * 1024) {
+  fmt::print("{} vs {}\n", total_sum / n_iterations, single_sum);
   assert(is_equal<T>(total_sum / n_iterations, single_sum));
+  // }
 
   fmt::print("Durations: {}\n", durations);
 
