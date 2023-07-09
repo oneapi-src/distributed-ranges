@@ -153,13 +153,18 @@ TEST_F(Mdarray, Iterator) {
   EXPECT_EQ(17, mdarray[0]);
 }
 
+auto mdrange_message(auto &mdarray) {
+  return fmt::format("Flat: {}\nMdspan:\n{}", mdarray, mdarray.mdspan());
+}
+
 TEST_F(Mdarray, Mdindex2D) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::fill(mdarray, 1);
 
   std::size_t i = 1, j = 2;
   mdarray.mdspan()(i, j) = 17;
   EXPECT_EQ(17, mdarray[i * ydim + j]);
-  EXPECT_EQ(17, mdarray.mdspan()(i, j));
+  EXPECT_EQ(17, mdarray.mdspan()(i, j)) << mdrange_message(mdarray);
 }
 
 TEST_F(Mdarray, Mdindex3D) {
