@@ -20,7 +20,7 @@ namespace dr::mhp {
 // Add a local mdspan to the underlying segment
 //
 template <typename BaseSegment, std::size_t Rank,
-          typename Layout = md::layout_right>
+          typename Layout = md::layout_stride>
 class mdsegment : public BaseSegment {
 public:
   mdsegment(std::size_t index, BaseSegment segment,
@@ -47,7 +47,7 @@ private:
   }
 
   std::size_t index_;
-  md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_right> mdspan_;
+  md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> mdspan_;
 };
 
 //

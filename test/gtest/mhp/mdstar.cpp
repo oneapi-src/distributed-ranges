@@ -12,7 +12,7 @@ using T = int;
 
 class Mdspan : public ::testing::Test {
 protected:
-  std::size_t xdim = 4, ydim = 3, zdim = 2;
+  std::size_t xdim = 4, ydim = 5, zdim = 2;
   std::size_t n2d = xdim * ydim, n3d = xdim * ydim * zdim;
 
   std::array<std::size_t, 2> extents2d = {xdim, ydim};
@@ -25,7 +25,7 @@ protected:
       dr::mhp::distribution().granularity(ydim * zdim);
 
   std::array<std::size_t, 2> slice_offset = {1, 1};
-  std::array<std::size_t, 2> slice_size = {2, 1};
+  std::array<std::size_t, 2> slice_size = {2, 2};
 };
 
 using Mdarray = Mdspan;
@@ -42,6 +42,7 @@ TEST_F(Mdspan, Iterator) {
   auto mdspan = xhp::views::mdspan(dist, extents2d);
 
   *mdspan.begin() = 17;
+  xhp::fence();
   EXPECT_EQ(17, *mdspan.begin());
   EXPECT_EQ(17, dist[0]);
 }
@@ -52,6 +53,7 @@ TEST_F(Mdspan, Mdindex2D) {
 
   std::size_t i = 1, j = 2;
   dmdspan.mdspan()(i, j) = 17;
+  xhp::fence();
   EXPECT_EQ(17, dist[i * ydim + j]);
   EXPECT_EQ(17, dmdspan.mdspan()(i, j));
 }
@@ -62,6 +64,7 @@ TEST_F(Mdspan, Mdindex3D) {
 
   std::size_t i = 1, j = 2, k = 0;
   dmdspan.mdspan()(i, j, k) = 17;
+  xhp::fence();
   EXPECT_EQ(17, dist[i * ydim * zdim + j * zdim + k]);
   EXPECT_EQ(17, dmdspan.mdspan()(i, j, k));
 }
@@ -71,6 +74,7 @@ TEST_F(Mdspan, Pipe) {
   auto mdspan = dist | xhp::views::mdspan(extents2d);
 
   *mdspan.begin() = 17;
+  xhp::fence();
   EXPECT_EQ(17, *mdspan.begin());
   EXPECT_EQ(17, dist[0]);
 }
@@ -152,6 +156,7 @@ TEST_F(Mdarray, Iterator) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
 
   *mdarray.begin() = 17;
+  xhp::fence();
   EXPECT_EQ(17, *mdarray.begin());
   EXPECT_EQ(17, mdarray[0]);
 }
@@ -175,6 +180,7 @@ TEST_F(Mdarray, Mdindex3D) {
 
   std::size_t i = 1, j = 2, k = 0;
   mdarray.mdspan()(i, j, k) = 17;
+  xhp::fence();
   EXPECT_EQ(17, mdarray[i * ydim * zdim + j * zdim + k]);
   EXPECT_EQ(17, mdarray.mdspan()(i, j, k));
 }
@@ -238,44 +244,38 @@ TEST_F(Submdspan, StaticAssert) {
 
 TEST_F(Submdspan, Mdindex2D) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::fill(mdarray, 1);
   auto sub = xhp::views::submdspan(mdarray.view(), slice_offset, slice_size);
 
-  fmt::print("mdarray: {}\n", mdarray.mdspan());
-  std::size_t i = 1, j = 2;
+  std::size_t i = 1, j = 0;
   sub.mdspan()(i, j) = 17;
-  EXPECT_EQ(17, mdarray[i * slice_size[1] + slice_offset[0] * ydim + j +
-                        slice_offset[1]]);
-  EXPECT_EQ(17, mdarray.mdspan()(i, j));
-}
-
-#if 0
-TEST_F(Submdspan, Mdindex3D) {
-  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
-
-  std::size_t i = 1, j = 2, k = 0;
-  mdarray.mdspan()(i, j, k) = 17;
-  EXPECT_EQ(17, mdarray[i * ydim * zdim + j * zdim + k]);
-  EXPECT_EQ(17, mdarray.mdspan()(i, j, k));
+  xhp::fence();
+  EXPECT_EQ(17, sub.mdspan()(i, j));
+  EXPECT_EQ(17, mdarray.mdspan()(slice_offset[0] + i, slice_offset[1] + j));
+  EXPECT_EQ(17, mdarray[(i + slice_offset[0]) * ydim + j + slice_offset[1]])
+      << mdrange_message(mdarray);
 }
 
 TEST_F(Submdspan, GridExtents) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::iota(mdarray, 100);
-  auto grid = mdarray.grid();
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_offset, slice_size);
+  auto grid = sub.grid();
 
   auto x = 0;
   for (std::size_t i = 0; i < grid.extent(0); i++) {
     x += grid(i, 0).mdspan().extent(0);
   }
-  EXPECT_EQ(mdarray.mdspan().extent(0), x);
+  EXPECT_EQ(sub.mdspan().extent(0), x);
 
   auto y = 0;
   for (std::size_t i = 0; i < grid.extent(1); i++) {
     y += grid(0, i).mdspan().extent(1);
   }
-  EXPECT_EQ(mdarray.mdspan().extent(1), y);
+  EXPECT_EQ(sub.mdspan().extent(1), y);
 }
 
+#if 0
 TEST_F(Submdspan, GridLocalReference) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::iota(mdarray, 100);
