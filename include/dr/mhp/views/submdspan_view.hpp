@@ -55,8 +55,8 @@ public:
   auto grid() {
     using grid_iterator_type = rng::iterator_t<segments_type>;
     using grid_type =
-        md::mdspan<grid_iterator_type, extents_type, md::layout_right,
-                   mdspan_iter_accessor<grid_iterator_type>>;
+        md::mdspan<grid_iterator_type, dr::__detail::md_extents<Base::rank()>,
+                   md::layout_right, mdspan_iter_accessor<grid_iterator_type>>;
     return grid_type(rng::begin(segments_), base_.grid().extents());
   }
 
