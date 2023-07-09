@@ -36,3 +36,29 @@ struct fmt::formatter<md::mdspan<T, Extents, LayoutPolicy, Accessor>, char>
     format_to(ctx.out(), "\n");
   }
 };
+
+namespace dr::__detail {
+
+template <std::size_t Rank> using dr_extents = std::array<std::size_t, Rank>;
+template <std::size_t Rank> using md_extents = md::dextents<std::size_t, Rank>;
+
+template <typename M, std::size_t Rank, std::size_t... indexes>
+auto make_submdspan_impl(M mdspan, const dr_extents<Rank> &offset,
+                         const dr_extents<Rank> &extents,
+                         std::index_sequence<indexes...>) {
+  return md::submdspan(
+      mdspan,
+      std::tuple(offset[indexes], offset[indexes] + extents[indexes])...);
+}
+
+// Mdspan accepts slices, but that is hard to work with because it
+// requires parameter packs. Work with offset/size vectors internally
+// and use slices at the interface
+template <std::size_t Rank>
+auto make_submdspan(auto mdspan, const std::array<std::size_t, Rank> &offset,
+                    const std::array<std::size_t, Rank> &extents) {
+  return make_submdspan_impl(mdspan, offset, extents,
+                             std::make_index_sequence<Rank>{});
+}
+
+} // namespace dr::__detail

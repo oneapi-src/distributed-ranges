@@ -33,7 +33,7 @@ target_link_libraries(
 add_executable(
   mhp-quick-bench
   mhp-bench.cpp
-  ../common/distributed_vector.cpp
+  stencil_2d.cpp
 )
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
 target_link_libraries(

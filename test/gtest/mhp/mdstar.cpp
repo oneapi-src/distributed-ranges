@@ -23,6 +23,9 @@ protected:
   // 3d data with 1d decompostion
   dr::mhp::distribution dist3d_1d =
       dr::mhp::distribution().granularity(ydim * zdim);
+
+  std::array<std::size_t, 2> slice_offset = {1, 1};
+  std::array<std::size_t, 2> slice_size = {2, 1};
 };
 
 using Mdarray = Mdspan;
@@ -222,5 +225,70 @@ TEST_F(Mdarray, Halo) {
   dr::mhp::fence();
   EXPECT_EQ(99, mdarray[0]);
 }
+
+using Submdspan = Mdspan;
+
+TEST_F(Submdspan, StaticAssert) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  auto submdspan =
+      xhp::views::submdspan(mdarray.view(), slice_offset, slice_size);
+  static_assert(rng::forward_range<decltype(submdspan)>);
+  static_assert(dr::distributed_range<decltype(submdspan)>);
+}
+
+TEST_F(Submdspan, Mdindex2D) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_offset, slice_size);
+
+  fmt::print("mdarray: {}\n", mdarray.mdspan());
+  std::size_t i = 1, j = 2;
+  sub.mdspan()(i, j) = 17;
+  EXPECT_EQ(17, mdarray[i * slice_size[1] + slice_offset[0] * ydim + j +
+                        slice_offset[1]]);
+  EXPECT_EQ(17, mdarray.mdspan()(i, j));
+}
+
+#if 0
+TEST_F(Submdspan, Mdindex3D) {
+  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+
+  std::size_t i = 1, j = 2, k = 0;
+  mdarray.mdspan()(i, j, k) = 17;
+  EXPECT_EQ(17, mdarray[i * ydim * zdim + j * zdim + k]);
+  EXPECT_EQ(17, mdarray.mdspan()(i, j, k));
+}
+
+TEST_F(Submdspan, GridExtents) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto grid = mdarray.grid();
+
+  auto x = 0;
+  for (std::size_t i = 0; i < grid.extent(0); i++) {
+    x += grid(i, 0).mdspan().extent(0);
+  }
+  EXPECT_EQ(mdarray.mdspan().extent(0), x);
+
+  auto y = 0;
+  for (std::size_t i = 0; i < grid.extent(1); i++) {
+    y += grid(0, i).mdspan().extent(1);
+  }
+  EXPECT_EQ(mdarray.mdspan().extent(1), y);
+}
+
+TEST_F(Submdspan, GridLocalReference) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto grid = mdarray.grid();
+
+  auto tile = grid(0, 0).mdspan();
+  if (comm_rank == 0) {
+    tile(0, 0) = 99;
+    EXPECT_EQ(99, tile(0, 0));
+  }
+  dr::mhp::fence();
+  EXPECT_EQ(99, mdarray[0]);
+}
+#endif
 
 #endif // Skip for gcc 10.4
