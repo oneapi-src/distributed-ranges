@@ -22,15 +22,16 @@ namespace dr::mhp {
 template <typename BaseSegment, std::size_t Rank,
           typename Layout = md::layout_stride>
 class mdsegment : public BaseSegment {
+private:
 public:
-  mdsegment(std::size_t index, BaseSegment segment,
-            dr::__detail::dr_extents<Rank> tile_offsets,
-            dr::__detail::dr_extents<Rank> tile_extents)
-      : BaseSegment(segment), index_(index),
+  using index_type = dr::__detail::dr_extents<Rank>;
+  mdsegment(index_type origin, BaseSegment segment, index_type tile_offsets,
+            index_type tile_extents)
+      : BaseSegment(segment), origin_(origin),
         mdspan_(local_tile(segment, tile_offsets, tile_extents)) {}
 
   auto mdspan() const { return mdspan_; }
-  auto index() const { return index_; }
+  auto origin() const { return origin_; }
 
 private:
   using T = rng::range_value_t<BaseSegment>;
@@ -46,7 +47,7 @@ private:
     return dr::__detail::make_submdspan(mdspan, tile_offsets, tile_extents);
   }
 
-  std::size_t index_;
+  index_type origin_;
   md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> mdspan_;
 };
 
@@ -83,21 +84,42 @@ private:
   using mdspan_type = md::mdspan<iterator_type, extents_type, Layout,
                                  mdspan_iter_accessor<iterator_type>>;
   using difference_type = rng::iter_difference_t<iterator_type>;
+  using index_type = dr::__detail::dr_extents<Rank>;
 
   base_type base_;
-  dr::__detail::dr_extents<Rank> full_extents_;
-  dr::__detail::dr_extents<Rank> tile_extents_;
-  static auto make_segments(auto base, auto tile_extents) {
-    auto make_md = [tile_extents](auto v) {
-      return mdsegment(std::size_t(std::get<0>(v)), std::get<1>(v),
-                       dr::__detail::dr_extents<Rank>{0, 0}, tile_extents);
+  index_type full_extents_;
+  index_type tile_extents_;
+
+  static auto segment_index_to_global_origin(std::size_t linear,
+                                             index_type full_shape,
+                                             index_type tile_shape) {
+    index_type index;
+
+    for (std::size_t d = 0; d < Rank; d++) {
+      std::size_t i = Rank - d;
+      std::size_t grid_size = full_shape[i] / tile_shape[i];
+      index[i] = (linear % grid_size) * tile_shape[i];
+      linear = linear / grid_size;
+    }
+
+    return index;
+  }
+
+  static auto make_segments(auto base, auto full_extents, auto tile_extents) {
+    index_type tile_offset;
+    tile_offset.fill(0);
+    auto make_md = [=](auto v) {
+      return mdsegment(
+          segment_index_to_global_origin(std::size_t(std::get<0>(v)),
+                                         full_extents, tile_extents),
+          std::get<1>(v), tile_offset, tile_extents);
     };
 
     return rng::views::enumerate(dr::ranges::segments(base)) |
            rng::views::transform(make_md);
   }
-  using segments_type =
-      decltype(make_segments(std::declval<base_type>(), tile_extents_));
+  using segments_type = decltype(make_segments(std::declval<base_type>(),
+                                               full_extents_, tile_extents_));
 
 public:
   mdspan_view(R r, dr::__detail::dr_extents<Rank> full_extents)
@@ -110,7 +132,7 @@ public:
 
     replace_decomp();
 
-    segments_ = make_segments(base_, tile_extents_);
+    segments_ = make_segments(base_, full_extents_, tile_extents_);
   }
 
   mdspan_view(R r, dr::__detail::dr_extents<Rank> full_extents,
@@ -118,7 +140,7 @@ public:
       : base_(rng::views::all(std::forward<R>(r))), full_extents_(full_extents),
         tile_extents_(tile_extents) {
     replace_decomp();
-    segments_ = make_segments(base_, tile_extents_);
+    segments_ = make_segments(base_, full_extents_, tile_extents_);
   }
 
   // Base implements random access range

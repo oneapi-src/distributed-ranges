@@ -16,20 +16,23 @@ namespace dr::mhp {
 template <is_mdspan_view Base>
 struct submdspan_view : public rng::view_interface<submdspan_view<Base>> {
 private:
+  static auto make_segments(auto base, auto slice_offset, auto slice_extents) {
+    // clip segments using the origin
+
+    return dr::ranges::segments(base);
+  }
+
   using iterator_type = rng::iterator_t<Base>;
   using extents_type = dr::__detail::dr_extents<Base::rank()>;
   using difference_type = rng::iter_difference_t<iterator_type>;
+  using segments_type =
+      decltype(make_segments(std::declval<Base>(), std::declval<extents_type>(),
+                             std::declval<extents_type>()));
 
   Base base_;
   extents_type slice_offset_;
   extents_type slice_extents_;
-
-  static auto make_segments(auto base, auto slice_offset, auto slice_extents) {
-    return dr::ranges::segments(base);
-  }
-  using segments_type =
-      decltype(make_segments(std::declval<Base>(), std::declval<extents_type>(),
-                             std::declval<extents_type>()));
+  segments_type segments_;
 
 public:
   submdspan_view(is_mdspan_view auto base, extents_type slice_offset,
@@ -59,9 +62,6 @@ public:
                    md::layout_right, mdspan_iter_accessor<grid_iterator_type>>;
     return grid_type(rng::begin(segments_), base_.grid().extents());
   }
-
-private:
-  segments_type segments_;
 };
 
 template <typename R, typename Extents>
