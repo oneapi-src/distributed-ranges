@@ -48,7 +48,7 @@ public:
 
   constexpr dense_matrix_accessor(Iter data, key_type idx, key_type idx_offset,
                                   key_type matrix_shape, size_type ld) noexcept
-      : idx_(idx), matrix_shape_(matrix_shape), ld_(ld),
+      : data_(data), idx_(idx), matrix_shape_(matrix_shape), ld_(ld),
         idx_offset_(idx_offset), data_(data) {}
 
   constexpr dense_matrix_accessor &operator+=(difference_type offset) noexcept {
@@ -91,13 +91,12 @@ private:
   }
 
 private:
+  Iter data_;
   key_type idx_;
   key_type matrix_shape_;
   size_type ld_;
 
   key_type idx_offset_;
-
-  Iter data_;
 };
 
 template <typename T, typename Iter>

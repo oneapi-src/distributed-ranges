@@ -72,15 +72,12 @@ bool is_equal(A &&a, B &&b) {
   return true;
 }
 
-/*
-template <rng::forward_range R>
-auto values_view(R&& m) {
+template <rng::forward_range R> auto values_view(R &&m) {
   return m | shp::views::transform([](auto &&e) {
-                auto &&[_, v] = e;
-                return v;
-              });
+           auto &&[_, v] = e;
+           return v;
+         });
 }
-*/
 
 template <typename T> auto sum_matrix(shp::distributed_dense_matrix<T> &m) {
   auto view = values_view(m);
