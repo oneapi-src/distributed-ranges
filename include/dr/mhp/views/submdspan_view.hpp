@@ -16,7 +16,7 @@ namespace dr::mhp {
 template <is_mdspan_view Base>
 struct submdspan_view : public rng::view_interface<submdspan_view<Base>> {
 private:
-  static auto make_segments(auto base, auto slice_offset, auto slice_extents) {
+  static auto make_segments(auto base, auto slice_starts, auto slice_lengths) {
     // clip segments using the origin
 
     return dr::ranges::segments(base);
@@ -30,16 +30,16 @@ private:
                              std::declval<extents_type>()));
 
   Base base_;
-  extents_type slice_offset_;
-  extents_type slice_extents_;
+  extents_type slice_starts_;
+  extents_type slice_lengths_;
   segments_type segments_;
 
 public:
-  submdspan_view(is_mdspan_view auto base, extents_type slice_offset,
-                 extents_type slice_extents)
-      : base_(base), slice_offset_(std::forward<extents_type>(slice_offset)),
-        slice_extents_(std::forward<extents_type>(slice_extents)) {
-    segments_ = make_segments(base_, slice_offset_, slice_extents_);
+  submdspan_view(is_mdspan_view auto base, extents_type slice_starts,
+                 extents_type slice_lengths)
+      : base_(base), slice_starts_(std::forward<extents_type>(slice_starts)),
+        slice_lengths_(std::forward<extents_type>(slice_lengths)) {
+    segments_ = make_segments(base_, slice_starts_, slice_lengths_);
   }
 
   // Base implements random access range
@@ -48,8 +48,8 @@ public:
   auto operator[](difference_type n) { return base_[n]; }
 
   auto mdspan() const {
-    return dr::__detail::make_submdspan(base_.mdspan(), slice_offset_,
-                                        slice_extents_);
+    return dr::__detail::make_submdspan(base_.mdspan(), slice_starts_,
+                                        slice_lengths_);
   }
 
   auto segments() const { return segments_; }
@@ -65,7 +65,7 @@ public:
 };
 
 template <typename R, typename Extents>
-submdspan_view(R r, Extents slice_offset, Extents slice_extents)
+submdspan_view(R r, Extents slice_starts, Extents slice_lengths)
     -> submdspan_view<R>;
 
 } // namespace dr::mhp
@@ -74,11 +74,11 @@ namespace dr::mhp::views {
 
 template <typename Extents> class submdspan_adapter_closure {
 public:
-  submdspan_adapter_closure(Extents slice_offset, Extents slice_extents)
-      : slice_offset_(slice_offset), slice_extents_(slice_extents) {}
+  submdspan_adapter_closure(Extents slice_starts, Extents slice_lengths)
+      : slice_starts_(slice_starts), slice_lengths_(slice_lengths) {}
 
   template <rng::viewable_range R> auto operator()(R &&r) const {
-    return submdspan_view(std::forward<R>(r), slice_offset_, slice_extents_);
+    return submdspan_view(std::forward<R>(r), slice_starts_, slice_lengths_);
   }
 
   template <rng::viewable_range R>
@@ -87,23 +87,23 @@ public:
   }
 
 private:
-  Extents slice_offset_;
-  Extents slice_extents_;
+  Extents slice_starts_;
+  Extents slice_lengths_;
 };
 
 class submdspan_fn_ {
 public:
   template <is_mdspan_view R, typename Extents>
-  auto operator()(R r, Extents &&slice_offset, Extents &&slice_extents) const {
-    return submdspan_adapter_closure(std::forward<Extents>(slice_offset),
-                                     std::forward<Extents>(slice_extents))(
+  auto operator()(R r, Extents &&slice_starts, Extents &&slice_lengths) const {
+    return submdspan_adapter_closure(std::forward<Extents>(slice_starts),
+                                     std::forward<Extents>(slice_lengths))(
         std::forward<R>(r));
   }
 
   template <typename Extents>
-  auto operator()(Extents &&slice_offset, Extents &&slice_extents) const {
-    return submdspan_adapter_closure(std::forward<Extents>(slice_offset),
-                                     std::forward<Extents>(slice_extents));
+  auto operator()(Extents &&slice_starts, Extents &&slice_lengths) const {
+    return submdspan_adapter_closure(std::forward<Extents>(slice_starts),
+                                     std::forward<Extents>(slice_lengths));
   }
 };
 

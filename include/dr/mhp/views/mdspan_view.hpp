@@ -25,10 +25,10 @@ class mdsegment : public BaseSegment {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
-  mdsegment(index_type origin, BaseSegment segment, index_type tile_offsets,
-            index_type tile_extents)
+  mdsegment(index_type origin, BaseSegment segment, index_type tile_starts,
+            index_type tile_lengths)
       : BaseSegment(segment), origin_(origin),
-        mdspan_(local_tile(segment, tile_offsets, tile_extents)) {}
+        mdspan_(local_tile(segment, tile_starts, tile_lengths)) {}
 
   auto mdspan() const { return mdspan_; }
   auto origin() const { return origin_; }
@@ -37,14 +37,14 @@ private:
   using T = rng::range_value_t<BaseSegment>;
 
   static auto local_tile(BaseSegment segment,
-                         const dr::__detail::dr_extents<Rank> &tile_offsets,
-                         const dr::__detail::dr_extents<Rank> &tile_extents) {
+                         const dr::__detail::dr_extents<Rank> &tile_starts,
+                         const dr::__detail::dr_extents<Rank> &tile_lengths) {
     // Undefined behavior if the segments is not local
     T *ptr = dr::ranges::rank(segment) == default_comm().rank()
                  ? std::to_address(dr::ranges::local(rng::begin(segment)))
                  : nullptr;
-    auto mdspan = md::mdspan(ptr, tile_extents);
-    return dr::__detail::make_submdspan(mdspan, tile_offsets, tile_extents);
+    auto mdspan = md::mdspan(ptr, tile_lengths);
+    return dr::__detail::make_submdspan(mdspan, tile_starts, tile_lengths);
   }
 
   index_type origin_;
@@ -87,8 +87,8 @@ private:
   using index_type = dr::__detail::dr_extents<Rank>;
 
   base_type base_;
-  index_type full_extents_;
-  index_type tile_extents_;
+  index_type full_lengths_;
+  index_type tile_lengths_;
 
   static auto segment_index_to_global_origin(std::size_t linear,
                                              index_type full_shape,
@@ -105,42 +105,42 @@ private:
     return index;
   }
 
-  static auto make_segments(auto base, auto full_extents, auto tile_extents) {
+  static auto make_segments(auto base, auto full_lengths, auto tile_lengths) {
     index_type tile_offset;
     tile_offset.fill(0);
     auto make_md = [=](auto v) {
       return mdsegment(
           segment_index_to_global_origin(std::size_t(std::get<0>(v)),
-                                         full_extents, tile_extents),
-          std::get<1>(v), tile_offset, tile_extents);
+                                         full_lengths, tile_lengths),
+          std::get<1>(v), tile_offset, tile_lengths);
     };
 
     return rng::views::enumerate(dr::ranges::segments(base)) |
            rng::views::transform(make_md);
   }
   using segments_type = decltype(make_segments(std::declval<base_type>(),
-                                               full_extents_, tile_extents_));
+                                               full_lengths_, tile_lengths_));
 
 public:
-  mdspan_view(R r, dr::__detail::dr_extents<Rank> full_extents)
+  mdspan_view(R r, dr::__detail::dr_extents<Rank> full_lengths)
       : base_(rng::views::all(std::forward<R>(r))) {
-    full_extents_ = full_extents;
+    full_lengths_ = full_lengths;
 
     // Default tile extents splits on leading dimension
-    tile_extents_ = full_extents;
-    tile_extents_[0] = decomp::div;
+    tile_lengths_ = full_lengths;
+    tile_lengths_[0] = decomp::div;
 
     replace_decomp();
 
-    segments_ = make_segments(base_, full_extents_, tile_extents_);
+    segments_ = make_segments(base_, full_lengths_, tile_lengths_);
   }
 
-  mdspan_view(R r, dr::__detail::dr_extents<Rank> full_extents,
-              dr::__detail::dr_extents<Rank> tile_extents)
-      : base_(rng::views::all(std::forward<R>(r))), full_extents_(full_extents),
-        tile_extents_(tile_extents) {
+  mdspan_view(R r, dr::__detail::dr_extents<Rank> full_lengths,
+              dr::__detail::dr_extents<Rank> tile_lengths)
+      : base_(rng::views::all(std::forward<R>(r))), full_lengths_(full_lengths),
+        tile_lengths_(tile_lengths) {
     replace_decomp();
-    segments_ = make_segments(base_, full_extents_, tile_extents_);
+    segments_ = make_segments(base_, full_lengths_, tile_lengths_);
   }
 
   // Base implements random access range
@@ -150,7 +150,7 @@ public:
 
   // Add a local mdspan to the base segment
   // Mdspan access to base
-  auto mdspan() const { return mdspan_type(rng::begin(base_), full_extents_); }
+  auto mdspan() const { return mdspan_type(rng::begin(base_), full_lengths_); }
   static constexpr auto rank() { return Rank; }
 
   auto segments() const { return segments_; }
@@ -159,8 +159,8 @@ public:
   auto grid() {
     dr::__detail::dr_extents<Rank> grid_extents;
     for (std::size_t i : rng::views::iota(0u, Rank)) {
-      grid_extents[i] = full_extents_[i] / tile_extents_[i];
-      assert(full_extents_[i] % tile_extents_[i] == 0);
+      grid_extents[i] = full_lengths_[i] / tile_lengths_[i];
+      assert(full_lengths_[i] % tile_lengths_[i] == 0);
     }
     using grid_iterator_type = rng::iterator_t<segments_type>;
     using grid_type = md::mdspan<grid_iterator_type, extents_type, Layout,
@@ -173,13 +173,13 @@ private:
   void replace_decomp() {
     auto n = std::size_t(rng::size(dr::ranges::segments(base_)));
     for (std::size_t i = 0; i < Rank; i++) {
-      if (tile_extents_[i] == decomp::div) {
-        tile_extents_[i] = full_extents_[i] / n;
-      } else if (tile_extents_[i] == decomp::all) {
-        tile_extents_[i] = full_extents_[i];
+      if (tile_lengths_[i] == decomp::div) {
+        tile_lengths_[i] = full_lengths_[i] / n;
+      } else if (tile_lengths_[i] == decomp::all) {
+        tile_lengths_[i] = full_lengths_[i];
       }
       // TODO: Handle this case
-      assert(full_extents_[i] % tile_extents_[i] == 0);
+      assert(full_lengths_[i] % tile_lengths_[i] == 0);
     }
   }
 
@@ -191,8 +191,8 @@ mdspan_view(R &&r, dr::__detail::dr_extents<Rank> extents)
     -> mdspan_view<rng::views::all_t<R>, Rank>;
 
 template <typename R, std::size_t Rank>
-mdspan_view(R &&r, dr::__detail::dr_extents<Rank> full_extents,
-            dr::__detail::dr_extents<Rank> tile_extents)
+mdspan_view(R &&r, dr::__detail::dr_extents<Rank> full_lengths,
+            dr::__detail::dr_extents<Rank> tile_lengths)
     -> mdspan_view<rng::views::all_t<R>, Rank>;
 
 template <typename R>
@@ -205,19 +205,19 @@ namespace dr::mhp::views {
 
 template <std::size_t Rank> class mdspan_adapter_closure {
 public:
-  mdspan_adapter_closure(dr::__detail::dr_extents<Rank> full_extents,
-                         dr::__detail::dr_extents<Rank> tile_extents)
-      : full_extents_(full_extents), tile_extents_(tile_extents),
+  mdspan_adapter_closure(dr::__detail::dr_extents<Rank> full_lengths,
+                         dr::__detail::dr_extents<Rank> tile_lengths)
+      : full_lengths_(full_lengths), tile_lengths_(tile_lengths),
         tile_valid_(true) {}
 
-  mdspan_adapter_closure(dr::__detail::dr_extents<Rank> full_extents)
-      : full_extents_(full_extents) {}
+  mdspan_adapter_closure(dr::__detail::dr_extents<Rank> full_lengths)
+      : full_lengths_(full_lengths) {}
 
   template <rng::viewable_range R> auto operator()(R &&r) const {
     if (tile_valid_) {
-      return mdspan_view(std::forward<R>(r), full_extents_, tile_extents_);
+      return mdspan_view(std::forward<R>(r), full_lengths_, tile_lengths_);
     } else {
-      return mdspan_view(std::forward<R>(r), full_extents_);
+      return mdspan_view(std::forward<R>(r), full_lengths_);
     }
   }
 
@@ -227,34 +227,34 @@ public:
   }
 
 private:
-  dr::__detail::dr_extents<Rank> full_extents_;
-  dr::__detail::dr_extents<Rank> tile_extents_;
+  dr::__detail::dr_extents<Rank> full_lengths_;
+  dr::__detail::dr_extents<Rank> tile_lengths_;
   bool tile_valid_ = false;
 };
 
 class mdspan_fn_ {
 public:
   template <rng::viewable_range R, typename Extents>
-  auto operator()(R &&r, Extents &&full_extents, Extents &&tile_extents) const {
-    return mdspan_adapter_closure(std::forward<Extents>(full_extents),
-                                  std::forward<Extents>(tile_extents))(
+  auto operator()(R &&r, Extents &&full_lengths, Extents &&tile_lengths) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_lengths),
+                                  std::forward<Extents>(tile_lengths))(
         std::forward<R>(r));
   }
 
   template <rng::viewable_range R, typename Extents>
-  auto operator()(R &&r, Extents &&full_extents) const {
-    return mdspan_adapter_closure(std::forward<Extents>(full_extents))(
+  auto operator()(R &&r, Extents &&full_lengths) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_lengths))(
         std::forward<R>(r));
   }
 
   template <typename Extents>
-  auto operator()(Extents &&full_extents, Extents &&tile_extents) const {
-    return mdspan_adapter_closure(std::forward<Extents>(full_extents),
-                                  std::forward<Extents>(tile_extents));
+  auto operator()(Extents &&full_lengths, Extents &&tile_lengths) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_lengths),
+                                  std::forward<Extents>(tile_lengths));
   }
 
-  template <typename Extents> auto operator()(Extents &&full_extents) const {
-    return mdspan_adapter_closure(std::forward<Extents>(full_extents));
+  template <typename Extents> auto operator()(Extents &&full_lengths) const {
+    return mdspan_adapter_closure(std::forward<Extents>(full_lengths));
   }
 };
 
