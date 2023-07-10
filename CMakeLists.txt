@@ -41,6 +41,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_compile_options(-fsycl)
     add_link_options(-fsycl)
+    if(ENABLE_CUDA)
+      add_compile_options(-fsycl-targets=nvptx64-nvidia-cuda -Wno-error=unknown-cuda-version)
+      add_link_options(-fsycl-targets=nvptx64-nvidia-cuda -Wno-error=unknown-cuda-version)
+    endif()
   endif()
 
   set(buildTypes Release Debug)
@@ -131,7 +135,7 @@ FetchContent_MakeAvailable(cpp-format)
 FetchContent_Declare(
   mdspan
   GIT_REPOSITORY https://github.com/kokkos/mdspan.git
-  GIT_TAG mdspan-0.5.0
+  GIT_TAG mdspan-0.6.0
 )
 FetchContent_MakeAvailable(mdspan)
 

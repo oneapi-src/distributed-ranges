@@ -81,6 +81,14 @@ inline const auto &dpl_policy() {
 #endif
 
 template <typename T> class default_allocator {
+
+  struct __dr_unique_ptr_deleter {
+    std::size_t allocated_size;
+    void operator()(T *ptr) {
+      default_allocator<T>().deallocate(ptr, allocated_size);
+    }
+  };
+
 public:
   default_allocator() {
 #ifdef SYCL_LANGUAGE_VERSION
@@ -91,6 +99,9 @@ public:
   }
 
   T *allocate(std::size_t sz) {
+    if (sz == 0) {
+      return nullptr;
+    }
 #ifdef SYCL_LANGUAGE_VERSION
     if (mhp::use_sycl()) {
       return sycl_allocator_.allocate(sz);
@@ -100,7 +111,17 @@ public:
     return std_allocator_.allocate(sz);
   }
 
+  std::unique_ptr<T, __dr_unique_ptr_deleter> allocate_unique(std::size_t sz) {
+    return std::unique_ptr<T, __dr_unique_ptr_deleter>(
+        allocate(sz), __dr_unique_ptr_deleter{sz});
+  }
+
   void deallocate(T *ptr, std::size_t sz) {
+    if (sz == 0) {
+      assert(ptr == nullptr);
+      return;
+    }
+    assert(ptr != nullptr);
 #ifdef SYCL_LANGUAGE_VERSION
     if (mhp::use_sycl()) {
       sycl_allocator_.deallocate(ptr, sz);
