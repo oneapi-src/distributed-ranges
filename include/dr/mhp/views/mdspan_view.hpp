@@ -52,25 +52,6 @@ private:
 };
 
 //
-// Mdspan accessor using an iterator
-//
-template <std::random_access_iterator Iter> class mdspan_iter_accessor {
-public:
-  using data_handle_type = Iter;
-  using reference = std::iter_reference_t<Iter>;
-  using offset_policy = mdspan_iter_accessor;
-
-  constexpr mdspan_iter_accessor() noexcept = default;
-  constexpr auto access(Iter iter, std::size_t index) const {
-    return iter[index];
-  }
-
-  constexpr auto offset(Iter iter, std::size_t index) const noexcept {
-    return iter + index;
-  }
-};
-
-//
 // Wrap a distributed range, adding an mdspan and adapting the
 // segments to also be mdspans for local access
 //
@@ -81,8 +62,9 @@ private:
   using base_type = rng::views::all_t<R>;
   using iterator_type = rng::iterator_t<base_type>;
   using extents_type = md::dextents<std::size_t, Rank>;
-  using mdspan_type = md::mdspan<iterator_type, extents_type, Layout,
-                                 mdspan_iter_accessor<iterator_type>>;
+  using mdspan_type =
+      md::mdspan<iterator_type, extents_type, Layout,
+                 dr::__detail::mdspan_iter_accessor<iterator_type>>;
   using difference_type = rng::iter_difference_t<iterator_type>;
   using index_type = dr::__detail::dr_extents<Rank>;
 
@@ -163,8 +145,9 @@ public:
       assert(full_lengths_[i] % tile_lengths_[i] == 0);
     }
     using grid_iterator_type = rng::iterator_t<segments_type>;
-    using grid_type = md::mdspan<grid_iterator_type, extents_type, Layout,
-                                 mdspan_iter_accessor<grid_iterator_type>>;
+    using grid_type =
+        md::mdspan<grid_iterator_type, extents_type, Layout,
+                   dr::__detail::mdspan_iter_accessor<grid_iterator_type>>;
     return grid_type(rng::begin(segments_), grid_extents);
   }
 
