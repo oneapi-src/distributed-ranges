@@ -186,6 +186,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         inclusive_scan_local_async(in_segment, out_segment, binary_op)();
       }
     }
+    barrier();
     return d_last;
   }
 
