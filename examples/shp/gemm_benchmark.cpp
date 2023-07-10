@@ -181,15 +181,6 @@ int main(int argc, char **argv) {
                       return std::abs(value - ref);
                     });
 
-    auto max = [](auto a, auto b) {
-      if (a < b) {
-        return b;
-      } else {
-        return a;
-      }
-    };
-
-    // T max_diff = shp::reduce(shp::par_unseq, sub_view, T(0), max);
     T diff_sum = shp::reduce(shp::par_unseq, sub_view, T(0));
     fmt::print("Diff sum is {}\n", diff_sum);
 

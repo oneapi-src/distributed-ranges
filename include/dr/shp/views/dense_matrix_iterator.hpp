@@ -49,7 +49,7 @@ public:
   constexpr dense_matrix_accessor(Iter data, key_type idx, key_type idx_offset,
                                   key_type matrix_shape, size_type ld) noexcept
       : data_(data), idx_(idx), matrix_shape_(matrix_shape), ld_(ld),
-        idx_offset_(idx_offset), data_(data) {}
+        idx_offset_(idx_offset) {}
 
   constexpr dense_matrix_accessor &operator+=(difference_type offset) noexcept {
     size_type new_idx = get_global_idx() + offset;
