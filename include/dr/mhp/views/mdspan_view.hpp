@@ -25,10 +25,9 @@ class mdsegment : public BaseSegment {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
-  mdsegment(index_type origin, BaseSegment segment, index_type tile_starts,
-            index_type tile_lengths)
+  mdsegment(index_type origin, BaseSegment segment, index_type tile_lengths)
       : BaseSegment(segment), origin_(origin),
-        mdspan_(local_tile(segment, tile_starts, tile_lengths)) {}
+        mdspan_(local_tile(segment, tile_lengths)) {}
 
   auto mdspan() const { return mdspan_; }
   auto origin() const { return origin_; }
@@ -36,15 +35,12 @@ public:
 private:
   using T = rng::range_value_t<BaseSegment>;
 
-  static auto local_tile(BaseSegment segment,
-                         const dr::__detail::dr_extents<Rank> &tile_starts,
-                         const dr::__detail::dr_extents<Rank> &tile_lengths) {
+  static auto local_tile(BaseSegment segment, const index_type &tile_lengths) {
     // Undefined behavior if the segments is not local
     T *ptr = dr::ranges::rank(segment) == default_comm().rank()
                  ? std::to_address(dr::ranges::local(rng::begin(segment)))
                  : nullptr;
-    auto mdspan = md::mdspan(ptr, tile_lengths);
-    return dr::__detail::make_submdspan(mdspan, tile_starts, tile_lengths);
+    return md::mdspan(ptr, tile_lengths);
   }
 
   index_type origin_;
@@ -88,13 +84,11 @@ private:
   }
 
   static auto make_segments(auto base, auto full_lengths, auto tile_lengths) {
-    index_type tile_offset;
-    tile_offset.fill(0);
     auto make_md = [=](auto v) {
       return mdsegment(
           segment_index_to_global_origin(std::size_t(std::get<0>(v)),
                                          full_lengths, tile_lengths),
-          std::get<1>(v), tile_offset, tile_lengths);
+          std::get<1>(v), tile_lengths);
     };
 
     return rng::views::enumerate(dr::ranges::segments(base)) |
