@@ -5,7 +5,7 @@
 FetchContent_Declare(
   dpl
   GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
-  GIT_TAG oneDPL-2022.1.0-rc3
+  GIT_TAG 40f53fdef934e32365ea74daadf09680c961ee51
   )
 FetchContent_MakeAvailable(dpl)
 
