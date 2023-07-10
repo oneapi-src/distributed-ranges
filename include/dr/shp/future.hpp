@@ -34,6 +34,10 @@ public:
     return std::move(*value_);
   }
 
+  std::vector<Event> events() const { return events_; }
+
+  T &value() const { return *value_; }
+
   void wait() { __detail::wait(events_); }
 
 private:
