@@ -5,10 +5,6 @@
 function(add_shp_example_no_test example_name)
   add_executable(${example_name} ${example_name}.cpp)
   target_link_libraries(${example_name} DR::shp)
-  if(ENABLE_CUDA)
-    target_compile_options(${example_name} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-    target_link_options(${example_name} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-  endif()
 endfunction()
 
 function(add_shp_example example_name)
