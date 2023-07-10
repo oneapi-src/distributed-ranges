@@ -293,6 +293,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   }
 
   wait_for_events_and_clear(events);
+  barrier();
 
   return d_last;
 }
