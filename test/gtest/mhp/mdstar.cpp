@@ -261,6 +261,8 @@ TEST_F(Submdspan, GridExtents) {
   xhp::iota(mdarray, 100);
   auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   auto grid = sub.grid();
+  EXPECT_EQ(slice_ends[0] - slice_starts[0], sub.mdspan().extent(0));
+  EXPECT_EQ(slice_ends[1] - slice_starts[1], sub.mdspan().extent(1));
 
   auto x = 0;
   for (std::size_t i = 0; i < grid.extent(0); i++) {
