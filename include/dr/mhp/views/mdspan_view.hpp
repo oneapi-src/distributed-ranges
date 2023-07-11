@@ -14,18 +14,18 @@ inline constexpr std::size_t all = div - 1;
 
 } // namespace dr::mhp::decomp
 
-namespace dr::mhp {
+namespace dr::mhp::__detail {
 
 //
 // Add a local mdspan to the underlying segment
 //
 template <typename BaseSegment, std::size_t Rank,
           typename Layout = md::layout_stride>
-class mdsegment : public BaseSegment {
+class md_segment : public BaseSegment {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
-  mdsegment(index_type origin, BaseSegment segment, index_type tile_lengths)
+  md_segment(index_type origin, BaseSegment segment, index_type tile_lengths)
       : BaseSegment(segment), origin_(origin),
         mdspan_(local_tile(segment, tile_lengths)) {}
 
@@ -46,6 +46,10 @@ private:
   index_type origin_;
   md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> mdspan_;
 };
+
+} // namespace dr::mhp::__detail
+
+namespace dr::mhp {
 
 //
 // Wrap a distributed range, adding an mdspan and adapting the
@@ -74,7 +78,7 @@ private:
     index_type index;
 
     for (std::size_t d = 0; d < Rank; d++) {
-      std::size_t i = Rank - d;
+      std::size_t i = Rank - 1 - d;
       std::size_t grid_size = full_shape[i] / tile_shape[i];
       index[i] = (linear % grid_size) * tile_shape[i];
       linear = linear / grid_size;
@@ -85,7 +89,7 @@ private:
 
   static auto make_segments(auto base, auto full_lengths, auto tile_lengths) {
     auto make_md = [=](auto v) {
-      return mdsegment(
+      return __detail::md_segment(
           segment_index_to_global_origin(std::size_t(std::get<0>(v)),
                                          full_lengths, tile_lengths),
           std::get<1>(v), tile_lengths);
