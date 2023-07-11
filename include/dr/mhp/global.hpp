@@ -70,7 +70,7 @@ inline void init(sycl::queue q) {
   __detail::global_context_ = new __detail::global_context(q);
 }
 
-inline sycl::queue select_queue() {
+inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   std::vector<sycl::device> devices;
 
   auto root_devices = sycl::platform().get_devices();
@@ -87,7 +87,8 @@ inline sycl::queue select_queue() {
 
   assert(rng::size(devices) > 0);
   // Round robin assignment of devices to ranks
-  return sycl::queue(devices[default_comm().rank() % rng::size(devices)]);
+  return sycl::queue(
+      devices[dr::communicator(comm).rank() % rng::size(devices)]);
 }
 
 #else // SYCL_LANGUAGE_VERSION
