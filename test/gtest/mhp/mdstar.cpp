@@ -24,8 +24,8 @@ protected:
   dr::mhp::distribution dist3d_1d =
       dr::mhp::distribution().granularity(ydim * zdim);
 
-  std::array<std::size_t, 2> slice_offset = {1, 1};
-  std::array<std::size_t, 2> slice_size = {2, 2};
+  std::array<std::size_t, 2> slice_starts = {1, 1};
+  std::array<std::size_t, 2> slice_ends = {3, 3};
 };
 
 using Mdarray = Mdspan;
@@ -237,7 +237,7 @@ using Submdspan = Mdspan;
 TEST_F(Submdspan, StaticAssert) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   auto submdspan =
-      xhp::views::submdspan(mdarray.view(), slice_offset, slice_size);
+      xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   static_assert(rng::forward_range<decltype(submdspan)>);
   static_assert(dr::distributed_range<decltype(submdspan)>);
 }
@@ -245,21 +245,21 @@ TEST_F(Submdspan, StaticAssert) {
 TEST_F(Submdspan, Mdindex2D) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::fill(mdarray, 1);
-  auto sub = xhp::views::submdspan(mdarray.view(), slice_offset, slice_size);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
 
   std::size_t i = 1, j = 0;
   sub.mdspan()(i, j) = 17;
   xhp::fence();
   EXPECT_EQ(17, sub.mdspan()(i, j));
-  EXPECT_EQ(17, mdarray.mdspan()(slice_offset[0] + i, slice_offset[1] + j));
-  EXPECT_EQ(17, mdarray[(i + slice_offset[0]) * ydim + j + slice_offset[1]])
+  EXPECT_EQ(17, mdarray.mdspan()(slice_starts[0] + i, slice_starts[1] + j));
+  EXPECT_EQ(17, mdarray[(i + slice_starts[0]) * ydim + j + slice_starts[1]])
       << mdrange_message(mdarray);
 }
 
 TEST_F(Submdspan, GridExtents) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::iota(mdarray, 100);
-  auto sub = xhp::views::submdspan(mdarray.view(), slice_offset, slice_size);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   auto grid = sub.grid();
 
   auto x = 0;
@@ -275,20 +275,21 @@ TEST_F(Submdspan, GridExtents) {
   EXPECT_EQ(sub.mdspan().extent(1), y);
 }
 
-#if 0
 TEST_F(Submdspan, GridLocalReference) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::iota(mdarray, 100);
-  auto grid = mdarray.grid();
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  auto grid = sub.grid();
 
+  std::size_t i = 0, j = 0;
   auto tile = grid(0, 0).mdspan();
   if (comm_rank == 0) {
-    tile(0, 0) = 99;
-    EXPECT_EQ(99, tile(0, 0));
+    tile(i, j) = 99;
+    EXPECT_EQ(99, tile(i, j));
   }
   dr::mhp::fence();
-  EXPECT_EQ(99, mdarray[0]);
+  auto flat_index = (i + slice_starts[0]) * extents2d[1] + slice_starts[1] + j;
+  EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
-#endif
 
 #endif // Skip for gcc 10.4
