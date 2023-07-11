@@ -9,7 +9,16 @@ import subprocess
 import json
 import os
 import datetime
+import click
 
+@click.command()
+@click.option('--dry_run', default=False, help='Emits commands but does not execute')
+def print_run_command(command:str, dry_run:bool):
+    print(f"Current benchmark command used: \n{command}")
+    if not dry_run:
+        output = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+    )
 
 def run_mhp(
     vec_size: int,
@@ -19,17 +28,10 @@ def run_mhp(
     only_fsycl: bool,
     mpirun: bool = True,
     n: int = None,
-    pin_domain: str = None,
-    pin_order: str = None,
-    pin_cell: str = None,
+    pin_domain: str = '',
+    pin_order: str = '',
+    pin_cell: str = '',
 ):
-    os.environ["BENCHMARK_FILTER"] = filter
-    if pin_domain is not None:
-        os.environ["I_MPI_PIN_DOMAIN"] = pin_domain
-    if pin_order is not None:
-        os.environ["I_MPI_PIN_ORDER"] = pin_order
-    if pin_cell is not None:
-        os.environ["I_MPI_PIN_CELL"] = pin_cell
     if only_fsycl:
         bench_path = "./build/benchmarks/gbench/mhp/mhp-bench-only-fsycl"
     else:
@@ -50,37 +52,11 @@ def run_mhp(
         mpirun = ""
         n = ""
     if sycl_used:
-        command = [
-            mpirun,
-            n,
-            bench_path,
-            "--sycl",
-            "--vector-size",
-            str(vec_size),
-            "--reps",
-            str(reps),
-            bench_out,
-        ]
+        command = f"BENCHMARK_FILTER={filter} I_MPI_PIN_DOMAIN={pin_domain} I_MPI_PIN_ORDER={pin_order} I_MPI_PIN_CELL={pin_cell} {mpirun} {n} {bench_path} --sycl --vector-size {str(vec_size)} --reps {str(reps)} {bench_out}"
     else:
-        command = [
-            mpirun,
-            n,
-            bench_path,
-            "--vector-size",
-            str(vec_size),
-            "--reps",
-            str(reps),
-            bench_out,
-        ]
-    while "" in command:
-        command.remove('')
-    command = " ".join(command)
-    process = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-    )
-    output, err = process.communicate()
-    print(output)
-    print(err)
+        command = f"BENCHMARK_FILTER={filter} I_MPI_PIN_DOMAIN={pin_domain} I_MPI_PIN_ORDER={pin_order} I_MPI_PIN_CELL={pin_cell} {mpirun} {n} {bench_path} --vector-size {str(vec_size)} --reps {str(reps)} {bench_out}"
+
+    print_run_command(command)
 
 
 def run_shp(
@@ -88,18 +64,9 @@ def run_shp(
     reps: int,
     d: int,
     only_fsycl: bool,
-    filter: str = None,
-    kmp_aff: str = None,
+    filter: str = '',
+    kmp_aff: str = '',
 ):
-    if filter is not None:
-        os.environ["BENCHMARK_FILTER"] = filter
-    else:
-        try:
-            os.unsetenv("BENCHMARK_FILTER")
-        except:
-            pass
-    if kmp_aff is not None:
-        os.environ["KMP_AFFINITY"] = kmp_aff
     if only_fsycl:
         bench_path = "./build/benchmarks/gbench/shp/shp-bench-only-fsycl"
     else:
@@ -109,23 +76,8 @@ def run_shp(
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     bench_out = f"--benchmark_out={directory_path}/shp_benchmark_{time_now_string}.json --benchmark_out_format=json"
-    command = [
-        bench_path,
-        "-d",
-        str(d),
-        "--vector-size",
-        str(vec_size),
-        "--reps",
-        str(reps),
-        bench_out,
-    ]
-    while "" in command:
-        command.remove('')
-    command = " ".join(command)
-    process = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-    )
-    output, err = process.communicate()
+    command = f"BENCHMARK_FILTER={filter} KMP_AFFINITY={kmp_aff} {bench_path} -d {str(d)} --vector-size {str(vec_size)} --reps {str(reps)} {bench_out}"
+    print_run_command(command)
 
 
 def run_all_benchmarks_fsycl_O3():
