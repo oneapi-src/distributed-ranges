@@ -41,17 +41,18 @@ TYPED_TEST(Subrange, ForEach) {
 }
 
 TYPED_TEST(Subrange, Transform) {
-  TypeParam v1(23), v2(23);
-  xhp::iota(v1, 100);
-  xhp::fill(v2, 100);
+  TypeParam v1(13), v2(13);
+  xhp::iota(v1, 10);
+  xhp::fill(v2, -1);
 
   auto s1 = rng::subrange(v1.begin() + 1, v1.end() - 2);
   auto s2 = rng::subrange(v2.begin() + 1, v2.end() - 2);
 
   auto null_op = [](auto v) { return v; };
   xhp::transform(s1, s2.begin(), null_op);
-  // xhp::transform(s2, s1.begin(), null_op);
-  EXPECT_EQ(s1, s2);
+
+  EXPECT_TRUE(equal(v2, std::vector<int>{-1, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                                         20, -1, -1}));
 }
 
 TYPED_TEST(Subrange, Reduce) {

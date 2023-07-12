@@ -32,8 +32,7 @@ void transform(rng::forward_range auto &&in, dr::distributed_iterator auto out,
   for_each(zip, transform_op);
 }
 
-template <typename DI_IN>
-  requires(std::forward_iterator<DI_IN>)
+template <rng::forward_iterator DI_IN>
 void transform(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out,
                auto op) {
   mhp::transform(rng::subrange(first, last), out, op);

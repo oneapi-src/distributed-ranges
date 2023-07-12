@@ -159,7 +159,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-tautological-constant-compare)
     # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel stl
     add_compile_options(-Wno-error=pass-failed)
-    add_compile_options(-Wno-error=unknown-pragmas)
+    add_compile_options(-Wno-unknown-pragmas)
   endif()
 
   if(ENABLE_SYCL)

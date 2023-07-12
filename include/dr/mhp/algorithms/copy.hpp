@@ -10,7 +10,7 @@
 namespace dr::mhp {
 
 /// Copy
-void copy(dr::distributed_range auto &&in, dr::distributed_iterator auto out) {
+void copy(rng::forward_range auto &&in, dr::distributed_iterator auto out) {
   if (rng::empty(in)) {
     return;
   }
@@ -54,28 +54,6 @@ void copy(std::size_t root, rng::contiguous_range auto &&in,
       remainder -= sz;
     }
   }
-  barrier();
-}
-
-// copy for dr::views::iota
-// views::iota require copying elements ony by one
-template <std::integral T>
-void copy(std::size_t root, rng::iota_view<T, T> &in,
-          dr::distributed_contiguous_iterator auto out) {
-
-  if (default_comm().rank() == root) {
-    auto s_itr = dr::ranges::segments(out).begin();
-    auto l_itr = (*s_itr).begin();
-
-    for (auto i : in) {
-      (l_itr++).put(i);
-      if (l_itr == (*s_itr).end()) {
-        s_itr++;
-        l_itr = (*s_itr).begin();
-      }
-    }
-  }
-
   barrier();
 }
 
