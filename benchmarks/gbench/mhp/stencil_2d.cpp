@@ -16,8 +16,8 @@ using T = double;
 static const T init_val = 1;
 
 // For debugging, use  col_static = 10 with --vector-size 100
-const std::size_t cols_static = 10;
-// const std::size_t cols_static = 10000;
+// const std::size_t cols_static = 10;
+const std::size_t cols_static = 10000;
 
 using Row = std::array<T, cols_static>;
 
@@ -311,6 +311,15 @@ DR_BENCHMARK(Stencil2D_Tiled_DR);
 
 auto mdspan_stencil_op = [](auto v) {
   auto [in, out] = v;
+#if 0
+  for (int i = -1; i < 2; i++) {
+    for (int j = -1; j < 2; j++) {
+      fmt::print("{:4} ", in(i, j));
+    }
+    fmt::print("\n");
+  }
+  fmt::print("\n");
+#endif
   out(0, 0) = (in(-1, 0) + in(0, -1) + in(0, 0) + in(0, 1) + in(1, 0)) / 4;
 };
 
@@ -401,10 +410,10 @@ static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
   std::size_t radius = 1;
   std::array slice_starts{radius, radius};
   std::array slice_ends{shape[0] - radius, shape[1] - radius};
-  fmt::print("Slice starts: {}\nSlice ends: {}\n", slice_starts, slice_ends);
   if (shape[0] == 0) {
     return;
   }
+
   auto dist = dr::mhp::distribution().halo(radius);
   dr::mhp::distributed_mdarray<T, 2> a(shape, dist);
   dr::mhp::distributed_mdarray<T, 2> b(shape, dist);

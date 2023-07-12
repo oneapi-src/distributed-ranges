@@ -22,9 +22,11 @@ public:
   mdsub_segment(BaseSegment segment, const index_type &slice_starts,
                 const index_type &slice_ends)
       : BaseSegment(segment),
-        mdspan_(local_tile(segment, slice_starts, slice_ends)) {}
+        mdspan_(local_tile(segment, slice_starts, slice_ends)),
+        root_mdspan_(segment.mdspan()) {}
 
   auto mdspan() const { return mdspan_; }
+  auto root_mdspan() const { return root_mdspan_; }
 
 private:
   using T = rng::range_value_t<BaseSegment>;
@@ -45,6 +47,7 @@ private:
   }
 
   md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> mdspan_;
+  md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> root_mdspan_;
 };
 
 } // namespace dr::mhp::__detail

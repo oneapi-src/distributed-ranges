@@ -77,19 +77,19 @@ void stencil_for_each(auto op, dr::distributed_range auto &&dr1,
     if (tile_index == default_comm().rank()) {
       auto t1 = grid1(tile_index, 0).mdspan();
       auto t2 = grid2(tile_index, 0).mdspan();
+      auto t1_root = grid1(tile_index, 0).root_mdspan();
+      auto t2_root = grid2(tile_index, 0).root_mdspan();
 
       // TODO support arbitrary ranks
       assert(t1.rank() == t2.rank() && t2.rank() == 2);
       assert(t1.extents() == t2.extents());
 
-      fmt::print("t1.extent(0): {}\nt1.extent(1): {}\n", t1.extent(0),
-                 t1.extent(1));
       for (std::size_t i = 0; i < t1.extent(0); i++) {
         for (std::size_t j = 0; j < t1.extent(1); j++) {
           auto t1_stencil =
-              md::mdspan(std::to_address(&t1(i, j)), t1.extents());
+              md::mdspan(std::to_address(&t1(i, j)), t1_root.extents());
           auto t2_stencil =
-              md::mdspan(std::to_address(&t2(i, j)), t2.extents());
+              md::mdspan(std::to_address(&t2(i, j)), t2_root.extents());
           op(std::tuple(t1_stencil, t2_stencil));
         }
       }
