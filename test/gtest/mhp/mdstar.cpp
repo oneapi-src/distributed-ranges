@@ -287,11 +287,15 @@ TEST_F(Submdspan, GridLocalReference) {
 
   std::size_t i = 0, j = 0;
   auto tile = grid(0, 0).mdspan();
+  if (tile.extent(0) == 0 || tile.extent(1) == 0) {
+    return;
+  }
   if (comm_rank == 0) {
     tile(i, j) = 99;
     EXPECT_EQ(99, tile(i, j));
   }
   dr::mhp::fence();
+
   auto flat_index = (i + slice_starts[0]) * extents2d[1] + slice_starts[1] + j;
   EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
