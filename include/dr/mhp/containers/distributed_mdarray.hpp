@@ -12,7 +12,9 @@ namespace dr::mhp {
 template <typename T, std::size_t Rank, typename Layout = md::layout_right>
 class distributed_mdarray {
 public:
-  distributed_mdarray(dr_extents<Rank> extents,
+  using extents_type = dr::__detail::dr_extents<Rank>;
+
+  distributed_mdarray(dr::__detail::dr_extents<Rank> extents,
                       distribution dist = distribution())
       : dv_(md_size(extents), dv_dist(dist, extents)),
         md_view_(make_md_view(dv_, extents)) {}
@@ -26,6 +28,7 @@ public:
 
   auto mdspan() { return md_view_.mdspan(); }
   auto grid() { return md_view_.grid(); }
+  auto view() const { return md_view_; }
 
 private:
   static auto md_size(auto extents) {
@@ -55,8 +58,8 @@ private:
 
   using DV = distributed_vector<T>;
   DV dv_;
-  using mdspan_type = decltype(make_md_view(std::declval<DV>(),
-                                            std::declval<dr_extents<Rank>>()));
+  using mdspan_type = decltype(make_md_view(
+      std::declval<DV>(), std::declval<dr::__detail::dr_extents<Rank>>()));
   mdspan_type md_view_;
 };
 

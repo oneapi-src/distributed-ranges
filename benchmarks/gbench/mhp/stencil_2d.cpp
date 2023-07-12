@@ -311,6 +311,15 @@ DR_BENCHMARK(Stencil2D_Tiled_DR);
 
 auto mdspan_stencil_op = [](auto v) {
   auto [in, out] = v;
+#if 0
+  for (int i = -1; i < 2; i++) {
+    for (int j = -1; j < 2; j++) {
+      fmt::print("{:4} ", in(i, j));
+    }
+    fmt::print("\n");
+  }
+  fmt::print("\n");
+#endif
   out(0, 0) = (in(-1, 0) + in(0, -1) + in(0, 0) + in(0, 1) + in(1, 0)) / 4;
 };
 
@@ -361,7 +370,7 @@ DR_BENCHMARK(Stencil2D_MdspanTuple_DR);
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style.
 //
-static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
+static void Stencil2D_RadiusStencilForeach_DR(benchmark::State &state) {
   auto shape = default_shape();
   std::size_t radius = 1;
   if (shape[0] == 0) {
@@ -387,6 +396,47 @@ static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
       std::swap(in, out);
     }
     checker.check(*in);
+  }
+}
+
+DR_BENCHMARK(Stencil2D_RadiusStencilForeach_DR);
+
+//
+// Distributed vector of floats. Granularity ensures segments contain
+// whole rows. Explicitly process segments SPMD-style.
+//
+static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
+  auto shape = default_shape();
+  std::size_t radius = 1;
+  std::array slice_starts{radius, radius};
+  std::array slice_ends{shape[0] - radius, shape[1] - radius};
+  if (shape[0] == 0) {
+    return;
+  }
+
+  auto dist = dr::mhp::distribution().halo(radius);
+  dr::mhp::distributed_mdarray<T, 2> a(shape, dist);
+  dr::mhp::distributed_mdarray<T, 2> b(shape, dist);
+  xhp::fill(a, init_val);
+  xhp::fill(b, init_val);
+
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
+
+  auto in = dr::mhp::views::submdspan(a.view(), slice_starts, slice_ends);
+  auto out = dr::mhp::views::submdspan(b.view(), slice_starts, slice_ends);
+  auto in_array = &a;
+  auto out_array = &b;
+
+  Checker checker;
+  for (auto _ : state) {
+    for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
+      dr::mhp::halo(*in_array).exchange();
+      xhp::stencil_for_each(mdspan_stencil_op, in, out);
+      std::swap(in, out);
+      std::swap(in_array, out_array);
+    }
+    checker.check(*in_array);
   }
 }
 
