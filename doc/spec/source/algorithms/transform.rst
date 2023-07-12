@@ -16,7 +16,7 @@ Interface
 MHP
 ---
 
-.. doxygenfunction:: dr::mhp::transform(dr::distributed_range auto &&in, dr::distributed_iterator auto out, auto op)
+.. doxygenfunction:: dr::mhp::transform(rng::forward_range auto &&in, dr::distributed_iterator auto out, auto op)
 .. doxygenfunction:: dr::mhp::transform(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out, auto op)
 
 SHP
