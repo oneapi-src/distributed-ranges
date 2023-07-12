@@ -5,12 +5,6 @@
 function(add_shp_example_no_test example_name)
   add_executable(${example_name} ${example_name}.cpp)
   target_link_libraries(${example_name} DR::shp)
-  target_compile_options(${example_name} PUBLIC -fsycl)
-  target_link_options(${example_name} PUBLIC -fsycl)
-  if(ENABLE_CUDA)
-    target_compile_options(${example_name} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-    target_link_options(${example_name} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-  endif()
 endfunction()
 
 function(add_shp_example example_name)
@@ -32,6 +26,9 @@ add_shp_example_no_test(copy_test)
 add_shp_example_no_test(gather_test)
 add_shp_example_no_test(gemv_example)  # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example_no_test(matrix_example)  # PI_ERROR_DEVICE_NOT_FOUND
+add_shp_example_no_test(gemm_example)  # PI_ERROR_DEVICE_NOT_FOUND
+add_shp_example_no_test(gemm_benchmark)  # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example(sparse_test)
 add_shp_example_no_test(take_example)  # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example_no_test(zip_example)  # PI_ERROR_DEVICE_NOT_FOUND
+add_shp_example_no_test(black_scholes_benchmark)  # PI_ERROR_DEVICE_NOT_FOUND

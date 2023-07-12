@@ -10,10 +10,11 @@
 ``dr::shp::distributed_vector``
 ===============================
 
-Synopsis
-========
+Interface
+=========
 
 .. doxygenstruct:: dr::shp::distributed_vector
+   :members:
 
 Description
 ===========

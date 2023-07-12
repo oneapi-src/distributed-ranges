@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <dr/shp/containers/index.hpp>
+#include <dr/detail/index.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <iterator>
 
@@ -31,7 +31,7 @@ public:
   using const_iterator_accessor = iterator_accessor;
   using nonconst_iterator_accessor = iterator_accessor;
 
-  using key_type = dr::shp::index<I>;
+  using key_type = dr::index<I>;
 
   constexpr csr_matrix_view_accessor() noexcept = default;
   constexpr ~csr_matrix_view_accessor() noexcept = default;
@@ -122,7 +122,8 @@ using csr_matrix_view_iterator =
     dr::iterator_adaptor<csr_matrix_view_accessor<T, I, TIter, IIter>>;
 
 template <typename T, typename I, typename TIter = T *, typename IIter = I *>
-class csr_matrix_view {
+class csr_matrix_view
+    : public rng::view_interface<csr_matrix_view<T, I, TIter, IIter>> {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -133,7 +134,7 @@ public:
   using scalar_type = T;
   using index_type = I;
 
-  using key_type = dr::shp::index<I>;
+  using key_type = dr::index<I>;
   using map_type = T;
 
   using iterator = csr_matrix_view_iterator<T, I, TIter, IIter>;

@@ -23,7 +23,7 @@ public:
 
   using allocator_type = Allocator;
 
-  using key_type = dr::shp::index<I>;
+  using key_type = dr::index<I>;
   using map_type = T;
 
   using backend_allocator_type = typename std::allocator_traits<
@@ -38,9 +38,9 @@ public:
 
   using scalar_reference = T &;
 
-  coo_matrix(dr::shp::index<I> shape) : shape_(shape) {}
+  coo_matrix(dr::index<I> shape) : shape_(shape) {}
 
-  dr::shp::index<I> shape() const noexcept { return shape_; }
+  dr::index<I> shape() const noexcept { return shape_; }
 
   size_type size() const noexcept { return tuples_.size(); }
 
@@ -123,7 +123,7 @@ public:
     });
   }
 
-  void reshape(dr::shp::index<I> shape) {
+  void reshape(dr::index<I> shape) {
     bool all_inside = true;
     for (auto &&[index, v] : *this) {
       auto &&[i, j] = index;
@@ -161,7 +161,7 @@ public:
   }
 
 private:
-  dr::shp::index<I> shape_;
+  dr::index<I> shape_;
   backend_type tuples_;
 };
 

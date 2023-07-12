@@ -315,21 +315,8 @@ private:
 };
 
 struct halo_bounds {
-  /// Constructor
-  halo_bounds(std::size_t radius = 0, bool per = false) {
-    prev = radius;
-    next = radius;
-    periodic = per;
-  }
-  /// Constructor
-  halo_bounds(std::size_t prv, std::size_t nxt, bool per = false) {
-    prev = prv;
-    next = nxt;
-    periodic = per;
-  }
-
-  std::size_t prev, next;
-  bool periodic;
+  std::size_t prev = 0, next = 0;
+  bool periodic = false;
 };
 
 template <typename T, typename Memory>
@@ -362,13 +349,14 @@ private:
     std::vector<group_type> owned;
     drlog.debug(nostd::source_location::current(),
                 "owned groups {}/{} first/last\n", comm.first(), comm.last());
-    if (hb.prev > 0 && (hb.periodic || !comm.first())) {
-      owned.emplace_back(span.subspan(hb.prev, hb.prev), comm.prev(),
+    if (hb.next > 0 && (hb.periodic || !comm.first())) {
+      owned.emplace_back(span.subspan(hb.prev, hb.next), comm.prev(),
                          communicator::tag::halo_reverse);
     }
-    if (hb.next > 0 && (hb.periodic || !comm.last())) {
-      owned.emplace_back(span.subspan(rng::size(span) - 2 * hb.next, hb.next),
-                         comm.next(), communicator::tag::halo_forward);
+    if (hb.prev > 0 && (hb.periodic || !comm.last())) {
+      owned.emplace_back(
+          span.subspan(rng::size(span) - (hb.prev + hb.next), hb.prev),
+          comm.next(), communicator::tag::halo_forward);
     }
     return owned;
   }

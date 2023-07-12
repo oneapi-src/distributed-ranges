@@ -43,6 +43,12 @@ public:
     MPI_Scatter(src, size, MPI_BYTE, dst, size, MPI_BYTE, root, mpi_comm_);
   }
 
+  template <typename T>
+  void scatter(const std::span<T> src, T &dst, std::size_t root) const {
+    assert(src.size() >= size());
+    scatter(src.data(), &dst, sizeof(T), root);
+  }
+
   void scatterv(const void *src, int *counts, int *offsets, void *dst,
                 int dst_count, std::size_t root) const {
     assert(counts == nullptr || counts[rank()] == dst_count);
@@ -56,7 +62,7 @@ public:
   }
 
   template <typename T>
-  void gather(const T &src, std::vector<T> &dst, std::size_t root) const {
+  void gather(const T &src, std::span<T> dst, std::size_t root) const {
     assert(dst.size() >= size());
     gather(&src, dst.data(), sizeof(T), root);
   }
@@ -116,6 +122,7 @@ private:
 class rma_window {
 public:
   void create(communicator comm, void *data, std::size_t size) {
+    communicator_ = comm;
     drlog.debug("win create:: size: {}\n", size);
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
@@ -162,9 +169,11 @@ public:
     MPI_Win_flush(rank, win_);
   }
 
+  const auto &communicator() const { return communicator_; }
   auto mpi_win() { return win_; }
 
 private:
+  dr::communicator communicator_;
   MPI_Win win_ = MPI_WIN_NULL;
 };
 
