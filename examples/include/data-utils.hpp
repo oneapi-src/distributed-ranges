@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <../../include/dr/detail/format_shim.hpp>
+#include <dr/detail/format_shim.hpp>
 
 inline std::size_t partition_up(std::size_t num, std::size_t multiple) {
   return (num + multiple - 1) / multiple;

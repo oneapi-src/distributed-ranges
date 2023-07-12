@@ -57,7 +57,7 @@ add_mpi_test(wave_equation wave_equation 4)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)
-  target_link_libraries(vector-add-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX fmt::fmt)
+  target_link_libraries(vector-add-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX DR::shp fmt::fmt)
   add_mpi_test(vector-add-ref vector-add-ref 2)
 endif()
 
