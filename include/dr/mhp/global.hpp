@@ -69,7 +69,56 @@ inline void init(sycl::queue q) {
          "Do not call mhp::init() more than once");
   __detail::global_context_ = new __detail::global_context(q);
 }
-#else
+
+inline auto partitionable(sycl::device device) {
+  auto props = device.get_info<sycl::info::device::partition_properties>();
+  if (rng::find(props,
+                sycl::info::partition_property::partition_by_affinity_domain) ==
+      props.end()) {
+    dr::drlog.debug("Cannot partition by affinity domain\n");
+    return false;
+  }
+
+  auto domains =
+      device.get_info<sycl::info::device::partition_affinity_domains>();
+  if (rng::find(domains, sycl::info::partition_affinity_domain::numa) ==
+      domains.end()) {
+    dr::drlog.debug("Cannot partition by numa domain\n");
+    return false;
+  }
+  return true;
+}
+
+inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
+  std::vector<sycl::device> devices;
+
+  auto root_devices = sycl::platform().get_devices();
+
+  for (auto &&root_device : root_devices) {
+    if (partitionable(root_device)) {
+      auto subdevices = root_device.create_sub_devices<
+          sycl::info::partition_property::partition_by_affinity_domain>(
+          sycl::info::partition_affinity_domain::numa);
+
+      for (auto &&subdevice : subdevices) {
+        dr::drlog.debug("Add subdevice: {}\n",
+                        subdevice.get_info<sycl::info::device::name>());
+        devices.push_back(subdevice);
+      }
+    } else {
+      dr::drlog.debug("Add root device: {}\n",
+                      root_device.get_info<sycl::info::device::name>());
+      devices.push_back(root_device);
+    }
+  }
+
+  assert(rng::size(devices) > 0);
+  // Round robin assignment of devices to ranks
+  return sycl::queue(
+      devices[dr::communicator(comm).rank() % rng::size(devices)]);
+}
+
+#else // SYCL_LANGUAGE_VERSION
 inline auto sycl_queue() {
   assert(false);
   return 0;
@@ -78,7 +127,8 @@ inline const auto &dpl_policy() {
   assert(false);
   return std::execution::seq;
 }
-#endif
+
+#endif // SYCL_LANGUAGE_VERSION
 
 template <typename T> class default_allocator {
 

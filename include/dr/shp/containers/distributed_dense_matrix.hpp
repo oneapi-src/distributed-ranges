@@ -241,7 +241,7 @@ public:
   }
 
   template <typename Allocator = std::allocator<T>>
-  auto get_tile(key_type tile_index, Allocator &alloc = Allocator{}) {
+  auto get_tile(key_type tile_index, const Allocator &alloc = Allocator{}) {
     std::size_t nrows = get_tile_shape_(tile_index)[0];
     std::size_t ld = tile_shape_[1];
     std::size_t tile_size = nrows * ld;
@@ -254,7 +254,8 @@ public:
   }
 
   template <typename Allocator = std::allocator<T>>
-  auto get_tile_async(key_type tile_index, Allocator &alloc = Allocator{}) {
+  auto get_tile_async(key_type tile_index,
+                      const Allocator &alloc = Allocator{}) {
     std::size_t nrows = get_tile_shape_(tile_index)[0];
     std::size_t ld = tile_shape_[1];
     std::size_t tile_size = nrows * ld;

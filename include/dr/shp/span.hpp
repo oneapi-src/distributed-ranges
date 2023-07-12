@@ -55,4 +55,7 @@ private:
 template <rng::random_access_range R>
 span(R &&) -> span<rng::range_value_t<R>, rng::iterator_t<R>>;
 
+template <rng::random_access_iterator Iter>
+span(Iter first, std::size_t count) -> span<std::iter_value_t<Iter>, Iter>;
+
 } // namespace dr::shp
