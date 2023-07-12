@@ -25,6 +25,21 @@ template <typename R> auto local_segments(R &&dr) {
          rng::views::filter(is_local) | rng::views::transform(local_iter);
 }
 
+template <typename R> auto local_segments_with_idx(R &&dr) {
+  auto is_local = [](const auto &segment_with_idx) {
+    return dr::ranges::rank(std::get<1>(segment_with_idx)) ==
+           default_comm().rank();
+  };
+  // Convert from remote iter to local iter
+  auto local_iter = [](const auto &segment_with_idx) {
+    auto &&[idx, segment] = segment_with_idx;
+    auto b = dr::ranges::local(rng::begin(segment));
+    return std::tuple(idx, rng::subrange(b, b + rng::distance(segment)));
+  };
+  return dr::ranges::segments(std::forward<R>(dr)) | rng::views::enumerate |
+         rng::views::filter(is_local) | rng::views::transform(local_iter);
+}
+
 template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
   auto segments = dr::mhp::local_segments(std::forward<R>(r));
 
@@ -34,8 +49,29 @@ template <dr::distributed_contiguous_range R> auto local_segment(R &&r) {
 
   // Should be error, not assert. Or we could join all the segments
   assert(rng::distance(segments) == 1);
-
   return *rng::begin(segments);
+}
+
+template <typename R> auto local_mdspans(R &&dr) {
+  return dr::ranges::segments(std::forward<R>(dr))
+         // Select the local segments
+         | rng::views::filter([](auto s) {
+             return dr::ranges::rank(s) == default_comm().rank();
+           })
+         // Extract the mdspan
+         | rng::views::transform([](auto s) { return s.mdspan(); });
+}
+
+template <dr::distributed_contiguous_range R> auto local_mdspan(R &&r) {
+  auto mdspans = dr::mhp::local_mdspans(std::forward<R>(r));
+
+  if (rng::empty(mdspans)) {
+    return rng::range_value_t<decltype(mdspans)>{};
+  }
+
+  // Should be error, not assert. Or we could join all the segments
+  assert(rng::distance(mdspans) == 1);
+  return *rng::begin(mdspans);
 }
 
 } // namespace dr::mhp

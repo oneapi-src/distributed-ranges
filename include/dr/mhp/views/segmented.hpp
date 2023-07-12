@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <dr/detail/remote_subrange.hpp>
+
 namespace dr::mhp {
 
 template <typename BaseIter, typename SegTplIter>
@@ -68,6 +70,9 @@ public:
     return segmented_view_iterator(rng::begin(base_), rng::end(segments_tpl_),
                                    rng::end(segments_tpl_));
   }
+
+  auto size() const { return rng::size(segments_tpl_); }
+  auto empty() const { return rng::empty(segments_tpl_); }
 
 private:
   rng::views::all_t<R> base_;

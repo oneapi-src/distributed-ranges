@@ -217,6 +217,12 @@ public:
     return dr::__detail::owning_view(std::move(segment_views));
   }
 
+  auto local() const noexcept
+    requires(!(dr::distributed_range<Rs> || ...))
+  {
+    return local_impl_(std::make_index_sequence<sizeof...(Rs)>());
+  }
+
   // If:
   //   - There is at least one remote range in the zip
   //   - There are no distributed ranges in the zip
@@ -229,6 +235,11 @@ public:
   }
 
 private:
+  template <std::size_t... Ints>
+  auto local_impl_(std::index_sequence<Ints...>) const noexcept {
+    return rng::views::zip(__detail::local(std::get<Ints>(views_))...);
+  }
+
   template <std::size_t I, typename R> std::size_t get_rank_impl_() const {
     static_assert(I < sizeof...(Rs));
     return dr::ranges::rank(get_view<I>());

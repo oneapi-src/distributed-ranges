@@ -11,11 +11,25 @@ namespace dr::mhp {
 struct distribution {
 public:
   distribution &halo(std::size_t radius) {
-    halo_bounds_ = halo_bounds(radius);
+    halo_bounds_.prev = radius;
+    halo_bounds_.next = radius;
+    return *this;
+  }
+
+  distribution &halo(std::size_t prev, std::size_t next) {
+    halo_bounds_.prev = prev;
+    halo_bounds_.next = next;
     return *this;
   }
 
   auto halo() const { return halo_bounds_; }
+
+  distribution &periodic(bool periodic) {
+    halo_bounds_.periodic = periodic;
+    return *this;
+  }
+
+  auto periodic() const { return halo_bounds_.periodic; }
 
   distribution &granularity(std::size_t size) {
     granularity_ = size;

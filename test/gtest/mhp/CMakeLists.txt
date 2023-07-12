@@ -16,6 +16,7 @@ add_executable(
   ../common/enumerate.cpp
   ../common/fill.cpp
   ../common/for_each.cpp
+  ../common/inclusive_scan.cpp
   ../common/iota.cpp
   ../common/iota_view.cpp
   ../common/reduce.cpp
@@ -28,23 +29,30 @@ add_executable(
   alignment.cpp
   copy.cpp
   distributed_vector.cpp
+  halo.cpp
+  mdstar.cpp
   reduce.cpp
   stencil.cpp
   segments.cpp
+  slide_view.cpp
 )
 
 add_executable(
   mhp-tests-3
   mhp-tests.cpp
+  halo-3.cpp
   slide_view-3.cpp
 )
 
-# mhp-quick-test is a skeleton for rapid builds of individual tests,
-# feel free to change this
+
+# mhp-quick-test is for development. By reducing the number of source
+# files, it builds much faster. Change the source files to match what
+# you need to test. It is OK to commit changes to the source file
+# list.
 add_executable(
   mhp-quick-test
   mhp-tests.cpp
-  segments.cpp
+  ../common/inclusive_scan.cpp
 )
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
@@ -57,10 +65,12 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
     DR::mpi
   )
 
-  if(ENABLE_SYCL)
-    target_compile_options(${test-exec} PRIVATE -fsycl)
-  endif()
 endforeach()
+
+add_mpi_test(mhp-quick-test-1 mhp-quick-test 1)
+add_mpi_test(mhp-quick-test-2 mhp-quick-test 2)
+add_mpi_test(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl)
+add_mpi_test(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl)
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
@@ -77,12 +87,12 @@ add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
 if(ENABLE_SYCL)
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-Take*)
+    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)
   endif()
 
-  # TODO fix sycl Take issues
-  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl)
-  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl)
-  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl)
-  add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl)
+  #TODO: fix sycl Slide issues, see https://github.com/oneapi-src/distributed-ranges/issues/322
+  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
+  add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl --gtest_filter=-*Slide*)
 endif()

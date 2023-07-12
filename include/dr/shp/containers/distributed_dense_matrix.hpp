@@ -6,15 +6,18 @@
 
 #include <memory>
 
-#include <dr/shp/containers/index.hpp>
+#include <dr/detail/index.hpp>
+#include <dr/detail/owning_view.hpp>
 #include <dr/shp/containers/matrix_entry.hpp>
 #include <dr/shp/containers/matrix_partition.hpp>
+#include <dr/shp/containers/sequential/dense_matrix.hpp>
 #include <dr/shp/device_vector.hpp>
+#include <dr/shp/future.hpp>
 #include <dr/shp/views/dense_matrix_view.hpp>
 
 namespace dr::shp {
 
-template <typename T, typename L> class dense_matrix_accessor {
+template <typename T, typename L> class distributed_dense_matrix_accessor {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -28,29 +31,29 @@ public:
 
   using iterator_category = std::random_access_iterator_tag;
 
-  using iterator_accessor = dense_matrix_accessor;
+  using iterator_accessor = distributed_dense_matrix_accessor;
   using const_iterator_accessor = iterator_accessor;
   using nonconst_iterator_accessor = iterator_accessor;
 
   using tile_type = L;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
 
-  constexpr dense_matrix_accessor() noexcept = default;
-  constexpr ~dense_matrix_accessor() noexcept = default;
-  constexpr dense_matrix_accessor(const dense_matrix_accessor &) noexcept =
-      default;
-  constexpr dense_matrix_accessor &
-  operator=(const dense_matrix_accessor &) noexcept = default;
+  constexpr distributed_dense_matrix_accessor() noexcept = default;
+  constexpr ~distributed_dense_matrix_accessor() noexcept = default;
+  constexpr distributed_dense_matrix_accessor(
+      const distributed_dense_matrix_accessor &) noexcept = default;
+  constexpr distributed_dense_matrix_accessor &
+  operator=(const distributed_dense_matrix_accessor &) noexcept = default;
 
-  constexpr dense_matrix_accessor(std::span<tile_type> tiles, key_type grid_idx,
-                                  key_type tile_idx, key_type grid_shape,
-                                  key_type tile_shape,
-                                  key_type matrix_shape) noexcept
+  constexpr distributed_dense_matrix_accessor(
+      std::span<tile_type> tiles, key_type grid_idx, key_type tile_idx,
+      key_type grid_shape, key_type tile_shape, key_type matrix_shape) noexcept
       : grid_idx_(grid_idx), tile_idx_(tile_idx), grid_shape_(grid_shape),
         tile_shape_(tile_shape), matrix_shape_(matrix_shape), tiles_(tiles) {}
 
-  constexpr dense_matrix_accessor &operator+=(difference_type offset) noexcept {
+  constexpr distributed_dense_matrix_accessor &
+  operator+=(difference_type offset) noexcept {
     std::size_t new_global_idx_ = get_global_idx_() + offset;
     key_type new_global_idx = {new_global_idx_ / matrix_shape_[1],
                                new_global_idx_ % matrix_shape_[1]};
@@ -127,9 +130,10 @@ private:
 };
 
 template <typename T, typename L>
-using dense_matrix_iterator = dr::iterator_adaptor<dense_matrix_accessor<T, L>>;
+using distributed_dense_matrix_iterator =
+    dr::iterator_adaptor<distributed_dense_matrix_accessor<T, L>>;
 
-template <typename T> class dense_matrix {
+template <typename T> class distributed_dense_matrix {
 public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -144,17 +148,17 @@ public:
   using reference = dr::shp::matrix_ref<T, scalar_reference>;
   using const_reference = dr::shp::matrix_ref<const T, const_scalar_reference>;
 
-  using key_type = dr::shp::index<>;
+  using key_type = dr::index<>;
 
-  using iterator = dense_matrix_iterator<
+  using iterator = distributed_dense_matrix_iterator<
       T, dr::shp::device_vector<T, dr::shp::device_allocator<T>>>;
 
-  dense_matrix(key_type shape)
+  distributed_dense_matrix(key_type shape)
       : shape_(shape), partition_(new dr::shp::block_cyclic()) {
     init_();
   }
 
-  dense_matrix(key_type shape, const matrix_partition &partition)
+  distributed_dense_matrix(key_type shape, const matrix_partition &partition)
       : shape_(shape), partition_(partition.clone()) {
     init_();
   }
@@ -236,9 +240,34 @@ public:
     return views_;
   }
 
-  std::vector<dense_matrix_view<T, rng::iterator_t<dr::shp::device_vector<
-                                       T, dr::shp::device_allocator<T>>>>>
-  segments() {
+  template <typename Allocator = std::allocator<T>>
+  auto get_tile(key_type tile_index, const Allocator &alloc = Allocator{}) {
+    std::size_t nrows = get_tile_shape_(tile_index)[0];
+    std::size_t ld = tile_shape_[1];
+    std::size_t tile_size = nrows * ld;
+    dense_matrix<T, Allocator> local_tile(get_tile_shape_(tile_index), ld,
+                                          alloc);
+    auto remote_tile = tile(tile_index);
+    shp::copy(remote_tile.data(), remote_tile.data() + tile_size,
+              local_tile.data());
+    return local_tile;
+  }
+
+  template <typename Allocator = std::allocator<T>>
+  auto get_tile_async(key_type tile_index,
+                      const Allocator &alloc = Allocator{}) {
+    std::size_t nrows = get_tile_shape_(tile_index)[0];
+    std::size_t ld = tile_shape_[1];
+    std::size_t tile_size = nrows * ld;
+    dense_matrix<T, Allocator> local_tile(get_tile_shape_(tile_index), ld,
+                                          alloc);
+    auto remote_tile = tile(tile_index);
+    auto event = shp::copy_async(
+        remote_tile.data(), remote_tile.data() + tile_size, local_tile.data());
+    return future(std::move(local_tile), {event});
+  }
+
+  auto segments() {
     std::vector<dense_matrix_view<T, rng::iterator_t<dr::shp::device_vector<
                                          T, dr::shp::device_allocator<T>>>>>
         views_;
@@ -260,7 +289,7 @@ public:
                             tiles_[i * grid_shape_[1] + j].rank());
       }
     }
-    return views_;
+    return dr::__detail::owning_view(std::move(views_));
   }
 
 private:
@@ -282,6 +311,13 @@ private:
         tiles_.emplace_back(tile_size, alloc, rank);
       }
     }
+  }
+
+  key_type get_tile_shape_(key_type tile_index) {
+    auto &&[i, j] = tile_index;
+    std::size_t tm = std::min(tile_shape_[0], shape()[0] - i * tile_shape_[0]);
+    std::size_t tn = std::min(tile_shape_[1], shape()[1] - j * tile_shape_[1]);
+    return key_type{tm, tn};
   }
 
 private:

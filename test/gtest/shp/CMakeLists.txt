@@ -8,9 +8,7 @@ add_executable(
   shp-tests
   shp-tests.cpp
   ../common/all.cpp
-
-  # need to implement same API as MHP
-  # ../common/copy.cpp
+  ../common/copy.cpp
   ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
@@ -59,14 +57,6 @@ foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)
     fmt::fmt
     cxxopts
   )
-
-  target_compile_options(${test-exec} PRIVATE -fsycl)
-  target_link_options(${test-exec} PRIVATE -fsycl)
-
-  if(ENABLE_CUDA)
-    target_compile_options(${test-exec} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-    target_link_options(${test-exec} PUBLIC -fsycl-targets=nvptx64-nvidia-cuda)
-  endif()
 endforeach()
 
 function(add_shp_test test_name name)

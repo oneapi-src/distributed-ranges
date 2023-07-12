@@ -30,7 +30,7 @@ public:
 void dr_init() {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.count("sycl")) {
-    sycl::queue q;
+    sycl::queue q = dr::mhp::select_queue();
     if (comm_rank == 0) {
       fmt::print("  SYCL device:\n");
       benchmark::AddCustomContext("device", device_info(q.get_device()));
