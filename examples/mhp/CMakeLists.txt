@@ -5,7 +5,7 @@
 add_executable(stencil-slide stencil-slide.cpp)
 target_link_libraries(stencil-slide cxxopts DR::mpi)
 
-if (ENABLE_SYCL)
+if(ENABLE_SYCL)
   add_executable(mhp_dot_product_benchmark dot_product_benchmark.cpp)
   target_link_libraries(mhp_dot_product_benchmark DR::mpi cxxopts)
   add_mpi_test(mhp_dot_product mhp_dot_product_benchmark 1 -n 1000)
@@ -17,10 +17,7 @@ add_mpi_test(vector-add vector-add 2)
 
 function(add_mhp_example example_name)
   add_executable(${example_name} ${example_name}.cpp)
-  target_link_libraries(
-          ${example_name}
-          cxxopts
-          DR::mpi)
+  target_link_libraries(${example_name} cxxopts DR::mpi)
   add_mpi_test(${example_name} ${example_name} 2)
 endfunction()
 
@@ -30,7 +27,8 @@ add_mhp_example(stencil-1d-pointer)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)
-  target_link_libraries(vector-add-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX fmt::fmt)
+  target_link_libraries(vector-add-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX
+                                               fmt::fmt)
   add_mpi_test(vector-add-ref vector-add-ref 2)
 endif()
 
