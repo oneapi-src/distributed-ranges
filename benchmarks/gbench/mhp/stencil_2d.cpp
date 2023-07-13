@@ -370,7 +370,7 @@ DR_BENCHMARK(Stencil2D_MdspanTuple_DR);
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style.
 //
-static void Stencil2D_RadiusStencilForeach_DR(benchmark::State &state) {
+static void Stencil2D_StencilForeachRadius_DR(benchmark::State &state) {
   auto shape = default_shape();
   std::size_t radius = 1;
   if (shape[0] == 0) {
@@ -399,7 +399,7 @@ static void Stencil2D_RadiusStencilForeach_DR(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Stencil2D_RadiusStencilForeach_DR);
+DR_BENCHMARK(Stencil2D_StencilForeachRadius_DR);
 
 //
 // Distributed vector of floats. Granularity ensures segments contain
