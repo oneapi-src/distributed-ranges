@@ -64,7 +64,6 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
     cxxopts
     DR::mpi
   )
-
 endforeach()
 
 add_mpi_test(mhp-quick-test-1 mhp-quick-test 1)
