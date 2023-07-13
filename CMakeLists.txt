@@ -10,8 +10,7 @@ project(
 
 include(FetchContent)
 
-# Project wide defaults, not needed when another project uses the
-# library
+# Project wide defaults, not needed when another project uses the library
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include(CheckLanguage)
@@ -42,35 +41,42 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-fsycl)
     add_link_options(-fsycl)
     if(ENABLE_CUDA)
-      add_compile_options(-fsycl-targets=nvptx64-nvidia-cuda -Wno-error=unknown-cuda-version)
-      add_link_options(-fsycl-targets=nvptx64-nvidia-cuda -Wno-error=unknown-cuda-version)
+      add_compile_options(-fsycl-targets=nvptx64-nvidia-cuda
+                          -Wno-error=unknown-cuda-version)
+      add_link_options(-fsycl-targets=nvptx64-nvidia-cuda
+                       -Wno-error=unknown-cuda-version)
     endif()
   endif()
 
   set(buildTypes Release Debug)
 
   if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release")
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Choose the type of build, options are: Release Debug ..." FORCE)
+    message(
+      STATUS "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release")
+    set(CMAKE_BUILD_TYPE
+        "Release"
+        CACHE STRING "Choose the type of build, options are: Release Debug ..."
+              FORCE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${buildTypes})
   else()
     message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
     if(NOT CMAKE_BUILD_TYPE IN_LIST buildTypes)
-      message(WARNING "Unusual build type was set, please make sure it's a proper one. "
-        "Only following are supported by default: ${buildTypes}.")
+      message(
+        WARNING
+          "Unusual build type was set, please make sure it's a proper one. "
+          "Only following are supported by default: ${buildTypes}.")
     endif()
   endif()
 
   set(CMAKE_C_FLAGS_DEBUG "-O0 -g -ggdb")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb")
-  # When we define NDEBUG, ranges-v3 uses printf, which is not ok in
-  # sycl kernels. When we do not define NDEBUG, google bench warns
-  # about timing error. Need to investigate if there is another way to
-  # stop ranges-v3 from using printf
+  # When we define NDEBUG, ranges-v3 uses printf, which is not ok in sycl
+  # kernels. When we do not define NDEBUG, google bench warns about timing
+  # error. Need to investigate if there is another way to stop ranges-v3 from
+  # using printf
   #
-  # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
-  # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+  # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG") set(CMAKE_CXX_FLAGS_RELEASE "-O3
+  # -DNDEBUG")
   set(CMAKE_C_FLAGS_RELEASE "-O3")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
@@ -87,10 +93,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.12.1
-  )
-  # For Windows: Prevent overriding the parent project's compiler/linker settings
-  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    GIT_TAG release-1.12.1)
+  # For Windows: Prevent overriding the parent project's compiler/linker
+  # settings
+  set(gtest_force_shared_crt
+      ON
+      CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
   #
@@ -101,10 +109,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   FetchContent_Declare(
     googlebench
     GIT_REPOSITORY https://github.com/google/benchmark.git
-    GIT_TAG v1.8.0
-  )
+    GIT_TAG v1.8.0)
   FetchContent_MakeAvailable(googlebench)
-
 
   #
   # Command-line options parser
@@ -112,8 +118,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   FetchContent_Declare(
     cxxopts
     GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
-    GIT_TAG v3.0.0
-    )
+    GIT_TAG v3.0.0)
   FetchContent_MakeAvailable(cxxopts)
 
 endif()
@@ -121,26 +126,25 @@ endif()
 FetchContent_Declare(
   range-v3
   GIT_REPOSITORY https://github.com/BenBrock/range-v3.git
-  GIT_TAG 5300fe3
-)
+  GIT_TAG 5300fe3)
 FetchContent_MakeAvailable(range-v3)
 
 FetchContent_Declare(
   cpp-format
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 0b0f7cf
-)
+  GIT_TAG 0b0f7cf)
 FetchContent_MakeAvailable(cpp-format)
 
 FetchContent_Declare(
   mdspan
   GIT_REPOSITORY https://github.com/kokkos/mdspan.git
-  GIT_TAG mdspan-0.6.0
-)
+  GIT_TAG mdspan-0.6.0)
 FetchContent_MakeAvailable(mdspan)
 
 function(add_mpi_test test_name name processes)
-  add_test(NAME ${test_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+  add_test(NAME ${test_name}
+           COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+                   ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -166,14 +170,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     # Most code get warnings with -ffast-math
     add_compile_options(-Wno-tautological-constant-compare)
-    # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel stl
+    # DPL turns on -fopenmp-simd, triggering optimization warnings in parallel
+    # stl
     add_compile_options(-Wno-error=pass-failed)
     add_compile_options(-Wno-error=unknown-pragmas)
   endif()
 
   if(ENABLE_SYCL)
-    # disables rng::detail::box_compress::coalesce which causes rng::box to use global non-const variable, which can not
-    # be used in SYCL kernels
+    # disables rng::detail::box_compress::coalesce which causes rng::box to use
+    # global non-const variable, which can not be used in SYCL kernels
     add_compile_definitions(RANGES_WORKAROUND_MSVC_249830)
 
     add_subdirectory(examples/shp)

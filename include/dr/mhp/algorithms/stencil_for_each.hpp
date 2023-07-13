@@ -59,4 +59,44 @@ void stencil_for_each(std::size_t radius, auto op,
   barrier();
 }
 
+/// Collective for_each on distributed range
+template <typename... Ts>
+void stencil_for_each(auto op, dr::distributed_range auto &&dr1,
+                      dr::distributed_range auto &&dr2) {
+  if (rng::empty(dr1)) {
+    return;
+  }
+
+  auto grid1 = dr1.grid();
+  auto grid2 = dr2.grid();
+
+  // TODO: Support distribution other than first dimension
+  assert(grid1.extent(1) == 1);
+  for (std::size_t tile_index = 0; tile_index < grid1.extent(0); tile_index++) {
+    // If local
+    if (tile_index == default_comm().rank()) {
+      auto t1 = grid1(tile_index, 0).mdspan();
+      auto t2 = grid2(tile_index, 0).mdspan();
+      auto t1_root = grid1(tile_index, 0).root_mdspan();
+      auto t2_root = grid2(tile_index, 0).root_mdspan();
+
+      // TODO support arbitrary ranks
+      assert(t1.rank() == t2.rank() && t2.rank() == 2);
+      assert(t1.extents() == t2.extents());
+
+      for (std::size_t i = 0; i < t1.extent(0); i++) {
+        for (std::size_t j = 0; j < t1.extent(1); j++) {
+          auto t1_stencil =
+              md::mdspan(std::to_address(&t1(i, j)), t1_root.extents());
+          auto t2_stencil =
+              md::mdspan(std::to_address(&t2(i, j)), t2_root.extents());
+          op(std::tuple(t1_stencil, t2_stencil));
+        }
+      }
+    }
+  }
+
+  barrier();
+}
+
 } // namespace dr::mhp

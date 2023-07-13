@@ -12,7 +12,7 @@ using T = int;
 
 class Mdspan : public ::testing::Test {
 protected:
-  std::size_t xdim = 4, ydim = 3, zdim = 2;
+  std::size_t xdim = 4, ydim = 5, zdim = 2;
   std::size_t n2d = xdim * ydim, n3d = xdim * ydim * zdim;
 
   std::array<std::size_t, 2> extents2d = {xdim, ydim};
@@ -23,6 +23,9 @@ protected:
   // 3d data with 1d decompostion
   dr::mhp::distribution dist3d_1d =
       dr::mhp::distribution().granularity(ydim * zdim);
+
+  std::array<std::size_t, 2> slice_starts = {1, 1};
+  std::array<std::size_t, 2> slice_ends = {3, 3};
 };
 
 using Mdarray = Mdspan;
@@ -39,6 +42,7 @@ TEST_F(Mdspan, Iterator) {
   auto mdspan = xhp::views::mdspan(dist, extents2d);
 
   *mdspan.begin() = 17;
+  xhp::fence();
   EXPECT_EQ(17, *mdspan.begin());
   EXPECT_EQ(17, dist[0]);
 }
@@ -49,6 +53,7 @@ TEST_F(Mdspan, Mdindex2D) {
 
   std::size_t i = 1, j = 2;
   dmdspan.mdspan()(i, j) = 17;
+  xhp::fence();
   EXPECT_EQ(17, dist[i * ydim + j]);
   EXPECT_EQ(17, dmdspan.mdspan()(i, j));
 }
@@ -59,6 +64,7 @@ TEST_F(Mdspan, Mdindex3D) {
 
   std::size_t i = 1, j = 2, k = 0;
   dmdspan.mdspan()(i, j, k) = 17;
+  xhp::fence();
   EXPECT_EQ(17, dist[i * ydim * zdim + j * zdim + k]);
   EXPECT_EQ(17, dmdspan.mdspan()(i, j, k));
 }
@@ -68,6 +74,7 @@ TEST_F(Mdspan, Pipe) {
   auto mdspan = dist | xhp::views::mdspan(extents2d);
 
   *mdspan.begin() = 17;
+  xhp::fence();
   EXPECT_EQ(17, *mdspan.begin());
   EXPECT_EQ(17, dist[0]);
 }
@@ -149,6 +156,7 @@ TEST_F(Mdarray, Iterator) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
 
   *mdarray.begin() = 17;
+  xhp::fence();
   EXPECT_EQ(17, *mdarray.begin());
   EXPECT_EQ(17, mdarray[0]);
 }
@@ -172,6 +180,7 @@ TEST_F(Mdarray, Mdindex3D) {
 
   std::size_t i = 1, j = 2, k = 0;
   mdarray.mdspan()(i, j, k) = 17;
+  xhp::fence();
   EXPECT_EQ(17, mdarray[i * ydim * zdim + j * zdim + k]);
   EXPECT_EQ(17, mdarray.mdspan()(i, j, k));
 }
@@ -221,6 +230,74 @@ TEST_F(Mdarray, Halo) {
   }
   dr::mhp::fence();
   EXPECT_EQ(99, mdarray[0]);
+}
+
+using Submdspan = Mdspan;
+
+TEST_F(Submdspan, StaticAssert) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  auto submdspan =
+      xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  static_assert(rng::forward_range<decltype(submdspan)>);
+  static_assert(dr::distributed_range<decltype(submdspan)>);
+}
+
+TEST_F(Submdspan, Mdindex2D) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::fill(mdarray, 1);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+
+  std::size_t i = 1, j = 0;
+  sub.mdspan()(i, j) = 17;
+  xhp::fence();
+  EXPECT_EQ(17, sub.mdspan()(i, j));
+  EXPECT_EQ(17, mdarray.mdspan()(slice_starts[0] + i, slice_starts[1] + j));
+  EXPECT_EQ(17, mdarray[(i + slice_starts[0]) * ydim + j + slice_starts[1]])
+      << mdrange_message(mdarray);
+}
+
+TEST_F(Submdspan, GridExtents) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  auto grid = sub.grid();
+  EXPECT_EQ(slice_ends[0] - slice_starts[0], sub.mdspan().extent(0));
+  EXPECT_EQ(slice_ends[1] - slice_starts[1], sub.mdspan().extent(1));
+
+  auto x = 0;
+  for (std::size_t i = 0; i < grid.extent(0); i++) {
+    x += grid(i, 0).mdspan().extent(0);
+  }
+  EXPECT_EQ(slice_ends[0] - slice_starts[0], x);
+  EXPECT_EQ(slice_ends[0] - slice_starts[0], sub.mdspan().extent(0));
+
+  auto y = 0;
+  for (std::size_t i = 0; i < grid.extent(1); i++) {
+    y += grid(0, i).mdspan().extent(1);
+  }
+  EXPECT_EQ(slice_ends[1] - slice_starts[1], y);
+  EXPECT_EQ(slice_ends[1] - slice_starts[1], sub.mdspan().extent(1));
+}
+
+TEST_F(Submdspan, GridLocalReference) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  auto grid = sub.grid();
+
+  std::size_t i = 0, j = 0;
+  auto tile = grid(0, 0).mdspan();
+  if (tile.extent(0) == 0 || tile.extent(1) == 0) {
+    return;
+  }
+  if (comm_rank == 0) {
+    tile(i, j) = 99;
+    EXPECT_EQ(99, tile(i, j));
+  }
+  dr::mhp::fence();
+
+  auto flat_index = (i + slice_starts[0]) * extents2d[1] + slice_starts[1] + j;
+  EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
 
 #endif // Skip for gcc 10.4
