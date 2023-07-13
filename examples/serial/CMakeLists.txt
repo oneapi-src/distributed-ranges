@@ -7,5 +7,6 @@ target_link_libraries(vector-add-serial PRIVATE DR::mpi fmt::fmt)
 add_test(vector-add-serial ./vector-add-serial)
 
 add_executable(transpose-serial transpose-serial.cpp)
-target_link_libraries(transpose-serial PRIVATE MKL::MKL range-v3 DR::mpi fmt::fmt)
+target_link_libraries(transpose-serial PRIVATE MKL::MKL range-v3 DR::mpi
+                                               fmt::fmt)
 add_test(transpose-serial ./transpose-serial)

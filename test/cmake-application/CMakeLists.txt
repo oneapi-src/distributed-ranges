@@ -10,8 +10,7 @@ include(FetchContent)
 FetchContent_Declare(
   dr
   GIT_REPOSITORY https://github.com/oneapi-src/distributed-ranges.git
-  GIT_TAG main
-  )
+  GIT_TAG main)
 FetchContent_MakeAvailable(dr)
 
 set(CMAKE_CXX_STANDARD 20)
