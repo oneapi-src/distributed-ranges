@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <dr/detail/format_shim.hpp>
+
 inline std::size_t partition_up(std::size_t num, std::size_t multiple) {
   return (num + multiple - 1) / multiple;
 }
@@ -36,4 +38,20 @@ int check(const auto &actual, const auto &reference, int max_errors = 10) {
   }
 
   return errors;
+}
+
+template <std::integral T> bool is_equal(T a, T b) { return a == b; }
+
+template <std::floating_point Tp>
+bool is_equal(Tp a, Tp b,
+              Tp epsilon = 128 * std::numeric_limits<Tp>::epsilon()) {
+  if (a == b) {
+    return true;
+  }
+  auto abs_th = std::numeric_limits<Tp>::min();
+  auto diff = std::abs(a - b);
+  auto norm =
+      std::min(std::abs(a) + std::abs(b), std::numeric_limits<Tp>::max());
+
+  return diff < std::max(abs_th, epsilon * norm);
 }

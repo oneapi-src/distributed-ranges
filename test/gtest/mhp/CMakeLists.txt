@@ -28,6 +28,7 @@ add_executable(
   alignment.cpp
   copy.cpp
   distributed_vector.cpp
+  distributed_dense_matrix.cpp
   halo.cpp
   mdstar.cpp
   reduce.cpp
@@ -35,7 +36,8 @@ add_executable(
   segments.cpp
   slide_view.cpp)
 
-add_executable(mhp-tests-3 mhp-tests.cpp halo-3.cpp slide_view-3.cpp)
+add_executable(mhp-tests-3 mhp-tests.cpp halo-3.cpp slide_view-3.cpp
+                           distributed_dense_matrix3.cpp)
 
 # mhp-quick-test is for development. By reducing the number of source files, it
 # builds much faster. Change the source files to match what you need to test. It

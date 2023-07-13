@@ -36,6 +36,7 @@ inline void fence() { dr::mhp::fence(); }
 
 // minimal testing for quick builds
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
+using AllTypesDM = ::testing::Types<dr::mhp::distributed_dense_matrix<float>>;
 
 namespace dr::mhp {
 
