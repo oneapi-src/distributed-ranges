@@ -25,17 +25,14 @@ def run_mhp(
     reps: int,
     filter: str,
     sycl_used: bool,
-    only_fsycl: bool,
     mpirun: bool = True,
     n: int = None,
     pin_domain: str = '',
     pin_order: str = '',
     pin_cell: str = '',
 ):
-    if only_fsycl:
-        bench_path = "./benchmarks/gbench/mhp/mhp-bench-only-fsycl"
-    else:
-        bench_path = "./benchmarks/gbench/mhp/mhp-bench"
+
+    bench_path = "./benchmarks/gbench/mhp/mhp-bench"
 
     time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
     directory_path = f"benchmarks/json_output/mhp"
@@ -63,14 +60,10 @@ def run_shp(
     vec_size: int,
     reps: int,
     d: int,
-    only_fsycl: bool,
     filter: str = '',
     kmp_aff: str = '',
 ):
-    if only_fsycl:
-        bench_path = "./benchmarks/gbench/shp/shp-bench-only-fsycl"
-    else:
-        bench_path = "./benchmarks/gbench/shp/shp-bench"
+    bench_path = "./benchmarks/gbench/shp/shp-bench"
     time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
     directory_path = f"benchmarks/json_output/shp"
     if not os.path.exists(directory_path):
@@ -85,16 +78,15 @@ def run_all_benchmarks_fsycl_O3():
     reps = 100
     bench_filter = "Stream_"
     kmp_affinity = "compact"
-    only_fsycl = True
 
     # shp
     d = 1
-    run_shp(vec_size, reps, d, only_fsycl)
-    run_shp(vec_size, reps, d, only_fsycl, bench_filter, kmp_affinity)
+    run_shp(vec_size, reps, d)
+    run_shp(vec_size, reps, d, bench_filter, kmp_affinity)
 
     d = 2
-    run_shp(vec_size, reps, d, only_fsycl)
-    run_shp(vec_size, reps, d, only_fsycl, bench_filter, kmp_affinity)
+    run_shp(vec_size, reps, d)
+    run_shp(vec_size, reps, d, bench_filter, kmp_affinity)
 
     # mhp/cpu
     sycl_used = False
@@ -163,13 +155,12 @@ def run_all_benchmarks_other_options():
     reps = 100
     bench_filter = "Stream_"
     kmp_affinity = "compact"
-    only_fsycl = False
     mpirun = True
     # shp
     d = 1
-    run_shp(vec_size, reps, d, only_fsycl, bench_filter, kmp_affinity)
+    run_shp(vec_size, reps, d, bench_filter, kmp_affinity)
     d = 2
-    run_shp(vec_size, reps, d, only_fsycl, bench_filter, kmp_affinity)
+    run_shp(vec_size, reps, d, bench_filter, kmp_affinity)
     # mhp/cpu
     sycl_used = False
     mpi_pin_domain = "core"
@@ -181,7 +172,6 @@ def run_all_benchmarks_other_options():
         reps,
         bench_filter,
         sycl_used,
-        only_fsycl,
         mpirun,
         n,
         mpi_pin_domain,
@@ -194,7 +184,6 @@ def run_all_benchmarks_other_options():
         reps,
         bench_filter,
         sycl_used,
-        only_fsycl,
         mpirun,
         n,
         mpi_pin_domain,
@@ -221,7 +210,6 @@ def run_mhp_test():
     reps = 100
     bench_filter = "Stream_"
     kmp_affinity = "compact"
-    only_fsycl = True
     sycl_used = False
     mpirun = False
     n = 1
@@ -230,7 +218,6 @@ def run_mhp_test():
         reps,
         bench_filter,
         sycl_used,
-        only_fsycl,
         mpirun,
         n,
     )
@@ -240,9 +227,8 @@ def run_shp_test():
     vec_size = 1000000000
     reps = 100
     d = 1
-    only_fsycl = True
 
-    run_shp(vec_size, reps, d, only_fsycl)
+    run_shp(vec_size, reps, d)
 
 
 run_mhp_test()
