@@ -33,12 +33,12 @@ def run_mhp(
     pin_cell: str = '',
 ):
     if only_fsycl:
-        bench_path = "./build/benchmarks/gbench/mhp/mhp-bench-only-fsycl"
+        bench_path = "./benchmarks/gbench/mhp/mhp-bench-only-fsycl"
     else:
-        bench_path = "./build/benchmarks/gbench/mhp/mhp-bench"
+        bench_path = "./benchmarks/gbench/mhp/mhp-bench"
 
     time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
-    directory_path = f"build/benchmarks/json_output/mhp"
+    directory_path = f"benchmarks/json_output/mhp"
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     bench_out = f"--benchmark_out={directory_path}/mhp_benchmark_{time_now_string}.json --benchmark_out_format=json"
@@ -68,11 +68,11 @@ def run_shp(
     kmp_aff: str = '',
 ):
     if only_fsycl:
-        bench_path = "./build/benchmarks/gbench/shp/shp-bench-only-fsycl"
+        bench_path = "./benchmarks/gbench/shp/shp-bench-only-fsycl"
     else:
-        bench_path = "./build/benchmarks/gbench/shp/shp-bench"
+        bench_path = "./benchmarks/gbench/shp/shp-bench"
     time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
-    directory_path = f"build/benchmarks/json_output/shp"
+    directory_path = f"benchmarks/json_output/shp"
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     bench_out = f"--benchmark_out={directory_path}/shp_benchmark_{time_now_string}.json --benchmark_out_format=json"

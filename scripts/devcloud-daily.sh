@@ -11,6 +11,6 @@ cmake -DENABLE_SYCL:BOOL=ON -DENABLE_SYCL_MPI:BOOL=ON -B build -S .
 make -C build -j
 
 # python -m pip install --upgrade pip
-cd benchmarks/runner
+cd build
 # pip install -r requirements.txt
-python3 run_benchmarks.py
+python3 ../benchmarks/runner/run_benchmarks.py
