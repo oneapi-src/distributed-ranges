@@ -4,12 +4,12 @@
 
 #pragma once
 
+#ifdef SYCL_LANGUAGE_VERSION
+
 #include <limits>
 #include <sycl/sycl.hpp>
 
-namespace dr::shp {
-
-namespace __detail {
+namespace dr::__detail {
 
 // With the ND-range workaround, the maximum kernel size is
 // `std::numeric_limits<std::int32_t>::max()` rounded down to
@@ -71,7 +71,7 @@ sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
 }
 
 template <typename Fn>
-sycl::event parallel_for(sycl::queue &q, sycl::range<1> numWorkItems, Fn &&fn) {
+sycl::event parallel_for(sycl::queue q, sycl::range<1> numWorkItems, Fn &&fn) {
   std::size_t block_size = 128;
   std::size_t max_kernel_size = max_kernel_size_();
 
@@ -83,6 +83,6 @@ sycl::event parallel_for(sycl::queue &q, sycl::range<1> numWorkItems, Fn &&fn) {
   }
 }
 
-} // namespace __detail
+} // namespace dr::__detail
 
-} // namespace dr::shp
+#endif // SYCL_LANGUAGE_VERSION

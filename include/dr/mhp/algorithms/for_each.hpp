@@ -13,6 +13,7 @@
 #include <dr/detail/logger.hpp>
 #include <dr/detail/onedpl_direct_iterator.hpp>
 #include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/sycl_utils.hpp>
 #include <dr/mhp/global.hpp>
 
 namespace dr::mhp {
@@ -28,8 +29,16 @@ void for_each(dr::distributed_range auto &&dr, auto op) {
   for (const auto &s : local_segments(dr)) {
     if (mhp::use_sycl()) {
       dr::drlog.debug("  using sycl\n");
-      std::for_each(dpl_policy(), dr::__detail::direct_iterator(rng::begin(s)),
-                    dr::__detail::direct_iterator(rng::end(s)), op);
+
+      assert(rng::distance(s) > 0);
+#ifdef SYCL_LANGUAGE_VERSION
+      dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(), rng::distance(s),
+          [first = rng::begin(s), op](auto idx) { op(first[idx]); })
+          .wait();
+#else
+      assert(false);
+#endif
     } else {
       dr::drlog.debug("  using cpu\n");
       rng::for_each(s, op);
