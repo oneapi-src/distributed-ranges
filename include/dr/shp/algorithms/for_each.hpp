@@ -29,8 +29,8 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
 
     auto first = rng::begin(local_segment);
 
-    auto event = __detail::parallel_for(q, rng::distance(local_segment),
-                                        [=](auto idx) { fn(*(first + idx)); });
+    auto event = dr::__detail::parallel_for(
+        q, rng::distance(local_segment), [=](auto idx) { fn(*(first + idx)); });
     events.emplace_back(event);
   }
   __detail::wait(events);

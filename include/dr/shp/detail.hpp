@@ -5,9 +5,9 @@
 #pragma once
 
 #include <dr/detail/ranges.hpp>
+#include <dr/detail/sycl_utils.hpp>
 #include <dr/shp/device_ptr.hpp>
 #include <dr/shp/init.hpp>
-#include <dr/shp/util/sycl_utils.hpp>
 #include <iterator>
 #include <sycl/sycl.hpp>
 
