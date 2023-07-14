@@ -74,18 +74,27 @@ void stencil_for_each(auto op, dr::distributed_range auto &&...drs) {
   for (std::size_t tile_index = 0; tile_index < grid1.extent(0); tile_index++) {
     // If local
     if (tile_index == default_comm().rank()) {
-      auto t1 = grid1(tile_index, 0).mdspan();
+      auto make_operand_info = [=](auto &&dr) {
+        auto tile = dr.grid()(tile_index, 0);
+        // mdspan for tile. This could be a submdspan, so we need the
+        // extents of the root to get the memory strides
+        return std::pair(tile.mdspan(), tile.root_mdspan().extents());
+      };
+      // Calculate loop invariant info about the operands. Use a tuple
+      // to hold the info for all operands.
+      std::tuple operand_infos(make_operand_info(drs)...);
 
-      for (std::size_t i = 0; i < t1.extent(0); i++) {
-        for (std::size_t j = 0; j < t1.extent(1); j++) {
-          auto make_stencil = [=](auto &&dr) {
-            auto grid = dr.grid();
-            auto mdspan = grid(tile_index, 0).mdspan();
-            auto root_mdspan = grid(tile_index, 0).root_mdspan();
-            return md::mdspan(std::to_address(&mdspan(i, j)),
-                              root_mdspan.extents());
+      auto tile1 = grid1(tile_index, 0).mdspan();
+      for (std::size_t i = 0; i < tile1.extent(0); i++) {
+        for (std::size_t j = 0; j < tile1.extent(1); j++) {
+          auto make_operands = [=](auto... infos) {
+            // Use mdspan for tile to calculate the address of the
+            // current element, and make an mdspan centered on it with
+            // strides from the root mdspan
+            return std::tuple(md::mdspan(std::to_address(&infos.first(i, j)),
+                                         infos.second)...);
           };
-          op(std::tuple(make_stencil(drs)...));
+          op(std::apply(make_operands, operand_infos));
         }
       }
     }
