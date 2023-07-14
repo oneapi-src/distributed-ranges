@@ -4,6 +4,8 @@
 
 #pragma once
 
+#ifdef SYCL_LANGUAGE_VERSION
+
 #include <limits>
 #include <sycl/sycl.hpp>
 
@@ -82,3 +84,5 @@ sycl::event parallel_for(sycl::queue q, sycl::range<1> numWorkItems, Fn &&fn) {
 }
 
 } // namespace dr::__detail
+
+#endif // SYCL_LANGUAGE_VERSION

@@ -31,11 +31,14 @@ void for_each(dr::distributed_range auto &&dr, auto op) {
       dr::drlog.debug("  using sycl\n");
 
       assert(rng::distance(s) > 0);
-      auto first = rng::begin(s);
-      dr::__detail::parallel_for(dr::mhp::sycl_queue(), rng::distance(s),
-                                 [=](auto idx) { op(first[idx]); })
+#ifdef SYCL_LANGUAGE_VERSION
+      dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(), rng::distance(s),
+          [first = rng::begin(s), op](auto idx) { op(first[idx]); })
           .wait();
-
+#else
+      assert(false);
+#endif
     } else {
       dr::drlog.debug("  using cpu\n");
       rng::for_each(s, op);
