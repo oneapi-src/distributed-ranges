@@ -43,7 +43,7 @@ add_executable(mhp-tests-3 mhp-tests.cpp halo-3.cpp slide_view-3.cpp
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
 
-add_executable(mhp-quick-test mhp-tests.cpp ../common/inclusive_scan.cpp)
+add_executable(mhp-quick-test mhp-tests.cpp mdstar.cpp)
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 

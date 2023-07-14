@@ -300,4 +300,36 @@ TEST_F(Submdspan, GridLocalReference) {
   EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
 
+using StencilForeach = Mdspan;
+
+TEST_F(StencilForeach, 2ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  auto copy_op = [](auto v) {
+    auto [in, out] = v;
+    out(0, 0) = in(0, 0);
+  };
+
+  xhp::stencil_for_each(copy_op, a, b);
+  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2));
+}
+
+TEST_F(StencilForeach, 3ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::distributed_mdarray<T, 2> c(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  xhp::iota(c, 200);
+  auto copy_op = [](auto v) {
+    auto [in1, in2, out] = v;
+    out(0, 0) = in1(0, 0) + in2(0, 0);
+  };
+
+  xhp::stencil_for_each(copy_op, a, b, c);
+  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
+}
+
 #endif // Skip for gcc 10.4

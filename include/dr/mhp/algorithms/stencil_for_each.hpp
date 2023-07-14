@@ -61,36 +61,40 @@ void stencil_for_each(std::size_t radius, auto op,
 
 /// Collective for_each on distributed range
 template <typename... Ts>
-void stencil_for_each(auto op, dr::distributed_range auto &&dr1,
-                      dr::distributed_range auto &&dr2) {
+void stencil_for_each(auto op, dr::distributed_range auto &&...drs) {
+  auto &&dr1 = std::get<0>(std::tie(drs...));
   if (rng::empty(dr1)) {
     return;
   }
 
   auto grid1 = dr1.grid();
-  auto grid2 = dr2.grid();
 
   // TODO: Support distribution other than first dimension
   assert(grid1.extent(1) == 1);
   for (std::size_t tile_index = 0; tile_index < grid1.extent(0); tile_index++) {
     // If local
     if (tile_index == default_comm().rank()) {
-      auto t1 = grid1(tile_index, 0).mdspan();
-      auto t2 = grid2(tile_index, 0).mdspan();
-      auto t1_root = grid1(tile_index, 0).root_mdspan();
-      auto t2_root = grid2(tile_index, 0).root_mdspan();
+      auto make_operand_info = [=](auto &&dr) {
+        auto tile = dr.grid()(tile_index, 0);
+        // mdspan for tile. This could be a submdspan, so we need the
+        // extents of the root to get the memory strides
+        return std::pair(tile.mdspan(), tile.root_mdspan().extents());
+      };
+      // Calculate loop invariant info about the operands. Use a tuple
+      // to hold the info for all operands.
+      std::tuple operand_infos(make_operand_info(drs)...);
 
-      // TODO support arbitrary ranks
-      assert(t1.rank() == t2.rank() && t2.rank() == 2);
-      assert(t1.extents() == t2.extents());
-
-      for (std::size_t i = 0; i < t1.extent(0); i++) {
-        for (std::size_t j = 0; j < t1.extent(1); j++) {
-          auto t1_stencil =
-              md::mdspan(std::to_address(&t1(i, j)), t1_root.extents());
-          auto t2_stencil =
-              md::mdspan(std::to_address(&t2(i, j)), t2_root.extents());
-          op(std::tuple(t1_stencil, t2_stencil));
+      auto tile1 = grid1(tile_index, 0).mdspan();
+      for (std::size_t i = 0; i < tile1.extent(0); i++) {
+        for (std::size_t j = 0; j < tile1.extent(1); j++) {
+          auto make_operands = [=](auto... infos) {
+            // Use mdspan for tile to calculate the address of the
+            // current element, and make an mdspan centered on it with
+            // strides from the root mdspan
+            return std::tuple(md::mdspan(std::to_address(&infos.first(i, j)),
+                                         infos.second)...);
+          };
+          op(std::apply(make_operands, operand_infos));
         }
       }
     }

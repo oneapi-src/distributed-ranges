@@ -31,6 +31,7 @@ public:
 
   auto mdspan() const { return mdspan_; }
   auto origin() const { return origin_; }
+  auto root_mdspan() const { return mdspan(); }
 
 private:
   using T = rng::range_value_t<BaseSegment>;
