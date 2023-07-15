@@ -86,6 +86,7 @@ void stencil_for_each(auto op, dr::distributed_range auto &&...drs) {
 
       auto tile1 = grid1(tile_index, 0).mdspan();
       if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
         auto do_point = [=](auto index) {
           auto i = index[0];
           auto j = index[1];
@@ -98,10 +99,15 @@ void stencil_for_each(auto op, dr::distributed_range auto &&...drs) {
           };
           op(std::apply(make_operands, operand_infos));
         };
+        // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
+        // ndrange and handles > 32 bits.
         dr::mhp::sycl_queue()
             .parallel_for(sycl::range(tile1.extent(0), tile1.extent(1)),
                           do_point)
             .wait();
+#else
+        assert(false);
+#endif
       } else {
         for (std::size_t i = 0; i < tile1.extent(0); i++) {
           for (std::size_t j = 0; j < tile1.extent(1); j++) {
