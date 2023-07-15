@@ -74,11 +74,6 @@ all_rules = [
     (r'namespace sycl = ', 'do not define sycl namespace'),
     (r'[< (]cl::sycl', 'delete cl::'),
     (r'parallel_for<class', 'use unnamed lambda'),
-    (r'parallel_for\(sycl::range(\{|\()', 'use scalar instead of sycl::range'),
-    (
-        r'sycl::buffer.*?sycl::range(\{|\()',
-        'use scalar instead of sycl::range',
-    ),
     (r'sycl::write_only\)', 'use sycl::write_only, sycl::no_init)'),
     (
         r'\.get_access<sycl::access::mode::read',

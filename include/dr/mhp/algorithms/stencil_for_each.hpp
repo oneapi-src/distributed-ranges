@@ -85,8 +85,10 @@ void stencil_for_each(auto op, dr::distributed_range auto &&...drs) {
       std::tuple operand_infos(make_operand_info(drs)...);
 
       auto tile1 = grid1(tile_index, 0).mdspan();
-      for (std::size_t i = 0; i < tile1.extent(0); i++) {
-        for (std::size_t j = 0; j < tile1.extent(1); j++) {
+      if (mhp::use_sycl()) {
+        auto do_point = [=](auto index) {
+          auto i = index[0];
+          auto j = index[1];
           auto make_operands = [=](auto... infos) {
             // Use mdspan for tile to calculate the address of the
             // current element, and make an mdspan centered on it with
@@ -95,6 +97,23 @@ void stencil_for_each(auto op, dr::distributed_range auto &&...drs) {
                                          infos.second)...);
           };
           op(std::apply(make_operands, operand_infos));
+        };
+        dr::mhp::sycl_queue()
+            .parallel_for(sycl::range(tile1.extent(0), tile1.extent(1)),
+                          do_point)
+            .wait();
+      } else {
+        for (std::size_t i = 0; i < tile1.extent(0); i++) {
+          for (std::size_t j = 0; j < tile1.extent(1); j++) {
+            auto make_operands = [=](auto... infos) {
+              // Use mdspan for tile to calculate the address of the
+              // current element, and make an mdspan centered on it with
+              // strides from the root mdspan
+              return std::tuple(md::mdspan(std::to_address(&infos.first(i, j)),
+                                           infos.second)...);
+            };
+            op(std::apply(make_operands, operand_infos));
+          }
         }
       }
     }
