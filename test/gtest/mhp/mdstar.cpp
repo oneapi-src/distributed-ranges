@@ -300,9 +300,42 @@ TEST_F(Submdspan, GridLocalReference) {
   EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
 
-using StencilForeach = Mdspan;
+using MdForeach = Mdspan;
 
-TEST_F(StencilForeach, 2ops) {
+TEST_F(MdForeach, 2ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  auto copy_op = [](auto v) {
+    auto [in, out] = v;
+    out = in;
+  };
+
+  xhp::for_each(copy_op, a, b);
+  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2))
+      << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
+}
+
+TEST_F(MdForeach, 3ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::distributed_mdarray<T, 2> c(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  xhp::iota(c, 200);
+  auto copy_op = [](auto v) {
+    auto [in1, in2, out] = v;
+    out = in1 + in2;
+  };
+
+  xhp::for_each(copy_op, a, b, c);
+  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
+}
+
+using MdStencilForeach = Mdspan;
+
+TEST_F(MdStencilForeach, 2ops) {
   xhp::distributed_mdarray<T, 2> a(extents2d);
   xhp::distributed_mdarray<T, 2> b(extents2d);
   xhp::iota(a, 100);
@@ -317,7 +350,7 @@ TEST_F(StencilForeach, 2ops) {
       << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
 }
 
-TEST_F(StencilForeach, 3ops) {
+TEST_F(MdStencilForeach, 3ops) {
   xhp::distributed_mdarray<T, 2> a(extents2d);
   xhp::distributed_mdarray<T, 2> b(extents2d);
   xhp::distributed_mdarray<T, 2> c(extents2d);
