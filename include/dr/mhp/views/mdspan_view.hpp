@@ -179,7 +179,7 @@ mdspan_view(R &&r, dr::__detail::dr_extents<Rank> full_lengths,
 
 template <typename R>
 concept is_mdspan_view =
-    rng::viewable_range<R> && requires(R &r) { r.mdspan(); };
+    dr::distributed_range<R> && requires(R &r) { r.mdspan(); };
 
 } // namespace dr::mhp
 
