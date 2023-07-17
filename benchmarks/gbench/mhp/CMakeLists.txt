@@ -15,6 +15,7 @@ add_executable(
   stencil_1d.cpp
   stencil_2d.cpp
   chunk.cpp
+  mdspan.cpp
   mpi.cpp)
 target_compile_definitions(mhp-bench PRIVATE BENCH_MHP)
 target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)
@@ -23,7 +24,7 @@ target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
 
-add_executable(mhp-quick-bench mhp-bench.cpp stencil_2d.cpp)
+add_executable(mhp-quick-bench mhp-bench.cpp mdspan.cpp)
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
 target_link_libraries(mhp-quick-bench benchmark::benchmark cxxopts DR::mpi)
 
