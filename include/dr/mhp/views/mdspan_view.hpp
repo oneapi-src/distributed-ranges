@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/detail/mdspan_shim.hpp>
+#include <dr/detail/mdspan_utils.hpp>
 #include <dr/detail/ranges_shim.hpp>
 
 namespace dr::mhp::decomp {

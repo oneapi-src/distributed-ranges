@@ -366,4 +366,16 @@ TEST_F(MdStencilForeach, 3ops) {
   EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
 }
 
+using MdspanUtil = Mdspan;
+
+TEST_F(MdspanUtil, pack) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 100);
+
+  dr::__detail::mdspan_pack(md::mdspan(a.data(), extents2d), b.begin());
+  EXPECT_EQ(a, b);
+}
+
 #endif // Skip for gcc 10.4
