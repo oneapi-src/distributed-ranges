@@ -11,7 +11,7 @@ using DV = dr::mhp::distributed_vector<T, dr::mhp::default_allocator<T>>;
 using V = std::vector<T>;
 
 TEST(MhpSort, Sort) {
-  std::vector<std::size_t> sizes = {36};
+  std::vector<std::size_t> sizes = {33};
 
   unsigned short int seedv[] = {1, 2, 3};
   seed48(seedv);
@@ -27,6 +27,8 @@ TEST(MhpSort, Sort) {
     std::sort(l_v.begin(), l_v.end());
 
     dr::mhp::sort(d_v);
+
+    EXPECT_TRUE(equal(l_v, d_v));
 
     // for (std::size_t i = 0; i < l_v.size(); i++) {
     //   EXPECT_EQ(l_v[i], d_v[i]);
