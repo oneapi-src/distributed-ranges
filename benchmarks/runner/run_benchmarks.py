@@ -4,27 +4,40 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import csv
-import subprocess
-import json
-import os
 import datetime
+import os
+import subprocess
+
 import click
 
+
 def bench_common_params(func):
-    func = click.option('--vec_size', default=1000000, type=int, help='Size of a vector')(func)
-    func = click.option('--reps', default=100, type=int, help='Number of reps')(func)
-    func = click.option('--bench_filter', default='Stream_', type=str, help='A filter used for a benchmark')(func)
+    func = click.option(
+        '--vec_size', default=1000000, type=int, help='Size of a vector'
+    )(func)
+    func = click.option(
+        '--reps', default=100, type=int, help='Number of reps'
+    )(func)
+    func = click.option(
+        '--bench_filter',
+        default='Stream_',
+        type=str,
+        help='A filter used for a benchmark',
+    )(func)
     return func
 
+
 @click.command()
-@click.option('--dry_run', default=False, help='Emits commands but does not execute')
-def print_run_command(command:str, dry_run:bool):
+@click.option(
+    '--dry_run', default=False, help='Emits commands but does not execute'
+)
+def print_run_command(command: str, dry_run: bool):
     click.echo(f"Current benchmark command used: \n{command}")
     if not dry_run:
-        output = subprocess.run(
+        subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-    )
+        )
+
 
 @click.command()
 @bench_common_params
@@ -41,10 +54,13 @@ def run_mhp(
 ):
     bench_path = "./benchmarks/gbench/mhp/mhp-bench"
     time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
-    directory_path = f"benchmarks/json_output/mhp"
+    directory_path = "benchmarks/json_output/mhp"
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-    bench_out = f"--benchmark_out={directory_path}/mhp_benchmark_{time_now_string}.json --benchmark_out_format=json"
+    bench_out = (
+        f"--benchmark_out={directory_path}"
+        f"/mhp_benchmark_{time_now_string}.json --benchmark_out_format=json"
+    )
     if n is None:
         n = ""
     else:
@@ -55,11 +71,22 @@ def run_mhp(
         mpirun = ""
         n = ""
     if sycl_used:
-        command = f"BENCHMARK_FILTER={bench_filter} I_MPI_PIN_DOMAIN={pin_domain} I_MPI_PIN_ORDER={pin_order} I_MPI_PIN_CELL={pin_cell} {mpirun} {n} {bench_path} --sycl --vector-size {str(vec_size)} --reps {str(reps)} {bench_out}"
+        command = (
+            f"BENCHMARK_FILTER={bench_filter} I_MPI_PIN_DOMAIN={pin_domain} "
+            f"I_MPI_PIN_ORDER={pin_order} I_MPI_PIN_CELL={pin_cell} {mpirun} "
+            f"{n} {bench_path} --sycl --vector-size {str(vec_size)} --reps "
+            f"{str(reps)} {bench_out}"
+        )
     else:
-        command = f"BENCHMARK_FILTER={bench_filter} I_MPI_PIN_DOMAIN={pin_domain} I_MPI_PIN_ORDER={pin_order} I_MPI_PIN_CELL={pin_cell} {mpirun} {n} {bench_path} --vector-size {str(vec_size)} --reps {str(reps)} {bench_out}"
+        command = (
+            f"BENCHMARK_FILTER={bench_filter} I_MPI_PIN_DOMAIN={pin_domain} "
+            f"I_MPI_PIN_ORDER={pin_order} I_MPI_PIN_CELL={pin_cell} {mpirun} "
+            f"{n} {bench_path} --vector-size {str(vec_size)} --reps "
+            f"{str(reps)} {bench_out}"
+        )
 
     print_run_command(command)
+
 
 @click.command()
 @bench_common_params
@@ -72,12 +99,21 @@ def run_shp(
 ):
     bench_path = "./benchmarks/gbench/shp/shp-bench"
     time_now_string = datetime.datetime.now().isoformat(timespec='minutes')
-    directory_path = f"benchmarks/json_output/shp"
+    directory_path = "benchmarks/json_output/shp"
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-    bench_out = f"--benchmark_out={directory_path}/shp_benchmark_{time_now_string}.json --benchmark_out_format=json"
-    command = f"BENCHMARK_FILTER={bench_filter} KMP_AFFINITY={kmp_aff} {bench_path} -d {str(d)} --vector-size {str(vec_size)} --reps {str(reps)} {bench_out}"
+    bench_out = (
+        f"--benchmark_out={directory_path}"
+        f"/shp_benchmark_{time_now_string}.json "
+        f"--benchmark_out_format=json"
+    )
+    command = (
+        f"BENCHMARK_FILTER={bench_filter} KMP_AFFINITY={kmp_aff} {bench_path} "
+        f"-d {str(d)} --vector-size {str(vec_size)} --reps {str(reps)} "
+        f"{bench_out}"
+    )
     print_run_command(command)
+
 
 def run_all_benchmarks_fsycl_O3():
     kmp_affinity = "compact"
@@ -140,6 +176,7 @@ def run_all_benchmarks_fsycl_O3():
         mpirun=mpirun,
     )
 
+
 def run_all_benchmarks_other_options():
     kmp_affinity = "compact"
     mpirun = True
@@ -171,6 +208,7 @@ def run_all_benchmarks_other_options():
         pin_order=mpi_pin_order,
         pin_cell=mpi_pin_cell,
     )
+
 
 def run_mhp_test():
     sycl_used = False
