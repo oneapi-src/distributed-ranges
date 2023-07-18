@@ -31,6 +31,7 @@ add_executable(
   halo.cpp
   mdstar.cpp
   reduce.cpp
+  sort.cpp
   stencil.cpp
   segments.cpp
   slide_view.cpp)
