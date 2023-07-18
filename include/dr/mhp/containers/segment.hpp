@@ -125,7 +125,7 @@ public:
 
   void get(value_type *dst, std::size_t size) const {
     assert(dv_ != nullptr);
-    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
+    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dv_->win_.get(dst, size * sizeof(*dst), segment_index_,
                   segment_offset * sizeof(*dst));
@@ -139,7 +139,7 @@ public:
 
   void put(const value_type *dst, std::size_t size) const {
     assert(dv_ != nullptr);
-    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size_);
+    assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
@@ -234,6 +234,8 @@ public:
   auto end() const { return begin() + size(); }
 
   auto operator[](difference_type n) const { return *(begin() + n); }
+
+  bool is_local() const { return segment_index_ == default_comm().rank(); }
 
 private:
   DV *dv_ = nullptr;

@@ -24,20 +24,13 @@
 #include <utility>
 #include <vector>
 
-#ifdef DR_FORMAT
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-#endif
-
-// Workaround for doxygen warning about internal inconsistency
-namespace fmt {}
-
 #include <vendor/source_location/source_location.hpp>
 
 // MPI should be optional
 #include <mkl.h>
 #include <mpi.h>
 
+#include <dr/detail/format_shim.hpp>
 #include <dr/detail/ranges_shim.hpp>
 
 // clang-format off
@@ -71,7 +64,8 @@ namespace fmt {}
 #include <dr/mhp/algorithms/inclusive_scan.hpp>
 #include <dr/mhp/algorithms/iota.hpp>
 #include <dr/mhp/algorithms/reduce.hpp>
-#include <dr/mhp/algorithms/stencil_for_each.hpp>
+#include <dr/mhp/algorithms/md_for_each.hpp>
 #include <dr/mhp/algorithms/transform.hpp>
 #include <dr/mhp/containers/distributed_vector.hpp>
+#include <dr/mhp/containers/distributed_dense_matrix.hpp>
 #include <dr/mhp/containers/distributed_mdarray.hpp>

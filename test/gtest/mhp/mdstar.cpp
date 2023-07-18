@@ -300,4 +300,82 @@ TEST_F(Submdspan, GridLocalReference) {
   EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
 
+using MdForeach = Mdspan;
+
+TEST_F(MdForeach, 2ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  auto copy_op = [](auto v) {
+    auto [in, out] = v;
+    out = in;
+  };
+
+  xhp::for_each(copy_op, a, b);
+  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2))
+      << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
+}
+
+TEST_F(MdForeach, 3ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::distributed_mdarray<T, 2> c(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  xhp::iota(c, 200);
+  auto copy_op = [](auto v) {
+    auto [in1, in2, out] = v;
+    out = in1 + in2;
+  };
+
+  xhp::for_each(copy_op, a, b, c);
+  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
+}
+
+using MdStencilForeach = Mdspan;
+
+TEST_F(MdStencilForeach, 2ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  auto copy_op = [](auto v) {
+    auto [in, out] = v;
+    out(0, 0) = in(0, 0);
+  };
+
+  xhp::stencil_for_each(copy_op, a, b);
+  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2))
+      << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
+}
+
+TEST_F(MdStencilForeach, 3ops) {
+  xhp::distributed_mdarray<T, 2> a(extents2d);
+  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xhp::distributed_mdarray<T, 2> c(extents2d);
+  xhp::iota(a, 100);
+  xhp::iota(b, 200);
+  xhp::iota(c, 200);
+  auto copy_op = [](auto v) {
+    auto [in1, in2, out] = v;
+    out(0, 0) = in1(0, 0) + in2(0, 0);
+  };
+
+  xhp::stencil_for_each(copy_op, a, b, c);
+  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
+}
+
+using MdspanUtil = Mdspan;
+
+TEST_F(MdspanUtil, pack) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 100);
+
+  dr::__detail::mdspan_pack(md::mdspan(a.data(), extents2d), b.begin());
+  EXPECT_EQ(a, b);
+}
+
 #endif // Skip for gcc 10.4

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/detail/mdspan_shim.hpp>
+#include <dr/detail/mdspan_utils.hpp>
 #include <dr/detail/ranges_shim.hpp>
 
 namespace dr::mhp::decomp {
@@ -31,6 +32,7 @@ public:
 
   auto mdspan() const { return mdspan_; }
   auto origin() const { return origin_; }
+  auto root_mdspan() const { return mdspan(); }
 
 private:
   using T = rng::range_value_t<BaseSegment>;
@@ -178,7 +180,7 @@ mdspan_view(R &&r, dr::__detail::dr_extents<Rank> full_lengths,
 
 template <typename R>
 concept is_mdspan_view =
-    rng::viewable_range<R> && requires(R &r) { r.mdspan(); };
+    dr::distributed_range<R> && requires(R &r) { r.mdspan(); };
 
 } // namespace dr::mhp
 
