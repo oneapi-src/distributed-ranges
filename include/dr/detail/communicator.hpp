@@ -109,6 +109,35 @@ public:
     irecv(data.data(), data.size(), source, t, request);
   }
 
+  template <typename T> void alltoall(T *sendbuf, void *recvbuf, int count) {
+    MPI_Alltoall(sendbuf, count * sizeof(T), MPI_BYTE, recvbuf,
+                 count * sizeof(T), MPI_BYTE, mpi_comm_);
+  }
+
+  template <rng::contiguous_range R>
+  void alltoall(R &sendr, R &recvr, int size) {
+    alltoall(sendr.data(), recvr.data(), size);
+  }
+
+  // In alltoallv() methods the sizes and displacements must be scaled by the
+  // user before calling
+
+  template <typename T>
+  void alltoallv(T *sendbuf, int *sendcounts, int *sdispls, T *recvbuf,
+                 int *recvcounts, int *rdispls) {
+    MPI_Alltoallv(sendbuf, sendcounts, sdispls, MPI_BYTE, recvbuf, recvcounts,
+                  rdispls, MPI_BYTE, mpi_comm_);
+  }
+
+  template <typename T>
+  void alltoallv(T *sendbuf, std::vector<int> &sendcnt,
+                 std::vector<int> &senddispls, T *recvbuf,
+                 std::vector<int> &recvcnt, std::vector<int> &recvdispls) {
+
+    MPI_Alltoallv(sendbuf, sendcnt.data(), senddispls.data(), MPI_BYTE, recvbuf,
+                  recvcnt.data(), recvdispls.data(), MPI_BYTE, mpi_comm_);
+  }
+
   bool operator==(const communicator &other) const {
     return mpi_comm_ == other.mpi_comm_;
   }
