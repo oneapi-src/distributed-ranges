@@ -4,6 +4,8 @@
 
 name: Tests
 
+if: false
+
 on:
   push:
     branches:

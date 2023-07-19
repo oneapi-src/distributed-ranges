@@ -20,7 +20,7 @@ env:
   RUN_PARTITION: pvc-shared
 
 jobs:
-  devcloud::
+  devcloud:
     runs-on: devcloud
     steps:
     - uses: actions/checkout@v3
