@@ -85,28 +85,57 @@ public:
   }
 
   template <typename T>
-  void isend(const T *data, std::size_t size, std::size_t source, tag t,
+  void isend(const T *data, std::size_t size, std::size_t dest, tag t,
              MPI_Request *request) const {
-    MPI_Isend(data, size * sizeof(T), MPI_BYTE, source, int(t), mpi_comm_,
+    MPI_Isend(data, size * sizeof(T), MPI_BYTE, dest, int(t), mpi_comm_,
               request);
   }
 
   template <rng::contiguous_range R>
-  void isend(const R &data, std::size_t source, tag t,
+  void isend(const R &data, std::size_t dest, tag t,
              MPI_Request *request) const {
-    isend(data.data(), data.size(), source, int(t), request);
+    isend(data.data(), data.size(), dest, t, request);
   }
 
   template <typename T>
-  void irecv(T *data, std::size_t size, std::size_t dest, tag t,
+  void irecv(T *data, std::size_t size, std::size_t source, tag t,
              MPI_Request *request) const {
-    MPI_Irecv(data, size * sizeof(T), MPI_BYTE, dest, int(t), mpi_comm_,
+    MPI_Irecv(data, size * sizeof(T), MPI_BYTE, source, int(t), mpi_comm_,
               request);
   }
 
   template <rng::contiguous_range R>
   void irecv(R &data, std::size_t source, tag t, MPI_Request *request) const {
-    irecv(data.data(), data.size(), source, int(t), request);
+    irecv(data.data(), data.size(), source, t, request);
+  }
+
+  template <typename T> void alltoall(T *sendbuf, void *recvbuf, int count) {
+    MPI_Alltoall(sendbuf, count * sizeof(T), MPI_BYTE, recvbuf,
+                 count * sizeof(T), MPI_BYTE, mpi_comm_);
+  }
+
+  template <rng::contiguous_range R>
+  void alltoall(R &sendr, R &recvr, int size) {
+    alltoall(sendr.data(), recvr.data(), size);
+  }
+
+  // In alltoallv() methods the sizes and displacements must be scaled by the
+  // user before calling
+
+  template <typename T>
+  void alltoallv(T *sendbuf, int *sendcounts, int *sdispls, T *recvbuf,
+                 int *recvcounts, int *rdispls) {
+    MPI_Alltoallv(sendbuf, sendcounts, sdispls, MPI_BYTE, recvbuf, recvcounts,
+                  rdispls, MPI_BYTE, mpi_comm_);
+  }
+
+  template <typename T>
+  void alltoallv(T *sendbuf, std::vector<int> &sendcnt,
+                 std::vector<int> &senddispls, T *recvbuf,
+                 std::vector<int> &recvcnt, std::vector<int> &recvdispls) {
+
+    MPI_Alltoallv(sendbuf, sendcnt.data(), senddispls.data(), MPI_BYTE, recvbuf,
+                  recvcnt.data(), recvdispls.data(), MPI_BYTE, mpi_comm_);
   }
 
   bool operator==(const communicator &other) const {
