@@ -5,18 +5,22 @@
 name: Benchmarks
 
 on:
+  workflow_dispatch:
+  # 8am UTC is 12am PST, 1am PDT
   schedule:
-    - cron '0 0 * * *'
+    - cron: '0 8 * * *'
+  push:
+    branches:
+      - main
+  pull_request:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
-  IMPI: impi@2021.9.0
-  MKL:  mkl@2023.1.0
-  TBB:  tbb@2021.9.0
-  ICX:  icx@2023.1.0
+  BUILD_PARTITION: pvc-shared
+  RUN_PARTITION: pvc-shared
 
 jobs:
-  dailyBench:
+  devcloud::
     runs-on: devcloud
     steps:
     - uses: actions/checkout@v3
@@ -26,9 +30,9 @@ jobs:
         python-version: '3.x'
         cache: 'pip'
     - name: Build
-      run: srun -p pvc scripts/devcloud-build.sh
+      run: srun -p ${BUILD_PARTITION} scripts/devcloud-build.sh
     - name: Test
       # mpi does not like the way SLURM sets environment variables
-      run: srun -p pvc /usr/bin/env -i scripts/devcloud-run.sh
+      run: srun -p ${BUILD_PARTITION} /usr/bin/env -i scripts/devcloud-run.sh
     - name: Run benchmarks
-      run: srun -p pvc /usr/bin/env -i scripts/devcloud-daily.sh
+      run: srun -p ${RUN_PARTITION} /usr/bin/env -i scripts/devcloud-benchmarks.sh
