@@ -50,14 +50,15 @@ def cli(ctx, vec_size, reps, benchmark_filter, dry_run, timestamp, output):
 
 # mhp subcommand
 @cli.command()
-@click.option('--nprocs', default=1, type=int, help='Number of processes')
-@click.option('--sycl-gpu', is_flag=True, help='Use sycl')
-@click.option('--sycl-cpu', is_flag=True, help='Use sycl on cpu device')
 @click.option(
     '--bench', default='./mhp-bench', type=str, help='Benchmark program'
 )
+@click.option('--fork', is_flag=True, help='Use -launcher=fork with mpi')
+@click.option('--nprocs', default=1, type=int, help='Number of processes')
+@click.option('--sycl-cpu', is_flag=True, help='Use sycl on cpu device')
+@click.option('--sycl-gpu', is_flag=True, help='Use sycl')
 @click.pass_context
-def mhp(ctx, nprocs, sycl_gpu, sycl_cpu, bench):
+def mhp(ctx, bench, fork, nprocs, sycl_cpu, sycl_gpu):
     if sycl_gpu:
         # mhp-bench will spread GPUs over ranks automatically, so no
         # pinning ONEAPI_DEVICE_SELECTOR is workaround for devcloud
@@ -74,7 +75,7 @@ def mhp(ctx, nprocs, sycl_gpu, sycl_cpu, bench):
         sycl_args = ''
 
     command = (
-        f'{env} mpirun -n {nprocs} '
+        f'{env} mpirun {"-launcher=fork" if fork else ""} -n {nprocs} '
         f'{bench} {sycl_args} {ctx.obj["COMMON_ARGS"]} '
         f'--benchmark_out={ctx.obj["OUTPUT"]}'
     )
