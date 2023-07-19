@@ -16,7 +16,7 @@ Interface
 MHP
 ---
 
-.. doxygenfunction:: dr::mhp::copy(dr::distributed_range auto &&in, dr::distributed_iterator auto out)
+.. doxygenfunction:: dr::mhp::copy(rng::forward_range auto &&in, dr::distributed_iterator auto out)
    :outline:
 .. doxygenfunction:: dr::mhp::copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out)
    :outline:

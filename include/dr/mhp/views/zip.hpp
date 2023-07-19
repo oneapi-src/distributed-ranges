@@ -150,7 +150,7 @@ public:
     return iter;
   }
 
-  auto operator==(zip_iterator other) const {
+  bool operator==(zip_iterator other) const {
     return rng_iter_ == other.rng_iter_;
   }
   auto operator<=>(zip_iterator other) const {

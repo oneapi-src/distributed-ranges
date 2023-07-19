@@ -16,6 +16,7 @@ add_executable(
   ../common/fill.cpp
   ../common/for_each.cpp
   ../common/iota.cpp
+  # ../common/iota_view.cpp
   ../common/reduce.cpp
   ../common/subrange.cpp
   ../common/take.cpp

@@ -18,6 +18,7 @@ add_executable(
   ../common/for_each.cpp
   ../common/inclusive_scan.cpp
   ../common/iota.cpp
+  ../common/iota_view.cpp
   ../common/reduce.cpp
   ../common/subrange.cpp
   ../common/take.cpp
@@ -62,6 +63,7 @@ if(NOT MPI_IMPL STREQUAL "openmpi")
   # MPI_Win_create fails for communicator with size 1
   add_mpi_test(mhp-tests-1 mhp-tests 1)
 endif()
+
 add_mpi_test(mhp-tests-2 mhp-tests 2)
 add_mpi_test(mhp-tests-3 mhp-tests 3)
 add_mpi_test(mhp-tests-4 mhp-tests 4)
