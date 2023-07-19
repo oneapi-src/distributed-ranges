@@ -62,3 +62,9 @@ if(NOT MPI_IMPL STREQUAL "openmpi")
       --sycl)
   endif()
 endif()
+
+add_custom_target(bench DEPENDS bench-results)
+add_custom_command(
+  OUTPUT bench-results
+  COMMAND python ${CMAKE_SOURCE_DIR}/scripts/dr-bench.py mhp
+  DEPENDS mhp-bench)
