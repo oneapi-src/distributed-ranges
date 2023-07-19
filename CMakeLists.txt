@@ -20,6 +20,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   option(ENABLE_SYCL "Build sycl shp examples" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
+  option(ENABLE_MPIFORK "Use MPI fork launcher" OFF)
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
 
   #
@@ -27,6 +28,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   #
   set(CMAKE_CXX_EXTENSIONS OFF)
   set(CMAKE_CXX_STANDARD 20)
+
+  if(ENABLE_MPIFORK)
+    set(MPIEXEC_LAUNCHFLAGS "-launcher=fork")
+  endif()
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-fconcepts-diagnostics-depth=10)
@@ -142,9 +147,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(mdspan)
 
 function(add_mpi_test test_name name processes)
-  add_test(NAME ${test_name}
-           COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
-                   ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+  add_test(
+    NAME ${test_name}
+    COMMAND
+      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+      ${MPIEXEC_PREFLAGS} ${MPIEXEC_LAUNCHFLAGS} ./${name} ${ARGN}
+      COMMAND_EXPAND_LISTS)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
