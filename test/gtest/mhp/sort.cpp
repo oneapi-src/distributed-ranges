@@ -11,27 +11,43 @@ using DV = dr::mhp::distributed_vector<T, dr::mhp::default_allocator<T>>;
 using V = std::vector<T>;
 
 TEST(MhpSort, Sort) {
-  std::vector<std::size_t> sizes = {33};
+  std::size_t comm_size = dr::mhp::default_comm().size();
+  std::vector<std::size_t> sizes = {comm_size, 23, 100, 1234};
 
-  unsigned short int seedv[] = {1, 2, 3};
-  seed48(seedv);
   for (std::size_t n : sizes) {
-    std::vector<T> l_v = generate_random<T>(n, 100);
+    V l_v = generate_random<T>(n, 1000);
+    DV d_v(n);
 
-    dr::mhp::distributed_vector<T> d_v(n);
-
-    for (int idx = 0; idx < n; idx++) {
+    for (std::size_t idx = 0; idx < n; idx++) {
       d_v[idx] = l_v[idx];
     }
 
-    std::sort(l_v.begin(), l_v.end());
+    barrier();
 
     dr::mhp::sort(d_v);
+    std::sort(l_v.begin(), l_v.end());
 
     EXPECT_TRUE(equal(l_v, d_v));
+  }
+}
 
-    // for (std::size_t i = 0; i < l_v.size(); i++) {
-    //   EXPECT_EQ(l_v[i], d_v[i]);
-    // }
+TEST(MhpSort, Sort_reverse) {
+  std::size_t comm_size = dr::mhp::default_comm().size();
+  std::vector<std::size_t> sizes = {comm_size, 23, 100, 1234};
+
+  for (std::size_t n : sizes) {
+    V l_v = generate_random<T>(n, 1000);
+    DV d_v(n);
+
+    for (std::size_t idx = 0; idx < n; idx++) {
+      d_v[idx] = l_v[idx];
+    }
+
+    barrier();
+
+    dr::mhp::sort(d_v, std::greater<T>());
+    std::sort(l_v.begin(), l_v.end(), std::greater<T>());
+
+    EXPECT_TRUE(equal(l_v, d_v));
   }
 }

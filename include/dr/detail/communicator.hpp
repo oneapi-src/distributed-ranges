@@ -94,7 +94,7 @@ public:
   template <rng::contiguous_range R>
   void isend(const R &data, std::size_t source, tag t,
              MPI_Request *request) const {
-    isend(data.data(), data.size(), source, int(t), request);
+    isend(data.data(), data.size(), source, t, request);
   }
 
   template <typename T>
@@ -106,7 +106,7 @@ public:
 
   template <rng::contiguous_range R>
   void irecv(R &data, std::size_t source, tag t, MPI_Request *request) const {
-    irecv(data.data(), data.size(), source, int(t), request);
+    irecv(data.data(), data.size(), source, t, request);
   }
 
   bool operator==(const communicator &other) const {
