@@ -23,7 +23,7 @@ jobs:
   devcloud:
     runs-on: devcloud
     env:
-      CXX=icpx
+      CXX: icpx
     steps:
     - uses: actions/checkout@v3
     - name: Python setup
