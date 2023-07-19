@@ -82,8 +82,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   #
   # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG") set(CMAKE_CXX_FLAGS_RELEASE "-O3
   # -DNDEBUG")
-  set(CMAKE_C_FLAGS_RELEASE "-O3")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+  set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 
   #
   # Common dependencies for examples
@@ -182,6 +182,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # stl
     add_compile_options(-Wno-error=pass-failed)
     add_compile_options(-Wno-error=unknown-pragmas)
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+      add_compile_options(-qopenmp -qopt-streaming-stores=always
+                          -qopt-zmm-usage=high)
+      add_link_options(-qopenmp)
+    endif()
   endif()
 
   if(ENABLE_SYCL)
