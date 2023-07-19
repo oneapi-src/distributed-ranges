@@ -12,9 +12,6 @@
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/benchmarks.yml/badge.svg
-   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/benchmarks.yml
-
 Productivity library for distributed and partitioned memory based on
 C++ Ranges.
 
