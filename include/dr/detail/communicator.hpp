@@ -119,9 +119,6 @@ public:
     alltoall(sendr.data(), recvr.data(), size);
   }
 
-  // In alltoallv() methods the sizes and displacements must be scaled by the
-  // user before calling
-
   template <typename T>
   void alltoallv(T *sendbuf, int *sendcounts, int *sdispls, T *recvbuf,
                  int *recvcounts, int *rdispls) {
