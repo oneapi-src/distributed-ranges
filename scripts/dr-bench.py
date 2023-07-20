@@ -61,9 +61,8 @@ def cli(ctx, vec_size, reps, benchmark_filter, dry_run, timestamp, output):
 def mhp(ctx, bench, fork, nprocs, sycl_cpu, sycl_gpu):
     if sycl_gpu:
         # mhp-bench will spread GPUs over ranks automatically, so no
-        # pinning ONEAPI_DEVICE_SELECTOR is workaround for devcloud
-        # multi-card not working
-        env = 'ONEAPI_DEVICE_SELECTOR=level_zero:0'
+        # pinning is needed
+        env = 'ONEAPI_DEVICE_SELECTOR=level_zero:gpu'
         sycl_args = '--sycl'
     elif sycl_cpu:
         env = 'ONEAPI_DEVICE_SELECTOR=opencl:cpu'
