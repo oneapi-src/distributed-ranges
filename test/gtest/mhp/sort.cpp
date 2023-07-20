@@ -21,12 +21,11 @@ TEST(MhpSort, Sort) {
     for (std::size_t idx = 0; idx < n; idx++) {
       d_v[idx] = l_v[idx];
     }
-
     barrier();
 
     dr::mhp::sort(d_v);
     std::sort(l_v.begin(), l_v.end());
-
+    barrier();
     EXPECT_TRUE(equal(l_v, d_v));
   }
 }
@@ -42,11 +41,11 @@ TEST(MhpSort, Sort_reverse) {
     for (std::size_t idx = 0; idx < n; idx++) {
       d_v[idx] = l_v[idx];
     }
-
     barrier();
 
     dr::mhp::sort(d_v, std::greater<T>());
     std::sort(l_v.begin(), l_v.end(), std::greater<T>());
+    barrier();
 
     EXPECT_TRUE(equal(l_v, d_v));
   }

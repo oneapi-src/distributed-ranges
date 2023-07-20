@@ -29,16 +29,20 @@ void sort(R &r, Compare comp = Compare()) {
   auto &&lsegment = local_segment(r);
   assert(rng::size(lsegment) > 0);
 
+  auto policy = oneapi::dpl::execution::dpcpp_default;
+
   if (_comm_size == 0)
     return;
   else if (_comm_size == 1) {
-    rng::sort(lsegment, comp);
+    // rng::sort(lsegment, comp);
+    oneapi::dpl::sort(policy, lsegment.begin(), lsegment.end(), comp);
     return;
   }
 
   /* sort local segment */
 
-  rng::sort(lsegment, comp);
+  // rng::sort(lsegment, comp);
+  oneapi::dpl::sort(policy, lsegment.begin(), lsegment.end(), comp);
 
   std::vector<T> vec_lmedians(_comm_size - 1);
   std::vector<T> vec_gmedians((_comm_size - 1) * _comm_size);
@@ -104,6 +108,7 @@ void sort(R &r, Compare comp = Compare()) {
   std::size_t _recvsum = std::reduce(vec_rsizes.begin(), vec_rsizes.end());
 
   /* send and receive data belonging to each node */
+
   std::vector<T> vec_recvdata(_recvsum);
   std::size_t _recv_elems = rng::size(vec_recvdata);
 
