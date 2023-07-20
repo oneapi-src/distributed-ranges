@@ -26,6 +26,7 @@ add_executable(
   ../common/zip.cpp
   ../common/zip_local.cpp
   alignment.cpp
+  communicator.cpp
   copy.cpp
   distributed_vector.cpp
   distributed_dense_matrix.cpp

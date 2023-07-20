@@ -125,17 +125,45 @@ public:
   template <typename T>
   void alltoallv(T *sendbuf, int *sendcounts, int *sdispls, T *recvbuf,
                  int *recvcounts, int *rdispls) {
-    MPI_Alltoallv(sendbuf, sendcounts, sdispls, MPI_BYTE, recvbuf, recvcounts,
-                  rdispls, MPI_BYTE, mpi_comm_);
+
+    std::span<int> sendcnt(sendcounts, sendcounts + size_);
+    std::span<int> senddsp(sdispls, sdispls + size_);
+    std::span<int> recvcnt(recvcounts, recvcounts + size_);
+    std::span<int> recvdsp(rdispls, rdispls + size_);
+
+    std::vector<int> _sendcnt(size_);
+    std::vector<int> _senddsp(size_);
+    std::vector<int> _recvcnt(size_);
+    std::vector<int> _recvdsp(size_);
+
+    rng::transform(sendcnt, _sendcnt.begin(),
+                   [](auto e) { return e * sizeof(T); });
+    rng::transform(senddsp, _senddsp.begin(),
+                   [](auto e) { return e * sizeof(T); });
+    rng::transform(recvcnt, _recvcnt.begin(),
+                   [](auto e) { return e * sizeof(T); });
+    rng::transform(recvdsp, _recvdsp.begin(),
+                   [](auto e) { return e * sizeof(T); });
+
+    MPI_Alltoallv(sendbuf, _sendcnt.data(), _senddsp.data(), MPI_BYTE, recvbuf,
+                  _recvcnt.data(), _recvdsp.data(), MPI_BYTE, MPI_COMM_WORLD);
+  }
+
+  template <rng::contiguous_range R>
+  void alltoallv(R &s, std::vector<int> &sendcnt, std::vector<int> &senddsp,
+                 R &r, std::vector<int> &recvcnt, std::vector<int> &recvdsp) {
+
+    alltoallv(s.data(), sendcnt.data(), senddsp.data(), r.data(),
+              recvcnt.data(), recvdsp.data());
   }
 
   template <typename T>
   void alltoallv(T *sendbuf, std::vector<int> &sendcnt,
-                 std::vector<int> &senddispls, T *recvbuf,
-                 std::vector<int> &recvcnt, std::vector<int> &recvdispls) {
+                 std::vector<int> &senddsp, T *recvbuf,
+                 std::vector<int> &recvcnt, std::vector<int> &recvdsp) {
 
-    MPI_Alltoallv(sendbuf, sendcnt.data(), senddispls.data(), MPI_BYTE, recvbuf,
-                  recvcnt.data(), recvdispls.data(), MPI_BYTE, mpi_comm_);
+    alltoallv(sendbuf, sendcnt.data(), senddsp.data(), recvbuf, recvcnt.data(),
+              recvdsp.data());
   }
 
   bool operator==(const communicator &other) const {
