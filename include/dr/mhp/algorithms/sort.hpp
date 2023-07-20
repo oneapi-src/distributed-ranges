@@ -38,7 +38,7 @@ void sort(R &r, Compare comp = Compare()) {
 
   /* sort local segment */
 
-  std::sort(lsegment.begin(), lsegment.end(), comp);
+  rng::sort(lsegment, comp);
 
   std::vector<T> vec_lmedians(_comm_size - 1);
   std::vector<T> vec_gmedians((_comm_size - 1) * _comm_size);
@@ -74,19 +74,19 @@ void sort(R &r, Compare comp = Compare()) {
 
   while (vidx < _comm_size) {
     if (comp(vec_split_v[vidx - 1], *(lsegment.begin() + segidx))) {
-      vec_split_i[vidx] = segidx * sizeof(T);
+      vec_split_i[vidx] = segidx;
       vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
       std::size_t _sum = std::reduce(vec_split_s.begin(), vec_split_s.end());
-      if (_sum > rng::size(lsegment) * sizeof(T)) {
-        vec_split_s[vidx - 1] -= _sum - rng::size(lsegment) * sizeof(T);
+      if (_sum > rng::size(lsegment)) {
+        vec_split_s[vidx - 1] -= _sum - rng::size(lsegment);
       }
       vidx++;
     } else
       segidx++;
   }
   vec_split_s[vidx - 1] =
-      ((int)(rng::size(lsegment) * sizeof(T) - vec_split_i[vidx - 1]) > 0)
-          ? (rng::size(lsegment) * sizeof(T) - vec_split_i[vidx - 1])
+      ((int)(rng::size(lsegment) - vec_split_i[vidx - 1]) > 0)
+          ? (rng::size(lsegment) - vec_split_i[vidx - 1])
           : 0;
 
   assert(vec_split_s[vidx - 1] >= 0);
@@ -104,7 +104,7 @@ void sort(R &r, Compare comp = Compare()) {
   std::size_t _recvsum = std::reduce(vec_rsizes.begin(), vec_rsizes.end());
 
   /* send and receive data belonging to each node */
-  std::vector<T> vec_recvdata(_recvsum / sizeof(T));
+  std::vector<T> vec_recvdata(_recvsum);
   std::size_t _recv_elems = rng::size(vec_recvdata);
 
   default_comm().alltoallv(lsegment.data(), vec_split_s, vec_split_i,
