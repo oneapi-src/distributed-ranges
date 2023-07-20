@@ -7,35 +7,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # tested with a variable number of ranks
 add_executable(
   mhp-tests
-  mhp-tests.cpp
-  ../common/all.cpp
-  ../common/copy.cpp
-  ../common/counted.cpp
-  ../common/distributed_vector.cpp
-  ../common/drop.cpp
-  ../common/enumerate.cpp
-  ../common/fill.cpp
-  ../common/for_each.cpp
-  ../common/inclusive_scan.cpp
-  ../common/iota.cpp
-  ../common/iota_view.cpp
-  ../common/reduce.cpp
-  ../common/subrange.cpp
-  ../common/take.cpp
-  ../common/transform.cpp
-  ../common/transform_view.cpp
-  ../common/zip.cpp
-  ../common/zip_local.cpp
-  alignment.cpp
-  copy.cpp
-  distributed_vector.cpp
-  distributed_dense_matrix.cpp
-  halo.cpp
-  mdstar.cpp
-  reduce.cpp
-  stencil.cpp
-  segments.cpp
-  slide_view.cpp)
+  mhp-tests.cpp ../common/all.cpp ../common/copy.cpp ../common/counted.cpp
+  ../common/distributed_vector.cpp ../common/drop.cpp ../common/enumerate.cpp
+  ../common/fill.cpp ../common/for_each.cpp ../common/inclusive_scan.cpp
+  ../common/iota.cpp ../common/iota_view.cpp ../common/reduce.cpp
+  ../common/subrange.cpp ../common/take.cpp ../common/transform.cpp
+  ../common/transform_view.cpp ../common/zip.cpp ../common/zip_local.cpp
+  alignment.cpp copy.cpp distributed_vector.cpp distributed_dense_matrix.cpp
+  halo.cpp mdstar.cpp reduce.cpp stencil.cpp segments.cpp slide_view.cpp)
 
 add_executable(mhp-tests-3 mhp-tests.cpp halo-3.cpp slide_view-3.cpp
                            distributed_dense_matrix3.cpp)
