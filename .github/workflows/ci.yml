@@ -101,11 +101,29 @@ jobs:
       CXX: icpx
     steps:
     - uses: actions/checkout@v3
+    - name: Python setup
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        cache: 'pip'
+    - name: Install python packages
+      run: pip install -r requirements.txt
     - name: Build
       run: srun -p pvc-shared scripts/devcloud-build.sh
     - name: Test
-      # mpi does not like the way SLURM sets environment variables
-      run: srun -p pvc-shared /usr/bin/env -i scripts/devcloud-run.sh
+      run: srun -p pvc-shared scripts/devcloud-run.sh
+    - name: Benchmark
+      run: srun -p pvc scripts/devcloud-benchmarks.sh
+    - uses: actions/upload-artifact@v3
+      with:
+        name: log-devcloud-bench
+        path: |
+          build/benchmarks/gbench/mhp/dr-bench*.json
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: log-icpx
+        path: build/Testing
 
   publish:
     needs: [checks, clang, gcc, icpx]

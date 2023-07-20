@@ -7,5 +7,6 @@
 set -e
 hostname
 source /opt/intel/oneapi/setvars.sh
-cmake -B build -DENABLE_SYCL=on
+# devcloud requires --launcher=fork for mpi
+cmake -B build -DENABLE_SYCL=on -DENABLE_MPIFORK=on
 make -C build -j

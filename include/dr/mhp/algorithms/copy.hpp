@@ -9,7 +9,7 @@
 namespace dr::mhp {
 
 /// Copy
-void copy(dr::distributed_range auto &&in, dr::distributed_iterator auto out) {
+void copy(rng::forward_range auto &&in, dr::distributed_iterator auto out) {
   if (rng::empty(in)) {
     return;
   }
