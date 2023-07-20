@@ -6,17 +6,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(
   mhp-bench
-  mhp-bench.cpp
-  ../common/distributed_vector.cpp
-  ../common/dot_product.cpp
-  ../common/stream.cpp
-  ../common/black_scholes.cpp
-  rooted.cpp
-  stencil_1d.cpp
-  stencil_2d.cpp
-  chunk.cpp
-  mdspan.cpp
-  mpi.cpp)
+  mhp-bench.cpp ../common/distributed_vector.cpp ../common/dot_product.cpp
+  ../common/stream.cpp ../common/black_scholes.cpp rooted.cpp stencil_1d.cpp
+  stencil_2d.cpp chunk.cpp mdspan.cpp mpi.cpp)
 target_compile_definitions(mhp-bench PRIVATE BENCH_MHP)
 target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)
 
@@ -36,29 +28,17 @@ if(NOT MPI_IMPL STREQUAL "openmpi")
   # intermittent fails with: ONEAPI_DEVICE_SELECTOR=opencl:cpu mpirun -n 1
   # ./mhp-bench --vector-size 30000 --rows 100 --columns 100 --check
   add_mpi_test(
-    mhp-bench-1
-    mhp-bench
-    1
-    --vector-size
-    30000
-    --rows
-    100
-    --columns
-    100
+    mhp-bench-1 mhp-bench 1 --vector-size 30000 --rows 100 --columns 100
     --check)
   if(ENABLE_SYCL)
     add_mpi_test(
-      mhp-bench-1-sycl
-      mhp-bench
-      1
-      --vector-size
-      30000
-      --rows
-      100
-      --columns
-      100
-      --check
-      --benchmark_filter=-.*DPL.*
-      --sycl)
+      mhp-bench-1-sycl mhp-bench 1 --vector-size 30000 --rows 100 --columns 100
+      --check --benchmark_filter=-.*DPL.* --sycl)
   endif()
 endif()
+
+add_custom_target(bench DEPENDS bench-results)
+add_custom_command(
+  OUTPUT bench-results
+  COMMAND python ${CMAKE_SOURCE_DIR}/scripts/dr-bench.py mhp --fork
+  DEPENDS mhp-bench)

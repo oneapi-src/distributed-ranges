@@ -8,9 +8,6 @@ set -e
 hostname
 source /opt/intel/oneapi/setvars.sh
 
-# we clear the environment to make mpi work, add back error output
-export CTEST_OUTPUT_ON_FAILURE=1
-
 # default sycl device will be GPU, if available. Only use 1 GPU:
 # workaround for devcloud multi-card not working
 ONEAPI_DEVICE_SELECTOR=level_zero:0 make -C build test
