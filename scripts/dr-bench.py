@@ -13,7 +13,7 @@ import click
 def execute(command: str, ctx):
     click.echo(command)
     if not ctx.obj['DRY_RUN']:
-        subprocess.run(command, shell=True)
+        subprocess.run(command, shell=True, check=True)
 
 
 # common arguments
