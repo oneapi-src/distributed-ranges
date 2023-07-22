@@ -387,16 +387,14 @@ TEST_F(MdspanUtil, Transpose) {
 
   // transpose view of mda
   dr::__detail::mdtranspose<decltype(mda), 1, 0> mdat(mda);
-  EXPECT_EQ(mda(3, 1), mdat(1, 3));
-  EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3})));
-  ;
+  auto message = fmt::format("mda:\n{}mdat:\n{}", mda, mdat);
+  EXPECT_EQ(mda(3, 1), mdat(1, 3)) << message;
+  EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3}))) << message;
 
-  fmt::print("mda:\n{}", mda);
-  // fmt::print("mdat:\n{}", mdat);
   //  pack the transpose view into b
   dr::__detail::mdspan_pack(mdat, b.begin());
-  EXPECT_EQ(a[3 * ydim + 1], b[1 * xdim + 3]);
-  fmt::print("B: {}\n", b);
+  EXPECT_EQ(a[3 * ydim + 1], b[1 * xdim + 3])
+      << fmt::format("mdat:\n{}b:\n{}", mdat, b);
 }
 
 #endif // Skip for gcc 10.4

@@ -6,37 +6,13 @@
 
 #include <dr/detail/mdspan_shim.hpp>
 
-template <typename T, typename Extents, typename LayoutPolicy,
-          typename Accessor>
-struct fmt::formatter<md::mdspan<T, Extents, LayoutPolicy, Accessor>, char>
-    : public formatter<string_view> {
-  template <typename FmtContext>
-  auto format(md::mdspan<T, Extents, LayoutPolicy, Accessor> mdspan,
-              FmtContext &ctx) const {
-    std::array<std::size_t, mdspan.rank()> index;
-    rng::fill(index, 0);
-    format_mdspan(ctx, mdspan, index, 0);
-    return ctx.out();
-  }
-
-  void format_mdspan(auto &ctx, auto mdspan, auto &index,
-                     std::size_t dim) const {
-    for (std::size_t i = 0; i < mdspan.extent(dim); i++) {
-      index[dim] = i;
-      if (dim == mdspan.rank() - 1) {
-        if (i == 0) {
-          format_to(ctx.out(), "{}: ", index);
-        }
-        format_to(ctx.out(), "{:4} ", mdspan(index));
-      } else {
-        format_mdspan(ctx, mdspan, index, dim + 1);
-      }
-    }
-    format_to(ctx.out(), "\n");
-  }
-};
-
 namespace dr::__detail {
+
+template <typename Mdspan>
+concept mdspan_like = requires(Mdspan &mdspan) {
+  mdspan.rank();
+  mdspan.extents();
+};
 
 template <std::size_t Rank> using dr_extents = std::array<std::size_t, Rank>;
 template <std::size_t Rank> using md_extents = md::dextents<std::size_t, Rank>;
@@ -97,7 +73,7 @@ void mdspan_pack(M mdspan, std::forward_iterator auto iter) {
 
 // For operator(), rearrange indices according to template arguments.
 //
-// For mdpermute<mdspan2d, 2, 1> a(b);
+// For mdtranspose<mdspan2d, 1, 0> a(b);
 //
 // a(3, 4) will do b(4, 3)
 //
@@ -115,6 +91,36 @@ public:
   auto &operator()(std::array<std::size_t, Mdspan::rank()> index) {
     return Mdspan::operator()(index[Is]...);
   }
+
+  auto extents() { return md_extents<Mdspan::rank()>(Mdspan::extent(Is)...); }
+  auto extent(std::size_t d) { return extents().extent(d); }
 };
 
 } // namespace dr::__detail
+
+template <dr::__detail::mdspan_like Mdspan>
+struct fmt::formatter<Mdspan, char> : public formatter<string_view> {
+  template <typename FmtContext>
+  auto format(Mdspan mdspan, FmtContext &ctx) const {
+    std::array<std::size_t, mdspan.rank()> index;
+    rng::fill(index, 0);
+    format_mdspan(ctx, mdspan, index, 0);
+    return ctx.out();
+  }
+
+  void format_mdspan(auto &ctx, auto mdspan, auto &index,
+                     std::size_t dim) const {
+    for (std::size_t i = 0; i < mdspan.extent(dim); i++) {
+      index[dim] = i;
+      if (dim == mdspan.rank() - 1) {
+        if (i == 0) {
+          format_to(ctx.out(), "{}: ", index);
+        }
+        format_to(ctx.out(), "{:4} ", mdspan(index));
+      } else {
+        format_mdspan(ctx, mdspan, index, dim + 1);
+      }
+    }
+    format_to(ctx.out(), "\n");
+  }
+};
