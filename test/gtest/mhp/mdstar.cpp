@@ -368,7 +368,7 @@ TEST_F(MdStencilForeach, 3ops) {
 
 using MdspanUtil = Mdspan;
 
-TEST_F(MdspanUtil, pack) {
+TEST_F(MdspanUtil, Pack) {
   std::vector<T> a(xdim * ydim);
   std::vector<T> b(xdim * ydim);
   rng::iota(a, 100);
@@ -376,6 +376,27 @@ TEST_F(MdspanUtil, pack) {
 
   dr::__detail::mdspan_pack(md::mdspan(a.data(), extents2d), b.begin());
   EXPECT_EQ(a, b);
+}
+
+TEST_F(MdspanUtil, Transpose) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 100);
+  md::mdspan mda(a.data(), extents2d);
+
+  // transpose view of mda
+  dr::__detail::mdtranspose<decltype(mda), 1, 0> mdat(mda);
+  EXPECT_EQ(mda(3, 1), mdat(1, 3));
+  EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3})));
+  ;
+
+  fmt::print("mda:\n{}", mda);
+  // fmt::print("mdat:\n{}", mdat);
+  //  pack the transpose view into b
+  dr::__detail::mdspan_pack(mdat, b.begin());
+  EXPECT_EQ(a[3 * ydim + 1], b[1 * xdim + 3]);
+  fmt::print("B: {}\n", b);
 }
 
 #endif // Skip for gcc 10.4

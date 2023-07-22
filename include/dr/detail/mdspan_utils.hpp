@@ -95,4 +95,26 @@ void mdspan_pack(M mdspan, std::forward_iterator auto iter) {
   mdspan_pack_impl(mdspan, iter, index, 0);
 }
 
+// For operator(), rearrange indices according to template arguments.
+//
+// For mdpermute<mdspan2d, 2, 1> a(b);
+//
+// a(3, 4) will do b(4, 3)
+//
+template <typename Mdspan, std::size_t... Is>
+class mdtranspose : public Mdspan {
+public:
+  // Inherit constructors from base class
+  mdtranspose(Mdspan &mdspan) : Mdspan(mdspan) {}
+
+  // rearrange indices according to template arguments
+  template <std::integral... Indexes> auto &operator()(Indexes... indexes) {
+    std::tuple index(indexes...);
+    return Mdspan::operator()(std::get<Is>(index)...);
+  }
+  auto &operator()(std::array<std::size_t, Mdspan::rank()> index) {
+    return Mdspan::operator()(index[Is]...);
+  }
+};
+
 } // namespace dr::__detail
