@@ -375,7 +375,17 @@ TEST_F(MdspanUtil, Pack) {
   rng::iota(a, 100);
   rng::iota(b, 100);
 
-  dr::__detail::mdspan_pack(md::mdspan(a.data(), extents2d), b.begin());
+  dr::__detail::mdspan_copy(md::mdspan(a.data(), extents2d), b.begin());
+  EXPECT_EQ(a, b);
+}
+
+TEST_F(MdspanUtil, UnPack) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 100);
+
+  dr::__detail::mdspan_copy(a.begin(), md::mdspan(b.data(), extents2d));
   EXPECT_EQ(a, b);
 }
 
@@ -407,7 +417,7 @@ TEST_F(MdspanUtil, Transpose) {
   EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3}))) << tv_message;
 
   // Transpose pack
-  dr::__detail::mdspan_pack(mdat, b.begin());
+  dr::__detail::mdspan_copy(mdat, b.begin());
   EXPECT_EQ(a[3 * ydim + 1], b[1 * xdim + 3])
       << fmt::format("mdat:\n{}b:\n{}", mdat, b);
 

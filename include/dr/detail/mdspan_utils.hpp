@@ -53,40 +53,36 @@ auto make_submdspan(auto mdspan, const std::array<std::size_t, Rank> &starts,
                              std::make_index_sequence<Rank>{});
 }
 
-template <typename M>
-void mdspan_pack_impl(M mdspan, auto &iter, dr_extents<M::rank()> &index,
-                      std::size_t rank) {
-  for (index[rank] = 0; index[rank] < mdspan.extent(rank); index[rank]++) {
-    if (rank == M::rank() - 1) {
-      *iter++ = mdspan(index);
+template <std::size_t Rank, typename Op>
+void mdspan_foreach(md_extents<Rank> extents, Op op,
+                    dr_extents<Rank> index = dr_extents<Rank>(),
+                    std::size_t rank = 0) {
+  for (index[rank] = 0; index[rank] < extents.extent(rank); index[rank]++) {
+    if (rank == Rank - 1) {
+      op(index);
     } else {
-      mdspan_pack_impl(mdspan, iter, index, rank + 1);
+      mdspan_foreach(extents, op, index, rank + 1);
     }
   }
 }
 
-template <typename M>
-void mdspan_pack(M mdspan, std::forward_iterator auto iter) {
-  dr_extents<M::rank()> index;
-  mdspan_pack_impl(mdspan, iter, index, 0);
+// Pack mdspan into contiguous container
+void mdspan_copy(mdspan_like auto src, std::forward_iterator auto dst) {
+  auto pack = [src, &dst](auto index) { *dst++ = src(index); };
+  mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
 }
 
-template <mdspan_like Src, mdspan_like Dst>
-void mdspan_copy_impl(Src src, Dst dst, dr_extents<Src::rank()> &index,
-                      std::size_t rank) {
-  for (index[rank] = 0; index[rank] < src.extent(rank); index[rank]++) {
-    if (rank == Src::rank() - 1) {
-      dst(index) = src(index);
-    } else {
-      mdspan_copy_impl(src, dst, index, rank + 1);
-    }
-  }
+// unpack contiguous container into mdspan
+void mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst) {
+  auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
+  mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
 }
 
-template <mdspan_like Src, mdspan_like Dst> void mdspan_copy(Src src, Dst dst) {
+// copy mdspan to mdspan
+void mdspan_copy(mdspan_like auto src, mdspan_like auto dst) {
   assert(src.extents() == dst.extents());
-  dr_extents<Src::rank()> index;
-  mdspan_copy_impl(src, dst, index, 0);
+  auto copy = [src, dst](auto index) { dst(index) = src(index); };
+  mdspan_foreach<src.rank(), decltype(copy)>(src.extents(), copy);
 }
 
 // For operator(), rearrange indices according to template arguments.
@@ -102,16 +98,19 @@ public:
   mdtranspose(Mdspan &mdspan) : Mdspan(mdspan) {}
 
   // rearrange indices according to template arguments
-  template <std::integral... Indexes> auto &operator()(Indexes... indexes) {
+  template <std::integral... Indexes>
+  auto &operator()(Indexes... indexes) const {
     std::tuple index(indexes...);
     return Mdspan::operator()(std::get<Is>(index)...);
   }
-  auto &operator()(std::array<std::size_t, Mdspan::rank()> index) {
+  auto &operator()(std::array<std::size_t, Mdspan::rank()> index) const {
     return Mdspan::operator()(index[Is]...);
   }
 
-  auto extents() { return md_extents<Mdspan::rank()>(Mdspan::extent(Is)...); }
-  auto extent(std::size_t d) { return extents().extent(d); }
+  auto extents() const {
+    return md_extents<Mdspan::rank()>(Mdspan::extent(Is)...);
+  }
+  auto extent(std::size_t d) const { return extents().extent(d); }
 };
 
 } // namespace dr::__detail
