@@ -16,6 +16,7 @@ protected:
   std::size_t n2d = xdim * ydim, n3d = xdim * ydim * zdim;
 
   std::array<std::size_t, 2> extents2d = {xdim, ydim};
+  std::array<std::size_t, 2> extents2dt = {ydim, xdim};
   std::array<std::size_t, 3> extents3d = {xdim, ydim, zdim};
 
   // 2d data with 1d decompostion
@@ -378,23 +379,42 @@ TEST_F(MdspanUtil, Pack) {
   EXPECT_EQ(a, b);
 }
 
-TEST_F(MdspanUtil, Transpose) {
+TEST_F(MdspanUtil, Copy) {
   std::vector<T> a(xdim * ydim);
   std::vector<T> b(xdim * ydim);
   rng::iota(a, 100);
   rng::iota(b, 100);
+
+  dr::__detail::mdspan_copy(md::mdspan(a.data(), extents2d),
+                            md::mdspan(b.data(), extents2d));
+  EXPECT_EQ(a, b);
+}
+
+TEST_F(MdspanUtil, Transpose) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  std::vector<T> c(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 200);
+  rng::iota(c, 300);
   md::mdspan mda(a.data(), extents2d);
+  md::mdspan mdc(c.data(), extents2dt);
 
-  // transpose view of mda
+  // Transpose view
   dr::__detail::mdtranspose<decltype(mda), 1, 0> mdat(mda);
-  auto message = fmt::format("mda:\n{}mdat:\n{}", mda, mdat);
-  EXPECT_EQ(mda(3, 1), mdat(1, 3)) << message;
-  EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3}))) << message;
+  auto tv_message = fmt::format("mda:\n{}mdat:\n{}", mda, mdat);
+  EXPECT_EQ(mda(3, 1), mdat(1, 3)) << tv_message;
+  EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3}))) << tv_message;
 
-  //  pack the transpose view into b
+  // Transpose pack
   dr::__detail::mdspan_pack(mdat, b.begin());
   EXPECT_EQ(a[3 * ydim + 1], b[1 * xdim + 3])
       << fmt::format("mdat:\n{}b:\n{}", mdat, b);
+
+  // Transpose copy
+  dr::__detail::mdspan_copy(mdat, mdc);
+  EXPECT_EQ(mdat(3, 1), mdc(3, 1))
+      << fmt::format("mdat:\n{}mdc:\n{}", mdat, mdc);
 }
 
 #endif // Skip for gcc 10.4

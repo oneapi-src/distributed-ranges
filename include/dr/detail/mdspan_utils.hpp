@@ -71,6 +71,24 @@ void mdspan_pack(M mdspan, std::forward_iterator auto iter) {
   mdspan_pack_impl(mdspan, iter, index, 0);
 }
 
+template <mdspan_like Src, mdspan_like Dst>
+void mdspan_copy_impl(Src src, Dst dst, dr_extents<Src::rank()> &index,
+                      std::size_t rank) {
+  for (index[rank] = 0; index[rank] < src.extent(rank); index[rank]++) {
+    if (rank == Src::rank() - 1) {
+      dst(index) = src(index);
+    } else {
+      mdspan_copy_impl(src, dst, index, rank + 1);
+    }
+  }
+}
+
+template <mdspan_like Src, mdspan_like Dst> void mdspan_copy(Src src, Dst dst) {
+  assert(src.extents() == dst.extents());
+  dr_extents<Src::rank()> index;
+  mdspan_copy_impl(src, dst, index, 0);
+}
+
 // For operator(), rearrange indices according to template arguments.
 //
 // For mdtranspose<mdspan2d, 1, 0> a(b);
