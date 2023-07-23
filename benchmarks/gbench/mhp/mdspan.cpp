@@ -15,7 +15,7 @@ static void MdspanUtil_Pack(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      dr::__detail::mdspan_pack(
+      dr::__detail::mdspan_copy(
           md::mdspan(a.data(), std::array{num_rows, num_columns}), b.begin());
     }
   }
