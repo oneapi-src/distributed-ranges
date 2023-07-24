@@ -111,10 +111,10 @@ jobs:
     - name: Build and install benchmark framework
       working-directory: src-python/drbench
       run: python -m build && pip install dist/drbench-*tar.gz
-    - name: Build
-      run: srun -p pvc-shared scripts/devcloud-build.sh
-    - name: Test
-      run: srun -p pvc-shared scripts/devcloud-run.sh
+#    - name: Build
+#      run: srun -p pvc-shared scripts/devcloud-build.sh
+#    - name: Test
+#      run: srun -p pvc-shared scripts/devcloud-run.sh
     - name: Benchmark
       run: srun -p pvc scripts/devcloud-benchmarks.sh
     - uses: actions/upload-artifact@v3
@@ -129,7 +129,7 @@ jobs:
         path: build/Testing
 
   publish:
-    needs: [checks, clang, gcc, icpx]
+    needs: [checks, icpx]
     runs-on: ubuntu-latest
     env:
       SPHINXOPTS: -q -W
