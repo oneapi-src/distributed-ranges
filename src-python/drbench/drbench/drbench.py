@@ -5,15 +5,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import datetime
-import subprocess
 
 import click
-
-
-def execute(command: str, ctx):
-    click.echo(command)
-    if not ctx.obj['DRY_RUN']:
-        subprocess.run(command, shell=True, check=True)
+from drbench import plotter, runner
 
 
 # common arguments
@@ -78,12 +72,13 @@ def mhp(ctx, bench, fork, nprocs, sycl_cpu, sycl_gpu):
         f'{bench} {sycl_args} {ctx.obj["COMMON_ARGS"]} '
         f'--benchmark_out={ctx.obj["OUTPUT"]}'
     )
-    execute(command, ctx)
+    runner.execute(command, ctx)
+
 
 @cli.command()
 @click.pass_context
 def plot(ctx):
-    pass
+    plotter.do_nothing()  # TODO: to be implemented
 
 
 if __name__ == '__main__':

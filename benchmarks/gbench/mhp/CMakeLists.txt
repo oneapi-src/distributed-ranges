@@ -7,13 +7,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_executable(
   mhp-bench
   mhp-bench.cpp ../common/distributed_vector.cpp ../common/dot_product.cpp
-  ../common/stream.cpp rooted.cpp stencil_1d.cpp
-  stencil_2d.cpp chunk.cpp mdspan.cpp mpi.cpp)
+  ../common/stream.cpp rooted.cpp stencil_1d.cpp stencil_2d.cpp chunk.cpp
+  mdspan.cpp mpi.cpp)
 
 if(NOT ENABLE_CUDA)
   # black_scholes.cpp does not compile in CUDA because it uses std::log
   target_sources(mhp-bench PRIVATE ../common/black_scholes.cpp)
-endif ()
+endif()
 
 target_compile_definitions(mhp-bench PRIVATE BENCH_MHP)
 target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)

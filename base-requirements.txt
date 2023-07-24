@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # procedure of adding a new python package to our repo
-# 1. create venv
-# 2. edit base-requirements.txt
-# 3. do pip install -r base-requirements.txt
+# 1. edit base-requirements.txt
+# 3. run scripts/regenerate-requitements-txt.sh
 # 4. do pip freeze > requirements.txt
 # 5. commit changes to repo
 
