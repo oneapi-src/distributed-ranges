@@ -8,9 +8,6 @@
 # 4. do pip freeze > requirements.txt
 # 5. commit changes to repo
 
-# Creating custom python packages (e.g. for benchmarking)
-build
-
 # Testing
 pre-commit
 

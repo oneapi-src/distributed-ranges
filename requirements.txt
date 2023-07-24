@@ -7,7 +7,6 @@ alabaster==0.7.13
 Babel==2.12.1
 beautifulsoup4==4.12.2
 breathe==4.35.0
-build==0.10.0
 certifi==2023.7.22
 cfgv==3.3.1
 charset-normalizer==3.2.0
@@ -26,7 +25,6 @@ pre-commit==3.3.3
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
 Pygments==2.15.1
-pyproject_hooks==1.0.0
 PyYAML==6.0.1
 requests==2.31.0
 snowballstemmer==2.2.0
@@ -40,7 +38,6 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 sphinxcontrib-spelling==8.0.0
-tomli==2.0.1
 typing_extensions==4.7.1
 urllib3==2.0.4
 virtualenv==20.24.1
