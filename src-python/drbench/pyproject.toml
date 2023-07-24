@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drbench"
+version = "0.0.1"
+description = "Benchmarking framework for distributed ranges project"
+dependencies = [
+    "click",
+    'importlib-metadata; python_version<"3.8"',
+]
+[project.scripts]
+dr-bench = "drbench.drbench:cli"

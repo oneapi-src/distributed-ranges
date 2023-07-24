@@ -108,6 +108,8 @@ jobs:
         cache: 'pip'
     - name: Install python packages
       run: pip install -r requirements.txt
+    - name: Install benchmark framework
+      run: pip install src-python/drbench
     - name: Build
       run: srun -p pvc-shared scripts/devcloud-build.sh
     - name: Test
