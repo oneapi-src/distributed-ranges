@@ -111,8 +111,8 @@ jobs:
     - name: Build and install benchmark framework
       working-directory: src-python/drbench
       run: python -m build && pip install dist/drbench-*tar.gz
-#    - name: Build
-#      run: srun -p pvc-shared scripts/devcloud-build.sh
+    - name: Build
+      run: srun -p pvc-shared scripts/devcloud-build.sh
 #    - name: Test
 #      run: srun -p pvc-shared scripts/devcloud-run.sh
     - name: Benchmark
