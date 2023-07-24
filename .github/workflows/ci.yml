@@ -33,67 +33,67 @@ jobs:
     - name: Checks
       uses: pre-commit/action@v3.0.0
 
-#  clang:
-#    runs-on: ubuntu-latest
-#    env:
-#      CXX: clang++-15
-#    steps:
-#    - uses: actions/checkout@v3
-#    - name: Apt installs
-#      run: |
-#        sudo apt update
-#        sudo apt install -y clang-15
-#    - uses: rscohn2/setup-oneapi@v0
-#      with:
-#        components: |
-#          ${{ env.IMPI }}
-#          ${{ env.MKL }}
-#          ${{ env.TBB }}
-#    - name: Build & test
-#      run: |
-#        source /opt/intel/oneapi/setvars.sh
-#        cmake -B build
-#        make -j 2 -C build all test
-#    - uses: actions/upload-artifact@v3
-#      if: always()
-#      with:
-#        name: log-clang-${{ env.CXX }}
-#        path: build/Testing
-#
-#  gcc:
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        include:
-#        - cxx: g++-10
-#        - cxx: g++-11
-#        - cxx: g++-12
-#    name: ${{ matrix.cxx }}
-#    env:
-#      CXX: ${{ matrix.cxx }}
-#    steps:
-#    - uses: actions/checkout@v3
-#    - uses: rscohn2/setup-oneapi@v0
-#      with:
-#        components: |
-#          ${{ env.IMPI }}
-#          ${{ env.MKL }}
-#          ${{ env.TBB }}
-#    - name: Build
-#      run: |
-#        source /opt/intel/oneapi/setvars.sh
-#        cmake -B build
-#        make -j 2 -C build
-#    - name: Test
-#      run: |
-#        source /opt/intel/oneapi/setvars.sh
-#        make -C build test
-#    - uses: actions/upload-artifact@v3
-#      if: always()
-#      with:
-#        name: log-gcc-${{ env.CXX }}
-#        path: build/Testing
+  clang:
+    runs-on: ubuntu-latest
+    env:
+      CXX: clang++-15
+    steps:
+    - uses: actions/checkout@v3
+    - name: Apt installs
+      run: |
+        sudo apt update
+        sudo apt install -y clang-15
+    - uses: rscohn2/setup-oneapi@v0
+      with:
+        components: |
+          ${{ env.IMPI }}
+          ${{ env.MKL }}
+          ${{ env.TBB }}
+    - name: Build & test
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j 2 -C build all test
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: log-clang-${{ env.CXX }}
+        path: build/Testing
+
+  gcc:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - cxx: g++-10
+        - cxx: g++-11
+        - cxx: g++-12
+    name: ${{ matrix.cxx }}
+    env:
+      CXX: ${{ matrix.cxx }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: rscohn2/setup-oneapi@v0
+      with:
+        components: |
+          ${{ env.IMPI }}
+          ${{ env.MKL }}
+          ${{ env.TBB }}
+    - name: Build
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j 2 -C build
+    - name: Test
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        make -C build test
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: log-gcc-${{ env.CXX }}
+        path: build/Testing
 
   icpx:
     runs-on: devcloud
@@ -113,8 +113,8 @@ jobs:
       run: python -m build && pip install dist/drbench-*tar.gz
     - name: Build
       run: srun -p pvc-shared scripts/devcloud-build.sh
-#    - name: Test
-#      run: srun -p pvc-shared scripts/devcloud-run.sh
+    - name: Test
+      run: srun -p pvc-shared scripts/devcloud-run.sh
     - name: Benchmark
       run: srun -p pvc scripts/devcloud-benchmarks.sh
     - uses: actions/upload-artifact@v3
@@ -129,7 +129,7 @@ jobs:
         path: build/Testing
 
   publish:
-    needs: [checks, icpx]
+    needs: [checks, clang, gcc, icpx]
     runs-on: ubuntu-latest
     env:
       SPHINXOPTS: -q -W
