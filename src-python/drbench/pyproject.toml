@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "drbench"
 version = "0.0.1"
-description = "Benchmarking famework for distributed ranges project"
+description = "Benchmarking framework for distributed ranges project"
 dependencies = [
     "click",
     'importlib-metadata; python_version<"3.8"',
