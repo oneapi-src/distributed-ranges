@@ -23,10 +23,10 @@ class BenchResults:
 
 class Plotter:
     def __init__(self) -> None:
-        self.plots_path_shp = "."
-        self.plots_path_mhp = "."
-        self.bench_path_shp = "."
-        self.bench_path_mhp = "."
+        self.plots_path_shp = "scripts"
+        self.plots_path_mhp = "scripts"
+        self.bench_path_shp = "scripts"
+        self.bench_path_mhp = "scripts"
         self.create_directories()
 
     def create_directories(self):
@@ -148,7 +148,7 @@ class Plotter:
         # load shp
         for filename in os.listdir(self.bench_path_shp):
             d = Plotter._get_dev_num(filename)
-            if d in d_added or d is None:
+            if d in d_added or d is None or 'json' not in filename:
                 continue
             d_added.add(d)
             with open(os.path.join(self.bench_path_shp, filename), 'r') as f:
@@ -163,7 +163,7 @@ class Plotter:
         # load mhp
         for filename in os.listdir(self.bench_path_mhp):
             n = Plotter._get_mpi_proc_num(filename)
-            if d in n_added or n is None:
+            if n in n_added or n is None or 'json' not in filename:
                 continue
             n_added.add(n)
             with open(os.path.join(self.bench_path_mhp, filename), 'r') as f:
