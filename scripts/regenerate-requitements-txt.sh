@@ -1,4 +1,7 @@
 #!/bin/bash -e
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
 
 VDIR=$HOME/tmp/drvenvforreqtxt
 python3 -m venv --clear $VDIR
