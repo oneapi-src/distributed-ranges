@@ -9,7 +9,9 @@
 #include <algorithm>
 #include <utility>
 
+#ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
+#endif
 
 #include <dr/concepts/concepts.hpp>
 #include <dr/detail/logger.hpp>
@@ -29,42 +31,47 @@ void sort(R &r, Compare comp = Compare()) {
   auto &&lsegment = local_segment(r);
   assert(rng::size(lsegment) > 0);
 
-  auto policy = oneapi::dpl::execution::dpcpp_default;
-
   if (_comm_size == 0)
     return;
   else if (_comm_size == 1) {
-    // rng::sort(lsegment, comp);
-    oneapi::dpl::sort(policy, lsegment.begin(), lsegment.end(), comp);
+#ifdef SYCL_LANGUAGE_VERSION
+    oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                      lsegment.end(), comp);
+#else
+    rng::sort(lsegment, comp);
+#endif
     return;
   }
 
   /* sort local segment */
 
-  // rng::sort(lsegment, comp);
-  oneapi::dpl::sort(policy, lsegment.begin(), lsegment.end(), comp);
+#ifdef SYCL_LANGUAGE_VERSION
+  oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                    lsegment.end(), comp);
+#else
+  rng::sort(lsegment, comp);
+#endif
 
   std::vector<T> vec_lmedians(_comm_size - 1);
   std::vector<T> vec_gmedians((_comm_size - 1) * _comm_size);
 
   std::size_t _step = rng::size(lsegment) / _comm_size;
 
-  /* calculate splitting values and indices - find n-1 "medians" splitting each
-   * segment */
+  /* calculate splitting values and indices - find n-1 dividers splitting each
+   * segment into equal parts */
 
   for (std::size_t _i = 0; _i < rng::size(vec_lmedians); _i++) {
     vec_lmedians[_i] = lsegment[(_i + 1) * _step];
   }
 
-  default_comm().all_gather(vec_lmedians.data(), vec_gmedians.data(),
-                            (_comm_size - 1) * sizeof(T));
+  default_comm().all_gather(vec_lmedians, vec_gmedians);
 
   rng::sort(vec_gmedians, comp);
 
   std::vector<T> vec_split_v(_comm_size - 1);
   _step = rng::size(vec_gmedians) / (_comm_size - 1);
 
-  /* find splitting values - medians of "medians" */
+  /* find splitting values - medians of dividers */
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
     vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _step)];
   }
@@ -117,7 +124,8 @@ void sort(R &r, Compare comp = Compare()) {
 
   rng::sort(vec_recvdata, comp);
 
-  /* Now redistribute data */
+  /* Now redistribute data to achievesize of data in every segment equal to size
+   * of local segment */
 
   std::vector<std::size_t> vec_recv_elems(_comm_size);
 
@@ -136,7 +144,7 @@ void sort(R &r, Compare comp = Compare()) {
                     vec_recv_elems[_i];
   }
 
-  int shift_left = _comm_rank == 0 ? 0 : -vec_shift[_comm_rank - 1];
+  int shift_left = _comm_rank == 0 ? 0 : -vec_shift[default_comm().prev()];
   int shift_right = _comm_rank == _comm_size - 1 ? 0 : vec_shift[_comm_rank];
 
   MPI_Request req_l, req_r;
@@ -146,38 +154,53 @@ void sort(R &r, Compare comp = Compare()) {
   std::vector<T> vec_left(shift_left > 0 ? (shift_left) : 0);
   std::vector<T> vec_right(shift_right > 0 ? (shift_right) : 0);
 
-  /* left-hand (lower rank) redistribution */
+  if ((int)rng::size(vec_recvdata) < -shift_left) {
+    assert(shift_right > 0);
 
-  if (shift_left < 0) {
-
-    /* assert against side effects of too small distibuted range to
-     * sort over too many nodes */
-    assert((int)rng::size(vec_recvdata) >= -shift_left);
-    default_comm().isend(vec_recvdata.data(), -shift_left, _comm_rank - 1, t,
-                         &req_l);
-    MPI_Wait(&req_l, &stat_l);
-
-  } else if (shift_left > 0) {
-
-    default_comm().irecv(vec_left, _comm_rank - 1, t, &req_l);
-    MPI_Wait(&req_l, &stat_l);
-  }
-
-  /* right-hand (higher rank) redistribution */
-
-  if (shift_right > 0) {
-
-    default_comm().irecv(vec_right, _comm_rank + 1, t, &req_r);
+    default_comm().irecv(vec_right, default_comm().next(), t, &req_r);
     MPI_Wait(&req_r, &stat_r);
 
-  } else if (shift_right < 0) {
+    vec_recvdata.insert(vec_recvdata.end(), vec_right.begin(), vec_right.end());
+    vec_right.clear();
 
-    /* assert against side effects of too small distibuted range to
-     * sort over too many nodes */
-    assert((int)rng::size(vec_recvdata) >= -shift_right);
+    default_comm().isend(vec_recvdata.data(), -shift_left,
+                         default_comm().prev(), t, &req_l);
+    MPI_Wait(&req_l, &stat_l);
+
+  } else if ((int)rng::size(vec_recvdata) < -shift_right) {
+
+    assert(shift_left > 0);
+    default_comm().irecv(vec_left, default_comm().prev(), t, &req_l);
+    MPI_Wait(&req_l, &stat_l);
+    vec_left.insert(vec_left.end(), vec_recvdata.begin(), vec_recvdata.end());
+    std::swap(vec_left, vec_recvdata);
+    vec_left.clear();
+
     default_comm().isend((T *)(vec_recvdata.data()) + _recv_elems + shift_right,
-                         -shift_right, _comm_rank + 1, t, &req_r);
+                         -shift_right, default_comm().next(), t, &req_r);
     MPI_Wait(&req_r, &stat_r);
+  } else {
+
+    /* left-hand (lower rank) redistribution */
+    if (shift_left < 0) {
+      default_comm().isend(vec_recvdata.data(), -shift_left,
+                           default_comm().prev(), t, &req_l);
+      MPI_Wait(&req_l, &stat_l);
+    } else if (shift_left > 0) {
+      default_comm().irecv(vec_left, default_comm().prev(), t, &req_l);
+      MPI_Wait(&req_l, &stat_l);
+    }
+
+    /* right-hand (higher rank) redistribution */
+    if (shift_right > 0) {
+      default_comm().irecv(vec_right, default_comm().next(), t, &req_r);
+      MPI_Wait(&req_r, &stat_r);
+    } else if (shift_right < 0) {
+      default_comm().isend((T *)(vec_recvdata.data()) + _recv_elems +
+                               shift_right,
+                           -shift_right, default_comm().next(), t, &req_r);
+      MPI_Wait(&req_r, &stat_r);
+    }
   }
 
   std::size_t invalidate_left = (shift_left < 0) ? -shift_left : 0;
