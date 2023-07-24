@@ -47,7 +47,6 @@ if(ENABLE_SYCL)
   add_custom_target(bench DEPENDS bench-results)
   add_custom_command(
     OUTPUT bench-results
-    COMMAND python ${CMAKE_SOURCE_DIR}/scripts/dr-bench.py mhp --nprocs 4
-            --sycl-gpu --fork
+    COMMAND dr-bench mhp --nprocs 4 --sycl-gpu --fork
     DEPENDS mhp-bench)
 endif()

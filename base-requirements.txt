@@ -2,8 +2,15 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Benchmarking
-click
+# procedure of adding a new python package to our repo
+# 1. create venv
+# 2. edit base-requirements.txt
+# 3. do pip install -r base-requirements.txt
+# 4. do pip freeze > requirements.txt
+# 5. commit changes to repo
+
+# Creating custom python packages (e.g. for benchmarking)
+build
 
 # Testing
 pre-commit

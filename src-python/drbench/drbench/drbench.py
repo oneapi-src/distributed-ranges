@@ -80,6 +80,11 @@ def mhp(ctx, bench, fork, nprocs, sycl_cpu, sycl_gpu):
     )
     execute(command, ctx)
 
+@cli.command()
+@click.pass_context
+def plot(ctx):
+    pass
+
 
 if __name__ == '__main__':
     cli(obj={})

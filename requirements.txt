@@ -7,14 +7,14 @@ alabaster==0.7.13
 Babel==2.12.1
 beautifulsoup4==4.12.2
 breathe==4.35.0
-certifi==2023.5.7
+build==0.10.0
+certifi==2023.7.22
 cfgv==3.3.1
 charset-normalizer==3.2.0
-click==8.1.6
 distlib==0.3.7
 docutils==0.19
 filelock==3.12.2
-identify==2.5.25
+identify==2.5.26
 idna==3.4
 imagesize==1.4.1
 Jinja2==3.1.2
@@ -26,6 +26,7 @@ pre-commit==3.3.3
 pydata-sphinx-theme==0.13.3
 pyenchant==3.2.2
 Pygments==2.15.1
+pyproject_hooks==1.0.0
 PyYAML==6.0.1
 requests==2.31.0
 snowballstemmer==2.2.0
@@ -39,6 +40,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 sphinxcontrib-spelling==8.0.0
+tomli==2.0.1
 typing_extensions==4.7.1
 urllib3==2.0.4
-virtualenv==20.24.0
+virtualenv==20.24.1
