@@ -56,7 +56,7 @@ def mhp(ctx, bench, fork, nprocs, sycl_cpu, sycl_gpu):
     if sycl_gpu:
         # mhp-bench will spread GPUs over ranks automatically, so no
         # pinning is needed
-        env = 'ONEAPI_DEVICE_SELECTOR=ext_oneapi_cuda:gpu'
+        env = 'ONEAPI_DEVICE_SELECTOR=level_zero:gpu,ext_oneapi_cuda:gpu'
         sycl_args = '--sycl'
     elif sycl_cpu:
         env = 'ONEAPI_DEVICE_SELECTOR=opencl:cpu'
