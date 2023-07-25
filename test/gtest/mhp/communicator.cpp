@@ -10,6 +10,9 @@ using T = int;
 using DV = dr::mhp::distributed_vector<T>;
 
 TEST(Communicator, Alltoallv) {
+  if (comm_size <= 1)
+    return;
+
   const std::size_t SIZE = 2;
   std::vector<T> vec_src(comm_size * SIZE);
   std::vector<T> vec_dst(comm_size * SIZE);
@@ -40,7 +43,10 @@ TEST(Communicator, Alltoallv) {
 }
 
 TEST(Communicator, Allgather) {
-  const std::size_t SIZE = 2;
+  if (comm_size <= 1)
+    return;
+
+const std::size_t SIZE = 2;
   std::vector<T> vec_src(SIZE);
   std::vector<T> vec_dst(comm_size * SIZE);
 
