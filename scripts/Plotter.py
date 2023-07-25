@@ -7,6 +7,7 @@
 import json
 import os
 import re
+import shutil
 import dataclasses
 from dataclasses import dataclass
 
@@ -31,28 +32,20 @@ class Plotter:
         self.create_directories()
 
     def create_directories(self):
-        if not os.path.exists(self.plots_path_shp):
-            os.makedirs(self.plots_path_shp)
-        if not os.path.exists(self.plots_path_mhp):
-            os.makedirs(self.plots_path_mhp)
-        if not os.path.exists(self.bench_path_shp):
-            os.makedirs(self.bench_path_shp)
-        if not os.path.exists(self.bench_path_mhp):
-            os.makedirs(self.bench_path_mhp)
+        os.makedirs(self.plots_path_shp, exist_ok=True)
+        os.makedirs(self.plots_path_mhp, exist_ok=True)
+        os.makedirs(self.bench_path_shp, exist_ok=True)
+        os.makedirs(self.bench_path_mhp, exist_ok=True)
 
     def clean_directories(self):
-        if not os.path.exists(self.plots_path_shp):
-            for file in os.listdir(self.plots_path_shp):
-                os.remove(os.path.join(self.plots_path_shp), file)
-        if not os.path.exists(self.plots_path_mhp):
-            for file in os.listdir(self.plots_path_mhp):
-                os.remove(os.path.join(self.plots_path_mhp), file)
-        if not os.path.exists(self.bench_path_shp):
-            for file in os.listdir(self.bench_path_shp):
-                os.remove(os.path.join(self.bench_path_shp), file)
-        if not os.path.exists(self.bench_path_mhp):
-            for file in os.listdir(self.bench_path_mhp):
-                os.remove(os.path.join(self.bench_path_mhp), file)
+        if os.path.exists(self.plots_path_shp) and os.path.isdir(self.plots_path_shp):
+            shutil.rmtree(self.plots_path_shp)
+        if os.path.exists(self.plots_path_mhp) and os.path.isdir(self.plots_path_mhp):
+            shutil.rmtree(self.plots_path_mhp)
+        if os.path.exists(self.bench_path_shp) and os.path.isdir(self.bench_path_shp):
+            shutil.rmtree(self.bench_path_shp)
+        if os.path.exists(self.bench_path_mhp) and os.path.isdir(self.bench_path_mhp):
+            shutil.rmtree(self.bench_path_mhp)
 
     @staticmethod
     def _get_dev_num(filename: str):
