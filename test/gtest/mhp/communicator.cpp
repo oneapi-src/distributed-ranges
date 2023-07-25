@@ -46,7 +46,7 @@ TEST(Communicator, Allgather) {
   if (comm_size <= 1)
     return;
 
-const std::size_t SIZE = 2;
+  const std::size_t SIZE = 2;
   std::vector<T> vec_src(SIZE);
   std::vector<T> vec_dst(comm_size * SIZE);
 
