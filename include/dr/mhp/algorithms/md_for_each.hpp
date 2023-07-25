@@ -67,18 +67,18 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
         assert(false);
 #endif
       } else {
-        for (std::size_t i = 0; i < tile1.extent(0); i++) {
-          for (std::size_t j = 0; j < tile1.extent(1); j++) {
-            auto make_operands = [=](auto... infos) {
-              // Use mdspan for tile to calculate the address of the
-              // current element, and make an mdspan centered on it with
-              // strides from the root mdspan
-              return std::tuple(md::mdspan(std::to_address(&infos.first(i, j)),
-                                           infos.second)...);
-            };
-            op(std::apply(make_operands, operand_infos));
-          }
-        }
+        // Given an index, invoke op on a tuple of stencils
+        auto invoke_index = [=](auto index) {
+          // We have a tuple of infos and a index, invoke op on a
+          // tuple of stencils
+          auto invoke_op = [=](auto... infos) {
+            op(std::tuple(md::mdspan(std::to_address(&infos.first(index)),
+                                     infos.second)...));
+          };
+          std::apply(invoke_op, operand_infos);
+        };
+        dr::__detail::mdspan_foreach<tile1.rank(), decltype(invoke_index)>(
+            tile1.extents(), invoke_index);
       }
     }
   }
@@ -129,17 +129,17 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
         assert(false);
 #endif
       } else {
-        for (std::size_t i = 0; i < tile1.extent(0); i++) {
-          for (std::size_t j = 0; j < tile1.extent(1); j++) {
-            auto make_operands = [=](auto... mdspans) {
-              // Use mdspan for tile to calculate the address of the
-              // current element, and make an mdspan centered on it with
-              // strides from the root mdspan
-              return std::tie(mdspans(i, j)...);
-            };
-            op(std::apply(make_operands, operand_mdspans));
-          }
-        }
+        // Given an index, invoke op on a tuple of references to mdspan element
+        auto invoke_index = [=](auto index) {
+          // We have a tuple of mdspans and a index, invoke op on a
+          // tuple of references to mdspan elements
+          auto invoke_op = [=](auto... mdspans) {
+            op(std::tie(mdspans(index)...));
+          };
+          std::apply(invoke_op, operand_mdspans);
+        };
+        dr::__detail::mdspan_foreach<tile1.rank(), decltype(invoke_index)>(
+            tile1.extents(), invoke_index);
       }
     }
   }
