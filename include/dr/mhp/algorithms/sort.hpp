@@ -30,8 +30,8 @@ void sort(R &r, Compare comp = Compare()) {
 
   /* Distributed vector of size <= (comm_size-1) * (comm_size-1) may have 0-size
    * local segments. It is also small enough to prefer sequential sort */
-  if (r.size() <= (_comm_size - 1) * (_comm_size - 1)) {
-    std::vector<valT> vec_recvdata(r.size());
+  if (rng::size(r) <= (_comm_size - 1) * (_comm_size - 1)) {
+    std::vector<valT> vec_recvdata(rng::size(r));
     if (_comm_rank == 0) {
       rng::transform(r, vec_recvdata.begin(), [](auto el) { return el; });
       rng::sort(vec_recvdata, comp);
