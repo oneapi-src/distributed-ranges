@@ -6,6 +6,9 @@
 # 1. edit base-requirements.txt
 # 2. run scripts/regenerate-requitements-txt.sh
 # 3. review changes made in requirements.txt and if ok, commit changes
+# Benchmarking
+click
+matplotlib
 
 # Testing
 pre-commit
