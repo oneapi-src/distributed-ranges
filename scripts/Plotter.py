@@ -7,6 +7,7 @@
 import json
 import os
 import re
+import dataclasses
 from dataclasses import dataclass
 
 import click
@@ -15,10 +16,10 @@ import matplotlib.pyplot as plt
 
 @dataclass
 class BenchResults:
-    copy: float
-    scale: float
-    add: float
-    triad: float
+    copy: float = 0.0
+    scale: float = 0.0
+    add: float = 0.0
+    triad: float = 0.0
 
 
 class Plotter:
@@ -130,14 +131,26 @@ class Plotter:
     def _get_bench_vals(self, f):
         data = json.load(f)
         benchmarks = data["benchmarks"]
-        copy = round(benchmarks[0]["bytes_per_second"] / 1e9, 2)
-        scale = round(benchmarks[1]["bytes_per_second"] / 1e9, 2)
-        add = round(benchmarks[2]["bytes_per_second"] / 1e9, 2)
-        triad = round(benchmarks[3]["bytes_per_second"] / 1e9, 2)
+        benchmarks_rounded = []
+        benchmarks_names = []
+        for i in range(len(benchmarks)):
+            rounded_bench = round(benchmarks[i]["bytes_per_second"] / 1e9, 2)
+            benchmarks_rounded.append(rounded_bench)
+            benchmarks_names.append(benchmarks[i]["name"])
+        # copy = round(benchmarks[0]["bytes_per_second"] / 1e9, 2)
+        # scale = round(benchmarks[1]["bytes_per_second"] / 1e9, 2)
+        # add = round(benchmarks[2]["bytes_per_second"] / 1e9, 2)
+        # triad = round(benchmarks[3]["bytes_per_second"] / 1e9, 2)
 
         self.vec_size = int(data["context"]["default_vector_size"])
         self.reps = int(data["context"]["default_repetitions"])
-        return BenchResults(copy, scale, add, triad)
+
+        self.benchmark_names = benchmarks_names
+        field_names = [field.name for field in dataclasses.fields(BenchResults)]
+        keymap = dict(zip(benchmarks_names, field_names))
+        res_obj = BenchResults(**{newk: benchmarks_rounded[index] for index, (oldk, newk) in enumerate(keymap.items())})
+
+        return res_obj
 
     def load_bandwidth(self, mhp_shp: str = "shp"):
         self.shp_bandwidth_results = dict()
@@ -181,25 +194,30 @@ class Plotter:
         else:
             results = self.mhp_bandwidth_results
 
-        copy, scale, add, triad = [], [], [], []
+        benchmarks = [[] for _ in range(len(dataclasses.fields(BenchResults)))]
+        # copy, scale, add, triad = [], [], [], []
         for result in results.values():
-            copy.append(result.copy)
-            scale.append(result.scale)
-            add.append(result.add)
-            triad.append(result.triad)
+            for index, value in enumerate(result.__dict__.values()):
+                benchmarks[index].append(value)
+            # copy.append(result.copy)
+            # scale.append(result.scale)
+            # add.append(result.add)
+            # triad.append(result.triad)
 
-        return copy, scale, add, triad
+        return benchmarks
 
     def plot_bandwidth_shp(self):
         """
         Plots bandwidths for every number of devices from 1 to n (shp)
         """
-        copy, scale, add, triad = self._extract_bench_values("shp")
+        benchmarks = self._extract_bench_values("shp")
+        for i, benchmark in enumerate(benchmarks):
+            plt.plot(self.d_list, benchmark, label=f'{self.benchmark_names[i]}/bandwidth')
 
-        plt.plot(self.d_list, copy, label='Stream_Copy/bandwidth')
-        plt.plot(self.d_list, scale, label='Stream_Scale/bandwidth')
-        plt.plot(self.d_list, add, label='Stream_Add/bandwidth')
-        plt.plot(self.d_list, triad, label='Stream_Triad/bandwidth')
+        # plt.plot(self.d_list, copy, label='Stream_Copy/bandwidth')
+        # plt.plot(self.d_list, scale, label='Stream_Scale/bandwidth')
+        # plt.plot(self.d_list, add, label='Stream_Add/bandwidth')
+        # plt.plot(self.d_list, triad, label='Stream_Triad/bandwidth')
 
         plt.xlabel('Devices')
         plt.ylabel('GBps')
@@ -211,12 +229,15 @@ class Plotter:
         """
         Plots bandwidths for every number of mpi processes from 1 to n (mhp)
         """
-        copy, scale, add, triad = self._extract_bench_values("mhp")
+        benchmarks = self._extract_bench_values("mhp")
+        for i, benchmark in enumerate(benchmarks):
+            plt.plot(self.d_list, benchmark, label=f'{self.benchmark_names[i]}/bandwidth')
 
-        plt.plot(self.n_list, copy, label='Stream_Copy/bandwidth')
-        plt.plot(self.n_list, scale, label='Stream_Scale/bandwidth')
-        plt.plot(self.n_list, add, label='Stream_Add/bandwidth')
-        plt.plot(self.n_list, triad, label='Stream_Triad/bandwidth')
+
+        # plt.plot(self.n_list, copy, label='Stream_Copy/bandwidth')
+        # plt.plot(self.n_list, scale, label='Stream_Scale/bandwidth')
+        # plt.plot(self.n_list, add, label='Stream_Add/bandwidth')
+        # plt.plot(self.n_list, triad, label='Stream_Triad/bandwidth')
 
         plt.xlabel('MPI procs')
         plt.ylabel('GBps')
