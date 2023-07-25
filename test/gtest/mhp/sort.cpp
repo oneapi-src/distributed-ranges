@@ -11,8 +11,9 @@ using DV = dr::mhp::distributed_vector<T, dr::mhp::default_allocator<T>>;
 using V = std::vector<T>;
 
 TEST(MhpSort, Sort) {
-  std::size_t comm_size = dr::mhp::default_comm().size();
-  std::vector<std::size_t> sizes = {comm_size, 7, 10, 23, 100, 1234};
+  std::vector<std::size_t> sizes = {
+      1,   comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23,
+      100, 1234};
 
   for (std::size_t n : sizes) {
     V l_v = generate_random<T>(n, 1000);
@@ -31,8 +32,9 @@ TEST(MhpSort, Sort) {
 }
 
 TEST(MhpSort, Sort_reverse) {
-  std::size_t comm_size = dr::mhp::default_comm().size();
-  std::vector<std::size_t> sizes = {comm_size, 7, 10, 23, 100, 1234};
+  std::vector<std::size_t> sizes = {
+      1,   comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23,
+      100, 1234};
 
   for (std::size_t n : sizes) {
     V l_v = generate_random<T>(n, 1000);

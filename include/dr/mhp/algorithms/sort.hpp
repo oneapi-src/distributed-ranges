@@ -23,10 +23,23 @@ namespace dr::mhp {
 
 template <dr::distributed_range R, typename Compare = std::less<>>
 void sort(R &r, Compare comp = Compare()) {
-  using T = R::value_type;
+  using valT = typename R::value_type;
 
   std::size_t _comm_rank = default_comm().rank();
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
+
+  /* Distributed vector of size <= (comm_size-1) * (comm_size-1) may have 0-size
+   * local segments. It is also small enough to prefer sequential sort */
+  if (r.size() <= (_comm_size - 1) * (_comm_size - 1)) {
+    std::vector<valT> vec_recvdata(r.size());
+    if (_comm_rank == 0) {
+      rng::transform(r, vec_recvdata.begin(), [](auto el) { return el; });
+      rng::sort(vec_recvdata, comp);
+      std::transform(vec_recvdata.begin(), vec_recvdata.end(), r.begin(),
+                     [](auto el) { return el; });
+    }
+    return;
+  }
 
   auto &&lsegment = local_segment(r);
   assert(rng::size(lsegment) > 0);
@@ -52,26 +65,27 @@ void sort(R &r, Compare comp = Compare()) {
   rng::sort(lsegment, comp);
 #endif
 
-  std::vector<T> vec_lmedians(_comm_size - 1);
-  std::vector<T> vec_gmedians((_comm_size - 1) * _comm_size);
+  std::vector<valT> vec_lmedians(_comm_size - 1);
+  std::vector<valT> vec_gmedians((_comm_size - 1) * _comm_size);
 
-  std::size_t _step = rng::size(lsegment) / _comm_size;
+  double _step = (double)rng::size(lsegment) / (double)_comm_size;
 
   /* calculate splitting values and indices - find n-1 dividers splitting each
    * segment into equal parts */
 
   for (std::size_t _i = 0; _i < rng::size(vec_lmedians); _i++) {
-    vec_lmedians[_i] = lsegment[(_i + 1) * _step];
+    vec_lmedians[_i] = lsegment[(std::size_t)(_i + 1) * _step];
   }
 
   default_comm().all_gather(vec_lmedians, vec_gmedians);
 
   rng::sort(vec_gmedians, comp);
 
-  std::vector<T> vec_split_v(_comm_size - 1);
+  std::vector<valT> vec_split_v(_comm_size - 1);
   _step = rng::size(vec_gmedians) / (_comm_size - 1);
 
   /* find splitting values - medians of dividers */
+
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
     vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _step)];
   }
@@ -116,7 +130,7 @@ void sort(R &r, Compare comp = Compare()) {
 
   /* send and receive data belonging to each node */
 
-  std::vector<T> vec_recvdata(_recvsum);
+  std::vector<valT> vec_recvdata(_recvsum);
   std::size_t _recv_elems = rng::size(vec_recvdata);
 
   default_comm().alltoallv(lsegment.data(), vec_split_s, vec_split_i,
@@ -124,8 +138,8 @@ void sort(R &r, Compare comp = Compare()) {
 
   rng::sort(vec_recvdata, comp);
 
-  /* Now redistribute data to achievesize of data in every segment equal to size
-   * of local segment */
+  /* Now redistribute data to achieve size of data equal to size of local
+   * segment */
 
   std::vector<std::size_t> vec_recv_elems(_comm_size);
 
@@ -151,10 +165,12 @@ void sort(R &r, Compare comp = Compare()) {
   MPI_Status stat_l, stat_r;
   communicator::tag t = communicator::tag::halo_index;
 
-  std::vector<T> vec_left(shift_left > 0 ? (shift_left) : 0);
-  std::vector<T> vec_right(shift_right > 0 ? (shift_right) : 0);
+  std::vector<valT> vec_left(shift_left > 0 ? (shift_left) : 0);
+  std::vector<valT> vec_right(shift_right > 0 ? (shift_right) : 0);
 
   if ((int)rng::size(vec_recvdata) < -shift_left) {
+
+    /* not enough data to send in vec_recvdata - receive first */
     assert(shift_right > 0);
 
     default_comm().irecv(vec_right, default_comm().next(), t, &req_r);
@@ -176,12 +192,14 @@ void sort(R &r, Compare comp = Compare()) {
     std::swap(vec_left, vec_recvdata);
     vec_left.clear();
 
-    default_comm().isend((T *)(vec_recvdata.data()) + _recv_elems + shift_right,
+    default_comm().isend((valT *)(vec_recvdata.data()) + _recv_elems +
+                             shift_right,
                          -shift_right, default_comm().next(), t, &req_r);
     MPI_Wait(&req_r, &stat_r);
   } else {
 
     /* left-hand (lower rank) redistribution */
+
     if (shift_left < 0) {
       default_comm().isend(vec_recvdata.data(), -shift_left,
                            default_comm().prev(), t, &req_l);
@@ -192,11 +210,12 @@ void sort(R &r, Compare comp = Compare()) {
     }
 
     /* right-hand (higher rank) redistribution */
+
     if (shift_right > 0) {
       default_comm().irecv(vec_right, default_comm().next(), t, &req_r);
       MPI_Wait(&req_r, &stat_r);
     } else if (shift_right < 0) {
-      default_comm().isend((T *)(vec_recvdata.data()) + _recv_elems +
+      default_comm().isend((valT *)(vec_recvdata.data()) + _recv_elems +
                                shift_right,
                            -shift_right, default_comm().next(), t, &req_r);
       MPI_Wait(&req_r, &stat_r);
