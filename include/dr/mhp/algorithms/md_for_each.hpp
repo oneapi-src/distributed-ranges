@@ -113,16 +113,14 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
       auto tile1 = grid1(tile_index, 0).mdspan();
       if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
-        // TODO: Cannot use tuple_transform because it appears to capture a
-        // value and not a reference. Some subtlety with parallel_for
-        // lambda capture?
+        //
         auto invoke_index = [=](auto index) {
-          auto i = index[0];
-          auto j = index[1];
-          auto make_operands = [=](auto... mdspans) {
-            return std::tie(mdspans(i, j)...);
-          };
-          op(std::apply(make_operands, operand_mdspans));
+          // Transform mdspans into references
+          auto references = detail::tie_transform(
+              operand_mdspans, [index](auto mdspan) -> decltype(auto) {
+                return mdspan(index[0], index[1]);
+              });
+          op(references);
         };
 
         // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
@@ -138,9 +136,10 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
         // invoke op on a tuple of references created by using the mdspan's and
         // index
         auto invoke_index = [=](auto index) {
-          // Transform operand_infos into stencils
-          auto references = detail::tuple_transform(
-              operand_mdspans, [index](auto mdspan) { return mdspan(index); });
+          // Transform operand_infos into references
+          auto references = detail::tie_transform(
+              operand_mdspans,
+              [index](auto mdspan) -> decltype(auto) { return mdspan(index); });
           op(references);
         };
         detail::mdspan_foreach<tile1.rank(), decltype(invoke_index)>(
