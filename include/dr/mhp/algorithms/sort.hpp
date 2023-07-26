@@ -21,6 +21,7 @@
 
 namespace dr::mhp {
 
+#ifdef SYCL_LANGUAGE_VERSION
 namespace __detail {
 
 template <typename LocalPolicy, typename InputIt, typename Compare>
@@ -40,6 +41,7 @@ sycl::event sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
   }
 }
 } // __detail
+#endif
 
 template <dr::distributed_range R, typename Compare = std::less<>>
 void sort(R &r, Compare comp = Compare()) {
@@ -130,6 +132,7 @@ void sort(R &r, Compare comp = Compare()) {
   fmt::print("{}: find splitting indices and sizes\n", _comm_rank);
 
   while (vidx < _comm_size) {
+    assert(segidx < rng::size(lsegment));
     if (comp(vec_split_v[vidx - 1], *(lsegment.begin() + segidx))) {
       vec_split_i[vidx] = segidx;
       vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
