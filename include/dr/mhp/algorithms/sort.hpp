@@ -47,23 +47,13 @@ void sort(R &r, Compare comp = Compare()) {
   if (_comm_size == 0)
     return;
   else if (_comm_size == 1) {
-#ifdef SYCL_LANGUAGE_VERSION
-    oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-                      lsegment.end(), comp);
-#else
     rng::sort(lsegment, comp);
-#endif
     return;
   }
 
   /* sort local segment */
 
-#ifdef SYCL_LANGUAGE_VERSION
-  oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-                    lsegment.end(), comp);
-#else
   rng::sort(lsegment, comp);
-#endif
 
   std::vector<valT> vec_lmedians(_comm_size - 1);
   std::vector<valT> vec_gmedians((_comm_size - 1) * _comm_size);
