@@ -43,9 +43,8 @@ double initial_elev(double x, double y, double lx, double ly) {
   return exact_elev(x, y, 0.0, lx, ly);
 }
 
-void rhs(Array &u, Array &v, Array &e, Array &dudx, Array &dvdy, Array &dudt,
-         Array &dvdt, Array &dedt, double g, double h, double dx_inv,
-         double dy_inv, double dt) {
+void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
+         double g, double h, double dx_inv, double dy_inv, double dt) {
   /**
    * Evaluate right hand side of the equations
    */
@@ -74,29 +73,20 @@ void rhs(Array &u, Array &v, Array &e, Array &dudx, Array &dvdy, Array &dudt,
   auto dvdt_view = dr::mhp::views::submdspan(dvdt.view(), start2, end2);
   dr::mhp::stencil_for_each(rhs_dedy, e_view2, dvdt_view);
 
-  auto rhs_dudx = [dt, h, dx_inv](auto v) {
-    auto [in, out] = v;
-    out(0, 0) = -dt * h * (in(0, 0) - in(-1, 0)) * dx_inv;
+  auto rhs_div = [dt, h, dx_inv, dy_inv](auto args) {
+    auto [u, v, out] = args;
+    auto dudx = (u(0, 0) - u(-1, 0)) * dx_inv;
+    auto dvdy = (v(0, 1) - v(0, 0)) * dy_inv;
+    out(0, 0) = -dt * h * (dudx + dvdy);
   };
   std::array<std::size_t, 2> start3{1, 0};
   std::array<std::size_t, 2> end3{
       static_cast<std::size_t>(u.mdspan().extent(0)),
       static_cast<std::size_t>(u.mdspan().extent(1))};
   auto u_view = dr::mhp::views::submdspan(u.view(), start3, end3);
-  auto dudx_view = dr::mhp::views::submdspan(dudx.view(), start3, end3);
-  dr::mhp::stencil_for_each(rhs_dudx, u_view, dudx_view);
-
-  auto rhs_dvdy = [dt, h, dy_inv](auto v) {
-    auto [in, out] = v;
-    out(0, 0) = -dt * h * (in(0, 1) - in(0, 0)) * dy_inv;
-  };
   auto v_view = dr::mhp::views::submdspan(v.view(), start3, end3);
-  auto dvdy_view = dr::mhp::views::submdspan(dvdy.view(), start3, end3);
-  dr::mhp::stencil_for_each(rhs_dvdy, v_view, dvdy_view);
-
-  // FIXME fuse rhs_dudx/dvdy to a single kernel
-  auto add = [](auto ops) { return ops.first + ops.second; };
-  dr::mhp::transform(dr::mhp::views::zip(dudx, dvdy), dedt.begin(), add);
+  auto dedt_view = dr::mhp::views::submdspan(dedt.view(), start3, end3);
+  dr::mhp::stencil_for_each(rhs_div, u_view, v_view, dedt_view);
 };
 
 int run(int n, bool benchmark_mode) {
@@ -186,11 +176,6 @@ int run(int n, bool benchmark_mode) {
   Array dudt({nx + 1, ny}, dist);
   Array dvdt({nx + 1, ny + 1}, dist);
 
-  // temporary arrays
-  // FIXME these are not necessary if dedt is evaluated in one kernel
-  Array dudx({nx + 1, ny}, dist);
-  Array dvdy({nx + 1, ny}, dist);
-
   // initial condition for elevation
   for (std::size_t i = 1; i < e.mdspan().extent(0); i++) {
     for (std::size_t j = 0; j < e.mdspan().extent(1); j++) {
@@ -251,7 +236,7 @@ int run(int n, bool benchmark_mode) {
 
     // step
     // RK stage 1: u1 = u + dt*rhs(u)
-    rhs(u, v, e, dudx, dvdy, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+    rhs(u, v, e, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
     dr::mhp::transform(dr::mhp::views::zip(u, dudt), u1.begin(), add);
     dr::mhp::transform(dr::mhp::views::zip(v, dvdt), v1.begin(), add);
     dr::mhp::transform(dr::mhp::views::zip(e, dedt), e1.begin(), add);
@@ -260,7 +245,7 @@ int run(int n, bool benchmark_mode) {
     dr::mhp::halo(e1).exchange();
 
     // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
-    rhs(u1, v1, e1, dudx, dvdy, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+    rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
     dr::mhp::transform(dr::mhp::views::zip(u, u1, dudt), u2.begin(),
                        rk_update2);
     dr::mhp::transform(dr::mhp::views::zip(v, v1, dvdt), v2.begin(),
@@ -272,7 +257,7 @@ int run(int n, bool benchmark_mode) {
     dr::mhp::halo(e2).exchange();
 
     // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
-    rhs(u2, v2, e2, dudx, dvdy, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+    rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
     dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(), rk_update3);
     dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
     dr::mhp::transform(dr::mhp::views::zip(e, e2, dedt), e.begin(), rk_update3);

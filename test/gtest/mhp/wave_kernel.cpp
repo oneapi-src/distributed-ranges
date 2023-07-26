@@ -26,8 +26,8 @@ bool equal(MDA &a, std::vector<T> expected) {
 MDA generate_e() {
   MDA a({nx + 1, ny}, dist);
   dr::mhp::fill(a, 0.0);
-  for (size_t i = 1; i < a.mdspan().extent(0); i++) {
-    for (size_t j = 0; j < a.mdspan().extent(1); j++) {
+  for (std::size_t i = 1; i < a.mdspan().extent(0); i++) {
+    for (std::size_t j = 0; j < a.mdspan().extent(1); j++) {
       a.mdspan()(i, j) = 10 + i + j;
     }
   }
@@ -38,8 +38,8 @@ MDA generate_e() {
 MDA generate_u() {
   MDA a({nx + 1, ny}, dist);
   dr::mhp::fill(a, 0.0);
-  for (size_t i = 0; i < a.mdspan().extent(0); i++) {
-    for (size_t j = 0; j < a.mdspan().extent(1); j++) {
+  for (std::size_t i = 0; i < a.mdspan().extent(0); i++) {
+    for (std::size_t j = 0; j < a.mdspan().extent(1); j++) {
       a.mdspan()(i, j) = 10 + i + j;
     }
   }
@@ -50,8 +50,8 @@ MDA generate_u() {
 MDA generate_v() {
   MDA a({nx + 1, ny + 1}, dist);
   dr::mhp::fill(a, 0.0);
-  for (size_t i = 1; i < a.mdspan().extent(0); i++) {
-    for (size_t j = 0; j < a.mdspan().extent(1); j++) {
+  for (std::size_t i = 1; i < a.mdspan().extent(0); i++) {
+    for (std::size_t j = 0; j < a.mdspan().extent(1); j++) {
       a.mdspan()(i, j) = 10 + i + j;
     }
   }
@@ -220,5 +220,38 @@ TEST(MhpTests, WaveKernelDvDy) {
                            1, 1, 1,
                            1, 1, 1}))
       << fmt::format("dvdy:\n{}\n", dvdy);
+  // clang-format on
+}
+
+TEST(MhpTests, WaveKernelDivergence) {
+  if (comm_size > 1)
+    return;
+  MDA u = generate_u();
+  MDA v = generate_v();
+  MDA divuv({nx + 1, ny}, dist);
+  dr::mhp::fill(divuv, 0.0);
+
+  auto rhs_div = [](auto args) {
+    auto [u, v, out] = args;
+    auto dudx = u(0, 0) - u(-1, 0);
+    auto dvdy = v(0, 1) - v(0, 0);
+    out(0, 0) = dudx + dvdy;
+  };
+  std::array<std::size_t, 2> start{1, 0};
+  std::array<std::size_t, 2> end{
+      static_cast<std::size_t>(u.mdspan().extent(0)),
+      static_cast<std::size_t>(u.mdspan().extent(1))};
+  auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
+  auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
+  auto divuv_view = dr::mhp::views::submdspan(divuv.view(), start, end);
+  dr::mhp::stencil_for_each(rhs_div, u_view, v_view, divuv_view);
+
+  // first row is unused (all arrays must have the same number of rows)
+  // clang-format off
+  EXPECT_TRUE(equal(divuv, {0, 0, 0,
+                            2, 2, 2,
+                            2, 2, 2,
+                            2, 2, 2}))
+      << fmt::format("divuv:\n{}\n", divuv);
   // clang-format on
 }
