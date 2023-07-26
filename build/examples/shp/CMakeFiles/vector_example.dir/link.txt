@@ -1,1 +1,0 @@
-/opt/intel/oneapi/compiler/2023.2.0/linux/bin/icpx -O3 -march=native -fsycl -qopenmp CMakeFiles/vector_example.dir/vector_example.cpp.o -o vector_example  /opt/intel/oneapi/tbb/2021.10.0/lib/intel64/gcc4.8/libtbb.so.12 -fsycl ../../_deps/cpp-format-build/libfmt.a 

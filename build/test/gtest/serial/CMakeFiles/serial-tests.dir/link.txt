@@ -1,1 +1,0 @@
-/opt/intel/oneapi/compiler/2023.2.0/linux/bin/icpx -O3 -march=native -fsycl -qopenmp "CMakeFiles/serial-tests.dir/serial-tests.cpp.o" -o serial-tests  ../../../lib/libgtest_main.a ../../../lib/libgtest.a 

@@ -1,1 +1,0 @@
-/opt/intel/oneapi/compiler/2023.2.0/linux/bin/icpx -O3 -march=native -fsycl -qopenmp "CMakeFiles/shp-quick-test.dir/shp-tests.cpp.o" "CMakeFiles/shp-quick-test.dir/__/common/transform.cpp.o" -o shp-quick-test  ../../../lib/libgtest_main.a ../../../_deps/cpp-format-build/libfmt.a ../../../lib/libgtest.a /opt/intel/oneapi/tbb/2021.10.0/lib/intel64/gcc4.8/libtbb.so.12 -fsycl 
