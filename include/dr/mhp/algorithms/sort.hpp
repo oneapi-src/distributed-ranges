@@ -19,9 +19,28 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/global.hpp>
 
-#define _DEBUG()
+
+
+
 
 namespace dr::mhp {
+
+namespace __detail {
+
+template <typename LocalPolicy, typename InputIt, typename Compare>
+sycl::event sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
+                       Compare &&comp) {
+  if (rng::distance(first, last) >= 2) {
+    dr::__detail::direct_iterator d_first(first);
+    dr::__detail::direct_iterator d_last(last);
+    return oneapi::dpl::experimental::sort_async(
+        std::forward<LocalPolicy>(policy), d_first, d_last,
+        std::forward<Compare>(comp));
+  } else {
+    return sycl::event{};
+  }
+}
+} // __detail
 
 template <dr::distributed_range R, typename Compare = std::less<>>
 void sort(R &r, Compare comp = Compare()) {
@@ -56,25 +75,25 @@ void sort(R &r, Compare comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
-// #ifdef SYCL_LANGUAGE_VERSION
-//     oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-//                       lsegment.end(), comp);
-// #else
+#ifdef SYCL_LANGUAGE_VERSION
+    __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                      lsegment.end(), comp).wait();
+#else
     rng::sort(lsegment, comp);
-// #endif
+#endif
     return;
   }
 
   /* sort local segment */
 
-// #ifdef SYCL_LANGUAGE_VERSION
-//   fmt::print("{}: local segment dpl sort\n", _comm_rank);
-//   oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-//                     lsegment.end(), comp);
-// #else
+#ifdef SYCL_LANGUAGE_VERSION
+  fmt::print("{}: local segment dpl sort\n", _comm_rank);
+    __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                      lsegment.end(), comp).wait();
+#else
   fmt::print("{}: local segment rng sort\n", _comm_rank);
   rng::sort(lsegment, comp);
-// #endif
+#endif
 
   fmt::print("{}: barrier hit\n", _comm_rank);
   default_comm().barrier();
