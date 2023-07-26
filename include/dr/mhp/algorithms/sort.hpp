@@ -74,25 +74,14 @@ void sort(R &r, Compare comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
-#ifdef SYCL_LANGUAGE_VERSION
-    __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-                      lsegment.end(), comp).wait();
-#else
     rng::sort(lsegment, comp);
-#endif
     return;
   }
 
   /* sort local segment */
 
-#ifdef SYCL_LANGUAGE_VERSION
-  fmt::print("{}: local segment dpl sort\n", _comm_rank);
-  __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-                       lsegment.end(), comp).wait();
-#else
   fmt::print("{}: local segment rng sort\n", _comm_rank);
   rng::sort(lsegment, comp);
-#endif
 
   fmt::print("{}: barrier hit\n", _comm_rank);
   default_comm().barrier();
