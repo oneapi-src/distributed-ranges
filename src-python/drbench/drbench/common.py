@@ -5,3 +5,7 @@
 
 class Config:
     analysis_id = ''
+
+
+def analysis_file_prefix(analysis_id: str):
+    return f'dr-bench-{analysis_id}'

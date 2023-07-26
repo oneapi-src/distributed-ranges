@@ -128,7 +128,8 @@ def analyse(
 @cli.command()
 @click.pass_context
 def plot(ctx):
-    plotter.do_nothing()  # TODO: to be implemented
+    p = plotter.Plotter(plotter.PlottingConfig(ctx.obj))
+    p.create_plots()
 
 
 if __name__ == '__main__':
