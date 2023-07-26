@@ -309,7 +309,7 @@ TEST_F(MdForeach, 2ops) {
   xhp::iota(a, 100);
   xhp::iota(b, 200);
   auto copy_op = [](auto v) {
-    auto [in, out] = v;
+    auto &[in, out] = v;
     out = in;
   };
 
@@ -331,7 +331,9 @@ TEST_F(MdForeach, 3ops) {
   };
 
   xhp::for_each(copy_op, a, b, c);
-  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
+  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2))
+      << fmt::format("A:\n{}\nB:\n{}\nC:\n{}", a.mdspan(), b.mdspan(),
+                     c.mdspan());
 }
 
 using MdStencilForeach = Mdspan;
@@ -357,7 +359,7 @@ TEST_F(MdStencilForeach, 3ops) {
   xhp::distributed_mdarray<T, 2> c(extents2d);
   xhp::iota(a, 100);
   xhp::iota(b, 200);
-  xhp::iota(c, 200);
+  xhp::iota(c, 300);
   auto copy_op = [](auto v) {
     auto [in1, in2, out] = v;
     out(0, 0) = in1(0, 0) + in2(0, 0);
