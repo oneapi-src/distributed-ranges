@@ -19,6 +19,8 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/global.hpp>
 
+#define _DEBUG()
+
 namespace dr::mhp {
 
 template <dr::distributed_range R, typename Compare = std::less<>>
@@ -28,9 +30,15 @@ void sort(R &r, Compare comp = Compare()) {
   std::size_t _comm_rank = default_comm().rank();
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
+  fmt::print("\n{}: Input size {} comm size {}\n", _comm_rank, rng::size(r), _comm_size);
+
   /* Distributed vector of size <= (comm_size-1) * (comm_size-1) may have 0-size
    * local segments. It is also small enough to prefer sequential sort */
+
   if (rng::size(r) <= (_comm_size - 1) * (_comm_size - 1)) {
+
+    fmt::print("{}: Fallback to seq - small vector\n", _comm_rank);
+
     std::vector<valT> vec_recvdata(rng::size(r));
     if (_comm_rank == 0) {
       rng::transform(r, vec_recvdata.begin(), [](auto el) { return el; });
@@ -47,23 +55,30 @@ void sort(R &r, Compare comp = Compare()) {
   if (_comm_size == 0)
     return;
   else if (_comm_size == 1) {
-#ifdef SYCL_LANGUAGE_VERSION
-    oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-                      lsegment.end(), comp);
-#else
+    fmt::print("{}: Single node, local sort\n", _comm_rank);
+// #ifdef SYCL_LANGUAGE_VERSION
+//     oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+//                       lsegment.end(), comp);
+// #else
     rng::sort(lsegment, comp);
-#endif
+// #endif
     return;
   }
 
   /* sort local segment */
 
-#ifdef SYCL_LANGUAGE_VERSION
-  oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-                    lsegment.end(), comp);
-#else
+// #ifdef SYCL_LANGUAGE_VERSION
+//   fmt::print("{}: local segment dpl sort\n", _comm_rank);
+//   oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+//                     lsegment.end(), comp);
+// #else
+  fmt::print("{}: local segment rng sort\n", _comm_rank);
   rng::sort(lsegment, comp);
-#endif
+// #endif
+
+  fmt::print("{}: barrier hit\n", _comm_rank);
+  default_comm().barrier();
+  fmt::print("{}: barrier passed\n", _comm_rank);
 
   std::vector<valT> vec_lmedians(_comm_size - 1);
   std::vector<valT> vec_gmedians((_comm_size - 1) * _comm_size);
@@ -76,6 +91,8 @@ void sort(R &r, Compare comp = Compare()) {
   for (std::size_t _i = 0; _i < rng::size(vec_lmedians); _i++) {
     vec_lmedians[_i] = lsegment[(std::size_t)(_i + 1) * _step];
   }
+
+  fmt::print("{}: medians all_gather\n", _comm_rank);
 
   default_comm().all_gather(vec_lmedians, vec_gmedians);
 
@@ -122,6 +139,8 @@ void sort(R &r, Compare comp = Compare()) {
   std::vector<std::size_t> vec_rsizes(_comm_size, 0);
   std::vector<std::size_t> vec_rindices(_comm_size, 0); // recv buffers
 
+  fmt::print("{}: splitters alltoall\n", _comm_rank);
+
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 
   for (std::size_t i = 1; i < _comm_size; i++) {
@@ -134,6 +153,8 @@ void sort(R &r, Compare comp = Compare()) {
   std::vector<valT> vec_recvdata(_recvsum);
   std::size_t _recv_elems = rng::size(vec_recvdata);
 
+  fmt::print("{}: data exchange alltoallv\n", _comm_rank);
+
   default_comm().alltoallv(lsegment.data(), vec_split_s, vec_split_i,
                            vec_recvdata.data(), vec_rsizes, vec_rindices);
 
@@ -143,6 +164,8 @@ void sort(R &r, Compare comp = Compare()) {
    * segment */
 
   std::vector<std::size_t> vec_recv_elems(_comm_size);
+
+  fmt::print("{}: no of elements all_gather\n", _comm_rank);
 
   default_comm().all_gather(_recv_elems, vec_recv_elems);
 
@@ -169,8 +192,11 @@ void sort(R &r, Compare comp = Compare()) {
   std::vector<valT> vec_left(shift_left > 0 ? (shift_left) : 0);
   std::vector<valT> vec_right(shift_right > 0 ? (shift_right) : 0);
 
+  fmt::print("{}: redistribution\n", _comm_rank);
+
   if ((int)rng::size(vec_recvdata) < -shift_left) {
 
+    fmt::print("{}: except - recv from right\n", _comm_rank);
     /* not enough data to send in vec_recvdata - receive first */
     assert(shift_right > 0);
 
@@ -186,6 +212,8 @@ void sort(R &r, Compare comp = Compare()) {
 
   } else if ((int)rng::size(vec_recvdata) < -shift_right) {
 
+    fmt::print("{}: except - recv from left\n", _comm_rank);
+
     assert(shift_left > 0);
     default_comm().irecv(vec_left, default_comm().prev(), t, &req_l);
     MPI_Wait(&req_l, &stat_l);
@@ -199,7 +227,7 @@ void sort(R &r, Compare comp = Compare()) {
     MPI_Wait(&req_r, &stat_r);
   } else {
 
-    /* left-hand (lower rank) redistribution */
+    fmt::print("{}: normal - init\n", _comm_rank);
 
     if (shift_left < 0) {
       default_comm().isend(vec_recvdata.data(), -shift_left,
@@ -217,6 +245,8 @@ void sort(R &r, Compare comp = Compare()) {
                                shift_right,
                            -shift_right, default_comm().next(), t, &req_r);
     }
+
+    fmt::print("{}: normal - wait\n", _comm_rank);
 
     if (shift_left != 0)
       MPI_Wait(&req_l, &stat_l);
