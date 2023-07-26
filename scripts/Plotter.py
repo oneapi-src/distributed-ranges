@@ -104,17 +104,23 @@ class Plotter:
                     time_results[1][j] / time_results[d][j]
                 )
 
+        fig = plt.figure(figsize=(12, 6))
+        ax = fig.add_subplot()
         for i, bench_result in enumerate(bench_results):
-            plt.plot(d_list, bench_result, label=f'{benchmarks_names[i]}')
+            ax.plot(d_list, bench_result, label=f'{benchmarks_names[i]}')
 
-        plt.xticks(d_list)
-
-        plt.xlabel('Devices')
-        plt.ylabel('SHP Speedup')
+        ax.set_xticks(d_list)
+        ax.set_xlabel('Devices')
+        ax.set_ylabel('SHP Speedup')
         plt.title(f"Speedup for vec {self.vec_size} and {self.reps} reps")
         plt.legend()
-
-        plt.savefig(f'{self.plots_path_shp}/shp_speedup.png', format='png')
+        plt.savefig(
+            f'{self.plots_path_shp}/shp_speedup.png',
+            format='png',
+            dpi=200,
+            bbox_inches='tight',
+        )
+        plt.close(fig)
 
     def _get_bench_vals(self, f):
         data = json.load(f)
@@ -187,36 +193,52 @@ class Plotter:
         Plots bandwidths for every number of devices from 1 to n (shp)
         """
         benchmarks = self._extract_bench_values("shp")
+        fig = plt.figure(figsize=(12, 6))
+        ax = fig.add_subplot()
         for i, benchmark in enumerate(benchmarks):
-            plt.plot(
+            ax.plot(
                 self.d_list,
                 benchmark,
                 label=f'{self.benchmark_names[i]}/bandwidth',
             )
-
-        plt.xlabel('Devices')
-        plt.ylabel('GBps')
+        ax.set_xticks(self.d_list)
+        ax.set_xlabel('Devices')
+        ax.set_ylabel('GBps')
         plt.title("Bandwidth")
         plt.legend()
-        plt.savefig(f'{self.plots_path_shp}/shp_bandwidth.png', format='png')
+        plt.savefig(
+            f'{self.plots_path_shp}/shp_bandwidth.png',
+            format='png',
+            dpi=200,
+            bbox_inches='tight',
+        )
+        plt.close(fig)
 
     def plot_bandwidth_mhp(self):
         """
         Plots bandwidths for every number of mpi processes from 1 to n (mhp)
         """
         benchmarks = self._extract_bench_values("mhp")
+        fig = plt.figure(figsize=(12, 6))
+        ax = fig.add_subplot()
         for i, benchmark in enumerate(benchmarks):
-            plt.plot(
+            ax.plot(
                 self.d_list,
                 benchmark,
                 label=f'{self.benchmark_names[i]}/bandwidth',
             )
-
-        plt.xlabel('MPI procs')
-        plt.ylabel('GBps')
+        ax.set_xticks(self.d_list)
+        ax.set_xlabel('MPI procs')
+        ax.set_ylabel('GBps')
         plt.title("Bandwidth")
         plt.legend()
-        plt.savefig(f'{self.plots_path_mhp}/mhp_bandwidth.png', format='png')
+        plt.savefig(
+            f'{self.plots_path_mhp}/mhp_bandwidth.png',
+            format='png',
+            dpi=200,
+            bbox_inches='tight',
+        )
+        plt.close(fig)
 
 
 @click.command
