@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/CMakeFiles/googlebench-populate"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/CMakeFiles/googlebench-populate.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/CMakeFiles/googlebench-populate-complete.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-build.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-configure.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-download.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-install.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-mkdir.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-patch.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-test.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/googlebench-subbuild/googlebench-populate-prefix/src/googlebench-populate-stamp/googlebench-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"googlebench-populate"
+		],
+		"name" : "googlebench-populate"
+	}
+}

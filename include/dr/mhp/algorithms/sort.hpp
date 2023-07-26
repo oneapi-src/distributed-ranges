@@ -87,8 +87,8 @@ void sort(R &r, Compare comp = Compare()) {
 
 #ifdef SYCL_LANGUAGE_VERSION
   fmt::print("{}: local segment dpl sort\n", _comm_rank);
-    __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-                      lsegment.end(), comp).wait();
+  __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                       lsegment.end(), comp).wait();
 #else
   fmt::print("{}: local segment rng sort\n", _comm_rank);
   rng::sort(lsegment, comp);

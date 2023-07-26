@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/CMakeFiles/dpl-populate"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/CMakeFiles/dpl-populate.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/CMakeFiles/dpl-populate-complete.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-build.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-configure.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-download.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-install.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-mkdir.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-patch.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-test.rule"
+		},
+		{
+			"file" : "/nfs/site/home/nowakmat/work/distributed-ranges-sort/build/_deps/dpl-subbuild/dpl-populate-prefix/src/dpl-populate-stamp/dpl-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"dpl-populate"
+		],
+		"name" : "dpl-populate"
+	}
+}

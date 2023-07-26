@@ -1,0 +1,15 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=git
+command=/opt/hpc_software/tools/cmake/3.26.0/bin/cmake;-P;/nfs/site/home/nowakmat/work/distributed-ranges-sort/build-icpx/_deps/dpl-subbuild/dpl-populate-prefix/tmp/dpl-populate-gitclone.cmake
+source_dir=/nfs/site/home/nowakmat/work/distributed-ranges-sort/build-icpx/_deps/dpl-src
+work_dir=/nfs/site/home/nowakmat/work/distributed-ranges-sort/build-icpx/_deps
+repository=https://github.com/oneapi-src/oneDPL.git
+remote=origin
+init_submodules=TRUE
+recurse_submodules=--recursive
+submodules=
+CMP0097=NEW
+
