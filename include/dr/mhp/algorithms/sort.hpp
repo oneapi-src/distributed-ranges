@@ -47,13 +47,23 @@ void sort(R &r, Compare comp = Compare()) {
   if (_comm_size == 0)
     return;
   else if (_comm_size == 1) {
+#ifdef SYCL_LANGUAGE_VERSION
+    oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                      lsegment.end(), comp);
+#else
     rng::sort(lsegment, comp);
+#endif
     return;
   }
 
   /* sort local segment */
 
+#ifdef SYCL_LANGUAGE_VERSION
+  oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                    lsegment.end(), comp);
+#else
   rng::sort(lsegment, comp);
+#endif
 
   std::vector<valT> vec_lmedians(_comm_size - 1);
   std::vector<valT> vec_gmedians((_comm_size - 1) * _comm_size);
@@ -83,7 +93,8 @@ void sort(R &r, Compare comp = Compare()) {
   /* calculate splitting indices (start of buffers) and sizes of buffers to send
    */
 
-  std::vector<int> vec_split_i(_comm_size, 0), vec_split_s(_comm_size, 0);
+  std::vector<std::size_t> vec_split_i(_comm_size, 0);
+  std::vector<std::size_t> vec_split_s(_comm_size, 0);
 
   std::size_t segidx = 0, vidx = 1;
 
@@ -108,8 +119,8 @@ void sort(R &r, Compare comp = Compare()) {
 
   /* send data size to each node */
 
-  std::vector<int> vec_rsizes(_comm_size, 0);
-  std::vector<int> vec_rindices(_comm_size, 0); // recv buffers
+  std::vector<std::size_t> vec_rsizes(_comm_size, 0);
+  std::vector<std::size_t> vec_rindices(_comm_size, 0); // recv buffers
 
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 
@@ -193,23 +204,24 @@ void sort(R &r, Compare comp = Compare()) {
     if (shift_left < 0) {
       default_comm().isend(vec_recvdata.data(), -shift_left,
                            default_comm().prev(), t, &req_l);
-      MPI_Wait(&req_l, &stat_l);
     } else if (shift_left > 0) {
       default_comm().irecv(vec_left, default_comm().prev(), t, &req_l);
-      MPI_Wait(&req_l, &stat_l);
     }
 
     /* right-hand (higher rank) redistribution */
 
     if (shift_right > 0) {
       default_comm().irecv(vec_right, default_comm().next(), t, &req_r);
-      MPI_Wait(&req_r, &stat_r);
     } else if (shift_right < 0) {
       default_comm().isend((valT *)(vec_recvdata.data()) + _recv_elems +
                                shift_right,
                            -shift_right, default_comm().next(), t, &req_r);
-      MPI_Wait(&req_r, &stat_r);
     }
+
+    if (shift_left != 0)
+      MPI_Wait(&req_l, &stat_l);
+    if (shift_right != 0)
+      MPI_Wait(&req_r, &stat_r);
   }
 
   std::size_t invalidate_left = (shift_left < 0) ? -shift_left : 0;
