@@ -19,9 +19,27 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/global.hpp>
 
-#define _DEBUG()
-
 namespace dr::mhp {
+
+namespace __detail {
+
+template <typename LocalPolicy, typename InputIt, typename Compare>
+sycl::event sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
+                       Compare &&comp) {
+
+  fmt::print("{}: sort_async\n", comm_rank);
+
+  if (rng::distance(first, last) >= 2) {
+    dr::__detail::direct_iterator d_first(first);
+    dr::__detail::direct_iterator d_last(last);
+    return oneapi::dpl::experimental::sort_async(
+        std::forward<LocalPolicy>(policy), d_first, d_last,
+        std::forward<Compare>(comp));
+  } else {
+    return sycl::event{};
+  }
+}
+} // __detail
 
 template <dr::distributed_range R, typename Compare = std::less<>>
 void sort(R &r, Compare comp = Compare()) {
@@ -56,25 +74,25 @@ void sort(R &r, Compare comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
-// #ifdef SYCL_LANGUAGE_VERSION
-//     oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-//                       lsegment.end(), comp);
-// #else
+#ifdef SYCL_LANGUAGE_VERSION
+    __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                      lsegment.end(), comp).wait();
+#else
     rng::sort(lsegment, comp);
-// #endif
+#endif
     return;
   }
 
   /* sort local segment */
 
-// #ifdef SYCL_LANGUAGE_VERSION
-//   fmt::print("{}: local segment dpl sort\n", _comm_rank);
-//   oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
-//                     lsegment.end(), comp);
-// #else
+#ifdef SYCL_LANGUAGE_VERSION
+  fmt::print("{}: local segment dpl sort\n", _comm_rank);
+    __detail::sort_async(oneapi::dpl::execution::dpcpp_default, lsegment.begin(),
+                      lsegment.end(), comp).wait();
+#else
   fmt::print("{}: local segment rng sort\n", _comm_rank);
   rng::sort(lsegment, comp);
-// #endif
+#endif
 
   fmt::print("{}: barrier hit\n", _comm_rank);
   default_comm().barrier();
@@ -92,16 +110,21 @@ void sort(R &r, Compare comp = Compare()) {
     vec_lmedians[_i] = lsegment[(std::size_t)(_i + 1) * _step];
   }
 
-  fmt::print("{}: medians all_gather\n", _comm_rank);
+  fmt::print("{}: medians all_gather lsize {} gsize {}\n", _comm_rank, rng::size(vec_lmedians), rng::size(vec_gmedians));
 
-  default_comm().all_gather(vec_lmedians, vec_gmedians);
+  // default_comm().all_gather(vec_lmedians, vec_gmedians);
+  default_comm().all_gather(vec_lmedians.data(), vec_gmedians.data(), rng::size(vec_lmedians));
 
+
+  fmt::print("{}: gmedians sort\n", _comm_rank);
   rng::sort(vec_gmedians, comp);
 
   std::vector<valT> vec_split_v(_comm_size - 1);
   _step = rng::size(vec_gmedians) / (_comm_size - 1);
 
   /* find splitting values - medians of dividers */
+
+  fmt::print("{}: find splitting values\n", _comm_rank);
 
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
     vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _step)];
@@ -114,6 +137,8 @@ void sort(R &r, Compare comp = Compare()) {
   std::vector<std::size_t> vec_split_s(_comm_size, 0);
 
   std::size_t segidx = 0, vidx = 1;
+
+  fmt::print("{}: find splitting indices and sizes\n", _comm_rank);
 
   while (vidx < _comm_size) {
     if (comp(vec_split_v[vidx - 1], *(lsegment.begin() + segidx))) {
