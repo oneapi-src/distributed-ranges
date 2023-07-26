@@ -118,16 +118,17 @@ public:
   }
 
   template <rng::contiguous_range R>
-  void alltoall(R &sendr, R &recvr, std::size_t count) {
+  void alltoall(const R &sendr, R &recvr, std::size_t count) {
     using T = typename R::value_type;
     MPI_Alltoall(rng::data(sendr), count * sizeof(T), MPI_BYTE,
                  rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
   }
 
   template <typename T>
-  void alltoallv(T *sendbuf, std::vector<int> &sendcnt,
-                 std::vector<int> &senddsp, T *recvbuf,
-                 std::vector<int> &recvcnt, std::vector<int> &recvdsp) {
+  void alltoallv(const T *sendbuf, std::vector<std::size_t> &sendcnt,
+                 std::vector<std::size_t> &senddsp, T *recvbuf,
+                 std::vector<std::size_t> &recvcnt,
+                 std::vector<std::size_t> &recvdsp) {
 
     assert(rng::size(sendcnt) == size_);
     assert(rng::size(senddsp) == size_);

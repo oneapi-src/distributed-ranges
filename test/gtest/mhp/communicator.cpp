@@ -19,11 +19,11 @@ TEST(Communicator, Alltoallv) {
 
   rng::fill(vec_src, comm_rank * 10 + 1);
 
-  std::vector<int> sendsizes(comm_size, SIZE);
-  std::vector<int> recvsizes(comm_size, SIZE);
+  std::vector<std::size_t> sendsizes(comm_size, SIZE);
+  std::vector<std::size_t> recvsizes(comm_size, SIZE);
 
-  std::vector<int> senddispl(comm_size);
-  std::vector<int> recvdispl(comm_size);
+  std::vector<std::size_t> senddispl(comm_size);
+  std::vector<std::size_t> recvdispl(comm_size);
 
   for (std::size_t i = 0; i < comm_size; i++) {
     senddispl[i] = recvdispl[i] = i * SIZE;
