@@ -10,17 +10,20 @@ using T = int;
 using DV = dr::mhp::distributed_vector<T>;
 
 TEST(Communicator, Alltoallv) {
+  if (comm_size <= 1)
+    return;
+
   const std::size_t SIZE = 2;
   std::vector<T> vec_src(comm_size * SIZE);
   std::vector<T> vec_dst(comm_size * SIZE);
 
   rng::fill(vec_src, comm_rank * 10 + 1);
 
-  std::vector<int> sendsizes(comm_size, SIZE);
-  std::vector<int> recvsizes(comm_size, SIZE);
+  std::vector<std::size_t> sendsizes(comm_size, SIZE);
+  std::vector<std::size_t> recvsizes(comm_size, SIZE);
 
-  std::vector<int> senddispl(comm_size);
-  std::vector<int> recvdispl(comm_size);
+  std::vector<std::size_t> senddispl(comm_size);
+  std::vector<std::size_t> recvdispl(comm_size);
 
   for (std::size_t i = 0; i < comm_size; i++) {
     senddispl[i] = recvdispl[i] = i * SIZE;
@@ -40,6 +43,9 @@ TEST(Communicator, Alltoallv) {
 }
 
 TEST(Communicator, Allgather) {
+  if (comm_size <= 1)
+    return;
+
   const std::size_t SIZE = 2;
   std::vector<T> vec_src(SIZE);
   std::vector<T> vec_dst(comm_size * SIZE);
