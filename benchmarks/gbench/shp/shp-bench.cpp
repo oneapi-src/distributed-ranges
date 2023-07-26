@@ -49,7 +49,8 @@ int main(int argc, char *argv[]) {
   }
 
   benchmark::AddCustomContext("model", "shp");
-  benchmark::AddCustomContext("devices_num", options["num-devices"].as<std::string>());
+  benchmark::AddCustomContext("devices_num",
+                              options["num-devices"].as<std::string>());
   add_configuration();
 
   std::vector<sycl::device> devices;
