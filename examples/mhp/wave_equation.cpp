@@ -53,25 +53,29 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     auto [in, out] = v;
     out(0, 0) = -dt * g * (in(1, 0) - in(0, 0)) * dx_inv;
   };
-  std::array<std::size_t, 2> start{1, 0};
-  std::array<std::size_t, 2> end{
-      static_cast<std::size_t>(e.mdspan().extent(0) - 1),
-      static_cast<std::size_t>(e.mdspan().extent(1))};
-  auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
-  auto dudt_view = dr::mhp::views::submdspan(dudt.view(), start, end);
-  dr::mhp::stencil_for_each(rhs_dedx, e_view, dudt_view);
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
+    auto dudt_view = dr::mhp::views::submdspan(dudt.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_dedx, e_view, dudt_view);
+  }
 
   auto rhs_dedy = [dt, g, dy_inv](auto v) {
     auto [in, out] = v;
     out(0, 0) = -dt * g * (in(0, 0) - in(0, -1)) * dy_inv;
   };
-  std::array<std::size_t, 2> start2{0, 1};
-  std::array<std::size_t, 2> end2{
-      static_cast<std::size_t>(e.mdspan().extent(0)),
-      static_cast<std::size_t>(e.mdspan().extent(1))};
-  auto e_view2 = dr::mhp::views::submdspan(e.view(), start2, end2);
-  auto dvdt_view = dr::mhp::views::submdspan(dvdt.view(), start2, end2);
-  dr::mhp::stencil_for_each(rhs_dedy, e_view2, dvdt_view);
+  {
+    std::array<std::size_t, 2> start{0, 1};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0)),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
+    auto dvdt_view = dr::mhp::views::submdspan(dvdt.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_dedy, e_view, dvdt_view);
+  }
 
   auto rhs_div = [dt, h, dx_inv, dy_inv](auto args) {
     auto [u, v, out] = args;
@@ -79,17 +83,222 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     auto dvdy = (v(0, 1) - v(0, 0)) * dy_inv;
     out(0, 0) = -dt * h * (dudx + dvdy);
   };
-  std::array<std::size_t, 2> start3{1, 0};
-  std::array<std::size_t, 2> end3{
-      static_cast<std::size_t>(u.mdspan().extent(0)),
-      static_cast<std::size_t>(u.mdspan().extent(1))};
-  auto u_view = dr::mhp::views::submdspan(u.view(), start3, end3);
-  auto v_view = dr::mhp::views::submdspan(v.view(), start3, end3);
-  auto dedt_view = dr::mhp::views::submdspan(dedt.view(), start3, end3);
-  dr::mhp::stencil_for_each(rhs_div, u_view, v_view, dedt_view);
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(u.mdspan().extent(0)),
+        static_cast<std::size_t>(u.mdspan().extent(1))};
+    auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
+    auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
+    auto dedt_view = dr::mhp::views::submdspan(dedt.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_div, u_view, v_view, dedt_view);
+  }
 };
 
-int run(int n, bool benchmark_mode) {
+void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
+            double g, double h, double dx_inv, double dy_inv, double dt) {
+  /**
+   * Evaluate stage 1 of the RK time stepper
+   *
+   * u1 = u + dt*rhs(u)
+   *
+   */
+  // u: elevation x gradient
+  auto rhs_u1 = [dt, g, dx_inv](auto tuple) {
+    auto [e, u, out] = tuple;
+    auto dedx = (e(1, 0) - e(0, 0)) * dx_inv;
+    out(0, 0) = u(0, 0) - dt * g * dedx;
+  };
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
+    auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
+    auto u1_view = dr::mhp::views::submdspan(u1.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_u1, e_view, u_view, u1_view);
+    dr::mhp::halo(u1).exchange();
+  }
+
+  // v: elevation y gradient
+  auto rhs_v1 = [dt, g, dy_inv](auto tuple) {
+    auto [e, v, out] = tuple;
+    auto dedy = (e(0, 0) - e(0, -1)) * dy_inv;
+    out(0, 0) = v(0, 0) - dt * g * dedy;
+  };
+  {
+    std::array<std::size_t, 2> start{0, 1};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0)),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
+    auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
+    auto v1_view = dr::mhp::views::submdspan(v1.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_v1, e_view, v_view, v1_view);
+    dr::mhp::halo(v1).exchange();
+  }
+
+  // e: divergence of (u, v)
+  auto rhs_e1 = [dt, h, dx_inv, dy_inv](auto tuple) {
+    auto [e, u, v, out] = tuple;
+    auto dudx = (u(0, 0) - u(-1, 0)) * dx_inv;
+    auto dvdy = (v(0, 1) - v(0, 0)) * dy_inv;
+    out(0, 0) = e(0, 0) - dt * h * (dudx + dvdy);
+  };
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(u.mdspan().extent(0)),
+        static_cast<std::size_t>(u.mdspan().extent(1))};
+    auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
+    auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
+    auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
+    auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_e1, e_view, u_view, v_view, e1_view);
+    dr::mhp::halo(e1).exchange();
+  }
+};
+
+void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
+            Array &u2, Array &v2, Array &e2, double g, double h, double dx_inv,
+            double dy_inv, double dt) {
+  /**
+   * Evaluate stage 2 of the RK time stepper
+   *
+   * u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
+   *
+   */
+  // u: elevation x gradient
+  auto rhs_u2 = [dt, g, dx_inv](auto tuple) {
+    auto [e1, u1, u, out] = tuple;
+    auto dedx = (e1(1, 0) - e1(0, 0)) * dx_inv;
+    out(0, 0) = 0.75 * u(0, 0) + 0.25 * (u1(0, 0) - dt * g * dedx);
+  };
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
+    auto u1_view = dr::mhp::views::submdspan(u1.view(), start, end);
+    auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
+    auto u2_view = dr::mhp::views::submdspan(u2.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_u2, e1_view, u1_view, u_view, u2_view);
+    dr::mhp::halo(u2).exchange();
+  }
+
+  // v: elevation y gradient
+  auto rhs_v2 = [dt, g, dy_inv](auto tuple) {
+    auto [e1, v1, v, out] = tuple;
+    auto dedy = (e1(0, 0) - e1(0, -1)) * dy_inv;
+    out(0, 0) = 0.75 * v(0, 0) + 0.25 * (v1(0, 0) - dt * g * dedy);
+  };
+  {
+    std::array<std::size_t, 2> start{0, 1};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0)),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
+    auto v1_view = dr::mhp::views::submdspan(v1.view(), start, end);
+    auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
+    auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_v2, e1_view, v1_view, v_view, v2_view);
+    dr::mhp::halo(v2).exchange();
+  }
+
+  // e: divergence of (u, v)
+  auto rhs_e2 = [dt, h, dx_inv, dy_inv](auto tuple) {
+    auto [e1, u1, v1, e, out] = tuple;
+    auto dudx = (u1(0, 0) - u1(-1, 0)) * dx_inv;
+    auto dvdy = (v1(0, 1) - v1(0, 0)) * dy_inv;
+    out(0, 0) = 0.75 * e(0, 0) + 0.25 * (e1(0, 0) - dt * h * (dudx + dvdy));
+  };
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(u.mdspan().extent(0)),
+        static_cast<std::size_t>(u.mdspan().extent(1))};
+    auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
+    auto u1_view = dr::mhp::views::submdspan(u1.view(), start, end);
+    auto v1_view = dr::mhp::views::submdspan(v1.view(), start, end);
+    auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
+    auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_e2, e1_view, u1_view, v1_view, e_view,
+                              e2_view);
+    dr::mhp::halo(e2).exchange();
+  }
+};
+
+void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
+            double g, double h, double dx_inv, double dy_inv, double dt) {
+  /**
+   * Evaluate stage 3 of the RK time stepper
+   *
+   * u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
+   *
+   */
+  // u: elevation x gradient
+  auto rhs_u3 = [dt, g, dx_inv](auto tuple) {
+    auto [e2, u2, out] = tuple;
+    auto dedx = (e2(1, 0) - e2(0, 0)) * dx_inv;
+    out(0, 0) *= 1.0 / 3;
+    out(0, 0) += 2.0 / 3 * (u2(0, 0) - dt * g * dedx);
+  };
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
+    auto u2_view = dr::mhp::views::submdspan(u2.view(), start, end);
+    auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_u3, e2_view, u2_view, u_view);
+    dr::mhp::halo(u).exchange();
+  }
+
+  // v: elevation y gradient
+  auto rhs_v3 = [dt, g, dy_inv](auto tuple) {
+    auto [e2, v2, out] = tuple;
+    auto dedy = (e2(0, 0) - e2(0, -1)) * dy_inv;
+    out(0, 0) *= 1.0 / 3;
+    out(0, 0) += 2.0 / 3 * (v2(0, 0) - dt * g * dedy);
+  };
+  {
+    std::array<std::size_t, 2> start{0, 1};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(e.mdspan().extent(0)),
+        static_cast<std::size_t>(e.mdspan().extent(1))};
+    auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
+    auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);
+    auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_v3, e2_view, v2_view, v_view);
+    dr::mhp::halo(v).exchange();
+  }
+
+  // e: divergence of (u, v)
+  auto rhs_e3 = [dt, h, dx_inv, dy_inv](auto tuple) {
+    auto [e2, u2, v2, out] = tuple;
+    auto dudx = (u2(0, 0) - u2(-1, 0)) * dx_inv;
+    auto dvdy = (v2(0, 1) - v2(0, 0)) * dy_inv;
+    out(0, 0) *= 1.0 / 3;
+    out(0, 0) += 2.0 / 3 * (e2(0, 0) - dt * h * (dudx + dvdy));
+  };
+  {
+    std::array<std::size_t, 2> start{1, 0};
+    std::array<std::size_t, 2> end{
+        static_cast<std::size_t>(u.mdspan().extent(0)),
+        static_cast<std::size_t>(u.mdspan().extent(1))};
+    auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
+    auto u2_view = dr::mhp::views::submdspan(u2.view(), start, end);
+    auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);
+    auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
+    dr::mhp::stencil_for_each(rhs_e3, e2_view, u2_view, v2_view, e_view);
+    dr::mhp::halo(e).exchange();
+  }
+};
+
+int run(int n, bool benchmark_mode, bool fused_kernels) {
 
   // Arakava C grid
   //
@@ -121,6 +330,9 @@ int run(int n, bool benchmark_mode) {
 
   if (comm_rank == 0) {
     std::cout << "Using backend: dr" << std::endl;
+    if (fused_kernels) {
+      std::cout << "Using fused kernels" << std::endl;
+    }
     std::cout << "Grid size: " << nx << " x " << ny << std::endl;
     std::cout << "Elevation DOFs: " << nx * ny << std::endl;
     std::cout << "Velocity  DOFs: " << (nx + 1) * ny + nx * (ny + 1)
@@ -235,35 +447,44 @@ int run(int n, bool benchmark_mode) {
     }
 
     // step
-    // RK stage 1: u1 = u + dt*rhs(u)
-    rhs(u, v, e, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
-    dr::mhp::transform(dr::mhp::views::zip(u, dudt), u1.begin(), add);
-    dr::mhp::transform(dr::mhp::views::zip(v, dvdt), v1.begin(), add);
-    dr::mhp::transform(dr::mhp::views::zip(e, dedt), e1.begin(), add);
-    dr::mhp::halo(u1).exchange();
-    dr::mhp::halo(v1).exchange();
-    dr::mhp::halo(e1).exchange();
+    if (fused_kernels) {
+      stage1(u, v, e, u1, v1, e1, g, h, dx_inv, dy_inv, dt);
+      stage2(u, v, e, u1, v1, e1, u2, v2, e2, g, h, dx_inv, dy_inv, dt);
+      stage3(u, v, e, u2, v2, e2, g, h, dx_inv, dy_inv, dt);
+    } else {
+      // RK stage 1: u1 = u + dt*rhs(u)
+      rhs(u, v, e, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+      dr::mhp::transform(dr::mhp::views::zip(u, dudt), u1.begin(), add);
+      dr::mhp::transform(dr::mhp::views::zip(v, dvdt), v1.begin(), add);
+      dr::mhp::transform(dr::mhp::views::zip(e, dedt), e1.begin(), add);
+      dr::mhp::halo(u1).exchange();
+      dr::mhp::halo(v1).exchange();
+      dr::mhp::halo(e1).exchange();
 
-    // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
-    rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
-    dr::mhp::transform(dr::mhp::views::zip(u, u1, dudt), u2.begin(),
-                       rk_update2);
-    dr::mhp::transform(dr::mhp::views::zip(v, v1, dvdt), v2.begin(),
-                       rk_update2);
-    dr::mhp::transform(dr::mhp::views::zip(e, e1, dedt), e2.begin(),
-                       rk_update2);
-    dr::mhp::halo(u2).exchange();
-    dr::mhp::halo(v2).exchange();
-    dr::mhp::halo(e2).exchange();
+      // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
+      rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+      dr::mhp::transform(dr::mhp::views::zip(u, u1, dudt), u2.begin(),
+                         rk_update2);
+      dr::mhp::transform(dr::mhp::views::zip(v, v1, dvdt), v2.begin(),
+                         rk_update2);
+      dr::mhp::transform(dr::mhp::views::zip(e, e1, dedt), e2.begin(),
+                         rk_update2);
+      dr::mhp::halo(u2).exchange();
+      dr::mhp::halo(v2).exchange();
+      dr::mhp::halo(e2).exchange();
 
-    // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
-    rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
-    dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(), rk_update3);
-    dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
-    dr::mhp::transform(dr::mhp::views::zip(e, e2, dedt), e.begin(), rk_update3);
-    dr::mhp::halo(u).exchange();
-    dr::mhp::halo(v).exchange();
-    dr::mhp::halo(e).exchange();
+      // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
+      rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+      dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(),
+                         rk_update3);
+      dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v.begin(),
+                         rk_update3);
+      dr::mhp::transform(dr::mhp::views::zip(e, e2, dedt), e.begin(),
+                         rk_update3);
+      dr::mhp::halo(u).exchange();
+      dr::mhp::halo(e).exchange();
+      dr::mhp::halo(v).exchange();
+    }
   }
   auto toc = std::chrono::steady_clock::now();
   std::chrono::duration<double> duration = toc - tic;
@@ -348,6 +569,7 @@ int main(int argc, char *argv[]) {
   options_spec.add_options()
     ("n", "Grid size", cxxopts::value<std::size_t>()->default_value("128"))
     ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
+    ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
     ("h,help", "Print help");
   // clang-format on
 
@@ -361,8 +583,9 @@ int main(int argc, char *argv[]) {
 
   std::size_t n = options["n"].as<std::size_t>();
   bool benchmark_mode = options["t"].as<bool>();
+  bool fused_kernels = options["f"].as<bool>();
 
-  auto error = run(n, benchmark_mode);
+  auto error = run(n, benchmark_mode, fused_kernels);
   MPI_Finalize();
   return error;
 }
