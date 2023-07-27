@@ -314,8 +314,7 @@ TEST_F(MdForeach, 2ops) {
   };
 
   xhp::for_each(copy_op, a, b);
-  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2))
-      << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
+  EXPECT_EQ(a, b);
 }
 
 TEST_F(MdForeach, 3ops) {
@@ -349,8 +348,7 @@ TEST_F(MdStencilForeach, 2ops) {
   };
 
   xhp::stencil_for_each(copy_op, a, b);
-  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2))
-      << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
+  EXPECT_EQ(a, b);
 }
 
 TEST_F(MdStencilForeach, 3ops) {
