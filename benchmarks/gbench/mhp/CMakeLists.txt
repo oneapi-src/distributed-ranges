@@ -52,6 +52,6 @@ if(ENABLE_SYCL)
   add_custom_command(
     OUTPUT bench-results
     COMMAND dr-bench analyse --nprocs 1 --nprocs 2 --nprocs 3 --nprocs 4
-            --vec-size 2000000 --mode mhp_gpu --mode mhp_cpu --fork
+            --vec-size 1000000 --mode mhp_gpu --mode mhp_cpu --fork
     DEPENDS mhp-bench)
 endif()
