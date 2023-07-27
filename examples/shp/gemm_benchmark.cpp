@@ -95,9 +95,17 @@ void assign(shp::distributed_dense_matrix<T> &m, const U &value) {
 }
 
 int main(int argc, char **argv) {
-  auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
-  fmt::print("Initiating with {} devices\n", devices.size());
+  auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
+
+  std::size_t n_devices = devices_.size();
+
+  auto devices =
+      dr::shp::trim_devices(devices_, std::min(n_devices, devices_.size()));
+
   dr::shp::init(devices);
+
+  fmt::print("Running with {} devices.\n", devices.size());
+  dr::shp::print_device_details(devices);
 
   std::size_t m = 32 * 1024;
   std::size_t n = 32 * 1024;
