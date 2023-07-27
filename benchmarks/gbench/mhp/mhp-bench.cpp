@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
         assert(rank < 1000);
         char tmp[4];
         ::sprintf(tmp, "%03u", rank);
-        ::strncpy(argv[i] + nnnPos, tmp, 3);
+        ::memcpy(argv[i] + nnnPos, tmp, 3);
       }
     }
   }
