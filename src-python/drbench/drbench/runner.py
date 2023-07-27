@@ -31,13 +31,11 @@ class Runner:
             subprocess.run(command, shell=True, check=True)
 
     def __out_filename(self, case: AnalysisCase, add_nnn: bool):
-        return (
-            common.analysis_file_prefix(
-                self.analysis_config.common_config.analysis_id
-            )
-            + {".rankNNN" if add_nnn else ""}
-            + f'.{case.mode}.n{case.nprocs}.s{case.size}.json'
+        prefix = common.analysis_file_prefix(
+            self.analysis_config.common_config.analysis_id
         )
+        rank = ".rankNNN" if add_nnn else ""
+        return f'{prefix}{rank}.{case.mode}.n{case.nprocs}.s{case.size}.json'
 
     def __run_mhp_analysis(self, params, nprocs, mode):
         if mode == AnalysisMode.MHP_CPU:
