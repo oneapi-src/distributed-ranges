@@ -115,7 +115,7 @@ jobs:
     - name: Test
       run: srun -p pvc-shared scripts/devcloud-run.sh
     - name: Benchmark
-      run: srun -p pvc scripts/devcloud-benchmarks.sh
+      run: srun -p pvc-shared scripts/devcloud-benchmarks.sh
     - uses: actions/upload-artifact@v3
       with:
         name: log-devcloud-bench
