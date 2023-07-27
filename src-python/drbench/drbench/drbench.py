@@ -29,6 +29,17 @@ def cli(ctx, analysis_id: str):
         )
 
 
+def __plot_impl(ctx):
+    p = plotter.Plotter(plotter.PlottingConfig(ctx.obj))
+    p.create_plots()
+
+
+@cli.command()
+@click.pass_context
+def plot(ctx):
+    __plot_impl(ctx)
+
+
 Choice = click.Choice(['mhp_cpu', 'mhp_gpu', 'mhp_nosycl', 'shp'])
 
 
@@ -45,6 +56,7 @@ def choice_to_mode(c):
 
 
 @cli.command()
+@click.option('--dontplot', is_flag=True, help='just create json files')
 @click.option(
     '--mode',
     type=Choice,
@@ -92,6 +104,7 @@ def choice_to_mode(c):
 @click.pass_context
 def analyse(
     ctx,
+    dontplot,
     mode,
     vec_size,
     nprocs,
@@ -124,12 +137,8 @@ def analyse(
                     runner.AnalysisCase(choice_to_mode(m), s, n)
                 )
 
-
-@cli.command()
-@click.pass_context
-def plot(ctx):
-    p = plotter.Plotter(plotter.PlottingConfig(ctx.obj))
-    p.create_plots()
+    if not dontplot:
+        __plot_impl(ctx)
 
 
 if __name__ == '__main__':

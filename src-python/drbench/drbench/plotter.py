@@ -9,6 +9,7 @@ from collections import namedtuple
 
 import click
 import pandas as pd
+import seaborn as sns
 from drbench import common
 
 # only common_config for now, add plotting options here if needed
@@ -37,7 +38,7 @@ class Plotter:
             fdata = json.load(f)
             ctx = fdata['context']
             vsize = int(ctx['default_vector_size'])
-            nprocs = int(ctx['nprocs'])
+            nprocs = int(ctx['ranks'])
             benchs = fdata['benchmarks']
             for b in benchs:
                 bname = b['name'].partition('/')[0]
@@ -54,6 +55,14 @@ class Plotter:
                     }
                 )
 
+    # db is created which looks something like this:
+    #           mode  vsize          test  nprocs      rtime            bw
+    # 0   MHP_NOSYCL  20000   Stream_Copy       1   0.234987  1.361779e+11
+    # 1   MHP_NOSYCL  20000  Stream_Scale       1   0.240879  1.328468e+11
+    # 2   MHP_NOSYCL  20000    Stream_Add       1   0.329298  1.457645e+11
+    # ..         ...    ...           ...     ...        ...           ...
+    # 62     MHP_GPU  40000    Stream_Add       4  21.716973  4.420506e+09
+    # 63     MHP_GPU  40000  Stream_Triad       4  21.714421  4.421025e+09
     def __init__(self, plotting_config: PlottingConfig):
         rows = []
         for fname in os.listdir('.'):
@@ -62,7 +71,71 @@ class Plotter:
             ):
                 click.echo(f'found file {fname}')
                 Plotter.__import_file(fname, rows)
+
         self.db = pd.DataFrame(rows)
 
+        # helper structures that can be used to define plots
+        self.vec_sizes = self.db['vsize'].unique()
+        self.vec_sizes.sort()
+        self.max_vec_size = self.vec_sizes[-1]
+        self.db_maxvec = self.db.loc[(self.db['vsize'] == self.max_vec_size)]
+
+        self.nprocs = self.db['nprocs'].unique()
+        self.nprocs.sort()
+
+        self.modes = self.db['mode'].unique()
+
+    @staticmethod
+    def __make_plot(fname, data, **kwargs):
+        plot = sns.relplot(data=data, kind='line', **kwargs)
+        plot.savefig(f'{fname}.png')
+
+    def __stream_bandwidth_plots(self):
+        Plotter.__make_plot(
+            'stream_realtime',
+            self.db_maxvec.loc[self.db['test'].str.startswith('Stream_')],
+            x='nprocs',
+            y='rtime',
+            col='mode',
+            hue='test',
+        )
+
+    def __stream_strong_scaling_plots(self):
+        db = self.db_maxvec.loc[
+            self.db['test'].str.startswith('Stream_')
+        ].copy()
+
+        ref_stream = sorted(db['test'].unique())[0]
+        ref_mode = sorted(db['mode'].unique())[0]
+        ref_nproc = sorted(db['nprocs'].unique())[0]
+        # take value of reference stream/mode/nproc - can it be easier taken?
+        scale_factor = (
+            db.loc[
+                (db['mode'] == ref_mode)
+                & (db['test'] == ref_stream)
+                & (db['nprocs'] == ref_nproc)
+            ]
+            .squeeze()
+            .at['rtime']
+        )
+
+        click.echo(
+            f'stream strong scalling scalled by {ref_stream} {ref_mode}'
+            f' nproc:{ref_nproc} eq {scale_factor}'
+        )
+        db['rtime'] /= scale_factor
+
+        Plotter.__make_plot(
+            'stream_strong_scaling',
+            db,
+            x='nprocs',
+            y='rtime',
+            col='test',
+            hue='mode',
+        )
+
     def create_plots(self):
-        print(self.db)
+        sns.set_theme(style="ticks")
+
+        self.__stream_bandwidth_plots()
+        self.__stream_strong_scaling_plots()

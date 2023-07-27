@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
 
   if (comm_rank == 0) {
     benchmark::AddCustomContext("model", "mhp");
-    benchmark::AddCustomContext("nprocs", std::to_string(size));
     add_configuration();
   }
 
