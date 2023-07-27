@@ -9,8 +9,10 @@
 #include <algorithm>
 #include <utility>
 
+
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
 #endif
 
 #include <dr/concepts/concepts.hpp>
@@ -21,15 +23,13 @@
 
 namespace dr::mhp {
 
-#ifdef SYCL_LANGUAGE_VERSION
+
 namespace __detail {
 
+#ifdef SYCL_LANGUAGE_VERSION
 template <typename LocalPolicy, typename InputIt, typename Compare>
-sycl::event sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
+sycl::event _sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
                        Compare &&comp) {
-
-  fmt::print("{}: sort_async\n", comm_rank);
-
   if (rng::distance(first, last) >= 2) {
     dr::__detail::direct_iterator d_first(first);
     dr::__detail::direct_iterator d_last(last);
@@ -40,11 +40,24 @@ sycl::event sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
     return sycl::event{};
   }
 }
-} // __detail
 #endif
 
+template <rng::range R, typename Compare>
+void local_sort(R & r, Compare &&comp) {
+#ifdef SYCL_LANGUAGE_VERSION
+  //_sort_async(oneapi::dpl::execution::dpcpp_default, rng::begin(r), rng::end(r), comp).wait();
+  if (rng::size(r) >= 2)
+    oneapi::dpl::experimental::sort_async(oneapi::dpl::execution::dpcpp_default, rng::begin(r), rng::end(r), comp).wait();
+#else
+  rng::sort(r, comp);
+#endif
+}
+
+} // __detail
+
+
 template <dr::distributed_range R, typename Compare = std::less<>>
-void sort(R &r, Compare comp = Compare()) {
+void sort(R &r, Compare &&comp = Compare()) {
   using valT = typename R::value_type;
 
   std::size_t _comm_rank = default_comm().rank();
@@ -62,7 +75,7 @@ void sort(R &r, Compare comp = Compare()) {
     std::vector<valT> vec_recvdata(rng::size(r));
     if (_comm_rank == 0) {
       rng::transform(r, vec_recvdata.begin(), [](auto el) { return el; });
-      rng::sort(vec_recvdata, comp);
+      __detail::local_sort(vec_recvdata, comp);
       std::transform(vec_recvdata.begin(), vec_recvdata.end(), r.begin(),
                      [](auto el) { return el; });
     }
@@ -76,24 +89,17 @@ void sort(R &r, Compare comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
-#ifdef SYCL_LANGUAGE_VERSION
-    __detail::sort_async( oneapi::dpl::execution::dpcpp_default, lsegment.begin(), lsegment.end(), comp).wait();
-#else
-    rng::sort(lsegment, comp);
-#endif  
+    __detail::local_sort(lsegment, comp);
     return;
   }
 
   /* sort local segment */
 
   fmt::print("{}: local segment sort {}\n", _comm_rank, lsegment);
-#ifdef SYCL_LANGUAGE_VERSION
-  __detail::sort_async( oneapi::dpl::execution::dpcpp_default, lsegment.begin(), lsegment.end(), comp).wait();
-#else
-  rng::sort(lsegment, comp);
-#endif  
 
-  fmt::print("{}: barrier hit\n", _comm_rank);
+  __detail::local_sort(lsegment, comp);
+
+  fmt::print("{}: barrier hit, sorted {}\n", _comm_rank, lsegment);
   default_comm().barrier();
   fmt::print("{}: barrier passed\n", _comm_rank);
 
@@ -154,7 +160,7 @@ void sort(R &r, Compare comp = Compare()) {
       if (segidx >= rng::size(lsegment)) 
         break;
     }
-    fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n", _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
+    // fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n", _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
   }
   vec_split_s[vidx - 1] =
       ((int)(rng::size(lsegment) - vec_split_i[vidx - 1]) > 0)
@@ -190,11 +196,10 @@ void sort(R &r, Compare comp = Compare()) {
 
   // rng::sort(vec_recvdata, comp);
 
-#ifdef SYCL_LANGUAGE_VERSION
-  __detail::sort_async( oneapi::dpl::execution::dpcpp_default, vec_recvdata.begin(), vec_recvdata.end(), comp).wait();
-#else
-  rng::sort(vec_recvdata, comp);
-#endif  
+  fmt::print("{}: vec_recvdata recved {}\n", _comm_rank, lsegment);
+  __detail::local_sort(vec_recvdata, comp);
+  fmt::print("{}: vec_recvdata sorted {}\n", _comm_rank, lsegment);
+
   /* Now redistribute data to achieve size of data equal to size of local
    * segment */
 

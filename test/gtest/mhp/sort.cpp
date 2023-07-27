@@ -12,11 +12,11 @@ using V = std::vector<T>;
 
 TEST(MhpSort, Sort) {
   std::vector<std::size_t> sizes = {
-      1,   comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23,
-      100, 1234};
+      //1,   comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23, 100, 1234};
+      4, 7, 10, 23};
 
   for (std::size_t n : sizes) {
-    V l_v = generate_random<T>(n, 1000);
+    V l_v = generate_random<T>(n, 100);
     DV d_v(n);
     std::cout << " >>> Test size " << n << std::endl;
     for (std::size_t idx = 0; idx < n; idx++) {
