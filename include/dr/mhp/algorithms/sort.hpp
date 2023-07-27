@@ -76,14 +76,22 @@ void sort(R &r, Compare comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
+#ifdef SYCL_LANGUAGE_VERSION
+    __detail::sort_async( oneapi::dpl::execution::dpcpp_default, lsegment.begin(), lsegment.end(), comp).wait();
+#else
     rng::sort(lsegment, comp);
+#endif  
     return;
   }
 
   /* sort local segment */
 
-  fmt::print("{}: local segment rng sort\n", _comm_rank);
+  fmt::print("{}: local segment sort {}\n", _comm_rank, lsegment);
+#ifdef SYCL_LANGUAGE_VERSION
+  __detail::sort_async( oneapi::dpl::execution::dpcpp_default, lsegment.begin(), lsegment.end(), comp).wait();
+#else
   rng::sort(lsegment, comp);
+#endif  
 
   fmt::print("{}: barrier hit\n", _comm_rank);
   default_comm().barrier();
@@ -141,14 +149,19 @@ void sort(R &r, Compare comp = Compare()) {
         vec_split_s[vidx - 1] -= _sum - rng::size(lsegment);
       }
       vidx++;
-    } else
+    } else {
       segidx++;
+      if (segidx >= rng::size(lsegment)) 
+        break;
+    }
+    fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n", _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
   }
   vec_split_s[vidx - 1] =
       ((int)(rng::size(lsegment) - vec_split_i[vidx - 1]) > 0)
           ? (rng::size(lsegment) - vec_split_i[vidx - 1])
           : 0;
 
+  fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n", _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
   assert(vec_split_s[vidx - 1] >= 0);
 
   /* send data size to each node */
@@ -175,8 +188,13 @@ void sort(R &r, Compare comp = Compare()) {
   default_comm().alltoallv(lsegment.data(), vec_split_s, vec_split_i,
                            vec_recvdata.data(), vec_rsizes, vec_rindices);
 
-  rng::sort(vec_recvdata, comp);
+  // rng::sort(vec_recvdata, comp);
 
+#ifdef SYCL_LANGUAGE_VERSION
+  __detail::sort_async( oneapi::dpl::execution::dpcpp_default, vec_recvdata.begin(), vec_recvdata.end(), comp).wait();
+#else
+  rng::sort(vec_recvdata, comp);
+#endif  
   /* Now redistribute data to achieve size of data equal to size of local
    * segment */
 
