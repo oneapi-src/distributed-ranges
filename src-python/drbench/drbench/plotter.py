@@ -92,10 +92,10 @@ class Plotter:
 
     def __stream_bandwidth_plots(self):
         Plotter.__make_plot(
-            'stream_realtime',
+            'stream_bw',
             self.db_maxvec.loc[self.db['test'].str.startswith('Stream_')],
             x='nprocs',
-            y='rtime',
+            y='bw',
             col='mode',
             hue='test',
         )
@@ -116,20 +116,20 @@ class Plotter:
                 & (db['nprocs'] == ref_nproc)
             ]
             .squeeze()
-            .at['rtime']
+            .at['bw']
         )
 
         click.echo(
             f'stream strong scalling scalled by {ref_stream} {ref_mode}'
             f' nproc:{ref_nproc} eq {scale_factor}'
         )
-        db['rtime'] /= scale_factor
+        db['bw'] /= scale_factor
 
         Plotter.__make_plot(
             'stream_strong_scaling',
             db,
             x='nprocs',
-            y='rtime',
+            y='bw',
             col='test',
             hue='mode',
         )
