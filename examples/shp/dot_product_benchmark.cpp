@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   // results for large sizes due to floating point addition
   // non-determinism.
   // This does not indicate the benchmark is failing.
-  std::size_t n = 4ull * 1000 * 1000 * 1000ull;
+  std::size_t n = 32ull * 1000 * 1000ull;
 
   using T = float;
 
