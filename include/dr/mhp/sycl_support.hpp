@@ -8,7 +8,7 @@ namespace dr::mhp {
 
 #ifdef SYCL_LANGUAGE_VERSION
 
-sycl::queue sycl_queue();
+inline sycl::queue &sycl_queue();
 
 namespace _detail {
 
