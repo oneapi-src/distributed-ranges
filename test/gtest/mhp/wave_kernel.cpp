@@ -16,7 +16,7 @@ bool equal(MDA &a, std::vector<T> expected) {
   std::size_t k = 0;
   for (std::size_t i = 0; i < a.mdspan().extent(0); i++) {
     for (std::size_t j = 0; j < a.mdspan().extent(1); j++) {
-      result *= a.mdspan()(i, j) == expected[k];
+      result = result && a.mdspan()(i, j) == expected[k];
       k++;
     }
   }
