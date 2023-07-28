@@ -32,7 +32,6 @@ void dr_init() {
   if (options.count("sycl")) {
     sycl::queue q = dr::mhp::select_queue();
     if (comm_rank == 0) {
-      fmt::print("  SYCL device:\n");
       benchmark::AddCustomContext("device", device_info(q.get_device()));
     }
     dr::mhp::init(q);

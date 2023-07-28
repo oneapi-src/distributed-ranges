@@ -16,6 +16,7 @@ protected:
   std::size_t n2d = xdim * ydim, n3d = xdim * ydim * zdim;
 
   std::array<std::size_t, 2> extents2d = {xdim, ydim};
+  std::array<std::size_t, 2> extents2dt = {ydim, xdim};
   std::array<std::size_t, 3> extents3d = {xdim, ydim, zdim};
 
   // 2d data with 1d decompostion
@@ -308,13 +309,12 @@ TEST_F(MdForeach, 2ops) {
   xhp::iota(a, 100);
   xhp::iota(b, 200);
   auto copy_op = [](auto v) {
-    auto [in, out] = v;
+    auto &[in, out] = v;
     out = in;
   };
 
   xhp::for_each(copy_op, a, b);
-  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2))
-      << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
+  EXPECT_EQ(a, b);
 }
 
 TEST_F(MdForeach, 3ops) {
@@ -330,7 +330,9 @@ TEST_F(MdForeach, 3ops) {
   };
 
   xhp::for_each(copy_op, a, b, c);
-  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
+  EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2))
+      << fmt::format("A:\n{}\nB:\n{}\nC:\n{}", a.mdspan(), b.mdspan(),
+                     c.mdspan());
 }
 
 using MdStencilForeach = Mdspan;
@@ -346,8 +348,7 @@ TEST_F(MdStencilForeach, 2ops) {
   };
 
   xhp::stencil_for_each(copy_op, a, b);
-  EXPECT_EQ(a.mdspan()(2, 2), b.mdspan()(2, 2))
-      << fmt::format("A:\n{}\nB:\n{}", a.mdspan(), b.mdspan());
+  EXPECT_EQ(a, b);
 }
 
 TEST_F(MdStencilForeach, 3ops) {
@@ -356,7 +357,7 @@ TEST_F(MdStencilForeach, 3ops) {
   xhp::distributed_mdarray<T, 2> c(extents2d);
   xhp::iota(a, 100);
   xhp::iota(b, 200);
-  xhp::iota(c, 200);
+  xhp::iota(c, 300);
   auto copy_op = [](auto v) {
     auto [in1, in2, out] = v;
     out(0, 0) = in1(0, 0) + in2(0, 0);
@@ -368,14 +369,62 @@ TEST_F(MdStencilForeach, 3ops) {
 
 using MdspanUtil = Mdspan;
 
-TEST_F(MdspanUtil, pack) {
+TEST_F(MdspanUtil, Pack) {
   std::vector<T> a(xdim * ydim);
   std::vector<T> b(xdim * ydim);
   rng::iota(a, 100);
   rng::iota(b, 100);
 
-  dr::__detail::mdspan_pack(md::mdspan(a.data(), extents2d), b.begin());
+  dr::__detail::mdspan_copy(md::mdspan(a.data(), extents2d), b.begin());
   EXPECT_EQ(a, b);
+}
+
+TEST_F(MdspanUtil, UnPack) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 100);
+
+  dr::__detail::mdspan_copy(a.begin(), md::mdspan(b.data(), extents2d));
+  EXPECT_EQ(a, b);
+}
+
+TEST_F(MdspanUtil, Copy) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 100);
+
+  dr::__detail::mdspan_copy(md::mdspan(a.data(), extents2d),
+                            md::mdspan(b.data(), extents2d));
+  EXPECT_EQ(a, b);
+}
+
+TEST_F(MdspanUtil, Transpose) {
+  std::vector<T> a(xdim * ydim);
+  std::vector<T> b(xdim * ydim);
+  std::vector<T> c(xdim * ydim);
+  rng::iota(a, 100);
+  rng::iota(b, 200);
+  rng::iota(c, 300);
+  md::mdspan mda(a.data(), extents2d);
+  md::mdspan mdc(c.data(), extents2dt);
+
+  // Transpose view
+  dr::__detail::mdtranspose<decltype(mda), 1, 0> mdat(mda);
+  auto tv_message = fmt::format("mda:\n{}mdat:\n{}", mda, mdat);
+  EXPECT_EQ(mda(3, 1), mdat(1, 3)) << tv_message;
+  EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3}))) << tv_message;
+
+  // Transpose pack
+  dr::__detail::mdspan_copy(mdat, b.begin());
+  EXPECT_EQ(a[3 * ydim + 1], b[1 * xdim + 3])
+      << fmt::format("mdat:\n{}b:\n{}", mdat, b);
+
+  // Transpose copy
+  dr::__detail::mdspan_copy(mdat, mdc);
+  EXPECT_EQ(mdat(3, 1), mdc(3, 1))
+      << fmt::format("mdat:\n{}mdc:\n{}", mdat, mdc);
 }
 
 #endif // Skip for gcc 10.4
