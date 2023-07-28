@@ -205,7 +205,8 @@ private:
   difference_type offset_ = 0;
 };
 
-template <__detail::zipable... Rs> class zip_view : public rng::view_base {
+template <__detail::zipable... Rs>
+class zip_view : public rng::view_interface<zip_view<Rs...>> {
 private:
   using rng_zip = rng::zip_view<Rs...>;
   using rng_zip_iterator = rng::iterator_t<rng_zip>;
@@ -230,7 +231,6 @@ public:
     return std::apply(make_end, base_);
   }
   auto size() const { return rng::size(rng_zip_); }
-  auto empty() const { return begin() == end(); }
 
   auto operator[](difference_type n) const { return rng_zip_[n]; }
 
