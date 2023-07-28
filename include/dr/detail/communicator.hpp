@@ -38,15 +38,15 @@ public:
     MPI_Bcast(src, count, MPI_BYTE, root, mpi_comm_);
   }
 
-  void scatter(const void *src, void *dst, std::size_t size,
+  void scatter(const void *src, void *dst, std::size_t count,
                std::size_t root) const {
-    MPI_Scatter(src, size, MPI_BYTE, dst, size, MPI_BYTE, root, mpi_comm_);
+    MPI_Scatter(src, count, MPI_BYTE, dst, count, MPI_BYTE, root, mpi_comm_);
   }
 
   template <typename T>
   void scatter(const std::span<T> src, T &dst, std::size_t root) const {
-    assert(src.size() >= size());
-    scatter(src.data(), &dst, sizeof(T), root);
+    assert(rng::size(src) >= size_);
+    scatter(rng::data(src), &dst, sizeof(T), root);
   }
 
   void scatterv(const void *src, int *counts, int *offsets, void *dst,
@@ -56,26 +56,34 @@ public:
                  mpi_comm_);
   }
 
-  void gather(const void *src, void *dst, std::size_t size,
+  void gather(const void *src, void *dst, std::size_t count,
               std::size_t root) const {
-    MPI_Gather(src, size, MPI_BYTE, dst, size, MPI_BYTE, root, mpi_comm_);
+    MPI_Gather(src, count, MPI_BYTE, dst, count, MPI_BYTE, root, mpi_comm_);
   }
 
   template <typename T>
   void gather(const T &src, std::span<T> dst, std::size_t root) const {
-    assert(dst.size() >= size());
-    gather(&src, dst.data(), sizeof(T), root);
+    assert(rng::size(dst) >= size_);
+    gather(&src, rng::data(dst), sizeof(T), root);
   }
 
-  void all_gather(const void *src, void *dst, int sz) const {
+  template <typename T>
+  void all_gather(const T *src, T *dst, std::size_t count) const {
     // Gather size elements from each rank
-    MPI_Allgather(src, sz, MPI_BYTE, dst, sz, MPI_BYTE, mpi_comm_);
+    MPI_Allgather(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
+                  MPI_BYTE, mpi_comm_);
   }
 
   template <typename T>
   void all_gather(const T &src, std::vector<T> &dst) const {
-    assert(dst.size() >= size());
-    all_gather(&src, dst.data(), sizeof(T));
+    assert(rng::size(dst) >= size_);
+    all_gather(&src, rng::data(dst), 1);
+  }
+
+  template <rng::contiguous_range R>
+  void all_gather(const R &src, R &dst) const {
+    assert(rng::size(dst) >= size_ * rng::size(src));
+    all_gather(rng::data(src), rng::data(dst), rng::size(src));
   }
 
   void gatherv(const void *src, int *counts, int *offsets, void *dst,
@@ -85,28 +93,66 @@ public:
   }
 
   template <typename T>
-  void isend(const T *data, std::size_t size, std::size_t source, tag t,
+  void isend(const T *data, std::size_t count, std::size_t dst_rank, tag t,
              MPI_Request *request) const {
-    MPI_Isend(data, size * sizeof(T), MPI_BYTE, source, int(t), mpi_comm_,
+    MPI_Isend(data, count * sizeof(T), MPI_BYTE, dst_rank, int(t), mpi_comm_,
               request);
   }
 
   template <rng::contiguous_range R>
-  void isend(const R &data, std::size_t source, tag t,
+  void isend(const R &data, std::size_t dst_rank, tag t,
              MPI_Request *request) const {
-    isend(data.data(), data.size(), source, int(t), request);
+    isend(rng::data(data), rng::size(data), dst_rank, t, request);
   }
 
   template <typename T>
-  void irecv(T *data, std::size_t size, std::size_t dest, tag t,
+  void irecv(T *data, std::size_t size, std::size_t src_rank, tag t,
              MPI_Request *request) const {
-    MPI_Irecv(data, size * sizeof(T), MPI_BYTE, dest, int(t), mpi_comm_,
+    MPI_Irecv(data, size * sizeof(T), MPI_BYTE, src_rank, int(t), mpi_comm_,
               request);
   }
 
   template <rng::contiguous_range R>
-  void irecv(R &data, std::size_t source, tag t, MPI_Request *request) const {
-    irecv(data.data(), data.size(), source, int(t), request);
+  void irecv(R &data, std::size_t src_rank, tag t, MPI_Request *request) const {
+    irecv(rng::data(data), rng::size(data), src_rank, t, request);
+  }
+
+  template <rng::contiguous_range R>
+  void alltoall(const R &sendr, R &recvr, std::size_t count) {
+    using T = typename R::value_type;
+    MPI_Alltoall(rng::data(sendr), count * sizeof(T), MPI_BYTE,
+                 rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
+  }
+
+  template <rng::contiguous_range R>
+  void alltoallv(const R &sendbuf, const std::vector<std::size_t> &sendcnt,
+                 const std::vector<std::size_t> &senddsp, R &recvbuf,
+                 const std::vector<std::size_t> &recvcnt,
+                 const std::vector<std::size_t> &recvdsp) {
+    using valT = typename R::value_type;
+
+    assert(rng::size(sendcnt) == size_);
+    assert(rng::size(senddsp) == size_);
+    assert(rng::size(recvcnt) == size_);
+    assert(rng::size(recvdsp) == size_);
+
+    std::vector<int> _sendcnt(size_);
+    std::vector<int> _senddsp(size_);
+    std::vector<int> _recvcnt(size_);
+    std::vector<int> _recvdsp(size_);
+
+    rng::transform(sendcnt, _sendcnt.begin(),
+                   [](auto e) { return e * sizeof(valT); });
+    rng::transform(senddsp, _senddsp.begin(),
+                   [](auto e) { return e * sizeof(valT); });
+    rng::transform(recvcnt, _recvcnt.begin(),
+                   [](auto e) { return e * sizeof(valT); });
+    rng::transform(recvdsp, _recvdsp.begin(),
+                   [](auto e) { return e * sizeof(valT); });
+
+    MPI_Alltoallv(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
+                  MPI_BYTE, rng::data(recvbuf), rng::data(_recvcnt),
+                  rng::data(_recvdsp), MPI_BYTE, MPI_COMM_WORLD);
   }
 
   bool operator==(const communicator &other) const {
