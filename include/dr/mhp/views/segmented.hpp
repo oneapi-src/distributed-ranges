@@ -8,7 +8,7 @@
 
 namespace dr::mhp {
 
-template <typename BaseIter, typename SegTplIter>
+template <typename BaseIter, typename SegTplIter, typename SegTplSentinel>
 class segmented_view_iterator {
 public:
   using iterator_category = std::forward_iterator_tag;
@@ -17,7 +17,7 @@ public:
 
   segmented_view_iterator() {}
   segmented_view_iterator(BaseIter base_begin, SegTplIter tpl_begin,
-                          SegTplIter tpl_end)
+                          SegTplSentinel tpl_end)
       : base_cur_(base_begin), tpl_cur_(tpl_begin), tpl_end_(tpl_end) {}
 
   auto operator==(segmented_view_iterator other) const {
@@ -41,7 +41,8 @@ public:
 
 private:
   BaseIter base_cur_;
-  SegTplIter tpl_cur_, tpl_end_;
+  SegTplIter tpl_cur_;
+  SegTplSentinel tpl_end_;
 };
 
 //

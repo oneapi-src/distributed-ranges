@@ -51,9 +51,16 @@ auto dot_product_sequential(X &&x, Y &&y) {
 
 int main(int argc, char **argv) {
   auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
-  // auto devices = dr::shp::trim_devices(devices_, 8);
-  auto devices = devices_;
+
+  std::size_t n_devices = devices_.size();
+
+  auto devices =
+      dr::shp::trim_devices(devices_, std::min(n_devices, devices_.size()));
+
   dr::shp::init(devices);
+
+  fmt::print("Running with {} devices.\n", devices.size());
+  dr::shp::print_device_details(devices);
 
   // Note that parallel results will not match sequential
   // results for large sizes due to floating point addition

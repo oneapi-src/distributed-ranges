@@ -4,10 +4,14 @@
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(
-  shp-bench
-  shp-bench.cpp ../common/distributed_vector.cpp ../common/dot_product.cpp
-  ../common/stream.cpp ../common/black_scholes.cpp)
+add_executable(shp-bench shp-bench.cpp ../common/distributed_vector.cpp
+                         ../common/dot_product.cpp ../common/stream.cpp)
+
+if(NOT ENABLE_CUDA)
+  # black_scholes.cpp does not compile in CUDA because it uses std::log
+  target_sources(mhp-bench PRIVATE ../common/black_scholes.cpp)
+endif()
+
 target_compile_definitions(shp-bench PRIVATE BENCH_SHP)
 target_link_libraries(shp-bench benchmark::benchmark cxxopts DR::mpi)
 

@@ -9,6 +9,7 @@ from collections import namedtuple
 from enum import Enum
 
 import click
+from drbench import common
 
 AnalysisMode = Enum(
     'AnalysisMode', ['MHP_CPU', 'MHP_GPU', 'MHP_NOSYCL', 'SHP']
@@ -16,7 +17,7 @@ AnalysisMode = Enum(
 AnalysisCase = namedtuple('AnalysisCase', 'mode size nprocs')
 AnalysisConfig = namedtuple(
     'AnalysisConfig',
-    'common_config, benchmark_filter fork reps dry_run mhp_bench shp_bench',
+    'common_config benchmark_filter fork reps dry_run mhp_bench shp_bench',
 )
 
 
@@ -29,11 +30,12 @@ class Runner:
         if not self.analysis_config.dry_run:
             subprocess.run(command, shell=True, check=True)
 
-    def __out_filename(self, case: AnalysisCase):
-        return (
-            f'dr-bench-{self.analysis_config.common_config.analysis_id}'
-            f'.{case.mode}.n{case.nprocs}.s{case.size}.json'
+    def __out_filename(self, case: AnalysisCase, add_nnn: bool):
+        prefix = common.analysis_file_prefix(
+            self.analysis_config.common_config.analysis_id
         )
+        rank = ".rankNNN" if add_nnn else ""
+        return f'{prefix}{rank}.{case.mode}.n{case.nprocs}.s{case.size}.json'
 
     def __run_mhp_analysis(self, params, nprocs, mode):
         if mode == AnalysisMode.MHP_CPU:
@@ -70,7 +72,7 @@ class Runner:
 
     def __run_shp_analysis(self, params, nprocs):
         env = 'KMP_AFFINITY=compact'
-        params.append(f'--d {nprocs}')
+        params.append(f'--num-devices {nprocs}')
         self.__execute(
             f'{env} {self.analysis_config.shp_bench} {" ".join(params)}'
         )
@@ -80,7 +82,10 @@ class Runner:
         params.append(f'--vector-size {str(analysis_case.size)}')
         params.append(f'--reps {str(self.analysis_config.reps)}')
         params.append('--benchmark_out_format=json')
-        params.append(f'--benchmark_out={self.__out_filename(analysis_case)}')
+        outfname = self.__out_filename(
+            analysis_case, analysis_case.mode != AnalysisMode.SHP
+        )
+        params.append(f'--benchmark_out={outfname}')
 
         if self.analysis_config.benchmark_filter:
             params.append(

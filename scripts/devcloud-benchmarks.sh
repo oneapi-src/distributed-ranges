@@ -6,4 +6,4 @@
 source /opt/intel/oneapi/setvars.sh
 set -e
 hostname
-make -C build/benchmarks/gbench/mhp bench
+make -C build/benchmarks/gbench bench
