@@ -72,7 +72,7 @@ class Runner:
 
     def __run_shp_analysis(self, params, nprocs):
         env = 'KMP_AFFINITY=compact'
-        params.append(f'--d {nprocs}')
+        params.append(f'--num-devices {nprocs}')
         self.__execute(
             f'{env} {self.analysis_config.shp_bench} {" ".join(params)}'
         )
