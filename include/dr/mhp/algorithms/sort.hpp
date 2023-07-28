@@ -4,16 +4,16 @@
 
 #pragma once
 
+#ifdef SYCL_LANGUAGE_VERSION
+#include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
+#endif
+
 #include <mpi.h>
 
 #include <algorithm>
 #include <utility>
 
-
-#ifdef SYCL_LANGUAGE_VERSION
-#include <oneapi/dpl/algorithm>
-#include <oneapi/dpl/execution>
-#endif
 
 #include <dr/concepts/concepts.hpp>
 #include <dr/detail/logger.hpp>
@@ -33,6 +33,7 @@ sycl::event _sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
   if (rng::distance(first, last) >= 2) {
     dr::__detail::direct_iterator d_first(first);
     dr::__detail::direct_iterator d_last(last);
+    fmt::print("{}: _sort_async\n", comm_rank);
     return oneapi::dpl::experimental::sort_async(
         std::forward<LocalPolicy>(policy), d_first, d_last,
         std::forward<Compare>(comp));
@@ -42,18 +43,22 @@ sycl::event _sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
 }
 #endif
 
-template <rng::range R, typename Compare>
-void local_sort(R & r, Compare &&comp) {
-  if (rng::size(r) >= 2) {
+template <typename InputIt, typename Compare>
+void local_sort(InputIt first, InputIt last, Compare &&comp) {
+  if (rng::distance(first, last) >= 2) {
 #ifdef SYCL_LANGUAGE_VERSION
+    fmt::print("{}: l_s dpl sort, size {}\n", comm_rank,
+               rng::distance(first, last));
     auto policy = oneapi::dpl::execution::make_device_policy(sycl_queue());
-    //_sort_async(dpl_policy(), rng::begin(r), rng::end(r), comp).wait();
-    //oneapi::dpl::experimental::sort_async(dpl_policy(), rng::begin(r), rng::end(r), comp).wait();
-    oneapi::dpl::sort(policy, rng::begin(r), rng::end(r), comp);
+    fmt::print("{}: policy created\n", comm_rank);
+    // _sort_async(policy, first, last, comp).wait();
+    oneapi::dpl::experimental::sort_async(policy, first, last, comp).wait();
 #else
+    fmt::print("{}: l_s rng sort\n", comm_rank);
     rng::sort(r, comp);
 #endif
   }
+  fmt::print("{}: l_s sorted\n", comm_rank);
 }
 
 } // __detail
@@ -74,14 +79,22 @@ void sort(R &r, Compare &&comp = Compare()) {
   if (rng::size(r) <= (_comm_size - 1) * (_comm_size - 1)) {
 
     fmt::print("{}: Fallback to seq - small vector\n", _comm_rank);
-
-    std::vector<valT> vec_recvdata(rng::size(r));
+   
     if (_comm_rank == 0) {
-      rng::transform(r, vec_recvdata.begin(), [](auto el) { return el; });
-      __detail::local_sort(vec_recvdata, comp);
-      std::transform(vec_recvdata.begin(), vec_recvdata.end(), r.begin(),
-                     [](auto el) { return el; });
+      std::vector<valT> vec_recvdata(rng::size(r));
+      fmt::print("{}: local copy of {}\n", _comm_rank, r);
+      dr::mhp::copy(0, r, vec_recvdata.begin());
+      fmt::print("{}: local sort\n", _comm_rank);
+      // __detail::local_sort(vec_recvdata.begin(), vec_recvdata.end(), comp);
+      rng::sort(vec_recvdata, comp);
+      fmt::print("{}: sorted\n", _comm_rank);
+      dr::mhp::copy(0, vec_recvdata, r.begin());
+      fmt::print("{}: copied to {}\n", _comm_rank, r);
     }
+
+    // fmt::print("{}: barrier hit\n", _comm_rank);
+    // barrier();
+    // fmt::print("{}: barrier passed\n", _comm_rank);
     return;
   }
 
@@ -92,7 +105,7 @@ void sort(R &r, Compare &&comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
-    __detail::local_sort(lsegment, comp);
+    __detail::local_sort(lsegment.begin(), lsegment.end(), comp);
     return;
   }
 
@@ -100,9 +113,10 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   fmt::print("{}: local segment sort {}\n", _comm_rank, lsegment);
 
-  __detail::local_sort(lsegment, comp);
+  __detail::local_sort(lsegment.begin(), lsegment.end(), comp);
 
   fmt::print("{}: local segment sorted {}\n", _comm_rank, lsegment);
+
   default_comm().barrier();
   // fmt::print("{}: barrier passed\n", _comm_rank);
 
@@ -194,14 +208,15 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   // fmt::print("{}: data exchange alltoallv\n", _comm_rank);
 
-  default_comm().alltoallv(lsegment.data(), vec_split_s, vec_split_i,
-                           vec_recvdata.data(), vec_rsizes, vec_rindices);
+  default_comm().alltoallv(lsegment, vec_split_s, vec_split_i,
+                           vec_recvdata, vec_rsizes, vec_rindices);
 
-  // rng::sort(vec_recvdata, comp);
+  // fmt::print("{}: vec_recvdata recved {}\n", _comm_rank, lsegment);
 
-  fmt::print("{}: vec_recvdata recved {}\n", _comm_rank, lsegment);
-  __detail::local_sort(vec_recvdata, comp);
-  fmt::print("{}: vec_recvdata sorted {}\n", _comm_rank, lsegment);
+  rng::sort(vec_recvdata, comp);
+  // __detail::local_sort(vec_recvdata.begin(), vec_recvdata.end(), comp);
+
+  // fmt::print("{}: vec_recvdata sorted {}\n", _comm_rank, lsegment);
 
   /* Now redistribute data to achieve size of data equal to size of local
    * segment */

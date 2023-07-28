@@ -12,8 +12,8 @@ using V = std::vector<T>;
 
 TEST(MhpSort, Sort) {
   std::vector<std::size_t> sizes = {
-      //1,   comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23, 100, 1234};
-      4, 7, 10, 23};
+      // 1,   comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23, 100, 1234};
+      4, 7, 23, 100};
 
   for (std::size_t n : sizes) {
     V l_v = generate_random<T>(n, 100);
