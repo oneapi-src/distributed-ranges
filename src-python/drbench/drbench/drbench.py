@@ -87,7 +87,13 @@ def choice_to_mode(c):
     default=[1],
     help='Number of processes',
 )
-@click.option('--fork', is_flag=True, help='Use -launcher=fork with mpi')
+@click.option(
+    '--no-fork',
+    'fork',
+    default=True,
+    is_flag=True,
+    help="don't use -launcher=fork with mpi",
+)
 @click.option('-r', '--reps', default=100, type=int, help='Number of reps')
 @click.option(
     '-f',
@@ -112,7 +118,7 @@ def choice_to_mode(c):
     '-d', '--dry-run', is_flag=True, help='Emits commands but does not execute'
 )
 @click.pass_context
-def analyse(
+def analyze(
     ctx,
     plot,
     mode,

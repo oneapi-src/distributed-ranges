@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import glob
 import json
-import os
 import re
 from collections import namedtuple
 
@@ -65,7 +65,7 @@ class Plotter:
     # 63     MHP_GPU  40000  Stream_Triad       4  21.714421  4.421025e+09
     def __init__(self, plotting_config: PlottingConfig):
         rows = []
-        for fname in os.listdir('.'):
+        for fname in glob.glob('*json'):
             if Plotter.__is_our_file(
                 fname, plotting_config.common_config.analysis_id
             ):
