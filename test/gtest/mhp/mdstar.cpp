@@ -36,6 +36,11 @@ TEST_F(Mdspan, StaticAssert) {
   auto mdspan = xhp::views::mdspan(dist, extents2d);
   static_assert(rng::forward_range<decltype(mdspan)>);
   static_assert(dr::distributed_range<decltype(mdspan)>);
+  auto segments = dr::ranges::segments(mdspan);
+  // Begin on a lvalue
+  rng::begin(segments);
+  // Begin on a rvalue
+  // rng::begin(dr::ranges::segments(mdspan));
 }
 
 TEST_F(Mdspan, Iterator) {
