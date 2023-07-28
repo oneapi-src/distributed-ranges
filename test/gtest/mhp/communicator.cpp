@@ -29,8 +29,8 @@ TEST(Communicator, Alltoallv) {
     senddispl[i] = recvdispl[i] = i * SIZE;
   }
 
-  dr::mhp::default_comm().alltoallv(vec_src, sendsizes, senddispl,
-                                    vec_dst, recvsizes, recvdispl);
+  dr::mhp::default_comm().alltoallv(vec_src, sendsizes, senddispl, vec_dst,
+                                    recvsizes, recvdispl);
 
   std::vector<T> vec_ref(comm_size * SIZE);
 
