@@ -120,8 +120,8 @@ jobs:
       with:
         name: log-devcloud-bench
         path: |
-          build/benchmarks/gbench/mhp/dr-bench*.json
-          build/benchmarks/gbench/mhp/*.png
+          build/benchmarks/gbench/dr-bench*.json
+          build/benchmarks/gbench/*.png
     - uses: actions/upload-artifact@v3
       if: always()
       with:

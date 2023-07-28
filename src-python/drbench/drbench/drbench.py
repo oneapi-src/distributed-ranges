@@ -56,8 +56,15 @@ def choice_to_mode(c):
 
 
 @cli.command()
-@click.option('--dontplot', is_flag=True, help='just create json files')
 @click.option(
+    '--no-plot',
+    'plot',
+    default=True,
+    is_flag=True,
+    help="don't create plots, just json files",
+)
+@click.option(
+    '-m',
     '--mode',
     type=Choice,
     multiple=True,
@@ -65,6 +72,7 @@ def choice_to_mode(c):
     help='modes of benchmarking to run',
 )
 @click.option(
+    '-s',
     '--vec-size',
     type=int,
     multiple=True,
@@ -72,6 +80,7 @@ def choice_to_mode(c):
     help='Size of a vector',
 )
 @click.option(
+    '-n',
     '--nprocs',
     type=int,
     multiple=True,
@@ -79,8 +88,9 @@ def choice_to_mode(c):
     help='Number of processes',
 )
 @click.option('--fork', is_flag=True, help='Use -launcher=fork with mpi')
-@click.option('--reps', default=100, type=int, help='Number of reps')
+@click.option('-r', '--reps', default=100, type=int, help='Number of reps')
 @click.option(
+    '-f',
     '--benchmark-filter',
     default='Stream_',
     type=str,
@@ -88,23 +98,23 @@ def choice_to_mode(c):
 )
 @click.option(
     '--mhp-bench',
-    default='./mhp-bench',
+    default='mhp/mhp-bench',
     type=str,
     help='MHP benchmark program',
 )
 @click.option(
     '--shp-bench',
-    default='./shp-bench',
+    default='shp/shp-bench',
     type=str,
     help='SHP benchmark program',
 )
 @click.option(
-    '--dry-run', is_flag=True, help='Emits commands but does not execute'
+    '-d', '--dry-run', is_flag=True, help='Emits commands but does not execute'
 )
 @click.pass_context
 def analyse(
     ctx,
-    dontplot,
+    plot,
     mode,
     vec_size,
     nprocs,
@@ -137,7 +147,7 @@ def analyse(
                     runner.AnalysisCase(choice_to_mode(m), s, n)
                 )
 
-    if not dontplot:
+    if plot:
         __plot_impl(ctx)
 
 

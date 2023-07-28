@@ -46,12 +46,3 @@ if(NOT MPI_IMPL STREQUAL "openmpi")
       --check --benchmark_filter=-.*DPL.* --sycl)
   endif()
 endif()
-
-if(ENABLE_SYCL)
-  add_custom_target(bench DEPENDS bench-results)
-  add_custom_command(
-    OUTPUT bench-results
-    COMMAND dr-bench analyse --nprocs 1 --nprocs 2 --nprocs 3 --nprocs 4
-            --vec-size 1000000 --mode mhp_gpu --mode mhp_cpu --fork
-    DEPENDS mhp-bench)
-endif()
