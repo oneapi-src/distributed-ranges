@@ -29,6 +29,17 @@ def cli(ctx, analysis_id: str):
         )
 
 
+def __plot_impl(ctx):
+    p = plotter.Plotter(plotter.PlottingConfig(ctx.obj))
+    p.create_plots()
+
+
+@cli.command()
+@click.pass_context
+def plot(ctx):
+    __plot_impl(ctx)
+
+
 Choice = click.Choice(['mhp_cpu', 'mhp_gpu', 'mhp_nosycl', 'shp'])
 
 
@@ -46,6 +57,14 @@ def choice_to_mode(c):
 
 @cli.command()
 @click.option(
+    '--no-plot',
+    'plot',
+    default=True,
+    is_flag=True,
+    help="don't create plots, just json files",
+)
+@click.option(
+    '-m',
     '--mode',
     type=Choice,
     multiple=True,
@@ -53,6 +72,7 @@ def choice_to_mode(c):
     help='modes of benchmarking to run',
 )
 @click.option(
+    '-s',
     '--vec-size',
     type=int,
     multiple=True,
@@ -60,15 +80,23 @@ def choice_to_mode(c):
     help='Size of a vector',
 )
 @click.option(
+    '-n',
     '--nprocs',
     type=int,
     multiple=True,
     default=[1],
     help='Number of processes',
 )
-@click.option('--fork', is_flag=True, help='Use -launcher=fork with mpi')
-@click.option('--reps', default=100, type=int, help='Number of reps')
 @click.option(
+    '--no-fork',
+    'fork',
+    default=True,
+    is_flag=True,
+    help="don't use -launcher=fork with mpi",
+)
+@click.option('-r', '--reps', default=100, type=int, help='Number of reps')
+@click.option(
+    '-f',
     '--benchmark-filter',
     default='Stream_',
     type=str,
@@ -76,22 +104,23 @@ def choice_to_mode(c):
 )
 @click.option(
     '--mhp-bench',
-    default='./mhp-bench',
+    default='mhp/mhp-bench',
     type=str,
     help='MHP benchmark program',
 )
 @click.option(
     '--shp-bench',
-    default='./shp-bench',
+    default='shp/shp-bench',
     type=str,
     help='SHP benchmark program',
 )
 @click.option(
-    '--dry-run', is_flag=True, help='Emits commands but does not execute'
+    '-d', '--dry-run', is_flag=True, help='Emits commands but does not execute'
 )
 @click.pass_context
-def analyse(
+def analyze(
     ctx,
+    plot,
     mode,
     vec_size,
     nprocs,
@@ -124,11 +153,8 @@ def analyse(
                     runner.AnalysisCase(choice_to_mode(m), s, n)
                 )
 
-
-@cli.command()
-@click.pass_context
-def plot(ctx):
-    plotter.do_nothing()  # TODO: to be implemented
+    if plot:
+        __plot_impl(ctx)
 
 
 if __name__ == '__main__':
