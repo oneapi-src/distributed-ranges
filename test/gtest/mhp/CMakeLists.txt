@@ -13,7 +13,6 @@ add_executable(
   ../common/iota.cpp ../common/iota_view.cpp ../common/reduce.cpp
   ../common/subrange.cpp ../common/take.cpp ../common/transform.cpp
   ../common/transform_view.cpp ../common/zip.cpp ../common/zip_local.cpp
-
   alignment.cpp communicator.cpp copy.cpp distributed_vector.cpp
   distributed_dense_matrix.cpp halo.cpp mdstar.cpp reduce.cpp stencil.cpp
   segments.cpp slide_view.cpp wave_kernel.cpp)
