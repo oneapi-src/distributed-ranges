@@ -61,7 +61,7 @@ inline void init() {
 }
 
 #ifdef SYCL_LANGUAGE_VERSION
-inline sycl::queue sycl_queue() { return __detail::gcontext()->sycl_queue_; }
+inline sycl::queue &sycl_queue() { return __detail::gcontext()->sycl_queue_; }
 inline auto dpl_policy() { return __detail::gcontext()->dpl_policy_; }
 
 inline void init(sycl::queue q) {
@@ -71,21 +71,22 @@ inline void init(sycl::queue q) {
 }
 
 inline auto partitionable(sycl::device device) {
-  auto props = device.get_info<sycl::info::device::partition_properties>();
-  if (rng::find(props,
-                sycl::info::partition_property::partition_by_affinity_domain) ==
-      props.end()) {
-    dr::drlog.debug("Cannot partition by affinity domain\n");
-    return false;
+  // Earlier commits used the query API, but they return true even
+  // though a partition will fail:  Intel MPI mpirun with multiple
+  // processes.
+  try {
+    device.create_sub_devices<
+        sycl::info::partition_property::partition_by_affinity_domain>(
+        sycl::info::partition_affinity_domain::numa);
+  } catch (sycl::exception const &e) {
+    if (e.code() == sycl::errc::invalid ||
+        e.code() == sycl::errc::feature_not_supported) {
+      return false;
+    } else {
+      throw;
+    }
   }
 
-  auto domains =
-      device.get_info<sycl::info::device::partition_affinity_domains>();
-  if (rng::find(domains, sycl::info::partition_affinity_domain::numa) ==
-      domains.end()) {
-    dr::drlog.debug("Cannot partition by numa domain\n");
-    return false;
-  }
   return true;
 }
 
@@ -95,18 +96,21 @@ inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   auto root_devices = sycl::platform().get_devices();
 
   for (auto &&root_device : root_devices) {
+    dr::drlog.debug("Root device: {}\n",
+                    root_device.get_info<sycl::info::device::name>());
     if (partitionable(root_device)) {
       auto subdevices = root_device.create_sub_devices<
           sycl::info::partition_property::partition_by_affinity_domain>(
           sycl::info::partition_affinity_domain::numa);
+      assert(rng::size(subdevices) > 0);
 
       for (auto &&subdevice : subdevices) {
-        dr::drlog.debug("Add subdevice: {}\n",
+        dr::drlog.debug("  add subdevice: {}\n",
                         subdevice.get_info<sycl::info::device::name>());
         devices.push_back(subdevice);
       }
     } else {
-      dr::drlog.debug("Add root device: {}\n",
+      dr::drlog.debug("  add root device: {}\n",
                       root_device.get_info<sycl::info::device::name>());
       devices.push_back(root_device);
     }

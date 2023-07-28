@@ -9,8 +9,7 @@
 
 namespace dr::mhp {
 
-template <typename T, std::size_t Rank, typename Layout = md::layout_right>
-class distributed_mdarray {
+template <typename T, std::size_t Rank> class distributed_mdarray {
 public:
   using extents_type = dr::__detail::dr_extents<Rank>;
 
@@ -26,9 +25,13 @@ public:
 
   auto segments() { return dr::ranges::segments(dv_); }
 
-  auto mdspan() { return md_view_.mdspan(); }
+  auto mdspan() const { return md_view_.mdspan(); }
   auto grid() { return md_view_.grid(); }
   auto view() const { return md_view_; }
+
+  auto operator==(const distributed_mdarray &other) const {
+    return std::equal(begin(), end(), other.begin());
+  }
 
 private:
   static auto md_size(auto extents) {
@@ -62,5 +65,12 @@ private:
       std::declval<DV>(), std::declval<dr::__detail::dr_extents<Rank>>()));
   mdspan_type md_view_;
 };
+
+template <typename T, std::size_t Rank>
+std::ostream &operator<<(std::ostream &os,
+                         const distributed_mdarray<T, Rank> &mdarray) {
+  os << fmt::format("\n{}", mdarray.mdspan());
+  return os;
+}
 
 } // namespace dr::mhp

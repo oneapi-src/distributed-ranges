@@ -40,7 +40,8 @@ add_mpi_test(stencil-2d-matrix-rows stencil-2d-matrix-rows 2)
 
 add_executable(wave_equation wave_equation.cpp)
 target_link_libraries(wave_equation cxxopts DR::mpi)
-add_mpi_test(wave_equation wave_equation 4)
+add_mpi_test(wave_equation wave_equation 1)
+add_mpi_test(wave_equation_fused wave_equation 1 -f)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)

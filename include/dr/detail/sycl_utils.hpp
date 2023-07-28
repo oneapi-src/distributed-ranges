@@ -71,7 +71,7 @@ sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
 }
 
 template <typename Fn>
-sycl::event parallel_for(sycl::queue q, sycl::range<1> numWorkItems, Fn &&fn) {
+sycl::event parallel_for(sycl::queue &q, sycl::range<1> numWorkItems, Fn &&fn) {
   std::size_t block_size = 128;
   std::size_t max_kernel_size = max_kernel_size_();
 

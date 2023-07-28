@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Benchmarking
-click
+# procedure of adding a new python package to our repo
+# 1. edit base-requirements.txt
+# 2. run scripts/regenerate-requitements-txt.sh
+# 3. review changes made in requirements.txt and if ok, commit changes
 
 # Testing
 pre-commit
