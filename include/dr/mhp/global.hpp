@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/mhp/sycl_support.hpp>
+#include <unistd.h>
 
 namespace dr::mhp {
 
@@ -58,6 +59,13 @@ inline void init() {
   assert(__detail::global_context_ == nullptr &&
          "Do not call mhp::init() more than once");
   __detail::global_context_ = new __detail::global_context;
+}
+
+std::string hostname() {
+  constexpr size_t MH = 2048;
+  char buf[MH + 1];
+  gethostname(buf, MH);
+  return std::string(buf);
 }
 
 #ifdef SYCL_LANGUAGE_VERSION
