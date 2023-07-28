@@ -80,8 +80,8 @@ public:
     all_gather(&src, rng::data(dst), 1);
   }
 
-  template <typename T>
-  void all_gather(std::vector<T> &src, std::vector<T> &dst) const {
+  template <rng::contiguous_range R>
+  void all_gather(const R &src, R &dst) const {
     assert(rng::size(dst) >= size_ * rng::size(src));
     all_gather(rng::data(src), rng::data(dst), rng::size(src));
   }
@@ -124,11 +124,12 @@ public:
                  rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
   }
 
-  template <typename T>
-  void alltoallv(const T *sendbuf, std::vector<std::size_t> &sendcnt,
-                 std::vector<std::size_t> &senddsp, T *recvbuf,
-                 std::vector<std::size_t> &recvcnt,
-                 std::vector<std::size_t> &recvdsp) {
+  template <rng::contiguous_range R>
+  void alltoallv(const R &sendbuf, const std::vector<std::size_t> &sendcnt,
+                 const std::vector<std::size_t> &senddsp, R &recvbuf,
+                 const std::vector<std::size_t> &recvcnt,
+                 const std::vector<std::size_t> &recvdsp) {
+    using valT = typename R::value_type;
 
     assert(rng::size(sendcnt) == size_);
     assert(rng::size(senddsp) == size_);
@@ -141,17 +142,17 @@ public:
     std::vector<int> _recvdsp(size_);
 
     rng::transform(sendcnt, _sendcnt.begin(),
-                   [](auto e) { return e * sizeof(T); });
+                   [](auto e) { return e * sizeof(valT); });
     rng::transform(senddsp, _senddsp.begin(),
-                   [](auto e) { return e * sizeof(T); });
+                   [](auto e) { return e * sizeof(valT); });
     rng::transform(recvcnt, _recvcnt.begin(),
-                   [](auto e) { return e * sizeof(T); });
+                   [](auto e) { return e * sizeof(valT); });
     rng::transform(recvdsp, _recvdsp.begin(),
-                   [](auto e) { return e * sizeof(T); });
+                   [](auto e) { return e * sizeof(valT); });
 
-    MPI_Alltoallv(sendbuf, rng::data(_sendcnt), rng::data(_senddsp), MPI_BYTE,
-                  recvbuf, rng::data(_recvcnt), rng::data(_recvdsp), MPI_BYTE,
-                  MPI_COMM_WORLD);
+    MPI_Alltoallv(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
+                  MPI_BYTE, rng::data(recvbuf), rng::data(_recvcnt),
+                  rng::data(_recvdsp), MPI_BYTE, MPI_COMM_WORLD);
   }
 
   bool operator==(const communicator &other) const {
