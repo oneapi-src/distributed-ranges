@@ -39,6 +39,15 @@ inline void list_devices() {
   }
 }
 
+inline void print_device_details(std::span<sycl::device> devices) {
+  std::size_t device_id = 0;
+  for (auto &&device : devices) {
+    std::cout << "Device " << device_id << ": "
+              << device.get_info<sycl::info::device::name>() << std::endl;
+    device_id++;
+  }
+}
+
 template <typename Selector> void list_devices(Selector &&selector) {
   sycl::platform p(std::forward<Selector>(selector));
   auto devices = p.get_devices();

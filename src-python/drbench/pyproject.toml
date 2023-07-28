@@ -11,7 +11,7 @@ name = "drbench"
 version = "0.0.1"
 description = "Benchmarking framework for distributed ranges project"
 dependencies = [
-    "click",
+    "click", "seaborn", "pandas",
     'importlib-metadata; python_version<"3.8"',
 ]
 [project.scripts]

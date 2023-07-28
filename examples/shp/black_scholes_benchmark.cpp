@@ -207,7 +207,17 @@ void black_scholes_distributed(T r, T sig, RS &&s0, RX &&x, RT &&t, RC &&vcall,
 }
 
 int main(int argc, char **argv) {
-  shp::init(sycl::gpu_selector_v);
+  auto devices_ = dr::shp::get_devices(sycl::default_selector_v);
+
+  std::size_t n_devices = devices_.size();
+
+  auto devices =
+      dr::shp::trim_devices(devices_, std::min(n_devices, devices_.size()));
+
+  dr::shp::init(devices);
+
+  fmt::print("Running with {} devices.\n", devices.size());
+  dr::shp::print_device_details(devices);
 
   std::size_t n = 2ll * 1000 * 1000 * 1000;
   using T = float;

@@ -61,7 +61,7 @@ inline void init() {
 }
 
 #ifdef SYCL_LANGUAGE_VERSION
-inline sycl::queue sycl_queue() { return __detail::gcontext()->sycl_queue_; }
+inline sycl::queue &sycl_queue() { return __detail::gcontext()->sycl_queue_; }
 inline auto dpl_policy() { return __detail::gcontext()->dpl_policy_; }
 
 inline void init(sycl::queue q) {

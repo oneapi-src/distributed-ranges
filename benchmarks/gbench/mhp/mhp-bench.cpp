@@ -54,6 +54,20 @@ int main(int argc, char *argv[]) {
   comm_rank = rank;
   ranks = size;
 
+  // substitute NNN to be rank in output file
+  for (int i = 0; i < argc; ++i) {
+    auto param = std::string(argv[i]);
+    if (param.starts_with("--benchmark_out=")) {
+      const auto nnnPos = param.find("NNN");
+      if (nnnPos != std::string::npos) {
+        assert(rank < 1000);
+        char tmp[4];
+        ::sprintf(tmp, "%03u", rank);
+        ::memcpy(argv[i] + nnnPos, tmp, 3);
+      }
+    }
+  }
+
   benchmark::Initialize(&argc, argv);
 
   cxxopts::Options options_spec(argv[0], "DR MHP tests");

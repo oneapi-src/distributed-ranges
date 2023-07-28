@@ -20,18 +20,23 @@ namespace dr::mhp::__detail {
 //
 // Add a local mdspan to the underlying segment
 //
-template <typename BaseSegment, std::size_t Rank,
-          typename Layout = md::layout_stride>
-class md_segment : public BaseSegment {
+template <typename BaseSegment, std::size_t Rank>
+class md_segment : public rng::view_interface<md_segment<BaseSegment, Rank>> {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
   md_segment(index_type origin, BaseSegment segment, index_type tile_lengths)
-      : BaseSegment(segment), origin_(origin),
+      : base_(segment), origin_(origin),
         mdspan_(local_tile(segment, tile_lengths)) {}
 
+  // view_interface uses below to define everything else
+  auto begin() const { return base_.begin(); }
+  auto end() const { return base_.end(); }
+
+  // mdspan-specific methods
   auto mdspan() const { return mdspan_; }
   auto origin() const { return origin_; }
+  // for slices, this would be the underlying mdspan
   auto root_mdspan() const { return mdspan(); }
 
 private:
@@ -45,6 +50,7 @@ private:
     return md::mdspan(ptr, tile_lengths);
   }
 
+  BaseSegment base_;
   index_type origin_;
   md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> mdspan_;
 };
