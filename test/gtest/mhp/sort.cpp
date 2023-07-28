@@ -18,15 +18,19 @@ TEST(MhpSort, Sort) {
   for (std::size_t n : sizes) {
     V l_v = generate_random<T>(n, 100);
     DV d_v(n);
-    std::cout << " >>> Test size " << n << std::endl;
+    std::cout << comm_rank << ": >>> Test size " << n << std::endl;
     for (std::size_t idx = 0; idx < n; idx++) {
       d_v[idx] = l_v[idx];
     }
     barrier();
 
-    dr::mhp::sort(d_v);
+    std::cout << comm_rank <<": >>> sort " << n << std::endl;
     std::sort(l_v.begin(), l_v.end());
+    dr::mhp::sort(d_v);
+    std::cout << comm_rank <<": >>> sorted " << n << std::endl;
+
     barrier();
+    std::cout << comm_rank << ": >>> comparison " << n << std::endl;
     EXPECT_TRUE(equal(l_v, d_v));
   }
 }

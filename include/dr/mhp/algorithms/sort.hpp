@@ -49,13 +49,13 @@ void local_sort(InputIt first, InputIt last, Compare &&comp) {
 #ifdef SYCL_LANGUAGE_VERSION
     fmt::print("{}: l_s dpl sort, size {}\n", comm_rank,
                rng::distance(first, last));
-    auto policy = oneapi::dpl::execution::make_device_policy(sycl_queue());
-    fmt::print("{}: policy created\n", comm_rank);
-    // _sort_async(policy, first, last, comp).wait();
-    oneapi::dpl::experimental::sort_async(policy, first, last, comp).wait();
+    // auto policy = oneapi::dpl::execution::make_device_policy(sycl_queue());
+    // fmt::print("{}: policy created\n", comm_rank);
+    _sort_async(dpl_policy(), first, last, comp).wait();
+    // oneapi::dpl::experimental::sort_async(policy, first, last, comp).wait();
 #else
     fmt::print("{}: l_s rng sort\n", comm_rank);
-    rng::sort(r, comp);
+    rng::sort(first, last, comp);
 #endif
   }
   fmt::print("{}: l_s sorted\n", comm_rank);
@@ -88,7 +88,7 @@ void sort(R &r, Compare &&comp = Compare()) {
       // __detail::local_sort(vec_recvdata.begin(), vec_recvdata.end(), comp);
       rng::sort(vec_recvdata, comp);
       fmt::print("{}: sorted\n", _comm_rank);
-      dr::mhp::copy(0, vec_recvdata, r.begin());
+      rng::copy(vec_recvdata, r.begin());
       fmt::print("{}: copied to {}\n", _comm_rank, r);
     }
 
@@ -117,7 +117,7 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   fmt::print("{}: local segment sorted {}\n", _comm_rank, lsegment);
 
-  default_comm().barrier();
+  // default_comm().barrier();
   // fmt::print("{}: barrier passed\n", _comm_rank);
 
   std::vector<valT> vec_lmedians(_comm_size - 1);
