@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <dr/mhp/algorithms/fill.hpp>
 #include <dr/mhp/containers/distribution.hpp>
 #include <dr/mhp/containers/segment.hpp>
 
@@ -144,7 +145,7 @@ public:
   auto size() const { return size_; }
   /// Returns reference using index
   auto operator[](difference_type n) const { return *(begin() + n); }
-  auto &halo() { return *halo_; }
+  auto &halo() const { return *halo_; }
 
   auto segments() const { return rng::views::all(segments_); }
 
@@ -197,13 +198,9 @@ private:
   Allocator allocator_;
 };
 
-template <typename DR>
-concept has_halo_method = dr::distributed_range<DR> && requires(DR &&dr) {
-  { rng::begin(dr::ranges::segments(dr)[0]).halo() };
-};
-
-auto &halo(has_halo_method auto &&dr) {
-  return rng::begin(dr::ranges::segments(dr)[0]).halo();
+template <typename T, typename Allocator>
+auto &halo(const distributed_vector<T, Allocator> &dv) {
+  return dv.halo();
 }
 
 } // namespace dr::mhp
