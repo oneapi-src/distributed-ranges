@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Daily
+
+on:
+  workflow_dispatch:
+  # 8am UTC is 12am PST, 1am PDT
+  schedule:
+    - cron: '0 8 * * *'
+
+jobs:
+  devcloud:
+    runs-on: devcloud
+    name: "Devcloud Benchmarking"
+    env:
+      CXX: icpx
+      CTEST_OUTPUT_ON_FAILURE: 1
+    steps:
+    - uses: actions/checkout@v3
+    - name: Python setup
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        cache: 'pip'
+    - name: Install python packages
+      run: pip install -r requirements.txt
+    - name: Install benchmark framework
+      run: pip install src-python/drbench
+    - name: Build
+      run: srun -p pvc-shared scripts/devcloud-build.sh
+    - name: Test
+      run: srun -p pvc-shared scripts/devcloud-run.sh
+    - name: Benchmark
+      run: srun -p pvc scripts/devcloud-benchmarks.sh
+    - uses: actions/upload-artifact@v3
+      with:
+        name: log-devcloud-bench
+        path: |
+          build/benchmarks/gbench/mhp/dr-bench*.json
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: log-icpx
+        path: build/Testing
