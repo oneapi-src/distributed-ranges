@@ -7,6 +7,7 @@
 #include <dr/detail/mdspan_shim.hpp>
 #include <dr/detail/mdspan_utils.hpp>
 #include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/ranges_utils.hpp>
 
 namespace dr::mhp::decomp {
 
@@ -103,7 +104,8 @@ private:
           std::get<1>(v), tile_lengths);
     };
 
-    return rng::views::enumerate(dr::ranges::segments(base)) |
+    // used bounded_enumerate so we get a std::ranges::common_range
+    return dr::__detail::bounded_enumerate(dr::ranges::segments(base)) |
            rng::views::transform(make_md);
   }
   using segments_type = decltype(make_segments(std::declval<base_type>(),
