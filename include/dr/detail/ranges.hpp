@@ -52,7 +52,10 @@ struct rank_fn_ {
     if constexpr (has_rank_method<R> && !disable_rank<std::remove_cv_t<R>>) {
       return std::forward<R>(r).rank();
     } else if constexpr (is_remote_iterator_shadow_impl_<rng::iterator_t<R>>) {
-      return operator()(rng::begin(std::forward<R>(r)));
+      // rng::begin needs an lvalue or borrowed_range. We only need
+      // the rank from the rng::begin so creating a local lvalue is ok.
+      auto t = r;
+      return operator()(rng::begin(t));
     } else if constexpr (has_rank_adl<R> &&
                          !disable_rank<std::remove_cv_t<R>>) {
       return rank_(std::forward<R>(r));

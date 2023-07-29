@@ -23,7 +23,7 @@ public:
   auto size() const { return rng::size(md_view_); }
   auto operator[](auto n) { return md_view_[n]; }
 
-  auto segments() { return dr::ranges::segments(dv_); }
+  auto segments() { return dr::ranges::segments(md_view_); }
 
   auto mdspan() const { return md_view_.mdspan(); }
   auto grid() { return md_view_.grid(); }
