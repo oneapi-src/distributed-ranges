@@ -24,6 +24,7 @@ public:
   auto operator[](auto n) { return md_view_[n]; }
 
   auto segments() { return dr::ranges::segments(md_view_); }
+  auto &halo() const { return dr::mhp::halo(dv_); }
 
   auto mdspan() const { return md_view_.mdspan(); }
   auto grid() { return md_view_.grid(); }
@@ -65,6 +66,11 @@ private:
       std::declval<DV>(), std::declval<dr::__detail::dr_extents<Rank>>()));
   mdspan_type md_view_;
 };
+
+template <typename T, std::size_t Rank>
+auto &halo(const distributed_mdarray<T, Rank> &mdarray) {
+  return mdarray.halo();
+}
 
 template <typename T, std::size_t Rank>
 std::ostream &operator<<(std::ostream &os,

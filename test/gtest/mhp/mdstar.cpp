@@ -226,6 +226,7 @@ TEST_F(Mdarray, GridLocalReference) {
 TEST_F(Mdarray, Halo) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d,
                                          xhp::distribution().halo(1));
+  dr::mhp::halo(mdarray);
   xhp::iota(mdarray, 100);
   auto grid = mdarray.grid();
 

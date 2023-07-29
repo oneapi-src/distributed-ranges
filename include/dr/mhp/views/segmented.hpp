@@ -55,7 +55,7 @@ private:
 // It should be usable if you have a range that is local and
 // replicated across all processes, but that is not tested.
 //
-template <rng::random_access_range R, rng::forward_range SegTpl>
+template <rng::random_access_range R, rng::common_range SegTpl>
 class segmented_view : public rng::view_interface<segmented_view<R, SegTpl>> {
 public:
   template <typename V1, typename V2>
