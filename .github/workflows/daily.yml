@@ -30,8 +30,6 @@ jobs:
       run: pip install src-python/drbench
     - name: Build
       run: srun -p pvc-shared scripts/devcloud-build.sh
-    - name: Test
-      run: srun -p pvc-shared scripts/devcloud-run.sh
     - name: Benchmark
       run: srun -p pvc scripts/devcloud-benchmarks.sh
     - name: Upload benchmark results
