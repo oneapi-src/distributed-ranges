@@ -78,10 +78,29 @@ private:
   std::size_t reps_ = 0;
 };
 
-inline void add_configuration() {
+inline void add_configuration(std::string model, std::string runtime,
+                              const cxxopts::ParseResult &options) {
   benchmark::AddCustomContext("default_vector_size",
                               std::to_string(default_vector_size));
   benchmark::AddCustomContext("default_repetitions",
                               std::to_string(default_repetitions));
   benchmark::AddCustomContext("ranks", std::to_string(ranks));
+  benchmark::AddCustomContext("model", model);
+  benchmark::AddCustomContext("runtime", runtime);
+  if (options.count("context")) {
+    for (std::string context :
+         options["context"].as<std::vector<std::string>>()) {
+      std::string delimeter = ":";
+      auto split = context.find(delimeter);
+      if (split == std::string::npos) {
+        std::cerr << fmt::format("Context must use '{}' as delimiter: {}\n",
+                                 delimeter, context);
+        exit(1);
+      }
+      auto value_pos = split + delimeter.length();
+      benchmark::AddCustomContext(
+          context.substr(0, split),
+          context.substr(value_pos, context.length() - value_pos));
+    }
+  }
 }

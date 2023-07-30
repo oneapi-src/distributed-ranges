@@ -155,7 +155,7 @@ jobs:
         path: gh-pages
     - name: Publish to github pages
       run: |
-        rm -rf gh-pages/*
+        rm -rf gh-pages/spec gh-pages/doxygen
         touch gh-pages/.nojekyll
 
         cp -r doc/spec/build/html gh-pages/spec

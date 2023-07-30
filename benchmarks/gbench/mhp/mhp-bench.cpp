@@ -32,7 +32,7 @@ void dr_init() {
   if (options.count("sycl")) {
     sycl::queue q = dr::mhp::select_queue();
     if (comm_rank == 0) {
-      benchmark::AddCustomContext("device", device_info(q.get_device()));
+      benchmark::AddCustomContext("device_info", device_info(q.get_device()));
     }
     dr::mhp::init(q);
     return;
@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10000"))
     ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("100"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
+    ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
     ;
   // clang-format on
 
@@ -115,8 +116,8 @@ int main(int argc, char *argv[]) {
   check_results = options.count("check");
 
   if (comm_rank == 0) {
-    benchmark::AddCustomContext("model", "mhp");
-    add_configuration();
+    add_configuration("mhp", options.count("sycl") ? "sycl" : "direct",
+                      options);
   }
 
   dr_init();

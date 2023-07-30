@@ -20,11 +20,17 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_subdirectory(shp)
 
-    add_custom_target(bench DEPENDS bench-results)
+    add_custom_target(bench DEPENDS bench-gpu-results bench-cpu-results)
     add_custom_command(
-      OUTPUT bench-results
-      COMMAND dr-bench analyze -n 1 -n 2 -n 3 -n 4 -s 1000000 -m mhp_gpu -m
-              mhp_cpu -m shp
+      OUTPUT bench-gpu-results
+      COMMAND dr-bench analyze -n 1 -n 2 -n 3 -n 4 -s 1000000 -m mhp_gpu_sycl -m
+              shp_gpu_sycl
+      DEPENDS mhp-bench shp-bench)
+
+    add_custom_command(
+      OUTPUT bench-cpu-results
+      COMMAND dr-bench analyze -n 1 -n 2 -s 1000000 -m mhp_cpu_direct -m
+              mhp_cpu_sycl -m shp_cpu_sycl
       DEPENDS mhp-bench shp-bench)
   endif()
 endif()

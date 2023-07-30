@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     ("drhelp", "Print help")
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
+    ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
     ;
   // clang-format on
 
@@ -48,13 +49,12 @@ int main(int argc, char *argv[]) {
     ranks = available_devices.size();
   }
 
-  benchmark::AddCustomContext("model", "shp");
-  add_configuration();
+  add_configuration("shp", "sycl", options);
 
   std::vector<sycl::device> devices;
   for (std::size_t i = 0; i < ranks; i++) {
     devices.push_back(available_devices[i % available_devices.size()]);
-    benchmark::AddCustomContext("device" + std::to_string(i),
+    benchmark::AddCustomContext("device_info" + std::to_string(i),
                                 device_info(devices.back()));
   }
 
