@@ -25,9 +25,9 @@ class Plotter:
         files_prefix = common.analysis_file_prefix(analysis_id)
         if not fname.startswith(files_prefix):
             return False
-        if fname.startswith(files_prefix + '.rank000'):
+        if fname.endswith('.rank000.json'):
             return True
-        if fname.startswith(files_prefix + '.rank'):
+        if re.match('.*\\.rank[0-9]{3}\\.json$', fname):
             return False
         return True
 
@@ -37,8 +37,12 @@ class Plotter:
         with open(fname) as f:
             fdata = json.load(f)
             ctx = fdata['context']
-            vsize = int(ctx['default_vector_size'])
-            nprocs = int(ctx['ranks'])
+            try:
+                vsize = int(ctx['default_vector_size'])
+                nprocs = int(ctx['ranks'])
+            except KeyError:
+                print(f'could not parse context of {fname}')
+                raise
             benchs = fdata['benchmarks']
             for b in benchs:
                 bname = b['name'].partition('/')[0]
