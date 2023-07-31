@@ -104,6 +104,16 @@ class Plotter:
             hue='test',
         )
 
+    def __inclusive_scan_bandwidth_plots(self):
+        Plotter.__make_plot(
+            'inclusive_bw',
+            self.db_maxvec.loc[self.db['test'].str.startswith('Inclusive_')],
+            x='nprocs',
+            y='bw',
+            col='mode',
+            hue='test',
+        )
+
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
             self.db['test'].str.startswith('Stream_')
@@ -143,3 +153,4 @@ class Plotter:
 
         self.__stream_bandwidth_plots()
         self.__stream_strong_scaling_plots()
+        self.__inclusive_scan_bandwidth_plots()
