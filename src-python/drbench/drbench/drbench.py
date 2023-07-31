@@ -13,10 +13,10 @@ from drbench import common, plotter, runner
 # common arguments
 @click.group()
 @click.option(
-    '--analysis_id',
+    "--analysis_id",
     type=str,
-    default='',
-    help='id to use in output files, use time based if missing',
+    default="",
+    help="id to use in output files, use time based if missing",
 )
 @click.pass_context
 def cli(ctx, analysis_id: str):
@@ -25,7 +25,7 @@ def cli(ctx, analysis_id: str):
         ctx.obj.analysis_id = analysis_id
     else:
         ctx.obj.analysis_id = datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H_%M_%S'
+            "%Y-%m-%d_%H_%M_%S"
         )
 
 
@@ -40,83 +40,75 @@ def plot(ctx):
     __plot_impl(ctx)
 
 
-Choice = click.Choice(['mhp_cpu', 'mhp_gpu', 'mhp_nosycl', 'shp'])
+Choice = click.Choice(common.targets.keys())
 
 
-def choice_to_mode(c):
-    if c == 'mhp_cpu':
-        return runner.AnalysisMode.MHP_CPU
-    if c == 'mhp_gpu':
-        return runner.AnalysisMode.MHP_GPU
-    if c == 'mhp_nosycl':
-        return runner.AnalysisMode.MHP_NOSYCL
-    if c == 'shp':
-        return runner.AnalysisMode.SHP
-    assert False
+def choice_to_target(c):
+    return common.targets[c]
 
 
 @cli.command()
 @click.option(
-    '--no-plot',
-    'plot',
+    "--no-plot",
+    "plot",
     default=True,
     is_flag=True,
     help="don't create plots, just json files",
 )
 @click.option(
-    '-m',
-    '--mode',
+    "-t",
+    "--target",
     type=Choice,
     multiple=True,
-    default=['mhp_cpu'],
-    help='modes of benchmarking to run',
+    default=["mhp_direct_cpu"],
+    help="Target to execute benchmark",
 )
 @click.option(
-    '-s',
-    '--vec-size',
+    "-s",
+    "--vec-size",
     type=int,
     multiple=True,
     default=[1000000],
-    help='Size of a vector',
+    help="Size of a vector",
 )
 @click.option(
-    '-n',
-    '--nprocs',
+    "-n",
+    "--nprocs",
     type=int,
     multiple=True,
     default=[1],
-    help='Number of processes',
+    help="Number of processes",
 )
 @click.option(
-    '--no-fork',
-    'fork',
+    "--no-fork",
+    "fork",
     default=True,
     is_flag=True,
     help="don't use -launcher=fork with mpi",
 )
-@click.option('-r', '--reps', default=100, type=int, help='Number of reps')
+@click.option("-r", "--reps", default=100, type=int, help="Number of reps")
 @click.option(
-    '-f',
-    '--filter',
+    "-f",
+    "--filter",
     type=str,
     multiple=True,
-    default=['Stream_'],
-    help='A filter used for a benchmark',
+    default=["Stream_"],
+    help="A filter used for a benchmark",
 )
 @click.option(
-    '--mhp-bench',
-    default='mhp/mhp-bench',
+    "--mhp-bench",
+    default="mhp/mhp-bench",
     type=str,
-    help='MHP benchmark program',
+    help="MHP benchmark program",
 )
 @click.option(
-    '--shp-bench',
-    default='shp/shp-bench',
+    "--shp-bench",
+    default="shp/shp-bench",
     type=str,
-    help='SHP benchmark program',
+    help="SHP benchmark program",
 )
 @click.option(
-    '-d', '--dry-run', is_flag=True, help='Emits commands but does not execute'
+    "-d", "--dry-run", is_flag=True, help="Emits commands but does not execute"
 )
 @click.pass_context
 def analyze(
@@ -139,7 +131,7 @@ def analyze(
     r = runner.Runner(
         runner.AnalysisConfig(
             ctx.obj,
-            '\\|'.join(filter),
+            "\\|".join(filter),
             fork,
             reps,
             dry_run,
@@ -151,12 +143,12 @@ def analyze(
         for s in vec_size:
             for n in nprocs:
                 r.run_one_analysis(
-                    runner.AnalysisCase(choice_to_mode(m), s, n)
+                    runner.AnalysisCase(choice_to_target(m), s, n)
                 )
 
     if plot:
         __plot_impl(ctx)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     assert False  # not to be used this way, but by dr-bench executable
