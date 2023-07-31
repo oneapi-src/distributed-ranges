@@ -10,7 +10,5 @@ source /opt/intel/oneapi/setvars.sh
 # devcloud requires --launcher=fork for mpi
 cmake -B build -DENABLE_SYCL=on -DENABLE_MPIFORK=on
 
-cmake --build build -j
-
-# selective build below is broken
-#cmake --build build -j ${1:+"--target "$@}
+BUILD_TARGETS=("$@")
+cmake --build build -j "${BUILD_TARGETS[@]/#/-t }"
