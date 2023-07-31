@@ -94,11 +94,18 @@ class Runner:
             )
 
         target = analysis_case.target
-        params.extend(["--context", f"device:{target.device.name}",
-                       "--context", f"model:{target.model.name}",
-                       "--context", f"runtime:{target.runtime.name}",
-                       "--context", f"target:{target}",
-                       ])
+        params.extend(
+            [
+                "--context",
+                f"device:{target.device.name}",
+                "--context",
+                f"model:{target.model.name}",
+                "--context",
+                f"runtime:{target.runtime.name}",
+                "--context",
+                f"target:{target}",
+            ]
+        )
         if analysis_case.target.model == Model.SHP:
             self.__run_shp_analysis(params, analysis_case.nprocs)
         else:

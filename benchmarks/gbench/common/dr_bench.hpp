@@ -98,8 +98,7 @@ inline std::string exec(const char *cmd) {
   return result;
 }
 
-inline void add_configuration(int rank, 
-                              const cxxopts::ParseResult &options) {
+inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
   benchmark::AddCustomContext("default_vector_size",
                               std::to_string(default_vector_size));
   benchmark::AddCustomContext("default_repetitions",
