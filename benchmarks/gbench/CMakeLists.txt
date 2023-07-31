@@ -30,7 +30,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       # devcloud: 4 GPUs, 2 sockets, 112 cores
       COMMAND ${COMMON_PREFIX} -n 1 -n 2 -n 3 -n 4 -t mhp_sycl_gpu -t
               shp_sycl_gpu
-      COMMAND ${COMMON_PREFIX} -n 1 -n 2 -m mhp_sycl_cpu -m shp_sycl_cpu
+      COMMAND ${COMMON_PREFIX} -n 1 -n 2 -t mhp_sycl_cpu -t shp_sycl_cpu
       COMMAND ${COMMON_PREFIX} -n 1 -n 2 -n 4 -n 8 -n 56 -n 112 -t
               mhp_direct_cpu
       COMMAND dr-bench --analysis_id daily plot
