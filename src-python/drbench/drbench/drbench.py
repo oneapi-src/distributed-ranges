@@ -97,9 +97,10 @@ def choice_to_mode(c):
 @click.option('-r', '--reps', default=100, type=int, help='Number of reps')
 @click.option(
     '-f',
-    '--benchmark-filter',
-    default='Stream_',
+    '--filter',
     type=str,
+    multiple=True,
+    default=['Stream_'],
     help='A filter used for a benchmark',
 )
 @click.option(
@@ -126,7 +127,7 @@ def analyze(
     nprocs,
     fork,
     reps,
-    benchmark_filter,
+    filter,
     mhp_bench,
     shp_bench,
     dry_run,
@@ -138,7 +139,7 @@ def analyze(
     r = runner.Runner(
         runner.AnalysisConfig(
             ctx.obj,
-            benchmark_filter,
+            '\\|'.join(filter),
             fork,
             reps,
             dry_run,
