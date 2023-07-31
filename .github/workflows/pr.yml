@@ -97,6 +97,8 @@ jobs:
 
   icpx:
     runs-on: devcloud
+    # if it does not finish in 20 minutes, it is likely hung
+    timeout-minutes: 20
     env:
       CXX: icpx
     steps:
