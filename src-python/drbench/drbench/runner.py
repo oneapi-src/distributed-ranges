@@ -42,7 +42,7 @@ class Runner:
     def __run_mhp_analysis(self, params, nprocs, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
-            if target.device == Device.CPUModel:
+            if target.device == Device.CPU:
                 env = "ONEAPI_DEVICE_SELECTOR=opencl:cpu"
             else:
                 env = (

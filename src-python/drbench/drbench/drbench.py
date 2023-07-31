@@ -114,7 +114,7 @@ def choice_to_target(c):
 def analyze(
     ctx,
     plot,
-    mode,
+    target,
     vec_size,
     nprocs,
     fork,
@@ -124,7 +124,7 @@ def analyze(
     shp_bench,
     dry_run,
 ):
-    assert mode
+    assert target
     assert vec_size
     assert nprocs
 
@@ -139,11 +139,11 @@ def analyze(
             shp_bench,
         )
     )
-    for m in mode:
+    for t in target:
         for s in vec_size:
             for n in nprocs:
                 r.run_one_analysis(
-                    runner.AnalysisCase(choice_to_target(m), s, n)
+                    runner.AnalysisCase(choice_to_target(t), s, n)
                 )
 
     if plot:
