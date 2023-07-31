@@ -45,3 +45,33 @@ jobs:
       with:
         name: log-icpx
         path: build/Testing
+
+  publish:
+    needs: [devcloud]
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download benchmark results
+      uses: actions/download-artifact@v3
+      with:
+        name: log-devcloud-bench
+        path: bench/devcloud
+    - name: Checkout gh-pages
+      uses: actions/checkout@v3
+      with:
+        ref: gh-pages
+        path: gh-pages
+    - name: Publish to github pages
+      run: |
+        touch gh-pages/.nojekyll
+        mkdir -p gh-pages/bench
+        rm -rf gh-pages/bench/devcloud
+        cp -r bench/devcloud gh-pages/bench
+        cd gh-pages
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .
+        # Ignore errors because no updates returns an error status.
+        git commit --reset-author --amend -m "Update from github actions"
+        git push --force origin gh-pages

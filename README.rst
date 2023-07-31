@@ -25,6 +25,20 @@ C++ Ranges.
 The documentation is built from main branch on every commit and
 published at `latest spec`_ and `latest doxygen`_.
 
+Benchmark Results
+=================
+
+Devcloud
+--------
+
+By benchmark:
+
+.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_strong_scaling.png
+
+By configuration:
+
+.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_bw-cpu.png
+
 Environment Setup
 =================
 
