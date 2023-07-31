@@ -29,9 +29,7 @@ jobs:
     - name: Install benchmark framework
       run: pip install src-python/drbench
     - name: Build
-      run: srun -p pvc-shared scripts/devcloud-build.sh
-    - name: Test
-      run: srun -p pvc-shared scripts/devcloud-run.sh
+      run: srun -p pvc-shared scripts/devcloud-build.sh mhp-bench shp-bench
     - name: Benchmark
       run: srun -p pvc scripts/devcloud-benchmarks.sh
     - name: Upload benchmark results

@@ -24,7 +24,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT bench-results
       COMMAND dr-bench analyze -n 1 -n 2 -n 3 -n 4 -s 1000000 -m mhp_gpu -m
-              mhp_cpu -m shp
+              mhp_cpu -m shp -f Stream_ -f Black_Scholes -f DotProduct_
       DEPENDS mhp-bench shp-bench)
   endif()
 endif()
