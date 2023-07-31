@@ -31,12 +31,17 @@ class Plotter:
         return True
 
     @staticmethod
+    def __cores_per_package(lscpu):
+        return 2
+    
+    @staticmethod
     def __import_file(fname: str, rows):
         with open(fname) as f:
             fdata = json.load(f)
             ctx = fdata["context"]
             vsize = int(ctx["default_vector_size"])
             ranks = int(ctx["ranks"])
+            cores_per_package = Plotter.__cores_per_package(ctx["lscpu"])
             model = ctx["model"]
             device = ctx["device"]
             runtime = ctx["runtime"]
@@ -52,8 +57,10 @@ class Plotter:
                         "vsize": vsize,
                         "Benchmark": bname,
                         "Ranks": ranks,
+                        "Cores" : core_per_package * ranks if model == 'sycl' else ranks,
+                        "GPU Tiles": ranks,
                         "rtime": rtime,
-                        "Memory Bandwidth": bw,
+                        "Memory Bandwidth (TBps)": bw / 1e12,
                         "Model": model,
                         "Device": device,
                         "Runtime": runtime,
@@ -70,7 +77,7 @@ class Plotter:
     # 63     MHP_GPU  40000  Stream_Triad       4  21.714421  4.421025e+09
     def __init__(self, plotting_config: PlottingConfig):
         rows = []
-        for fname in glob.glob("*json"):
+        for fname in glob.glob(f'dr-bench-{plotting_config.common_config.analysis_id}*.json"):
             if Plotter.__is_our_file(
                 fname, plotting_config.common_config.analysis_id
             ):
@@ -99,8 +106,8 @@ class Plotter:
         Plotter.__make_plot(
             f"stream_bw-{device}",
             self.db_maxvec.loc[self.db["Benchmark"].str.startswith("Stream_")],
-            x="Ranks",
-            y="Memory Bandwidth",
+            x= "GPU Tiles" if device == "gpu" else "Cores",
+            y="Memory Bandwidth (TBps)",
             col="Config",
             hue="Benchmark",
         )
@@ -128,7 +135,6 @@ class Plotter:
             f"stream strong scalling scalled by {ref_stream} {ref_config}"
             f" ranks:{ref_ranks} eq {scale_factor}"
         )
-        db["Memory Bandwidth"] /= scale_factor
         db["Normalized Memory Bandwidth"] = (
             db["Memory Bandwidth"] / scale_factor
         )
@@ -136,8 +142,8 @@ class Plotter:
         Plotter.__make_plot(
             f"stream_strong_scaling-{device}",
             db,
-            x="Ranks",
-            y="Normalized Memory Bandwidth",
+            x= "GPU Tiles" if device == "gpu" else "Cores",
+            y="Memory Bandwidth (TBps)",
             col="Benchmark",
             hue="Config",
         )

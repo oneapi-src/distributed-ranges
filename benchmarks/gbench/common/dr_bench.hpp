@@ -3,6 +3,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <array>
+
 #ifdef SYCL_LANGUAGE_VERSION
 #include <sycl/sycl.hpp>
 #endif
@@ -78,6 +85,19 @@ private:
   std::size_t reps_ = 0;
 };
 
+inline std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
 inline void add_configuration(std::string model, std::string runtime,
                               const cxxopts::ParseResult &options) {
   benchmark::AddCustomContext("default_vector_size",
@@ -87,6 +107,7 @@ inline void add_configuration(std::string model, std::string runtime,
   benchmark::AddCustomContext("ranks", std::to_string(ranks));
   benchmark::AddCustomContext("model", model);
   benchmark::AddCustomContext("runtime", runtime);
+  benchmark::AddCustomContext("lscpu", exec("lscpu"));
   if (options.count("context")) {
     for (std::string context :
          options["context"].as<std::vector<std::string>>()) {
