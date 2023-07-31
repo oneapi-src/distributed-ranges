@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# TODO: more stuff is going to be moved here from drbench.py
-
+import glob
 import subprocess
 from collections import namedtuple
 from enum import Enum
@@ -34,8 +33,14 @@ class Runner:
         prefix = common.analysis_file_prefix(
             self.analysis_config.common_config.analysis_id
         )
-        rank = ".rankNNN" if add_nnn else ""
-        return f'{prefix}{rank}.{case.mode}.n{case.nprocs}.s{case.size}.json'
+
+        i = 0
+        while True:
+            p = f'{prefix}.{case.mode}.n{case.nprocs}.s{case.size}.i{i}i'
+            if not glob.glob(f'{p}*'):
+                rank = ".rankNNN" if add_nnn else ""
+                return f'{p}{rank}.json'
+            i = i + 1
 
     def __run_mhp_analysis(self, params, nprocs, mode):
         if mode == AnalysisMode.MHP_CPU:
