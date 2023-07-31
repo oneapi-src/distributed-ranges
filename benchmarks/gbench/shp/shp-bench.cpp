@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   }
 
   benchmark::AddCustomContext("model", "shp");
-  add_configuration(0, "shp", "sycl", options);
+  add_configuration(0, options);
 
   std::vector<sycl::device> devices;
   for (std::size_t i = 0; i < ranks; i++) {

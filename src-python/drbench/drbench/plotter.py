@@ -33,13 +33,16 @@ class Plotter:
 
     @staticmethod
     def __import_file(fname: str, rows):
-        mode = re.search(r'AnalysisMode\.([A-Z_]+)\.', fname).group(1)
         with open(fname) as f:
             fdata = json.load(f)
             ctx = fdata['context']
             try:
                 vsize = int(ctx['default_vector_size'])
                 nprocs = int(ctx['ranks'])
+                target = int(ctx['target'])
+                model = int(ctx['model'])
+                runtime = int(ctx['runtime'])
+                device = int(ctx['device'])
             except KeyError:
                 print(f'could not parse context of {fname}')
                 raise
@@ -50,7 +53,10 @@ class Plotter:
                 bw = b['bytes_per_second']
                 rows.append(
                     {
-                        'mode': mode,
+                        'target': target,
+                        'model': model,
+                        'runtime': runtime,
+                        'device': device,
                         'vsize': vsize,
                         'test': bname,
                         'nprocs': nprocs,

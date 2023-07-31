@@ -113,8 +113,7 @@ int main(int argc, char *argv[]) {
   num_columns = options["columns"].as<std::size_t>();
   check_results = options.count("check");
 
-  add_configuration(comm_rank, "mhp", options.count("sycl") ? "sycl" : "direct",
-                    options);
+  add_configuration(comm_rank, options);
 
   dr_init();
   if (rank == 0) {
