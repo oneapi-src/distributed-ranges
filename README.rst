@@ -31,13 +31,13 @@ Benchmark Results
 Devcloud
 --------
 
-By benchmark:
+GPU:
 
-.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_strong_scaling.png
+.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_strong_scaling_gpu.png
 
-By configuration:
+CPU:
 
-.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_bw-cpu.png
+.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_strong_scaling_cpu.png
 
 Environment Setup
 =================
