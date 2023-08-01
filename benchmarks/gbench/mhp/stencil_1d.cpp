@@ -108,6 +108,8 @@ static void Stencil1D_Subrange_DPL(benchmark::State &state) {
       std::swap(in, out);
     }
   }
+  sycl::free(in, q);
+  sycl::free(out, q);
 }
 
 DR_BENCHMARK(Stencil1D_Subrange_DPL);

@@ -35,6 +35,8 @@ static void Inclusive_Scan_DPL(benchmark::State &state) {
       std::inclusive_scan(policy, a, a + default_vector_size, b);
     }
   }
+  sycl::free(a, q);
+  sycl::free(b, q);
 }
 
 DR_BENCHMARK(Inclusive_Scan_DPL);

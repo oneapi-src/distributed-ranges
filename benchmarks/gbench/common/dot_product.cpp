@@ -138,6 +138,8 @@ static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
     }
   }
   check_dp(res);
+  sycl::free(a, q);
+  sycl::free(b, q);
 }
 
 DR_BENCHMARK(DotProduct_TransformReduce_DPL);
