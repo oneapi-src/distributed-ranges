@@ -117,7 +117,19 @@ class Plotter:
     def __black_scholes_bandwidth_plots(self):
         Plotter.__make_plot(
             'black_scholes_bw',
-            self.db_maxvec.loc[self.db['test'].str.startswith('Black_Scholes')],
+            self.db_maxvec.loc[
+                self.db['test'].str.startswith('Black_Scholes')
+            ],
+            x='nprocs',
+            y='bw',
+            col='mode',
+            hue='test',
+        )
+
+    def __reduce_bandwidth_plots(self):
+        Plotter.__make_plot(
+            'reduce_bw',
+            self.db_maxvec.loc[self.db['test'].str.startswith('Reduce')],
             x='nprocs',
             y='bw',
             col='mode',
@@ -161,6 +173,8 @@ class Plotter:
     def create_plots(self):
         sns.set_theme(style="ticks")
 
+        self.__black_scholes_bandwidth_plots()
         self.__dot_product_bandwidth_plots()
+        self.__reduce_bandwidth_plots()
         self.__stream_bandwidth_plots()
         self.__stream_strong_scaling_plots()
