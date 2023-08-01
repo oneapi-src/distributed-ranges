@@ -30,9 +30,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       # devcloud: 4 GPUs, 2 sockets, 112 cores
       COMMAND dr-bench clean
       COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --ranks 3 --ranks 4 --target
-              mhp_sycl_gpu
-      # Single process multi-gpu does not work on devcloud
-      COMMAND ${COMMON_PREFIX} --ranks 1 --target --target shp_sycl_gpu
+              mhp_sycl_gpu --target --target shp_sycl_gpu
       COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --target mhp_sycl_cpu
               --target shp_sycl_cpu
       COMMAND ${COMMON_PREFIX} --ranks 56 --ranks 112 --target mhp_direct_cpu
