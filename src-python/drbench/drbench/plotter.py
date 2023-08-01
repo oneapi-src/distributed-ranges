@@ -49,8 +49,8 @@ class Plotter:
                         'Benchmark': bname,
                         'Ranks': ranks,
                         'GPU Tiles': ranks,
-                        'Cores': ranks * cores_per_socket
-                        if runtime == 'SYCL' and device == 'CPU'
+                        'CPU Sockets': ranks / cores_per_socket
+                        if runtime == 'DIRECT' and device == 'CPU'
                         else ranks,
                         'rtime': rtime,
                         Plotter.bandwidth_title: bw / 1e12,
@@ -108,7 +108,7 @@ class Plotter:
         Plotter.__make_plot(
             'stream_strong_scaling_cpu',
             db_cpu,
-            x='Cores',
+            x='CPU Sockets',
             y=Plotter.bandwidth_title,
             col='Benchmark',
             style='Target',
