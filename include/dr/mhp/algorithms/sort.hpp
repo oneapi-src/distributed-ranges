@@ -7,6 +7,7 @@
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
+#include <oneapi/dpl/iterator>
 #endif
 
 #include <mpi.h>
@@ -26,39 +27,31 @@ namespace dr::mhp {
 
 namespace __detail {
 
-#ifdef SYCL_LANGUAGE_VERSION
-template <typename LocalPolicy, typename InputIt, typename Compare>
-sycl::event _sort_async(LocalPolicy &&policy, InputIt first, InputIt last,
-                       Compare &&comp) {
-  if (rng::distance(first, last) >= 2) {
-    dr::__detail::direct_iterator d_first(first);
-    dr::__detail::direct_iterator d_last(last);
-    fmt::print("{}: _sort_async\n", comm_rank);
-    return oneapi::dpl::experimental::sort_async(
-        std::forward<LocalPolicy>(policy), d_first, d_last,
-        std::forward<Compare>(comp));
-  } else {
-    return sycl::event{};
-  }
-}
-#endif
-
 template <typename InputIt, typename Compare>
 void local_sort(InputIt first, InputIt last, Compare &&comp) {
+  fmt::print("{}: __detail::local_sort, SIZE {}\n", comm_rank,
+             rng::distance(first, last));
+  auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
+
   if (rng::distance(first, last) >= 2) {
 #ifdef SYCL_LANGUAGE_VERSION
-    fmt::print("{}: l_s dpl sort, size {}\n", comm_rank,
-               rng::distance(first, last));
-    // auto policy = oneapi::dpl::execution::make_device_policy(sycl_queue());
-    // fmt::print("{}: policy created\n", comm_rank);
-    _sort_async(dpl_policy(), first, last, comp).wait();
-    // oneapi::dpl::experimental::sort_async(policy, first, last, comp).wait();
+    auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
+    // dr::__detail::direct_iterator d_first(first);
+    // dr::__detail::direct_iterator d_last(last);
+
+    // fmt::print("{}: oneapi::dpl::experimental::sort_async\n", comm_rank);
+    // oneapi::dpl::experimental::sort_async(std::forward<LocalPolicy>(policy),
+    // oneapi::dpl::experimental::sort_async(policy, d_first, d_last,
+    //                                       std::forward<Compare>(comp))
+    //     .wait();
+    fmt::print("{}: oneapi::dpl::sort\n", comm_rank);
+    oneapi::dpl::sort(policy, first, last, std::forward<Compare>(comp));
 #else
-    fmt::print("{}: l_s rng sort\n", comm_rank);
+    fmt::print("{}: rng::sort\n", comm_rank);
     rng::sort(first, last, comp);
 #endif
   }
-  fmt::print("{}: l_s sorted\n", comm_rank);
+  fmt::print("{}: local_sort sorted\n", comm_rank);
 }
 
 } // __detail
@@ -82,19 +75,14 @@ void sort(R &r, Compare &&comp = Compare()) {
    
     if (_comm_rank == 0) {
       std::vector<valT> vec_recvdata(rng::size(r));
-      fmt::print("{}: local copy of {}\n", _comm_rank, r);
-      dr::mhp::copy(0, r, vec_recvdata.begin());
-      fmt::print("{}: local sort\n", _comm_rank);
-      // __detail::local_sort(vec_recvdata.begin(), vec_recvdata.end(), comp);
+      dr::mhp::copy(0, r, rng::begin(vec_recvdata));
       rng::sort(vec_recvdata, comp);
-      fmt::print("{}: sorted\n", _comm_rank);
-      rng::copy(vec_recvdata, r.begin());
-      fmt::print("{}: copied to {}\n", _comm_rank, r);
+      rng::copy(vec_recvdata, rng::begin(r));
     }
 
-    // fmt::print("{}: barrier hit\n", _comm_rank);
-    // barrier();
-    // fmt::print("{}: barrier passed\n", _comm_rank);
+    fmt::print("{}: barrier hit\n", _comm_rank);
+    barrier();
+    fmt::print("{}: barrier passed\n", _comm_rank);
     return;
   }
 
@@ -105,7 +93,8 @@ void sort(R &r, Compare &&comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
-    __detail::local_sort(lsegment.begin(), lsegment.end(), comp);
+    __detail::local_sort(oneapi::dpl::begin(lsegment),
+                         oneapi::dpl::end(lsegment), comp);
     return;
   }
 
@@ -113,7 +102,8 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   fmt::print("{}: local segment sort {}\n", _comm_rank, lsegment);
 
-  __detail::local_sort(lsegment.begin(), lsegment.end(), comp);
+  __detail::local_sort(oneapi::dpl::begin(lsegment), oneapi::dpl::end(lsegment),
+                       comp);
 
   fmt::print("{}: local segment sorted {}\n", _comm_rank, lsegment);
 
