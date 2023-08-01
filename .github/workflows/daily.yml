@@ -40,12 +40,6 @@ jobs:
         path: |
           build/benchmarks/gbench/dr-bench*.json
           build/benchmarks/gbench/*.png
-    - name: Upload build logs
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: log-icpx
-        path: build/Testing
 
   publish:
     needs: [devcloud]

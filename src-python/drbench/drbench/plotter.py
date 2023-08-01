@@ -58,7 +58,7 @@ class Plotter:
                         'runtime': runtime,
                         'device': device,
                         'vsize': vsize,
-                        'test': bname,
+                        'benchmark': bname,
                         'nprocs': nprocs,
                         'rtime': rtime,
                         'bw': bw,
@@ -66,7 +66,7 @@ class Plotter:
                 )
 
     # db is created which looks something like this:
-    #           mode  vsize          test  nprocs      rtime            bw
+    #           mode  vsize          benchmark  nprocs      rtime            bw
     # 0   MHP_NOSYCL  20000   Stream_Copy       1   0.234987  1.361779e+11
     # 1   MHP_NOSYCL  20000  Stream_Scale       1   0.240879  1.328468e+11
     # 2   MHP_NOSYCL  20000    Stream_Add       1   0.329298  1.457645e+11
@@ -75,12 +75,9 @@ class Plotter:
     # 63     MHP_GPU  40000  Stream_Triad       4  21.714421  4.421025e+09
     def __init__(self, plotting_config: PlottingConfig):
         rows = []
-        for fname in glob.glob('*json'):
-            if Plotter.__is_our_file(
-                fname, plotting_config.common_config.analysis_id
-            ):
-                click.echo(f'found file {fname}')
-                Plotter.__import_file(fname, rows)
+        for fname in glob.glob('dr-bench*.json'):
+            click.echo(f'found file {fname}')
+            Plotter.__import_file(fname, rows)
 
         self.db = pd.DataFrame(rows)
 
@@ -103,26 +100,26 @@ class Plotter:
     def __stream_bandwidth_plots(self):
         Plotter.__make_plot(
             'stream_bw',
-            self.db_maxvec.loc[self.db['test'].str.startswith('Stream_')],
+            self.db_maxvec.loc[self.db['benchmark'].str.startswith('Stream_')],
             x='nprocs',
             y='bw',
             col='mode',
-            hue='test',
+            hue='benchmark',
         )
 
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
-            self.db['test'].str.startswith('Stream_')
+            self.db['benchmark'].str.startswith('Stream_')
         ].copy()
 
-        ref_stream = sorted(db['test'].unique())[0]
+        ref_stream = sorted(db['benchmark'].unique())[0]
         ref_mode = sorted(db['mode'].unique())[0]
         ref_nproc = sorted(db['nprocs'].unique())[0]
         # take value of reference stream/mode/nproc - can it be easier taken?
         scale_factor = (
             db.loc[
                 (db['mode'] == ref_mode)
-                & (db['test'] == ref_stream)
+                & (db['benchmark'] == ref_stream)
                 & (db['nprocs'] == ref_nproc)
             ]
             .squeeze()
@@ -140,7 +137,7 @@ class Plotter:
             db,
             x='nprocs',
             y='bw',
-            col='test',
+            col='benchmark',
             hue='mode',
         )
 
