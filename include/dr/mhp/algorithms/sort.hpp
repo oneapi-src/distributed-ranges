@@ -31,7 +31,6 @@ template <typename InputIt, typename Compare>
 void local_sort(InputIt first, InputIt last, Compare &&comp) {
   fmt::print("{}: __detail::local_sort, SIZE {}\n", comm_rank,
              rng::distance(first, last));
-  auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
 
   if (rng::distance(first, last) >= 2) {
 #ifdef SYCL_LANGUAGE_VERSION
@@ -93,8 +92,14 @@ void sort(R &r, Compare &&comp = Compare()) {
     return;
   else if (_comm_size == 1) {
     fmt::print("{}: Single node, local sort\n", _comm_rank);
-    __detail::local_sort(oneapi::dpl::begin(lsegment),
-                         oneapi::dpl::end(lsegment), comp);
+    
+#ifdef SYCL_LANGUAGE_VERSION
+    __detail::local_sort(oneapi::dpl::begin(lsegment), oneapi::dpl::end(lsegment),
+                       comp);
+#else
+    __detail::local_sort(rng::begin(lsegment), rng::end(lsegment),comp);
+#endif
+    barrier();
     return;
   }
 
@@ -102,8 +107,13 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   fmt::print("{}: local segment sort {}\n", _comm_rank, lsegment);
 
+#ifdef SYCL_LANGUAGE_VERSION
   __detail::local_sort(oneapi::dpl::begin(lsegment), oneapi::dpl::end(lsegment),
                        comp);
+#else
+__detail::local_sort(rng::begin(lsegment), rng::end(lsegment),
+                       comp);
+#endif                      
 
   fmt::print("{}: local segment sorted {}\n", _comm_rank, lsegment);
 
