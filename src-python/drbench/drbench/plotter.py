@@ -114,6 +114,16 @@ class Plotter:
             hue='test',
         )
 
+    def __black_scholes_bandwidth_plots(self):
+        Plotter.__make_plot(
+            'black_scholes_bw',
+            self.db_maxvec.loc[self.db['test'].str.startswith('Black_Scholes')],
+            x='nprocs',
+            y='bw',
+            col='mode',
+            hue='test',
+        )
+
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
             self.db['test'].str.startswith('Stream_')
