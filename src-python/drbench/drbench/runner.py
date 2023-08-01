@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import glob
 import subprocess
-from collections import namedtuple
 import uuid
+from collections import namedtuple
 
 import click
 from drbench.common import Device, Model, Runtime
@@ -15,6 +14,7 @@ AnalysisConfig = namedtuple(
     "AnalysisConfig",
     "prefix benchmark_filter fork reps dry_run mhp_bench shp_bench",
 )
+
 
 class Runner:
     def __init__(self, analysis_config: AnalysisConfig):
@@ -75,7 +75,8 @@ class Runner:
         params.append(f"--context runtime:{target.runtime.name}")
         params.append(f"--context target:{target}")
 
-        params.append(f"--benchmark_out={self.analysis_config.prefix}-{uuid.uuid4().hex}.json")
+        prefix = self.analysis_config.prefix
+        params.append(f"--benchmark_out={prefix}-{uuid.uuid4().hex}.json")
 
         if self.analysis_config.benchmark_filter:
             params.append(

@@ -5,12 +5,11 @@
 import glob
 import json
 import re
-from collections import namedtuple
 
 import click
 import pandas as pd
 import seaborn as sns
-from drbench import common
+
 
 class Plotter:
     bandwidth_title = 'Memory Bandwidth (TBps)'
@@ -31,6 +30,11 @@ class Plotter:
                 print(f'could not parse context of {fname}')
                 raise
             benchs = fdata['benchmarks']
+            cores_per_socket = int(
+                re.search(
+                    r'Core\(s\) per socket:\s*(\d+)', ctx['lscpu']
+                ).group(1)
+            )
             for b in benchs:
                 bname = b['name'].partition('/')[0]
                 rtime = b['real_time']
@@ -44,6 +48,10 @@ class Plotter:
                         'vsize': vsize,
                         'Benchmark': bname,
                         'Ranks': ranks,
+                        'GPU Tiles': ranks,
+                        'Cores': ranks * cores_per_socket
+                        if runtime == 'SYCL' and device == 'CPU'
+                        else ranks,
                         'rtime': rtime,
                         Plotter.bandwidth_title: bw / 1e12,
                     }
@@ -84,10 +92,23 @@ class Plotter:
             self.db['Benchmark'].str.startswith('Stream_')
         ].copy()
 
+        db_gpu = db.loc[db['device'] == 'GPU']
+
         Plotter.__make_plot(
-            'stream_strong_scaling',
-            db,
-            x='Ranks',
+            'stream_strong_scaling_gpu',
+            db_gpu,
+            x='GPU Tiles',
+            y=Plotter.bandwidth_title,
+            col='Benchmark',
+            style='Target',
+        )
+
+        db_cpu = db.loc[db['device'] == 'CPU']
+
+        Plotter.__make_plot(
+            'stream_strong_scaling_cpu',
+            db_cpu,
+            x='Cores',
             y=Plotter.bandwidth_title,
             col='Benchmark',
             style='Target',

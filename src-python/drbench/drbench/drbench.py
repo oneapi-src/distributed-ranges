@@ -4,13 +4,11 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import datetime
 import glob
 import os
 
 import click
 from drbench import common, plotter, runner
-
 
 option_prefix = click.option(
     "--prefix",
@@ -19,10 +17,12 @@ option_prefix = click.option(
     help="Prefix for files",
 )
 
+
 # common arguments
 @click.group()
 def cli():
     pass
+
 
 @cli.command()
 @option_prefix
@@ -30,9 +30,11 @@ def plot(prefix):
     p = plotter.Plotter(prefix)
     p.create_plots()
 
+
 def do_clean(prefix):
     for f in glob.glob(f"{prefix}-*.json"):
         os.remove(f)
+
 
 @cli.command()
 @option_prefix
@@ -115,7 +117,7 @@ def run(
     mhp_bench,
     shp_bench,
     dry_run,
-    clean
+    clean,
 ):
     assert target
     assert vec_size
@@ -123,7 +125,7 @@ def run(
 
     if clean:
         do_clean(prefix)
-        
+
     r = runner.Runner(
         runner.AnalysisConfig(
             prefix,

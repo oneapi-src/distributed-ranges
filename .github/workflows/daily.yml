@@ -31,7 +31,7 @@ jobs:
     - name: Build
       run: srun -p pvc-shared scripts/devcloud-build.sh mhp-bench shp-bench
     - name: Benchmark
-      run: srun -p pvc-shared scripts/devcloud-benchmarks.sh
+      run: srun -p pvc scripts/devcloud-benchmarks.sh
     - name: Upload benchmark results
       if: always()
       uses: actions/upload-artifact@v3
