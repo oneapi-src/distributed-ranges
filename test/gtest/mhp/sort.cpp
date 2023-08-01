@@ -14,7 +14,7 @@ TEST(MhpSort, Sort) {
   std::vector<std::size_t> sizes = {
       // 1,   comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23,
       // 100, 1234};
-      17, 23, 100};
+      1, 4, 17, 23, 100};
 
   for (std::size_t n : sizes) {
     V l_v = generate_random<T>(n, 100);
@@ -31,7 +31,7 @@ TEST(MhpSort, Sort) {
     std::cout << comm_rank <<": >>> sorted " << n << std::endl;
 
     barrier();
-    std::cout << comm_rank << ": >>> comparison " << n << std::endl;
+    std::cout << comm_rank << ": >>> comparison " << n << "\n";
     EXPECT_TRUE(equal(l_v, d_v));
   }
 }
@@ -49,7 +49,7 @@ TEST(MhpSort, Sort_reverse) {
     for (std::size_t idx = 0; idx < n; idx++) {
       d_v[idx] = l_v[idx];
     }
-    barrier();
+    dr::mhp::barrier();
 
     dr::mhp::sort(d_v, std::greater<T>());
     std::sort(l_v.begin(), l_v.end(), std::greater<T>());
