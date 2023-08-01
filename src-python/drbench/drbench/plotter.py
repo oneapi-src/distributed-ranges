@@ -76,8 +76,8 @@ class Plotter:
 
     @staticmethod
     def __make_plot(fname, data, **kwargs):
-        plot = sns.relplot(data=data, kind='line', **kwargs)
-        plot.savefig(f'{fname}.png')
+        plot = sns.relplot(data=data, kind='line', marker='d', **kwargs)
+        plot.savefig(f'{fname}.png', dpi=200, bbox_inches='tight')
 
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
@@ -90,7 +90,7 @@ class Plotter:
             x='Ranks',
             y=Plotter.bandwidth_title,
             col='Benchmark',
-            hue='Target',
+            style='Target',
         )
 
     def create_plots(self):

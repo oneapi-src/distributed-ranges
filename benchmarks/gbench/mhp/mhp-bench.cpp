@@ -27,6 +27,16 @@ public:
   virtual void Finalize() {}
 };
 
+// This reporter does nothing.
+// We can use it to disable output from all but the root process
+class NullJSONReporter : public ::benchmark::JSONReporter {
+public:
+  NullJSONReporter() {}
+  virtual bool ReportContext(const Context &) { return true; }
+  virtual void ReportRuns(const std::vector<Run> &) {}
+  virtual void Finalize() {}
+};
+
 void dr_init() {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.count("sycl")) {
@@ -52,12 +62,13 @@ int main(int argc, char *argv[]) {
   comm_rank = rank;
   ranks = size;
 
-  bool file_report = false;
- 
-  for (int i = 0; i < argc; ++i) {
-    auto param = std::string(argv[i]);
-    if (param.starts_with("--benchmark_out=")) {
-      file_report = true;
+  // Only rank 0 does file output
+  if (comm_rank != 0) {
+    for (int i = 0; i < argc; ++i) {
+      auto param = std::string(argv[i]);
+      if (param.starts_with("--benchmark_out=")) {
+        *argv[i] = 0;
+      }
     }
   }
 
@@ -114,13 +125,9 @@ int main(int argc, char *argv[]) {
   if (rank == 0) {
     benchmark::RunSpecifiedBenchmarks();
   } else {
-    // Disable console and file output if not rank 0
+    // Disable console output if not rank 0
     NullReporter null_reporter;
-    if (file_report) {
-      benchmark::RunSpecifiedBenchmarks(&null_reporter, &null_reporter);
-    } else {
-      benchmark::RunSpecifiedBenchmarks(&null_reporter);
-    }
+    benchmark::RunSpecifiedBenchmarks(&null_reporter);
   }
   benchmark::Shutdown();
 
