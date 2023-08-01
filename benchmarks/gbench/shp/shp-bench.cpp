@@ -49,7 +49,6 @@ int main(int argc, char *argv[]) {
     ranks = available_devices.size();
   }
 
-  benchmark::AddCustomContext("model", "shp");
   add_configuration(0, options);
 
   std::vector<sycl::device> devices;

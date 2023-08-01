@@ -27,16 +27,6 @@ public:
   virtual void Finalize() {}
 };
 
-// This reporter does nothing.
-// We can use it to disable output from all but the root process
-class NullJSONReporter : public ::benchmark::JSONReporter {
-public:
-  NullJSONReporter() {}
-  virtual bool ReportContext(const Context &) { return true; }
-  virtual void ReportRuns(const std::vector<Run> &) {}
-  virtual void Finalize() {}
-};
-
 void dr_init() {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.count("sycl")) {
