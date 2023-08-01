@@ -21,7 +21,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_subdirectory(shp)
 
     set(COMMON_PREFIX
-        dr-bench run --vec-size 1000000 --filter Stream_ --filter Black_Scholes
+        dr-bench run --vec-size 1000000000 --filter Stream_ --filter Black_Scholes
         --filter DotProduct_)
 
     add_custom_target(devcloud-bench DEPENDS devcloud-bench-results)
