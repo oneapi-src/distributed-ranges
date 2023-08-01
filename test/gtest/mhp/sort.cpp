@@ -25,10 +25,10 @@ TEST(MhpSort, Sort) {
     }
     barrier();
 
-    std::cout << comm_rank <<": >>> sort " << n << std::endl;
+    std::cout << comm_rank << ": >>> sort " << n << std::endl;
     std::sort(l_v.begin(), l_v.end());
     dr::mhp::sort(d_v);
-    std::cout << comm_rank <<": >>> sorted " << n << std::endl;
+    std::cout << comm_rank << ": >>> sorted " << n << std::endl;
 
     barrier();
     std::cout << comm_rank << ": >>> comparison " << n << std::endl;

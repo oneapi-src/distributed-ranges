@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <utility>
 
-
 #include <dr/concepts/concepts.hpp>
 #include <dr/detail/logger.hpp>
 #include <dr/detail/onedpl_direct_iterator.hpp>
@@ -23,7 +22,6 @@
 #include <dr/mhp/global.hpp>
 
 namespace dr::mhp {
-
 
 namespace __detail {
 
@@ -54,8 +52,7 @@ void local_sort(InputIt first, InputIt last, Compare &&comp) {
   fmt::print("{}: local_sort sorted\n", comm_rank);
 }
 
-} // __detail
-
+} // namespace __detail
 
 template <dr::distributed_range R, typename Compare = std::less<>>
 void sort(R &r, Compare &&comp = Compare()) {
@@ -64,7 +61,8 @@ void sort(R &r, Compare &&comp = Compare()) {
   std::size_t _comm_rank = default_comm().rank();
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
-  fmt::print("\n{}: Input size {} comm size {}\n", _comm_rank, rng::size(r), _comm_size);
+  fmt::print("\n{}: Input size {} comm size {}\n", _comm_rank, rng::size(r),
+             _comm_size);
 
   /* Distributed vector of size <= (comm_size-1) * (comm_size-1) may have 0-size
    * local segments. It is also small enough to prefer sequential sort */
@@ -72,7 +70,7 @@ void sort(R &r, Compare &&comp = Compare()) {
   if (rng::size(r) <= (_comm_size - 1) * (_comm_size - 1)) {
 
     fmt::print("{}: Fallback to seq - small vector\n", _comm_rank);
-   
+
     if (_comm_rank == 0) {
       std::vector<valT> vec_recvdata(rng::size(r));
       dr::mhp::copy(0, r, rng::begin(vec_recvdata));
@@ -122,11 +120,12 @@ void sort(R &r, Compare &&comp = Compare()) {
     vec_lmedians[_i] = lsegment[(std::size_t)(_i + 1) * _step];
   }
 
-  // fmt::print("{}: medians all_gather lsize {} gsize {}\n", _comm_rank, rng::size(vec_lmedians), rng::size(vec_gmedians));
+  // fmt::print("{}: medians all_gather lsize {} gsize {}\n", _comm_rank,
+  // rng::size(vec_lmedians), rng::size(vec_gmedians));
 
   // default_comm().all_gather(vec_lmedians, vec_gmedians);
-  default_comm().all_gather(vec_lmedians.data(), vec_gmedians.data(), rng::size(vec_lmedians));
-
+  default_comm().all_gather(vec_lmedians.data(), vec_gmedians.data(),
+                            rng::size(vec_lmedians));
 
   // fmt::print("{}: gmedians sort\n", _comm_rank);
   rng::sort(vec_gmedians, comp);
@@ -164,17 +163,19 @@ void sort(R &r, Compare &&comp = Compare()) {
       vidx++;
     } else {
       segidx++;
-      if (segidx >= rng::size(lsegment)) 
+      if (segidx >= rng::size(lsegment))
         break;
     }
-    // fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n", _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
+    // fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n",
+    // _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
   }
   vec_split_s[vidx - 1] =
       ((int)(rng::size(lsegment) - vec_split_i[vidx - 1]) > 0)
           ? (rng::size(lsegment) - vec_split_i[vidx - 1])
           : 0;
 
-  // fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n", _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
+  // fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n",
+  // _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
   assert(vec_split_s[vidx - 1] >= 0);
 
   /* send data size to each node */
@@ -198,8 +199,8 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   // fmt::print("{}: data exchange alltoallv\n", _comm_rank);
 
-  default_comm().alltoallv(lsegment, vec_split_s, vec_split_i,
-                           vec_recvdata, vec_rsizes, vec_rindices);
+  default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
+                           vec_rsizes, vec_rindices);
 
   // fmt::print("{}: vec_recvdata recved {}\n", _comm_rank, lsegment);
 
