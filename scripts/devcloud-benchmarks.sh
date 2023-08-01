@@ -6,4 +6,4 @@
 source /opt/intel/oneapi/setvars.sh
 set -e
 hostname
-cmake --build build --target bench
+cmake --build build --target devcloud-bench
