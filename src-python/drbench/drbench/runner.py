@@ -5,17 +5,16 @@
 import glob
 import subprocess
 from collections import namedtuple
+import uuid
 
 import click
-from drbench import common
 from drbench.common import Device, Model, Runtime
 
 AnalysisCase = namedtuple("AnalysisCase", "target size nprocs")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
-    "common_config benchmark_filter fork reps dry_run mhp_bench shp_bench",
+    "prefix benchmark_filter fork reps dry_run mhp_bench shp_bench",
 )
-
 
 class Runner:
     def __init__(self, analysis_config: AnalysisConfig):
@@ -25,19 +24,6 @@ class Runner:
         click.echo(command)
         if not self.analysis_config.dry_run:
             subprocess.run(command, shell=True, check=True)
-
-    def __out_filename(self, case: AnalysisCase, add_nnn: bool):
-        prefix = common.analysis_file_prefix(
-            self.analysis_config.common_config.analysis_id
-        )
-
-        i = 0
-        while True:
-            p = f"{prefix}.{case.target}.n{case.nprocs}.s{case.size}.i{i}i"
-            if not glob.glob(f"{p}*"):
-                rank = ".rankNNN" if add_nnn else ""
-                return f"{p}{rank}.json"
-            i = i + 1
 
     def __run_mhp_analysis(self, params, nprocs, target):
         if target.runtime == Runtime.SYCL:
@@ -80,32 +66,22 @@ class Runner:
 
     def run_one_analysis(self, analysis_case: AnalysisCase):
         params = []
+        target = analysis_case.target
         params.append(f"--vector-size {str(analysis_case.size)}")
         params.append(f"--reps {str(self.analysis_config.reps)}")
         params.append("--benchmark_out_format=json")
-        outfname = self.__out_filename(
-            analysis_case, analysis_case.target.model != Model.SHP
-        )
-        params.append(f"--benchmark_out={outfname}")
+        params.append(f"--context device:{target.device.name}")
+        params.append(f"--context model:{target.model.name}")
+        params.append(f"--context runtime:{target.runtime.name}")
+        params.append(f"--context target:{target}")
+
+        params.append(f"--benchmark_out={self.analysis_config.prefix}-{uuid.uuid4().hex}.json")
 
         if self.analysis_config.benchmark_filter:
             params.append(
                 f"--benchmark_filter={self.analysis_config.benchmark_filter}"
             )
 
-        target = analysis_case.target
-        params.extend(
-            [
-                "--context",
-                f"device:{target.device.name}",
-                "--context",
-                f"model:{target.model.name}",
-                "--context",
-                f"runtime:{target.runtime.name}",
-                "--context",
-                f"target:{target}",
-            ]
-        )
         if analysis_case.target.model == Model.SHP:
             self.__run_shp_analysis(params, analysis_case.nprocs)
         else:

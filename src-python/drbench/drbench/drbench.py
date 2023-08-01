@@ -5,39 +5,39 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import datetime
+import glob
+import os
 
 import click
 from drbench import common, plotter, runner
 
 
+option_prefix = click.option(
+    "--prefix",
+    type=str,
+    default="dr-bench",
+    help="Prefix for files",
+)
+
 # common arguments
 @click.group()
-@click.option(
-    "--analysis_id",
-    type=str,
-    default="",
-    help="id to use in output files, use time based if missing",
-)
-@click.pass_context
-def cli(ctx, analysis_id: str):
-    ctx.obj = common.Config()
-    if analysis_id:
-        ctx.obj.analysis_id = analysis_id
-    else:
-        ctx.obj.analysis_id = datetime.datetime.now().strftime(
-            "%Y-%m-%d_%H_%M_%S"
-        )
-
-
-def __plot_impl(ctx):
-    p = plotter.Plotter(plotter.PlottingConfig(ctx.obj))
-    p.create_plots()
-
+def cli():
+    pass
 
 @cli.command()
-@click.pass_context
-def plot(ctx):
-    __plot_impl(ctx)
+@option_prefix
+def plot(prefix):
+    p = plotter.Plotter(prefix)
+    p.create_plots()
+
+def do_clean(prefix):
+    for f in glob.glob(f"{prefix}-*.json"):
+        os.remove(f)
+
+@cli.command()
+@option_prefix
+def clean(prefix):
+    do_clean(prefix)
 
 
 Choice = click.Choice(common.targets.keys())
@@ -48,15 +48,8 @@ def choice_to_target(c):
 
 
 @cli.command()
+@option_prefix
 @click.option(
-    "--no-plot",
-    "plot",
-    default=True,
-    is_flag=True,
-    help="don't create plots, just json files",
-)
-@click.option(
-    "-t",
     "--target",
     type=Choice,
     multiple=True,
@@ -64,7 +57,6 @@ def choice_to_target(c):
     help="Target to execute benchmark",
 )
 @click.option(
-    "-s",
     "--vec-size",
     type=int,
     multiple=True,
@@ -72,8 +64,7 @@ def choice_to_target(c):
     help="Size of a vector",
 )
 @click.option(
-    "-n",
-    "--nprocs",
+    "--ranks",
     type=int,
     multiple=True,
     default=[1],
@@ -86,7 +77,7 @@ def choice_to_target(c):
     is_flag=True,
     help="don't use -launcher=fork with mpi",
 )
-@click.option("-r", "--reps", default=100, type=int, help="Number of reps")
+@click.option("--reps", default=100, type=int, help="Number of reps")
 @click.option(
     "-f",
     "--filter",
@@ -110,27 +101,32 @@ def choice_to_target(c):
 @click.option(
     "-d", "--dry-run", is_flag=True, help="Emits commands but does not execute"
 )
-@click.pass_context
-def analyze(
-    ctx,
-    plot,
+@click.option(
+    "-c", "--clean", is_flag=True, help="Delete all json files with the prefix"
+)
+def run(
+    prefix,
     target,
     vec_size,
-    nprocs,
+    ranks,
     fork,
     reps,
     filter,
     mhp_bench,
     shp_bench,
     dry_run,
+    clean
 ):
     assert target
     assert vec_size
-    assert nprocs
+    assert ranks
 
+    if clean:
+        do_clean(prefix)
+        
     r = runner.Runner(
         runner.AnalysisConfig(
-            ctx.obj,
+            prefix,
             "\\|".join(filter),
             fork,
             reps,
@@ -139,15 +135,14 @@ def analyze(
             shp_bench,
         )
     )
+    click.echo(f"Targets: {target}")
+    click.echo(f"Ranks: {ranks}")
     for t in target:
         for s in vec_size:
-            for n in nprocs:
+            for n in ranks:
                 r.run_one_analysis(
                     runner.AnalysisCase(choice_to_target(t), s, n)
                 )
-
-    if plot:
-        __plot_impl(ctx)
 
 
 if __name__ == "__main__":

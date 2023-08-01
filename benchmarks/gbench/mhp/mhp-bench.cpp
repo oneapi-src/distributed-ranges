@@ -52,17 +52,12 @@ int main(int argc, char *argv[]) {
   comm_rank = rank;
   ranks = size;
 
-  // substitute NNN to be rank in output file
+  bool file_report = false;
+ 
   for (int i = 0; i < argc; ++i) {
     auto param = std::string(argv[i]);
     if (param.starts_with("--benchmark_out=")) {
-      const auto nnnPos = param.find("NNN");
-      if (nnnPos != std::string::npos) {
-        assert(rank < 1000);
-        char tmp[4];
-        ::sprintf(tmp, "%03u", rank);
-        ::memcpy(argv[i] + nnnPos, tmp, 3);
-      }
+      file_report = true;
     }
   }
 
@@ -119,8 +114,13 @@ int main(int argc, char *argv[]) {
   if (rank == 0) {
     benchmark::RunSpecifiedBenchmarks();
   } else {
+    // Disable console and file output if not rank 0
     NullReporter null_reporter;
-    benchmark::RunSpecifiedBenchmarks(&null_reporter);
+    if (file_report) {
+      benchmark::RunSpecifiedBenchmarks(&null_reporter, &null_reporter);
+    } else {
+      benchmark::RunSpecifiedBenchmarks(&null_reporter);
+    }
   }
   benchmark::Shutdown();
 

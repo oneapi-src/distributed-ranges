@@ -12,24 +12,8 @@ import pandas as pd
 import seaborn as sns
 from drbench import common
 
-# only common_config for now, add plotting options here if needed
-PlottingConfig = namedtuple(
-    'PlottingConfig',
-    'common_config',
-)
-
-
 class Plotter:
-    @staticmethod
-    def __is_our_file(fname: str, analysis_id: str):
-        files_prefix = common.analysis_file_prefix(analysis_id)
-        if not fname.startswith(files_prefix):
-            return False
-        if fname.endswith('.rank000.json'):
-            return True
-        if re.match('.*\\.rank[0-9]{3}\\.json$', fname):
-            return False
-        return True
+    bandwidth_title = 'Memory Bandwidth (TBps)'
 
     @staticmethod
     def __import_file(fname: str, rows):
@@ -38,11 +22,11 @@ class Plotter:
             ctx = fdata['context']
             try:
                 vsize = int(ctx['default_vector_size'])
-                nprocs = int(ctx['ranks'])
-                target = int(ctx['target'])
-                model = int(ctx['model'])
-                runtime = int(ctx['runtime'])
-                device = int(ctx['device'])
+                ranks = int(ctx['ranks'])
+                target = ctx['target']
+                model = ctx['model']
+                runtime = ctx['runtime']
+                device = ctx['device']
             except KeyError:
                 print(f'could not parse context of {fname}')
                 raise
@@ -53,15 +37,15 @@ class Plotter:
                 bw = b['bytes_per_second']
                 rows.append(
                     {
-                        'target': target,
+                        'Target': target,
                         'model': model,
                         'runtime': runtime,
                         'device': device,
                         'vsize': vsize,
-                        'benchmark': bname,
-                        'nprocs': nprocs,
+                        'Benchmark': bname,
+                        'Ranks': ranks,
                         'rtime': rtime,
-                        'bw': bw,
+                        Plotter.bandwidth_title: bw / 1e12,
                     }
                 )
 
@@ -73,9 +57,9 @@ class Plotter:
     # ..         ...    ...           ...     ...        ...           ...
     # 62     MHP_GPU  40000    Stream_Add       4  21.716973  4.420506e+09
     # 63     MHP_GPU  40000  Stream_Triad       4  21.714421  4.421025e+09
-    def __init__(self, plotting_config: PlottingConfig):
+    def __init__(self, prefix):
         rows = []
-        for fname in glob.glob('dr-bench*.json'):
+        for fname in glob.glob(f'{prefix}-*.json'):
             click.echo(f'found file {fname}')
             Plotter.__import_file(fname, rows)
 
@@ -87,62 +71,29 @@ class Plotter:
         self.max_vec_size = self.vec_sizes[-1]
         self.db_maxvec = self.db.loc[(self.db['vsize'] == self.max_vec_size)]
 
-        self.nprocs = self.db['nprocs'].unique()
-        self.nprocs.sort()
-
-        self.modes = self.db['mode'].unique()
+        self.ranks = self.db['Ranks'].unique()
+        self.ranks.sort()
 
     @staticmethod
     def __make_plot(fname, data, **kwargs):
         plot = sns.relplot(data=data, kind='line', **kwargs)
         plot.savefig(f'{fname}.png')
 
-    def __stream_bandwidth_plots(self):
-        Plotter.__make_plot(
-            'stream_bw',
-            self.db_maxvec.loc[self.db['benchmark'].str.startswith('Stream_')],
-            x='nprocs',
-            y='bw',
-            col='mode',
-            hue='benchmark',
-        )
-
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
-            self.db['benchmark'].str.startswith('Stream_')
+            self.db['Benchmark'].str.startswith('Stream_')
         ].copy()
-
-        ref_stream = sorted(db['benchmark'].unique())[0]
-        ref_mode = sorted(db['mode'].unique())[0]
-        ref_nproc = sorted(db['nprocs'].unique())[0]
-        # take value of reference stream/mode/nproc - can it be easier taken?
-        scale_factor = (
-            db.loc[
-                (db['mode'] == ref_mode)
-                & (db['benchmark'] == ref_stream)
-                & (db['nprocs'] == ref_nproc)
-            ]
-            .squeeze()
-            .at['bw']
-        )
-
-        click.echo(
-            f'stream strong scalling scalled by {ref_stream} {ref_mode}'
-            f' nproc:{ref_nproc} eq {scale_factor}'
-        )
-        db['bw'] /= scale_factor
 
         Plotter.__make_plot(
             'stream_strong_scaling',
             db,
-            x='nprocs',
-            y='bw',
-            col='benchmark',
-            hue='mode',
+            x='Ranks',
+            y=Plotter.bandwidth_title,
+            col='Benchmark',
+            hue='Target',
         )
 
     def create_plots(self):
         sns.set_theme(style="ticks")
 
-        self.__stream_bandwidth_plots()
         self.__stream_strong_scaling_plots()

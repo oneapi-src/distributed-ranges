@@ -21,19 +21,17 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_subdirectory(shp)
 
     set(COMMON_PREFIX
-        dr-bench --analysis_id daily analyze --no-plot -s 1000000 -f Stream_ -f
-        Black_Scholes -f DotProduct_)
-    message(STATUS "Common prefix ${COMMON_PREFIX}")
+        dr-bench run --vec-size 1000000 --filter Stream_ --filter Black_Scholes --filter DotProduct_)
+
     add_custom_target(bench DEPENDS bench-results)
     add_custom_command(
       OUTPUT bench-results
       # devcloud: 4 GPUs, 2 sockets, 112 cores
-      COMMAND ${COMMON_PREFIX} -n 1 -n 2 -n 3 -n 4 -t mhp_sycl_gpu -t
-              shp_sycl_gpu
-      COMMAND ${COMMON_PREFIX} -n 1 -n 2 -t mhp_sycl_cpu -t shp_sycl_cpu
-      COMMAND ${COMMON_PREFIX} -n 1 -n 2 -n 4 -n 8 -n 56 -n 112 -t
-              mhp_direct_cpu
-      COMMAND dr-bench --analysis_id daily plot
+      COMMAND dr-bench clean
+      COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --ranks 3 --ranks 4 --target mhp_sycl_gpu --target shp_sycl_gpu
+      COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --target mhp_sycl_cpu --target shp_sycl_cpu
+      COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --ranks 4 --ranks 8 --ranks 56 --ranks 112 --target mhp_direct_cpu
+      COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
   endif()
 endif()

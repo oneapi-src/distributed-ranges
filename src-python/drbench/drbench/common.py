@@ -5,15 +5,6 @@
 from collections import namedtuple
 from enum import Enum
 
-
-class Config:
-    analysis_id = ""
-
-
-def analysis_file_prefix(analysis_id: str):
-    return f"dr-bench-{analysis_id}"
-
-
 Model = Enum("Model", ["SHP", "MHP"])
 Runtime = Enum("Runtime", ["SYCL", "DIRECT"])
 Device = Enum("Device", ["GPU", "CPU"])
