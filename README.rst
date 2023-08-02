@@ -33,11 +33,11 @@ Devcloud
 
 GPU:
 
-.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_strong_scaling_gpu.png
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_gpu.png
 
 CPU:
 
-.. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/stream_strong_scaling_cpu.png
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.png
 
 Environment Setup
 =================
