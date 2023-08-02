@@ -31,7 +31,7 @@ jobs:
     - name: Install benchmark framework
       run: pip install src-python/drbench
     - name: Benchmark
-      run: srun -p pvc-shared scripts/devcloud-benchmarks.sh
+      run: srun -p pvc-shared scripts/devcloud-benchmark.sh
     - name: Upload benchmark results
       if: always()
       uses: actions/upload-artifact@v3
