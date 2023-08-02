@@ -22,7 +22,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     set(COMMON_PREFIX
         dr-bench run --vec-size 1000000000 --filter Stream_ --filter
-        Black_Scholes --filter DotProduct_)
+        Black_Scholes)
 
     add_custom_target(devcloud-bench DEPENDS devcloud-bench-results)
     add_custom_command(
