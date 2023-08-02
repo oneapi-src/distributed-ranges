@@ -443,6 +443,8 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
     }
     checker.check_device(q, in);
   }
+  sycl::free(in, q);
+  sycl::free(out, q);
 }
 
 DR_BENCHMARK(Stencil2D_Basic_SYCL);

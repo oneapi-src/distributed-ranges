@@ -53,6 +53,7 @@ static void Fill_QueueFill_SYCL(benchmark::State &state) {
     stats.rep();
     q.fill(dst, init, default_vector_size).wait();
   }
+  sycl::free(dst, q);
 }
 
 DR_BENCHMARK(Fill_QueueFill_SYCL);
@@ -71,6 +72,7 @@ static void Fill_ParallelFor_SYCL(benchmark::State &state) {
        }).wait();
     }
   }
+  sycl::free(dst, q);
 }
 
 DR_BENCHMARK(Fill_ParallelFor_SYCL);
@@ -92,6 +94,8 @@ static void Copy_ParallelFor_SYCL(benchmark::State &state) {
        }).wait();
     }
   }
+  sycl::free(src, q);
+  sycl::free(dst, q);
 }
 
 DR_BENCHMARK(Copy_ParallelFor_SYCL);
@@ -109,6 +113,8 @@ static void Copy_QueueCopy_SYCL(benchmark::State &state) {
     stats.rep();
     q.copy(dst, src, default_vector_size).wait();
   }
+  sycl::free(src, q);
+  sycl::free(dst, q);
 }
 
 DR_BENCHMARK(Copy_QueueCopy_SYCL);
@@ -184,6 +190,7 @@ static void Reduce_DPL(benchmark::State &state) {
       benchmark::DoNotOptimize(res);
     }
   }
+  sycl::free(src, q);
 }
 
 DR_BENCHMARK(Reduce_DPL);

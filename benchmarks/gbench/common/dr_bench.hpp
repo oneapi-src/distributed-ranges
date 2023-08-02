@@ -98,16 +98,13 @@ inline std::string exec(const char *cmd) {
   return result;
 }
 
-inline void add_configuration(int rank, std::string model, std::string runtime,
-                              const cxxopts::ParseResult &options) {
+inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
   benchmark::AddCustomContext("default_vector_size",
                               std::to_string(default_vector_size));
   benchmark::AddCustomContext("default_repetitions",
                               std::to_string(default_repetitions));
   benchmark::AddCustomContext("rank", std::to_string(rank));
   benchmark::AddCustomContext("ranks", std::to_string(ranks));
-  benchmark::AddCustomContext("model", model);
-  benchmark::AddCustomContext("runtime", runtime);
   benchmark::AddCustomContext("lscpu", exec("lscpu"));
   if (options.count("context")) {
     for (std::string context :

@@ -116,15 +116,6 @@ jobs:
       run: srun -p pvc-shared scripts/devcloud-build.sh
     - name: Test
       run: srun -p pvc-shared scripts/devcloud-run.sh
-    - name: Benchmark
-      run: srun -p pvc-shared scripts/devcloud-benchmarks.sh
-    - name: Upload benchmark results
-      uses: actions/upload-artifact@v3
-      with:
-        name: log-devcloud-bench
-        path: |
-          build/benchmarks/gbench/dr-bench*.json
-          build/benchmarks/gbench/*.png
     - name: Upload build logs
       uses: actions/upload-artifact@v3
       if: always()

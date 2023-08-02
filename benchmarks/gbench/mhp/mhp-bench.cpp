@@ -52,16 +52,12 @@ int main(int argc, char *argv[]) {
   comm_rank = rank;
   ranks = size;
 
-  // substitute NNN to be rank in output file
-  for (int i = 0; i < argc; ++i) {
-    auto param = std::string(argv[i]);
-    if (param.starts_with("--benchmark_out=")) {
-      const auto nnnPos = param.find("NNN");
-      if (nnnPos != std::string::npos) {
-        assert(rank < 1000);
-        char tmp[4];
-        ::sprintf(tmp, "%03u", rank);
-        ::memcpy(argv[i] + nnnPos, tmp, 3);
+  // Only rank 0 does file output
+  if (comm_rank != 0) {
+    for (int i = 0; i < argc; ++i) {
+      auto param = std::string(argv[i]);
+      if (param.starts_with("--benchmark_out=")) {
+        *argv[i] = 0;
       }
     }
   }
@@ -113,13 +109,13 @@ int main(int argc, char *argv[]) {
   num_columns = options["columns"].as<std::size_t>();
   check_results = options.count("check");
 
-  add_configuration(comm_rank, "mhp", options.count("sycl") ? "sycl" : "direct",
-                    options);
+  add_configuration(comm_rank, options);
 
   dr_init();
   if (rank == 0) {
     benchmark::RunSpecifiedBenchmarks();
   } else {
+    // Disable console output if not rank 0
     NullReporter null_reporter;
     benchmark::RunSpecifiedBenchmarks(&null_reporter);
   }

@@ -35,18 +35,13 @@ jobs:
     - name: Benchmark
       run: srun -p pvc scripts/devcloud-benchmarks.sh
     - name: Upload benchmark results
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: log-devcloud-bench
         path: |
           build/benchmarks/gbench/dr-bench*.json
           build/benchmarks/gbench/*.png
-    - name: Upload build logs
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: log-icpx
-        path: build/Testing
 
   publish:
     needs: [devcloud]
