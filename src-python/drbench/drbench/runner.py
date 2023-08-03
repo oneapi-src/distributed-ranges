@@ -65,7 +65,7 @@ class Runner:
                 "ONEAPI_DEVICE_SELECTOR="
                 "'level_zero:gpu;ext_oneapi_cuda:gpu'"
             )
-        env = "KMP_AFFINITY=compact"
+        env += " KMP_AFFINITY=compact"
         params.append(f"--num-devices {ranks}")
         self.__execute(
             f'{env} {self.analysis_config.shp_bench} {" ".join(params)}'
