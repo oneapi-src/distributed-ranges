@@ -130,7 +130,7 @@ class Plotter:
         m = self.db_maxvec
 
         db = m.loc[
-            m['Benchmark'].isin(['Inclusive_Scan', 'Black_Scholes'])
+            m['Benchmark'].isin(['Black_Scholes', 'Inclusive_Scan', 'Reduce'])
         ].copy()
 
         db_gpu = db.loc[db['device'] == 'GPU']
