@@ -5,6 +5,9 @@
 name: Daily
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
   # 8am UTC is 12am PST, 1am PDT
   schedule:
