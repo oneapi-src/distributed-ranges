@@ -16,7 +16,7 @@ add_executable(
 
 if(NOT ENABLE_CUDA)
   # black_scholes.cpp does not compile in CUDA because it uses std::log
-  target_sources(mhp-bench PRIVATE ../common/black_scholes.cpp)
+  target_sources(shp-bench PRIVATE ../common/black_scholes.cpp)
 endif()
 
 target_compile_definitions(shp-bench PRIVATE BENCH_SHP)

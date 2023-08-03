@@ -17,7 +17,7 @@ jobs:
   devcloud:
     runs-on: devcloud
     # if it does not finish in 20 minutes, it is likely hung
-    timeout-minutes: 20
+    timeout-minutes: 30
     name: "Devcloud Benchmarking"
     env:
       CXX: icpx
