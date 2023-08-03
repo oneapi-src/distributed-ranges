@@ -9,7 +9,7 @@ from collections import namedtuple
 import click
 from drbench.common import Device, Model, Runtime
 
-AnalysisCase = namedtuple("AnalysisCase", "target size nprocs")
+AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
     "prefix benchmark_filter fork reps dry_run mhp_bench shp_bench",
@@ -25,7 +25,7 @@ class Runner:
         if not self.analysis_config.dry_run:
             subprocess.run(command, shell=True, check=True)
 
-    def __run_mhp_analysis(self, params, nprocs, target):
+    def __run_mhp_analysis(self, params, ranks, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
             if target.device == Device.CPU:
@@ -43,7 +43,7 @@ class Runner:
             )
 
         mpirun_params = []
-        mpirun_params.append(f"-n {str(nprocs)}")
+        mpirun_params.append(f"-n {str(ranks)}")
         if self.analysis_config.fork:
             mpirun_params.append("-launcher=fork")
 
@@ -57,9 +57,16 @@ class Runner:
             + " ".join(params)
         )
 
-    def __run_shp_analysis(self, params, nprocs):
+    def __run_shp_analysis(self, params, ranks, target):
+        if target.device == Device.CPU:
+            env = "ONEAPI_DEVICE_SELECTOR=opencl:cpu"
+        else:
+            env = (
+                "ONEAPI_DEVICE_SELECTOR="
+                "'level_zero:gpu;ext_oneapi_cuda:gpu'"
+            )
         env = "KMP_AFFINITY=compact"
-        params.append(f"--num-devices {nprocs}")
+        params.append(f"--num-devices {ranks}")
         self.__execute(
             f'{env} {self.analysis_config.shp_bench} {" ".join(params)}'
         )
@@ -84,8 +91,10 @@ class Runner:
             )
 
         if analysis_case.target.model == Model.SHP:
-            self.__run_shp_analysis(params, analysis_case.nprocs)
+            self.__run_shp_analysis(
+                params, analysis_case.ranks, analysis_case.target
+            )
         else:
             self.__run_mhp_analysis(
-                params, analysis_case.nprocs, analysis_case.target
+                params, analysis_case.ranks, analysis_case.target
             )
