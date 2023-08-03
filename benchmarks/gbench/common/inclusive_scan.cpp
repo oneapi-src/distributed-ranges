@@ -41,7 +41,7 @@ static void Inclusive_Scan_DPL(benchmark::State &state) {
 
 DR_BENCHMARK(Inclusive_Scan_DPL);
 
-static void Inclusive_Scan_Serial(benchmark::State &state) {
+static void Inclusive_Scan_Std(benchmark::State &state) {
   std::vector<T> a(default_vector_size, 3);
   std::vector<T> b(default_vector_size, 0);
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
@@ -55,4 +55,4 @@ static void Inclusive_Scan_Serial(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Inclusive_Scan_Serial);
+DR_BENCHMARK(Inclusive_Scan_Std);

@@ -20,35 +20,44 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_subdirectory(shp)
 
-    set(COMMON_PREFIX
-        dr-bench run --vec-size 1000000000 --filter Stream_ --filter
-        Black_Scholes)
+    set(COMMON_PREFIX dr-bench run --vec-size 1000000000)
+    set(DR_FILTERS --filter Stream_ --filter Black_Scholes --filter
+                   Inclusive_Scan_DR)
+    set(SERIAL_FILTERS --filter '.*_DPL' --filter '.*_Serial')
 
     add_custom_target(devcloud-bench DEPENDS devcloud-bench-results)
     add_custom_command(
       OUTPUT devcloud-bench-results
       # devcloud: 4 GPUs, 2 sockets, 112 cores
       COMMAND dr-bench clean
-      COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --ranks 3 --ranks 4 --target
-              mhp_sycl_gpu --target shp_sycl_gpu
-      COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --target mhp_sycl_cpu
-              --target shp_sycl_cpu
-      COMMAND ${COMMON_PREFIX} --ranks 56 --ranks 112 --target mhp_direct_cpu
+      COMMAND ${COMMON_PREFIX} --filter '.*_DPL' --ranks 1 --target mhp_sycl_cpu
+              --target shp_sycl_cpu --target mhp_sycl_gpu --target shp_sycl_gpu
+      COMMAND ${COMMON_PREFIX} --filter '.*_Serial' --ranks 1 --target
+              mhp_direct_cpu
+      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 1 --ranks 2 --ranks 3
+              --ranks 4 --target mhp_sycl_gpu --target shp_sycl_gpu
+      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 1 --ranks 2 --target
+              mhp_sycl_cpu --target shp_sycl_cpu
+      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 56 --ranks 112 --target
+              mhp_direct_cpu
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
     add_custom_target(aurora-bench DEPENDS aurora-bench-results)
     add_custom_command(
       OUTPUT aurora-bench-results
-      # aurora: 12 GPUs, 2 sockets, 112 cores
+      # aurora: 12 GPUs, 2 sockets, 104 cores
       COMMAND dr-bench clean
+      COMMAND ${COMMON_PREFIX} --filter '.*_DPL' --ranks 1 --target mhp_sycl_cpu
+              --target shp_sycl_cpu --target mhp_sycl_gpu --target shp_sycl_gpu
       COMMAND
-        ${COMMON_PREFIX} --ranks 1 --ranks 2 --ranks 3 --ranks 4 --ranks 5
-        --ranks 6 --ranks 7 --ranks 8 --ranks 9 --ranks 10 --ranks 11 --ranks 12
-        --target mhp_sycl_gpu --target shp_sycl_gpu
-      COMMAND ${COMMON_PREFIX} --ranks 1 --ranks 2 --target mhp_sycl_cpu
-              --target shp_sycl_cpu
-      COMMAND ${COMMON_PREFIX} --ranks 56 --ranks 112 --target mhp_direct_cpu
+        ${COMMON_PREFIX} ${DR_FILTERS} --no-fork --ranks 1 --ranks 2 --ranks 3
+        --ranks 4 --ranks 5 --ranks 6 --ranks 7 --ranks 8 --ranks 9 --ranks 10
+        --ranks 11 --ranks 12 --target mhp_sycl_gpu --target shp_sycl_gpu
+      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --no-fork --ranks 1 --ranks 2
+              --target mhp_sycl_cpu --target shp_sycl_cpu
+      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --no-fork --ranks 52 --ranks 104
+              --target mhp_direct_cpu
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
