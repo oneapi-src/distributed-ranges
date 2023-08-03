@@ -7,6 +7,8 @@
 #include <dr/detail/mdspan_shim.hpp>
 #include <dr/detail/mdspan_utils.hpp>
 #include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/ranges_utils.hpp>
+#include <dr/mhp/containers/distributed_vector.hpp>
 
 namespace dr::mhp::decomp {
 
@@ -32,6 +34,8 @@ public:
   // view_interface uses below to define everything else
   auto begin() const { return base_.begin(); }
   auto end() const { return base_.end(); }
+
+  auto halo() const { return dr::mhp::halo(base_); }
 
   // mdspan-specific methods
   auto mdspan() const { return mdspan_; }
@@ -103,7 +107,8 @@ private:
           std::get<1>(v), tile_lengths);
     };
 
-    return rng::views::enumerate(dr::ranges::segments(base)) |
+    // use bounded_enumerate so we get a std::ranges::common_range
+    return dr::__detail::bounded_enumerate(dr::ranges::segments(base)) |
            rng::views::transform(make_md);
   }
   using segments_type = decltype(make_segments(std::declval<base_type>(),

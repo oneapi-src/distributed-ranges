@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-name: Tests
+name: "PR Tests"
 
 on:
   push:
@@ -97,6 +97,8 @@ jobs:
 
   icpx:
     runs-on: devcloud
+    # if it does not finish in 20 minutes, it is likely hung
+    timeout-minutes: 20
     env:
       CXX: icpx
     steps:
@@ -110,19 +112,10 @@ jobs:
       run: pip install -r requirements.txt
     - name: Install benchmark framework
       run: pip install src-python/drbench
-    - name: Build
-      run: srun -p pvc-shared scripts/devcloud-build.sh
     - name: Test
-      run: srun -p pvc-shared scripts/devcloud-run.sh
-    - name: Benchmark
-      run: srun -p pvc-shared scripts/devcloud-benchmarks.sh
-    - uses: actions/upload-artifact@v3
-      with:
-        name: log-devcloud-bench
-        path: |
-          build/benchmarks/gbench/dr-bench*.json
-          build/benchmarks/gbench/*.png
-    - uses: actions/upload-artifact@v3
+      run: srun -p pvc-shared scripts/devcloud-test.sh
+    - name: Upload build logs
+      uses: actions/upload-artifact@v3
       if: always()
       with:
         name: log-icpx
@@ -153,7 +146,7 @@ jobs:
         path: gh-pages
     - name: Publish to github pages
       run: |
-        rm -rf gh-pages/*
+        rm -rf gh-pages/spec gh-pages/doxygen
         touch gh-pages/.nojekyll
 
         cp -r doc/spec/build/html gh-pages/spec

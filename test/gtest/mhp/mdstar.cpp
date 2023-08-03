@@ -226,6 +226,7 @@ TEST_F(Mdarray, GridLocalReference) {
 TEST_F(Mdarray, Halo) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d,
                                          xhp::distribution().halo(1));
+  dr::mhp::halo(mdarray);
   xhp::iota(mdarray, 100);
   auto grid = mdarray.grid();
 
@@ -236,6 +237,12 @@ TEST_F(Mdarray, Halo) {
   }
   dr::mhp::fence();
   EXPECT_EQ(99, mdarray[0]);
+}
+
+TEST_F(Mdarray, Enumerate) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  auto e = xhp::views::enumerate(mdarray);
+  static_assert(dr::distributed_range<decltype(e)>);
 }
 
 using Submdspan = Mdspan;

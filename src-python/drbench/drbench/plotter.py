@@ -5,72 +5,71 @@
 import glob
 import json
 import re
-from collections import namedtuple
 
 import click
 import pandas as pd
 import seaborn as sns
-from drbench import common
-
-# only common_config for now, add plotting options here if needed
-PlottingConfig = namedtuple(
-    'PlottingConfig',
-    'common_config',
-)
 
 
 class Plotter:
-    @staticmethod
-    def __is_our_file(fname: str, analysis_id: str):
-        files_prefix = common.analysis_file_prefix(analysis_id)
-        if not fname.startswith(files_prefix):
-            return False
-        if fname.startswith(files_prefix + '.rank000'):
-            return True
-        if fname.startswith(files_prefix + '.rank'):
-            return False
-        return True
+    bandwidth_title = 'Memory Bandwidth (TBps)'
 
     @staticmethod
     def __import_file(fname: str, rows):
-        mode = re.search(r'AnalysisMode\.([A-Z_]+)\.', fname).group(1)
         with open(fname) as f:
             fdata = json.load(f)
             ctx = fdata['context']
-            vsize = int(ctx['default_vector_size'])
-            nprocs = int(ctx['ranks'])
+            try:
+                vsize = int(ctx['default_vector_size'])
+                ranks = int(ctx['ranks'])
+                target = ctx['target']
+                model = ctx['model']
+                runtime = ctx['runtime']
+                device = ctx['device']
+            except KeyError:
+                print(f'could not parse context of {fname}')
+                raise
             benchs = fdata['benchmarks']
+            cores_per_socket = int(
+                re.search(
+                    r'Core\(s\) per socket:\s*(\d+)', ctx['lscpu']
+                ).group(1)
+            )
             for b in benchs:
                 bname = b['name'].partition('/')[0]
                 rtime = b['real_time']
                 bw = b['bytes_per_second']
                 rows.append(
                     {
-                        'mode': mode,
+                        'Target': target,
+                        'model': model,
+                        'runtime': runtime,
+                        'device': device,
                         'vsize': vsize,
-                        'test': bname,
-                        'nprocs': nprocs,
+                        'Benchmark': bname,
+                        'Ranks': ranks,
+                        'GPU Tiles': ranks,
+                        'CPU Sockets': ranks / cores_per_socket
+                        if runtime == 'DIRECT' and device == 'CPU'
+                        else ranks,
                         'rtime': rtime,
-                        'bw': bw,
+                        Plotter.bandwidth_title: bw / 1e12,
                     }
                 )
 
     # db is created which looks something like this:
-    #           mode  vsize          test  nprocs      rtime            bw
+    #           mode  vsize          benchmark  nprocs      rtime            bw
     # 0   MHP_NOSYCL  20000   Stream_Copy       1   0.234987  1.361779e+11
     # 1   MHP_NOSYCL  20000  Stream_Scale       1   0.240879  1.328468e+11
     # 2   MHP_NOSYCL  20000    Stream_Add       1   0.329298  1.457645e+11
     # ..         ...    ...           ...     ...        ...           ...
     # 62     MHP_GPU  40000    Stream_Add       4  21.716973  4.420506e+09
     # 63     MHP_GPU  40000  Stream_Triad       4  21.714421  4.421025e+09
-    def __init__(self, plotting_config: PlottingConfig):
+    def __init__(self, prefix):
         rows = []
-        for fname in glob.glob('*json'):
-            if Plotter.__is_our_file(
-                fname, plotting_config.common_config.analysis_id
-            ):
-                click.echo(f'found file {fname}')
-                Plotter.__import_file(fname, rows)
+        for fname in glob.glob(f'{prefix}-*.json'):
+            click.echo(f'found file {fname}')
+            Plotter.__import_file(fname, rows)
 
         self.db = pd.DataFrame(rows)
 
@@ -80,62 +79,42 @@ class Plotter:
         self.max_vec_size = self.vec_sizes[-1]
         self.db_maxvec = self.db.loc[(self.db['vsize'] == self.max_vec_size)]
 
-        self.nprocs = self.db['nprocs'].unique()
-        self.nprocs.sort()
-
-        self.modes = self.db['mode'].unique()
+        self.ranks = self.db['Ranks'].unique()
+        self.ranks.sort()
 
     @staticmethod
     def __make_plot(fname, data, **kwargs):
-        plot = sns.relplot(data=data, kind='line', **kwargs)
-        plot.savefig(f'{fname}.png')
-
-    def __stream_bandwidth_plots(self):
-        Plotter.__make_plot(
-            'stream_bw',
-            self.db_maxvec.loc[self.db['test'].str.startswith('Stream_')],
-            x='nprocs',
-            y='bw',
-            col='mode',
-            hue='test',
-        )
+        plot = sns.relplot(data=data, kind='line', marker='d', **kwargs)
+        plot.savefig(f'{fname}.png', dpi=200, bbox_inches='tight')
 
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
-            self.db['test'].str.startswith('Stream_')
+            self.db['Benchmark'].str.startswith('Stream_')
         ].copy()
 
-        ref_stream = sorted(db['test'].unique())[0]
-        ref_mode = sorted(db['mode'].unique())[0]
-        ref_nproc = sorted(db['nprocs'].unique())[0]
-        # take value of reference stream/mode/nproc - can it be easier taken?
-        scale_factor = (
-            db.loc[
-                (db['mode'] == ref_mode)
-                & (db['test'] == ref_stream)
-                & (db['nprocs'] == ref_nproc)
-            ]
-            .squeeze()
-            .at['bw']
-        )
-
-        click.echo(
-            f'stream strong scalling scalled by {ref_stream} {ref_mode}'
-            f' nproc:{ref_nproc} eq {scale_factor}'
-        )
-        db['bw'] /= scale_factor
+        db_gpu = db.loc[db['device'] == 'GPU']
 
         Plotter.__make_plot(
-            'stream_strong_scaling',
-            db,
-            x='nprocs',
-            y='bw',
-            col='test',
-            hue='mode',
+            'stream_strong_scaling_gpu',
+            db_gpu,
+            x='GPU Tiles',
+            y=Plotter.bandwidth_title,
+            col='Benchmark',
+            style='Target',
+        )
+
+        db_cpu = db.loc[db['device'] == 'CPU']
+
+        Plotter.__make_plot(
+            'stream_strong_scaling_cpu',
+            db_cpu,
+            x='CPU Sockets',
+            y=Plotter.bandwidth_title,
+            col='Benchmark',
+            style='Target',
         )
 
     def create_plots(self):
         sns.set_theme(style="ticks")
 
-        self.__stream_bandwidth_plots()
         self.__stream_strong_scaling_plots()

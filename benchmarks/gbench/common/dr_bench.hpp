@@ -3,6 +3,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+#include <array>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+
 #ifdef SYCL_LANGUAGE_VERSION
 #include <sycl/sycl.hpp>
 #endif
@@ -78,10 +85,41 @@ private:
   std::size_t reps_ = 0;
 };
 
-inline void add_configuration() {
+inline std::string exec(const char *cmd) {
+  std::array<char, 128> buffer;
+  std::string result;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+  if (!pipe) {
+    throw std::runtime_error("popen() failed!");
+  }
+  while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+    result += buffer.data();
+  }
+  return result;
+}
+
+inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
   benchmark::AddCustomContext("default_vector_size",
                               std::to_string(default_vector_size));
   benchmark::AddCustomContext("default_repetitions",
                               std::to_string(default_repetitions));
+  benchmark::AddCustomContext("rank", std::to_string(rank));
   benchmark::AddCustomContext("ranks", std::to_string(ranks));
+  benchmark::AddCustomContext("lscpu", exec("lscpu"));
+  if (options.count("context")) {
+    for (std::string context :
+         options["context"].as<std::vector<std::string>>()) {
+      std::string delimeter = ":";
+      auto split = context.find(delimeter);
+      if (split == std::string::npos) {
+        std::cerr << fmt::format("Context must use '{}' as delimiter: {}\n",
+                                 delimeter, context);
+        exit(1);
+      }
+      auto value_pos = split + delimeter.length();
+      benchmark::AddCustomContext(
+          context.substr(0, split),
+          context.substr(value_pos, context.length() - value_pos));
+    }
+  }
 }

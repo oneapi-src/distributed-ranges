@@ -31,9 +31,7 @@ void dr_init() {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.count("sycl")) {
     sycl::queue q = dr::mhp::select_queue();
-    if (comm_rank == 0) {
-      benchmark::AddCustomContext("device", device_info(q.get_device()));
-    }
+    benchmark::AddCustomContext("device_info", device_info(q.get_device()));
     dr::mhp::init(q);
     return;
   }
@@ -54,16 +52,12 @@ int main(int argc, char *argv[]) {
   comm_rank = rank;
   ranks = size;
 
-  // substitute NNN to be rank in output file
-  for (int i = 0; i < argc; ++i) {
-    auto param = std::string(argv[i]);
-    if (param.starts_with("--benchmark_out=")) {
-      const auto nnnPos = param.find("NNN");
-      if (nnnPos != std::string::npos) {
-        assert(rank < 1000);
-        char tmp[4];
-        ::sprintf(tmp, "%03u", rank);
-        ::memcpy(argv[i] + nnnPos, tmp, 3);
+  // Only rank 0 does file output
+  if (comm_rank != 0) {
+    for (int i = 0; i < argc; ++i) {
+      auto param = std::string(argv[i]);
+      if (param.starts_with("--benchmark_out=")) {
+        *argv[i] = 0;
       }
     }
   }
@@ -85,6 +79,7 @@ int main(int argc, char *argv[]) {
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10000"))
     ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("100"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
+    ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
     ;
   // clang-format on
 
@@ -114,15 +109,13 @@ int main(int argc, char *argv[]) {
   num_columns = options["columns"].as<std::size_t>();
   check_results = options.count("check");
 
-  if (comm_rank == 0) {
-    benchmark::AddCustomContext("model", "mhp");
-    add_configuration();
-  }
+  add_configuration(comm_rank, options);
 
   dr_init();
   if (rank == 0) {
     benchmark::RunSpecifiedBenchmarks();
   } else {
+    // Disable console output if not rank 0
     NullReporter null_reporter;
     benchmark::RunSpecifiedBenchmarks(&null_reporter);
   }

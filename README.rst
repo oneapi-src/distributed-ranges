@@ -6,8 +6,11 @@
  Distributed Ranges
 ====================
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml/badge.svg
-   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/ci.yml
+.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml/badge.svg
+   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/daily.yml/badge.svg
+   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/daily.yml
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml
@@ -22,46 +25,26 @@ C++ Ranges.
 The documentation is built from main branch on every commit and
 published at `latest spec`_ and `latest doxygen`_.
 
+Benchmark Results
+=================
+
+Devcloud
+--------
+
+GPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_gpu.png
+
+CPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.png
+
 Environment Setup
 =================
 
-CPU & SYCL (MPI) requires g++ 10 or higher, mpi, and MKL. On Ubuntu
-20.04::
-
-  sudo apt install g++-10 libopenmpi-dev
-
-SYCL (SHP) requires g++ 12 standard library. On Ubuntu 22.04::
+On Ubuntu 22.04::
 
   sudo apt install g++-12
-
-SYCL (SHP) requires a nightly build from the dpcpp open source project. If
-you are targeting intel gpu::
-
-  wget https://github.com/intel/llvm/releases/download/sycl-nightly%2F20221029/dpcpp-compiler.tar.gz
-  tar zxf dpcpp-compiler.tar.gz
-  source dpcpp_compiler/startup.sh
-
-If you are targeting cuda::
-
-  git clone https://github.com/intel/llvm
-  cd llvm
-  git checkout sycl-nightly/20221029
-  python buildbot/configure.py --cuda
-
-Copy `startup.sh` from the open source binary build, or create it at
-`build/install/startup.sh`::
-
-    export SYCL_BUNDLE_ROOT=$(realpath $(dirname "${BASH_SOURCE[0]}"))
-    export PATH=$SYCL_BUNDLE_ROOT/bin:$PATH
-    export CPATH=$SYCL_BUNDLE_ROOT/include:$CPATH
-    export LIBRARY_PATH=$SYCL_BUNDLE_ROOT/lib:$LIBRARY_PATH
-    export LD_LIBRARY_PATH=$SYCL_BUNDLE_ROOT/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=$SYCL_BUNDLE_ROOT/linux/lib/x64:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=$SYCL_BUNDLE_ROOT/lib/oclgpu:$LD_LIBRARY_PATH
-
-Then::
-
-  source build/install/startup.sh
 
 If you want to build the document or run the pre-commit checks, you
 must install some python packages. Create a python virtual environment
@@ -75,21 +58,25 @@ Activate virtual environment::
 
   source venv/bin/activate
 
+For benchmarking::
+
+  pip install src-python/drbench
+
 Examples
 ========
 
-Build and test examples with gcc on CPU::
+Build and test with gcc for CPU::
 
-  CXX=g++-10 cmake -B build
+  CXX=g++-12 cmake -B build
   make -C build -j all test
 
-Enable SYCL examples::
+Build and test with ipcx for SYCL && CPU::
 
-  CXX=clang++ cmake -B build -DENABLE_SYCL=ON
+  CXX=icpx cmake -B build -DENABLE_SYCL=ON
 
-Enable SYCL-MPI examples::
+Build and test with ipcx for SYCL && CPU on devcloud::
 
-  CXX=clang++ cmake -B build -DENABLE_SYCL_MPI=ON
+  CXX=icpx cmake -B build -DENABLE_SYCL=ON -DENABLE_MPIFORK=on
 
 See how example is run and the output::
 

@@ -24,29 +24,26 @@ namespace detail = dr::__detail;
 template <typename... Ts>
 void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
   auto ranges = std::tie(drs...);
-  auto &&dr1 = std::get<0>(ranges);
-  if (rng::empty(dr1)) {
+  auto &&dr0 = std::get<0>(ranges);
+  if (rng::empty(dr0)) {
     return;
   }
 
-  auto grid1 = dr1.grid();
+  auto all_segments = rng::views::zip(dr::ranges::segments(drs)...);
+  for (auto segs : all_segments) {
+    auto seg0 = std::get<0>(segs);
+    auto mdspan0 = seg0.mdspan();
 
-  // TODO: Support distribution other than first dimension
-  assert(grid1.extent(1) == 1);
-  for (std::size_t tile_index = 0; tile_index < grid1.extent(0); tile_index++) {
     // If local
-    if (tile_index == default_comm().rank()) {
+    if (dr::ranges::rank(seg0) == default_comm().rank()) {
       // Calculate loop invariant info about the operands. Use a tuple
       // to hold the info for all operands.
-      auto operand_infos =
-          detail::tuple_transform(ranges, [tile_index](auto &&dr) {
-            auto tile = dr.grid()(tile_index, 0);
-            // mdspan for tile. This could be a submdspan, so we need the
-            // extents of the root to get the memory strides
-            return std::make_pair(tile.mdspan(), tile.root_mdspan().extents());
-          });
+      auto operand_infos = detail::tuple_transform(segs, [](auto &&seg) {
+        // mdspan for tile. This could be a submdspan, so we need the
+        // extents of the root to get the memory strides
+        return std::make_pair(seg.mdspan(), seg.root_mdspan().extents());
+      });
 
-      auto tile1 = grid1(tile_index, 0).mdspan();
       if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
         auto do_point = [=](auto index) {
@@ -62,7 +59,7 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
         // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
         // ndrange and handles > 32 bits.
         dr::mhp::sycl_queue()
-            .parallel_for(sycl::range(tile1.extent(0), tile1.extent(1)),
+            .parallel_for(sycl::range(mdspan0.extent(0), mdspan0.extent(1)),
                           do_point)
             .wait();
 #else
@@ -79,8 +76,8 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
               });
           op(stencils);
         };
-        detail::mdspan_foreach<tile1.rank(), decltype(invoke_index)>(
-            tile1.extents(), invoke_index);
+        detail::mdspan_foreach<mdspan0.rank(), decltype(invoke_index)>(
+            mdspan0.extents(), invoke_index);
       }
     }
   }
@@ -91,26 +88,22 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
 /// Collective for_each on distributed range
 template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
   auto ranges = std::tie(drs...);
-  auto &&dr1 = std::get<0>(ranges);
-  if (rng::empty(dr1)) {
+  auto &&dr0 = std::get<0>(ranges);
+  if (rng::empty(dr0)) {
     return;
   }
 
-  auto grid1 = dr1.grid();
+  auto all_segments = rng::views::zip(dr::ranges::segments(drs)...);
+  for (auto segs : all_segments) {
+    auto seg0 = std::get<0>(segs);
+    auto mdspan0 = seg0.mdspan();
 
-  // TODO: Support distribution other than first dimension
-  assert(grid1.extent(1) == 1);
-  for (std::size_t tile_index = 0; tile_index < grid1.extent(0); tile_index++) {
     // If local
-    if (tile_index == default_comm().rank()) {
+    if (dr::ranges::rank(seg0) == default_comm().rank()) {
       // make a tuple of mdspans
-      auto operand_mdspans =
-          detail::tuple_transform(ranges, [tile_index](auto &&dr) {
-            auto tile = dr.grid()(tile_index, 0);
-            return tile.mdspan();
-          });
+      auto operand_mdspans = detail::tuple_transform(
+          segs, [](auto &&seg) { return seg.mdspan(); });
 
-      auto tile1 = grid1(tile_index, 0).mdspan();
       if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
         //
@@ -126,7 +119,7 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
         // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
         // ndrange and handles > 32 bits.
         dr::mhp::sycl_queue()
-            .parallel_for(sycl::range(tile1.extent(0), tile1.extent(1)),
+            .parallel_for(sycl::range(mdspan0.extent(0), mdspan0.extent(1)),
                           invoke_index)
             .wait();
 #else
@@ -142,8 +135,8 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
               [index](auto mdspan) -> decltype(auto) { return mdspan(index); });
           op(references);
         };
-        detail::mdspan_foreach<tile1.rank(), decltype(invoke_index)>(
-            tile1.extents(), invoke_index);
+        detail::mdspan_foreach<mdspan0.rank(), decltype(invoke_index)>(
+            mdspan0.extents(), invoke_index);
       }
     }
   }

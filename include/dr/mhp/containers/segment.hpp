@@ -243,4 +243,17 @@ private:
   std::size_t size_;
 }; // dv_segment
 
+//
+// Many views preserve the distributed_vector segments iterator, which
+// can supply halo
+//
+template <typename DR>
+concept has_halo_method = dr::distributed_range<DR> && requires(DR &&dr) {
+  { rng::begin(dr::ranges::segments(dr)[0]).halo() };
+};
+
+auto &halo(has_halo_method auto &&dr) {
+  return rng::begin(dr::ranges::segments(dr)[0]).halo();
+}
+
 } // namespace dr::mhp

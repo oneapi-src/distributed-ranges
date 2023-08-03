@@ -4,141 +4,132 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import datetime
+import glob
+import os
 
 import click
 from drbench import common, plotter, runner
 
+option_prefix = click.option(
+    "--prefix",
+    type=str,
+    default="dr-bench",
+    help="Prefix for files",
+)
+
 
 # common arguments
 @click.group()
-@click.option(
-    '--analysis_id',
-    type=str,
-    default='',
-    help='id to use in output files, use time based if missing',
-)
-@click.pass_context
-def cli(ctx, analysis_id: str):
-    ctx.obj = common.Config()
-    if analysis_id:
-        ctx.obj.analysis_id = analysis_id
-    else:
-        ctx.obj.analysis_id = datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H_%M_%S'
-        )
+def cli():
+    pass
 
 
-def __plot_impl(ctx):
-    p = plotter.Plotter(plotter.PlottingConfig(ctx.obj))
+@cli.command()
+@option_prefix
+def plot(prefix):
+    p = plotter.Plotter(prefix)
     p.create_plots()
 
 
-@cli.command()
-@click.pass_context
-def plot(ctx):
-    __plot_impl(ctx)
-
-
-Choice = click.Choice(['mhp_cpu', 'mhp_gpu', 'mhp_nosycl', 'shp'])
-
-
-def choice_to_mode(c):
-    if c == 'mhp_cpu':
-        return runner.AnalysisMode.MHP_CPU
-    if c == 'mhp_gpu':
-        return runner.AnalysisMode.MHP_GPU
-    if c == 'mhp_nosycl':
-        return runner.AnalysisMode.MHP_NOSYCL
-    if c == 'shp':
-        return runner.AnalysisMode.SHP
-    assert False
+def do_clean(prefix):
+    for f in glob.glob(f"{prefix}-*.json"):
+        os.remove(f)
 
 
 @cli.command()
+@option_prefix
+def clean(prefix):
+    do_clean(prefix)
+
+
+Choice = click.Choice(common.targets.keys())
+
+
+def choice_to_target(c):
+    return common.targets[c]
+
+
+@cli.command()
+@option_prefix
 @click.option(
-    '--no-plot',
-    'plot',
-    default=True,
-    is_flag=True,
-    help="don't create plots, just json files",
-)
-@click.option(
-    '-m',
-    '--mode',
+    "--target",
     type=Choice,
     multiple=True,
-    default=['mhp_cpu'],
-    help='modes of benchmarking to run',
+    default=["mhp_direct_cpu"],
+    help="Target to execute benchmark",
 )
 @click.option(
-    '-s',
-    '--vec-size',
+    "--vec-size",
     type=int,
     multiple=True,
     default=[1000000],
-    help='Size of a vector',
+    help="Size of a vector",
 )
 @click.option(
-    '-n',
-    '--nprocs',
+    "--ranks",
     type=int,
     multiple=True,
     default=[1],
-    help='Number of processes',
+    help="Number of processes",
 )
 @click.option(
-    '--no-fork',
-    'fork',
+    "--no-fork",
+    "fork",
     default=True,
     is_flag=True,
     help="don't use -launcher=fork with mpi",
 )
-@click.option('-r', '--reps', default=100, type=int, help='Number of reps')
+@click.option("--reps", default=100, type=int, help="Number of reps")
 @click.option(
-    '-f',
-    '--benchmark-filter',
-    default='Stream_',
+    "-f",
+    "--filter",
     type=str,
-    help='A filter used for a benchmark',
+    multiple=True,
+    default=["Stream_"],
+    help="A filter used for a benchmark",
 )
 @click.option(
-    '--mhp-bench',
-    default='mhp/mhp-bench',
+    "--mhp-bench",
+    default="mhp/mhp-bench",
     type=str,
-    help='MHP benchmark program',
+    help="MHP benchmark program",
 )
 @click.option(
-    '--shp-bench',
-    default='shp/shp-bench',
+    "--shp-bench",
+    default="shp/shp-bench",
     type=str,
-    help='SHP benchmark program',
+    help="SHP benchmark program",
 )
 @click.option(
-    '-d', '--dry-run', is_flag=True, help='Emits commands but does not execute'
+    "-d", "--dry-run", is_flag=True, help="Emits commands but does not execute"
 )
-@click.pass_context
-def analyze(
-    ctx,
-    plot,
-    mode,
+@click.option(
+    "-c", "--clean", is_flag=True, help="Delete all json files with the prefix"
+)
+def run(
+    prefix,
+    target,
     vec_size,
-    nprocs,
+    ranks,
     fork,
     reps,
-    benchmark_filter,
+    filter,
     mhp_bench,
     shp_bench,
     dry_run,
+    clean,
 ):
-    assert mode
+    assert target
     assert vec_size
-    assert nprocs
+    assert ranks
+
+    if clean:
+        do_clean(prefix)
 
     r = runner.Runner(
         runner.AnalysisConfig(
-            ctx.obj,
-            benchmark_filter,
+            prefix,
+            "\\|".join(filter),
             fork,
             reps,
             dry_run,
@@ -146,16 +137,15 @@ def analyze(
             shp_bench,
         )
     )
-    for m in mode:
+    click.echo(f"Targets: {target}")
+    click.echo(f"Ranks: {ranks}")
+    for t in target:
         for s in vec_size:
-            for n in nprocs:
+            for n in ranks:
                 r.run_one_analysis(
-                    runner.AnalysisCase(choice_to_mode(m), s, n)
+                    runner.AnalysisCase(choice_to_target(t), s, n)
                 )
 
-    if plot:
-        __plot_impl(ctx)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     assert False  # not to be used this way, but by dr-bench executable
