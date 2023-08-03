@@ -127,8 +127,10 @@ class Plotter:
         )
 
     def __algorithm_plots(self):
-        db = self.db_maxvec.loc[
-            self.db['Benchmark'].str.startswith('Inclusive_Scan')
+        m = self.db_maxvec
+
+        db = m.loc[
+            m['Benchmark'].isin(['Inclusive_Scan', 'Black_Scholes'])
         ].copy()
 
         db_gpu = db.loc[db['device'] == 'GPU']
