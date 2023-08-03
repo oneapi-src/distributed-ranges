@@ -16,7 +16,6 @@ class Plotter:
 
     @staticmethod
     def __name_target(bname, target, device):
-        print(f"In: {bname} {target} {device}")
         names = bname.split('_')
         last = names[-1]
         if last in ["DPL", "Std", "Serial"]:
@@ -24,7 +23,6 @@ class Plotter:
             target = f"{last}_{device}"
         elif last == "DR":
             bname = "_".join(names[0:-1])
-        print(f"out: {bname} {target} {device}")
         return bname, target
 
     @staticmethod
