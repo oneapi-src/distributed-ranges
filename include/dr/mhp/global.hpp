@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/mhp/sycl_support.hpp>
+#include <unistd.h>
 
 namespace dr::mhp {
 
@@ -42,6 +43,9 @@ inline void final() {
 
 inline dr::communicator &default_comm() { return __detail::gcontext()->comm_; }
 
+inline std::size_t rank() { return default_comm().rank(); }
+inline std::size_t nprocs() { return default_comm().size(); } // dr-style ignore
+
 inline std::set<MPI_Win> &active_wins() { return __detail::gcontext()->wins_; }
 
 inline void barrier() { __detail::gcontext()->comm_.barrier(); }
@@ -58,6 +62,13 @@ inline void init() {
   assert(__detail::global_context_ == nullptr &&
          "Do not call mhp::init() more than once");
   __detail::global_context_ = new __detail::global_context;
+}
+
+inline std::string hostname() {
+  constexpr std::size_t MH = 2048;
+  char buf[MH + 1];
+  gethostname(buf, MH);
+  return std::string(buf);
 }
 
 #ifdef SYCL_LANGUAGE_VERSION
