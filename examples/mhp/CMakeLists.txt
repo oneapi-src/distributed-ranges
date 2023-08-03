@@ -13,11 +13,6 @@ if(ENABLE_SYCL)
   add_executable(tile-example tile-example.cpp)
   target_link_libraries(tile-example cxxopts DR::mpi)
   add_mpi_test(tile-example tile-example 2)
-
-  add_executable(dpl-test dpl-test.cpp)
-  target_link_libraries(dpl-test DR::mpi)
-  add_mpi_test(dpl-test dpl-test 2)
-
 endif()
 
 add_executable(vector-add vector-add.cpp)

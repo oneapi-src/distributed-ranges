@@ -25,18 +25,16 @@ namespace dr::mhp {
 
 namespace __detail {
 
-// temporary disabled due to dpl bug, https://github.com/oneapi-src/oneDPL/issues/1038
-// to enable rename
-// DISABLED_SYCL_LANGUAGE_VERSION --> SYCL_LANGUAGE_VERSION
+// onedpl sort() temporary disabled due to dpl bug,
+// https://github.com/oneapi-src/oneDPL/issues/1038
+// to enable rename DISABLED_SYCL_LANGUAGE_VERSION --> SYCL_LANGUAGE_VERSION
+
 #ifdef DISABLED_SYCL_LANGUAGE_VERSION
-using namespace oneapi::dpl::execution;
-using namespace sycl;
 
 template <typename InputIt, typename Compare>
 void local_dpl_sort(InputIt first, InputIt last, Compare &&comp) {
   if (rng::distance(first, last) >= 2) {
-    // auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
-    auto policy = make_device_policy(sycl::device());
+    auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
     dr::__detail::direct_iterator d_first(first);
     dr::__detail::direct_iterator d_last(last);
 
@@ -65,13 +63,6 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* sort local segment */
 
-// #ifdef DISABLED_SYCL_LANGUAGE_VERSION
-//   __detail::local_dpl_sort(oneapi::dpl::begin(lsegment),
-//                            oneapi::dpl::end(lsegment), comp);
-// #else
-//   rng::sort(rng::begin(lsegment), rng::end(lsegment), comp);
-// #endif
-
   __detail::local_sort(lsegment, comp);
 
   std::vector<valT> vec_lmedians(_comm_size - 1);
@@ -87,8 +78,6 @@ void dist_sort(R &r, Compare &&comp) {
   }
 
   default_comm().all_gather(vec_lmedians, vec_gmedians);
-  // default_comm().all_gather(vec_lmedians.data(), vec_gmedians.data(),
-  //                           rng::size(vec_lmedians));
 
   rng::sort(rng::begin(vec_gmedians), rng::end(vec_gmedians), comp);
 
@@ -152,7 +141,6 @@ void dist_sort(R &r, Compare &&comp) {
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
                            vec_rsizes, vec_rindices);
 
-  // rng::sort(vec_recvdata, comp);
   __detail::local_sort(vec_recvdata, comp);
 
   /* Now redistribute data to achieve size of data equal to size of local
@@ -270,13 +258,6 @@ void sort(R &r, Compare &&comp = Compare()) {
   if (_comm_size == 0)
     return;
   else if (_comm_size == 1) {
-
-// #ifdef DISABLED_SYCL_LANGUAGE_VERSION
-//     __detail::local_dpl_sort(oneapi::dpl::begin(lsegment),
-//                              oneapi::dpl::end(lsegment), comp);
-// #else
-//     rng::sort(rng::begin(lsegment), rng::end(lsegment), comp);
-// #endif
     __detail::local_sort(lsegment, comp);
 
   } else if (rng::size(r) <= (_comm_size - 1) * (_comm_size - 1)) {
