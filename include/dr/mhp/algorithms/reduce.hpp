@@ -21,6 +21,7 @@ inline auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
 
 inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
   rng::range_value_t<decltype(r)> none{};
+#ifdef SYCL_LANGUAGE_VERSION
   if (rng::empty(r)) {
     return none;
   } else {
@@ -38,6 +39,10 @@ inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
                          *rng::begin(r), binary_op);
     }
   }
+#else
+  assert(false);
+  return none;
+#endif  
 }
 
 /// handles everything but init

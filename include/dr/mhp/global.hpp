@@ -44,7 +44,7 @@ inline void final() {
 inline dr::communicator &default_comm() { return __detail::gcontext()->comm_; }
 
 inline std::size_t rank() { return default_comm().rank(); }
-inline std::size_t nprocs() { return default_comm().size(); }
+inline std::size_t nprocs() { return default_comm().size(); } // dr-style ignore
 
 inline std::set<MPI_Win> &active_wins() { return __detail::gcontext()->wins_; }
 
@@ -65,7 +65,7 @@ inline void init() {
 }
 
 inline std::string hostname() {
-  constexpr size_t MH = 2048;
+  constexpr std::size_t MH = 2048;
   char buf[MH + 1];
   gethostname(buf, MH);
   return std::string(buf);
