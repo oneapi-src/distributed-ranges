@@ -28,8 +28,8 @@ published at `latest spec`_ and `latest doxygen`_.
 Benchmark Results
 =================
 
-Devcloud
---------
+Stream
+------
 
 GPU:
 
@@ -38,6 +38,17 @@ GPU:
 CPU:
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.png
+
+Algorithms
+----------
+
+GPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_gpu.png
+
+CPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_cpu.png
 
 Environment Setup
 =================

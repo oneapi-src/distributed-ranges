@@ -15,6 +15,17 @@ class Plotter:
     bandwidth_title = 'Memory Bandwidth (TBps)'
 
     @staticmethod
+    def __name_target(bname, target, device):
+        names = bname.split('_')
+        last = names[-1]
+        if last in ["DPL", "Std", "Serial"]:
+            bname = "_".join(names[0:-1])
+            target = f"{last}_{device}"
+        elif last == "DR":
+            bname = "_".join(names[0:-1])
+        return bname, target
+
+    @staticmethod
     def __import_file(fname: str, rows):
         with open(fname) as f:
             fdata = json.load(f)
@@ -37,11 +48,12 @@ class Plotter:
             )
             for b in benchs:
                 bname = b['name'].partition('/')[0]
+                bname, btarget = Plotter.__name_target(bname, target, device)
                 rtime = b['real_time']
                 bw = b['bytes_per_second']
                 rows.append(
                     {
-                        'Target': target,
+                        'Target': btarget,
                         'model': model,
                         'runtime': runtime,
                         'device': device,
@@ -114,7 +126,35 @@ class Plotter:
             style='Target',
         )
 
+    def __algorithm_plots(self):
+        db = self.db_maxvec.loc[
+            self.db['Benchmark'].str.startswith('Inclusive_Scan')
+        ].copy()
+
+        db_gpu = db.loc[db['device'] == 'GPU']
+
+        Plotter.__make_plot(
+            'algorithms_gpu',
+            db_gpu,
+            x='GPU Tiles',
+            y=Plotter.bandwidth_title,
+            col='Benchmark',
+            style='Target',
+        )
+
+        db_cpu = db.loc[db['device'] == 'CPU']
+
+        Plotter.__make_plot(
+            'algorithms_cpu',
+            db_cpu,
+            x='CPU Sockets',
+            y=Plotter.bandwidth_title,
+            col='Benchmark',
+            style='Target',
+        )
+
     def create_plots(self):
         sns.set_theme(style="ticks")
 
         self.__stream_strong_scaling_plots()
+        self.__algorithm_plots()

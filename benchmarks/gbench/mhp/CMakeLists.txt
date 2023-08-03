@@ -4,11 +4,21 @@
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# cmake-format: off
 add_executable(
   mhp-bench
-  mhp-bench.cpp ../common/distributed_vector.cpp ../common/dot_product.cpp
-  ../common/stream.cpp rooted.cpp stencil_1d.cpp stencil_2d.cpp chunk.cpp
-  mdspan.cpp mpi.cpp)
+  mhp-bench.cpp
+  ../common/distributed_vector.cpp
+  ../common/dot_product.cpp
+  ../common/inclusive_scan.cpp
+  ../common/stream.cpp
+  rooted.cpp
+  stencil_1d.cpp
+  stencil_2d.cpp
+  chunk.cpp
+  mdspan.cpp
+  mpi.cpp)
+# cmake-format: on
 
 if(NOT ENABLE_CUDA)
   # black_scholes.cpp does not compile in CUDA because it uses std::log
