@@ -42,7 +42,7 @@ inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
 #else
   assert(false);
   return none;
-#endif  
+#endif
 }
 
 /// handles everything but init
