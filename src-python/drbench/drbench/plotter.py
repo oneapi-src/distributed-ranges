@@ -159,3 +159,4 @@ class Plotter:
         sns.set_theme(style="ticks")
 
         self.__stream_strong_scaling_plots()
+        self.__algorithm_plots()

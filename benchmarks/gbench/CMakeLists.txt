@@ -30,10 +30,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       OUTPUT devcloud-bench-results
       # devcloud: 4 GPUs, 2 sockets, 112 cores
       COMMAND dr-bench clean
+      # DPL are single socket on cpu and single gpu on gpu
       COMMAND ${COMMON_PREFIX} --filter '.*_DPL' --ranks 1 --target mhp_sycl_cpu
-              --target shp_sycl_cpu --target mhp_sycl_gpu --target shp_sycl_gpu
-      COMMAND ${COMMON_PREFIX} --filter '.*_Serial' --ranks 1 --target
-              mhp_direct_cpu
+              --target mhp_sycl_gpu
       COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 1 --ranks 2 --ranks 3
               --ranks 4 --target mhp_sycl_gpu --target shp_sycl_gpu
       COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 1 --ranks 2 --target
