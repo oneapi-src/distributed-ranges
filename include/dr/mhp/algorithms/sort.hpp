@@ -25,48 +25,54 @@ namespace dr::mhp {
 
 namespace __detail {
 
-#ifdef SYCL_LANGUAGE_VERSION
+// temporary disabled due to dpl bug, https://github.com/oneapi-src/oneDPL/issues/1038
+// to enable rename
+// DISABLED_SYCL_LANGUAGE_VERSION --> SYCL_LANGUAGE_VERSION
+#ifdef DISABLED_SYCL_LANGUAGE_VERSION
+using namespace oneapi::dpl::execution;
+using namespace sycl;
+
 template <typename InputIt, typename Compare>
 void local_dpl_sort(InputIt first, InputIt last, Compare &&comp) {
-  fmt::print("{}: __detail::local_dpl_sort, SIZE {}\n", comm_rank,
-             rng::distance(first, last));
-
   if (rng::distance(first, last) >= 2) {
-    auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
+    // auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
+    auto policy = make_device_policy(sycl::device());
     dr::__detail::direct_iterator d_first(first);
     dr::__detail::direct_iterator d_last(last);
 
-    fmt::print("{}: oneapi::dpl::sort\n", comm_rank);
     oneapi::dpl::sort(policy, d_first, d_last, std::forward<Compare>(comp));
   }
-  fmt::print("{}:  __detail::local_dpl_sort sorted\n", comm_rank);
 }
 #endif
 
+template <rng::forward_range R, typename Compare>
+void local_sort(R &r, Compare &&comp) {
+#ifdef DISABLED_SYCL_LANGUAGE_VERSION
+  local_dpl_sort(oneapi::dpl::begin(r), oneapi::dpl::end(r), comp);
+#else
+  rng::sort(rng::begin(r), rng::end(r), comp);
+#endif
+}
+
 template <dr::distributed_range R, typename Compare>
-void __dsort(R &r, Compare &&comp) {
+void dist_sort(R &r, Compare &&comp) {
   using valT = typename R::value_type;
 
   std::size_t _comm_rank = default_comm().rank();
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
-  fmt::print("\n{}: DSORT Input size {} comm size {}\n", _comm_rank,
-             rng::size(r), _comm_size);
-
   auto &&lsegment = local_segment(r);
 
   /* sort local segment */
 
-  fmt::print("{}: local segment sort {}\n", _comm_rank, lsegment);
+// #ifdef DISABLED_SYCL_LANGUAGE_VERSION
+//   __detail::local_dpl_sort(oneapi::dpl::begin(lsegment),
+//                            oneapi::dpl::end(lsegment), comp);
+// #else
+//   rng::sort(rng::begin(lsegment), rng::end(lsegment), comp);
+// #endif
 
-#ifdef SYCL_LANGUAGE_VERSION
-  __detail::local_dpl_sort(oneapi::dpl::begin(lsegment),
-                           oneapi::dpl::end(lsegment), comp);
-#else
-  rng::sort(rng::begin(lsegment), rng::end(lsegment), comp);
-#endif                      
-
-  fmt::print("{}: local segment sorted {}\n", _comm_rank, lsegment);
+  __detail::local_sort(lsegment, comp);
 
   std::vector<valT> vec_lmedians(_comm_size - 1);
   std::vector<valT> vec_gmedians((_comm_size - 1) * _comm_size);
@@ -80,19 +86,16 @@ void __dsort(R &r, Compare &&comp) {
     vec_lmedians[_i] = lsegment[(std::size_t)(_i + 1) * _step];
   }
 
-  // default_comm().all_gather(vec_lmedians, vec_gmedians);
-  default_comm().all_gather(vec_lmedians.data(), vec_gmedians.data(),
-                            rng::size(vec_lmedians));
+  default_comm().all_gather(vec_lmedians, vec_gmedians);
+  // default_comm().all_gather(vec_lmedians.data(), vec_gmedians.data(),
+  //                           rng::size(vec_lmedians));
 
-  // fmt::print("{}: gmedians sort\n", _comm_rank);
-  rng::sort(vec_gmedians, comp);
+  rng::sort(rng::begin(vec_gmedians), rng::end(vec_gmedians), comp);
 
   std::vector<valT> vec_split_v(_comm_size - 1);
   _step = rng::size(vec_gmedians) / (_comm_size - 1);
 
   /* find splitting values - medians of dividers */
-
-  // fmt::print("{}: find splitting values\n", _comm_rank);
 
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
     vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _step)];
@@ -105,8 +108,6 @@ void __dsort(R &r, Compare &&comp) {
   std::vector<std::size_t> vec_split_s(_comm_size, 0);
 
   std::size_t segidx = 0, vidx = 1;
-
-  // fmt::print("{}: find splitting indices and sizes\n", _comm_rank);
 
   while (vidx < _comm_size) {
     assert(segidx < rng::size(lsegment));
@@ -123,24 +124,18 @@ void __dsort(R &r, Compare &&comp) {
       if (segidx >= rng::size(lsegment))
         break;
     }
-    // fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n",
-    // _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
   }
   vec_split_s[vidx - 1] =
       ((int)(rng::size(lsegment) - vec_split_i[vidx - 1]) > 0)
           ? (rng::size(lsegment) - vec_split_i[vidx - 1])
           : 0;
 
-  // fmt::print("{}: lseg size {} vidx {} segidx {} split_i {} split_s {}\n",
-  // _comm_rank, rng::size(lsegment), vidx, segidx, vec_split_i, vec_split_s);
   assert(vec_split_s[vidx - 1] >= 0);
 
   /* send data size to each node */
 
   std::vector<std::size_t> vec_rsizes(_comm_size, 0);
   std::vector<std::size_t> vec_rindices(_comm_size, 0); // recv buffers
-
-  // fmt::print("{}: splitters alltoall\n", _comm_rank);
 
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 
@@ -154,25 +149,16 @@ void __dsort(R &r, Compare &&comp) {
   std::vector<valT> vec_recvdata(_recvsum);
   std::size_t _recv_elems = rng::size(vec_recvdata);
 
-  // fmt::print("{}: data exchange alltoallv\n", _comm_rank);
-
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
                            vec_rsizes, vec_rindices);
 
-  // fmt::print("{}: vec_recvdata recved {}\n", _comm_rank, lsegment);
-
-  rng::sort(vec_recvdata, comp);
-  // __detail::local_dpl_sort(oneapi::dpl::begin(vec_recvdata),
-  // oneapi::dpl::end(vec_recvdata), comp);
-
-  // fmt::print("{}: vec_recvdata sorted {}\n", _comm_rank, lsegment);
+  // rng::sort(vec_recvdata, comp);
+  __detail::local_sort(vec_recvdata, comp);
 
   /* Now redistribute data to achieve size of data equal to size of local
    * segment */
 
   std::vector<std::size_t> vec_recv_elems(_comm_size);
-
-  // fmt::print("{}: no of elements all_gather\n", _comm_rank);
 
   default_comm().all_gather(_recv_elems, vec_recv_elems);
 
@@ -199,11 +185,8 @@ void __dsort(R &r, Compare &&comp) {
   std::vector<valT> vec_left(shift_left > 0 ? (shift_left) : 0);
   std::vector<valT> vec_right(shift_right > 0 ? (shift_right) : 0);
 
-  // fmt::print("{}: redistribution\n", _comm_rank);
-
   if ((int)rng::size(vec_recvdata) < -shift_left) {
 
-    // fmt::print("{}: except - recv from right\n", _comm_rank);
     /* not enough data to send in vec_recvdata - receive first */
     assert(shift_right > 0);
 
@@ -219,8 +202,6 @@ void __dsort(R &r, Compare &&comp) {
 
   } else if ((int)rng::size(vec_recvdata) < -shift_right) {
 
-    // fmt::print("{}: except - recv from left\n", _comm_rank);
-
     assert(shift_left > 0);
     default_comm().irecv(vec_left, default_comm().prev(), t, &req_l);
     MPI_Wait(&req_l, &stat_l);
@@ -233,8 +214,6 @@ void __dsort(R &r, Compare &&comp) {
                          -shift_right, default_comm().next(), t, &req_r);
     MPI_Wait(&req_r, &stat_r);
   } else {
-
-    // fmt::print("{}: normal - init\n", _comm_rank);
 
     if (shift_left < 0) {
       default_comm().isend(vec_recvdata.data(), -shift_left,
@@ -250,8 +229,6 @@ void __dsort(R &r, Compare &&comp) {
                                shift_right,
                            -shift_right, default_comm().next(), t, &req_r);
     }
-
-    // fmt::print("{}: normal - wait\n", _comm_rank);
 
     if (shift_left != 0)
       MPI_Wait(&req_l, &stat_l);
@@ -288,28 +265,24 @@ void sort(R &r, Compare &&comp = Compare()) {
   std::size_t _comm_rank = default_comm().rank();
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
-  fmt::print("\n{}: Input size {} comm size {}\n", _comm_rank, rng::size(r),
-             _comm_size);
-
   auto &&lsegment = local_segment(r);
 
   if (_comm_size == 0)
     return;
   else if (_comm_size == 1) {
-    fmt::print("{}: Single node, local sort\n", _comm_rank);
 
-#ifdef SYCL_LANGUAGE_VERSION
-    __detail::local_dpl_sort(oneapi::dpl::begin(lsegment),
-                             oneapi::dpl::end(lsegment), comp);
-#else
-    rng::sort(rng::begin(lsegment), rng::end(lsegment), comp);
-#endif
+// #ifdef DISABLED_SYCL_LANGUAGE_VERSION
+//     __detail::local_dpl_sort(oneapi::dpl::begin(lsegment),
+//                              oneapi::dpl::end(lsegment), comp);
+// #else
+//     rng::sort(rng::begin(lsegment), rng::end(lsegment), comp);
+// #endif
+    __detail::local_sort(lsegment, comp);
+
   } else if (rng::size(r) <= (_comm_size - 1) * (_comm_size - 1)) {
     /* Distributed vector of size <= (comm_size-1) * (comm_size-1) may have
      * 0-size local segments. It is also small enough to prefer sequential sort
      */
-
-    fmt::print("{}: Fallback to seq - small vector\n", _comm_rank);
 
     std::vector<valT> vec_recvdata(rng::size(r));
     dr::mhp::copy(0, r, rng::begin(vec_recvdata));
@@ -321,9 +294,8 @@ void sort(R &r, Compare &&comp = Compare()) {
     dr::mhp::barrier();
     dr::mhp::copy(0, vec_recvdata, rng::begin(r));
 
-    fmt::print("{}: barrier passed\n", _comm_rank);
   } else {
-    __detail::__dsort(r, comp);
+    __detail::dist_sort(r, comp);
   }
 }
 
