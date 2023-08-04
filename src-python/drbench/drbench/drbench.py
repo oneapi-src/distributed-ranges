@@ -17,6 +17,27 @@ option_prefix = click.option(
     help="Prefix for files",
 )
 
+option_mhp_bench = click.option(
+    "--mhp-bench",
+    default="mhp/mhp-bench",
+    type=str,
+    help="MHP benchmark program",
+)
+
+option_shp_bench = click.option(
+    "--shp-bench",
+    default="shp/shp-bench",
+    type=str,
+    help="SHP benchmark program",
+)
+
+option_dry_run = click.option(
+    "-d", "--dry-run", is_flag=True, help="Emits commands but does not execute"
+)
+
+option_clean = click.option(
+    "-c", "--clean", is_flag=True, help="Delete all json files with the prefix"
+)
 
 # common arguments
 @click.group()
@@ -49,6 +70,29 @@ def choice_to_target(c):
     return common.targets[c]
 
 
+def do_run(options):
+    if options['rank_range'] > 0:
+        options['ranks'] = list(range(1, options['rank_range'] + 1))
+
+    click.echo(f"Targets: {options['target']}")
+    click.echo(f"Ranks: {options['ranks']}")
+    r = runner.Runner(
+        runner.AnalysisConfig(
+            options['prefix'],
+            "\\|".join(options['filter']),
+            options['reps'],
+            options['dry_run'],
+            options['mhp_bench'],
+            options['shp_bench'],
+        )
+    )
+    for t in options['target']:
+        for s in options['vec_size']:
+            for n in options['ranks']:
+                r.run_one_analysis(
+                    runner.AnalysisCase(choice_to_target(t), s, n)
+                )
+
 @cli.command()
 @option_prefix
 @click.option(
@@ -70,7 +114,13 @@ def choice_to_target(c):
     type=int,
     multiple=True,
     default=[1],
-    help="Number of processes",
+    help="Number of ranks",
+)
+@click.option(
+    "--rank-range",
+    type=int,
+    default=0,
+    help="Run with 1 ... N ranks",
 )
 @click.option("--reps", default=100, type=int, help="Number of reps")
 @click.option(
@@ -81,29 +131,16 @@ def choice_to_target(c):
     default=["Stream_"],
     help="A filter used for a benchmark",
 )
-@click.option(
-    "--mhp-bench",
-    default="mhp/mhp-bench",
-    type=str,
-    help="MHP benchmark program",
-)
-@click.option(
-    "--shp-bench",
-    default="shp/shp-bench",
-    type=str,
-    help="SHP benchmark program",
-)
-@click.option(
-    "-d", "--dry-run", is_flag=True, help="Emits commands but does not execute"
-)
-@click.option(
-    "-c", "--clean", is_flag=True, help="Delete all json files with the prefix"
-)
+@option_mhp_bench
+@option_shp_bench
+@option_dry_run
+@option_clean
 def run(
     prefix,
     target,
     vec_size,
     ranks,
+    rank_range,
     reps,
     filter,
     mhp_bench,
@@ -115,28 +152,101 @@ def run(
     assert vec_size
     assert ranks
 
-    if clean:
+    options = {}
+    if clean and not dry_run:
         do_clean(prefix)
 
-    r = runner.Runner(
-        runner.AnalysisConfig(
-            prefix,
-            "\\|".join(filter),
-            reps,
-            dry_run,
-            mhp_bench,
-            shp_bench,
-        )
-    )
-    click.echo(f"Targets: {target}")
-    click.echo(f"Ranks: {ranks}")
-    for t in target:
-        for s in vec_size:
-            for n in ranks:
-                r.run_one_analysis(
-                    runner.AnalysisCase(choice_to_target(t), s, n)
-                )
+    do_run(options | {'prefix': prefix, 'target': target, 'vec_size': vec_size, 'ranks': ranks, 'rank_range': rank_range, 'reps': reps, 'filter': filter, 'mhp_bench': mhp_bench, 'shp_bench': shp_bench, 'dry_run': dry_run})
 
+
+@cli.command()
+@option_prefix
+@option_mhp_bench
+@option_shp_bench
+@option_dry_run
+@option_clean
+@click.option(
+    "--vec-size",
+    type=int,
+    default=1000000000,
+    help="Size of a vector",
+)
+@click.option(
+    "--reps",
+    type=int,
+    default=100,
+    help="Number of repetitions",
+)
+@click.option(
+    "--gpus",
+    type=int,
+    default=1,
+    help="Number of GPUs",
+)
+@click.option(
+    "--mhp-gpus",
+    type=int,
+    default=-1,
+    help="Number of GPUs for MHP",
+)
+@click.option(
+    "--shp-gpus",
+    type=int,
+    default=-1,
+    help="Number of GPUs for SHP",
+)
+@click.option(
+    "--cores-per-socket",
+    type=int,
+    default=2,
+    help="Number of cores per CPU socket",
+)
+def suite(
+        prefix,
+        mhp_bench,
+        shp_bench,
+        dry_run,
+        clean,
+        vec_size,
+        reps,
+        gpus,
+        shp_gpus,
+        mhp_gpus,
+        cores_per_socket,
+):
+    # Base options
+    base = {'prefix': prefix, 'mhp_bench': mhp_bench, 'shp_bench': shp_bench, 'dry_run': dry_run, 'vec_size': [vec_size], 'reps': reps}
+
+    def suite_run(rank_range, filters, targets):
+        do_run(base | {'rank_range': rank_range, 'filter': filters,  'target': targets})
+
+    def suite_run_ranks(ranks, filters, targets):
+        do_run(base | {'ranks': ranks, 'rank_range': 0, 'filter': filters,  'target': targets})
+
+    dr_filters = ['^Stream_', '^Black_Scholes', '^Inclusive_Scan_DR', '^Reduce_DR']
+
+    shp_gpus = shp_gpus if shp_gpus != -1 else gpus
+    mhp_gpus = mhp_gpus if mhp_gpus != -1 else gpus
+
+    if clean and not dry_run:
+        do_clean(prefix)
+
+    if shp_gpus > 0:
+        # DPL is 1 device
+        suite_run(1, ['.*_DPL'], ['shp_sycl_gpu'])
+        suite_run(shp_gpus, dr_filters, ['shp_sycl_gpu'])
+
+    if cores_per_socket > 0:
+        suite_run(1, ['.*_DPL'], ['shp_sycl_cpu'])
+        suite_run(2, dr_filters, ['mhp_sycl_cpu', 'shp_sycl_cpu'])
+
+    if mhp_gpus > 0:
+        suite_run(mhp_gpus, dr_filters, ['mhp_sycl_gpu'])
+
+
+    # 1 and 2 sockets for direct cpu
+    if cores_per_socket > 0:
+        suite_run_ranks([cores_per_socket, 2 * cores_per_socket], dr_filters, ['mhp_direct_cpu'])
 
 if __name__ == "__main__":
     assert False  # not to be used this way, but by dr-bench executable
