@@ -150,17 +150,27 @@ static void Copy_Serial(benchmark::State &state) {
 DR_BENCHMARK(Copy_Serial);
 
 static void Reduce_DR(benchmark::State &state) {
+  T ref, actual{};
+  {
+    std::vector<T> local_src(default_vector_size);
+    rng::iota(local_src, 100);
+    ref = std::reduce(local_src.begin(), local_src.end());
+  }
   xhp::distributed_vector<T> src(default_vector_size);
+  xhp::iota(src, 100);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      auto res = xhp::reduce(src);
-      benchmark::DoNotOptimize(res);
+      actual = xhp::reduce(src);
+      benchmark::DoNotOptimize(actual);
     }
   }
+  if ((ref - actual) / ref > .001) {
+    fmt::print("Mismatch:\n  Ref {} Actual {}\n", ref, actual);
+    exit(1);
+  }
 }
-
 DR_BENCHMARK(Reduce_DR);
 
 static void Reduce_Serial(benchmark::State &state) {
