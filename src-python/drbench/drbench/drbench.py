@@ -39,6 +39,7 @@ option_clean = click.option(
     "-c", "--clean", is_flag=True, help="Delete all json files with the prefix"
 )
 
+
 # common arguments
 @click.group()
 def cli():
@@ -92,6 +93,7 @@ def do_run(options):
                 r.run_one_analysis(
                     runner.AnalysisCase(choice_to_target(t), s, n)
                 )
+
 
 @cli.command()
 @option_prefix
@@ -156,7 +158,21 @@ def run(
     if clean and not dry_run:
         do_clean(prefix)
 
-    do_run(options | {'prefix': prefix, 'target': target, 'vec_size': vec_size, 'ranks': ranks, 'rank_range': rank_range, 'reps': reps, 'filter': filter, 'mhp_bench': mhp_bench, 'shp_bench': shp_bench, 'dry_run': dry_run})
+    do_run(
+        options
+        | {
+            'prefix': prefix,
+            'target': target,
+            'vec_size': vec_size,
+            'ranks': ranks,
+            'rank_range': rank_range,
+            'reps': reps,
+            'filter': filter,
+            'mhp_bench': mhp_bench,
+            'shp_bench': shp_bench,
+            'dry_run': dry_run,
+        }
+    )
 
 
 @cli.command()
@@ -202,28 +218,51 @@ def run(
     help="Number of cores per CPU socket",
 )
 def suite(
-        prefix,
-        mhp_bench,
-        shp_bench,
-        dry_run,
-        clean,
-        vec_size,
-        reps,
-        gpus,
-        shp_gpus,
-        mhp_gpus,
-        cores_per_socket,
+    prefix,
+    mhp_bench,
+    shp_bench,
+    dry_run,
+    clean,
+    vec_size,
+    reps,
+    gpus,
+    shp_gpus,
+    mhp_gpus,
+    cores_per_socket,
 ):
     # Base options
-    base = {'prefix': prefix, 'mhp_bench': mhp_bench, 'shp_bench': shp_bench, 'dry_run': dry_run, 'vec_size': [vec_size], 'reps': reps}
+    base = {
+        'prefix': prefix,
+        'mhp_bench': mhp_bench,
+        'shp_bench': shp_bench,
+        'dry_run': dry_run,
+        'vec_size': [vec_size],
+        'reps': reps,
+    }
 
     def suite_run(rank_range, filters, targets):
-        do_run(base | {'rank_range': rank_range, 'filter': filters,  'target': targets})
+        do_run(
+            base
+            | {'rank_range': rank_range, 'filter': filters, 'target': targets}
+        )
 
     def suite_run_ranks(ranks, filters, targets):
-        do_run(base | {'ranks': ranks, 'rank_range': 0, 'filter': filters,  'target': targets})
+        do_run(
+            base
+            | {
+                'ranks': ranks,
+                'rank_range': 0,
+                'filter': filters,
+                'target': targets,
+            }
+        )
 
-    dr_filters = ['^Stream_', '^Black_Scholes', '^Inclusive_Scan_DR', '^Reduce_DR']
+    dr_filters = [
+        '^Stream_',
+        '^Black_Scholes',
+        '^Inclusive_Scan_DR',
+        '^Reduce_DR',
+    ]
 
     shp_gpus = shp_gpus if shp_gpus != -1 else gpus
     mhp_gpus = mhp_gpus if mhp_gpus != -1 else gpus
@@ -243,10 +282,14 @@ def suite(
     if mhp_gpus > 0:
         suite_run(mhp_gpus, dr_filters, ['mhp_sycl_gpu'])
 
-
     # 1 and 2 sockets for direct cpu
     if cores_per_socket > 0:
-        suite_run_ranks([cores_per_socket, 2 * cores_per_socket], dr_filters, ['mhp_direct_cpu'])
+        suite_run_ranks(
+            [cores_per_socket, 2 * cores_per_socket],
+            dr_filters,
+            ['mhp_direct_cpu'],
+        )
+
 
 if __name__ == "__main__":
     assert False  # not to be used this way, but by dr-bench executable
