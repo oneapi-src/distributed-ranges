@@ -150,7 +150,7 @@ static void Copy_Serial(benchmark::State &state) {
 DR_BENCHMARK(Copy_Serial);
 
 static void Reduce_DR(benchmark::State &state) {
-  T ref, actual;
+  T ref, actual{};
   {
     std::vector<T> local_src(default_vector_size);
     rng::iota(local_src, 100);
