@@ -22,9 +22,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     set(COMMON_PREFIX dr-bench run --vec-size 1000000000)
     set(DR_FILTERS
-        --filter Stream_ --filter Black_Scholes --filter Inclusive_Scan_DR
-        --filter Reduce_DR)
-    set(SERIAL_FILTERS --filter '.*_DPL' --filter '.*_Serial')
+        --filter ^Stream_ --filter ^Black_Scholes --filter ^Inclusive_Scan_DR
+        --filter ^Reduce_DR)
+    set(SERIAL_FILTERS --filter '.*_DPL')
 
     add_custom_target(devcloud-bench DEPENDS devcloud-bench-results)
     add_custom_command(

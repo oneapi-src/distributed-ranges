@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import subprocess
 import uuid
 from collections import namedtuple
@@ -12,7 +13,7 @@ from drbench.common import Device, Model, Runtime
 AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
-    "prefix benchmark_filter fork reps dry_run mhp_bench shp_bench",
+    "prefix benchmark_filter reps dry_run mhp_bench shp_bench",
 )
 
 
@@ -44,8 +45,9 @@ class Runner:
 
         mpirun_params = []
         mpirun_params.append(f"-n {str(ranks)}")
-        if self.analysis_config.fork:
-            mpirun_params.append("-launcher=fork")
+        extra = 'MPIEXEC_EXTRA_FLAGS'
+        if extra in os.environ:
+            mpirun_params.append(os.environ[extra])
 
         self.__execute(
             env

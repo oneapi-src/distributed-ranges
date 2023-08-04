@@ -22,6 +22,7 @@ jobs:
     env:
       CXX: icpx
       CTEST_OUTPUT_ON_FAILURE: 1
+      MPIEXEC_EXTRA_FLAGS: --launcher=fork
     steps:
     - uses: actions/checkout@v3
     - name: Python setup

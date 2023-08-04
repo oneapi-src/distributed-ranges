@@ -72,13 +72,6 @@ def choice_to_target(c):
     default=[1],
     help="Number of processes",
 )
-@click.option(
-    "--no-fork",
-    "fork",
-    default=True,
-    is_flag=True,
-    help="don't use -launcher=fork with mpi",
-)
 @click.option("--reps", default=100, type=int, help="Number of reps")
 @click.option(
     "-f",
@@ -111,7 +104,6 @@ def run(
     target,
     vec_size,
     ranks,
-    fork,
     reps,
     filter,
     mhp_bench,
@@ -130,7 +122,6 @@ def run(
         runner.AnalysisConfig(
             prefix,
             "\\|".join(filter),
-            fork,
             reps,
             dry_run,
             mhp_bench,
