@@ -101,6 +101,7 @@ jobs:
     timeout-minutes: 20
     env:
       CXX: icpx
+      MPIEXEC_EXTRA_FLAGS: --launcher=fork
     steps:
     - uses: actions/checkout@v3
     - name: Python setup
