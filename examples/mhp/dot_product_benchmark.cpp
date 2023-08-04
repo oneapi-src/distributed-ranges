@@ -90,8 +90,8 @@ void time_summary(auto &durations, auto &sum) {
   double median_duration = durations[durations.size() / 2];
 
   fmt::print("Median duration: {} ms\n", median_duration * 1000);
-  fmt::print("Memory bandwidth: {:.6} MB/s\n",
-             n * 2 * sizeof(T) / (median_duration * 1000 * 1000));
+  fmt::print("Memory bandwidth: {:.6} GB/s\n",
+             n * 2 * sizeof(T) / (1e9 * median_duration));
 }
 
 void stats(auto &durations, auto &sum, auto v_serial, auto &x_local,
@@ -171,11 +171,25 @@ int main(int argc, char **argv) {
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);
 
-  sycl::queue q;
+  sycl::queue q = mhp::select_queue(comm);
   if (options.count("sycl")) {
     mhp::init(q);
   } else {
     mhp::init();
+  }
+
+  std::string device_string =
+      mhp::sycl_queue().get_device().get_info<sycl::info::device::name>();
+
+  for (std::size_t i = 0; i < size; i++) {
+    if (rank == i) {
+      fmt::print("Rank {} executing on device {} on node {}\n", rank,
+                 device_string, mhp::hostname());
+    }
+    fflush(stdout);
+    mhp::barrier();
+    fflush(stdout);
+    mhp::barrier();
   }
 
   n = options["n"].as<std::size_t>();
@@ -195,6 +209,7 @@ int main(int argc, char **argv) {
 
   mhp::distributed_vector<T> x(n);
   mhp::distributed_vector<T> y(n);
+
   mhp::copy(0, x_local, x.begin());
   mhp::copy(0, y_local, y.begin());
 

@@ -21,13 +21,28 @@ inline auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
 
 inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
   rng::range_value_t<decltype(r)> none{};
+#ifdef SYCL_LANGUAGE_VERSION
   if (rng::empty(r)) {
     return none;
   } else {
-    return std::reduce(
-        dpl_policy(), dr::__detail::direct_iterator(rng::begin(r) + 1),
-        dr::__detail::direct_iterator(rng::end(r)), *rng::begin(r), binary_op);
+    using T = rng::range_value_t<decltype(r)>;
+    using Fn = decltype(binary_op);
+    if constexpr (sycl::has_known_identity_v<Fn, T>) {
+      return std::reduce(dpl_policy(),
+                         dr::__detail::direct_iterator(rng::begin(r)),
+                         dr::__detail::direct_iterator(rng::end(r)),
+                         sycl::known_identity_v<Fn, T>, binary_op);
+    } else {
+      return std::reduce(dpl_policy(),
+                         dr::__detail::direct_iterator(rng::begin(r) + 1),
+                         dr::__detail::direct_iterator(rng::end(r)),
+                         *rng::begin(r), binary_op);
+    }
   }
+#else
+  assert(false);
+  return none;
+#endif
 }
 
 /// handles everything but init
