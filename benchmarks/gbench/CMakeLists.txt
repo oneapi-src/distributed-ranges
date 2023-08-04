@@ -25,7 +25,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       OUTPUT devcloud-bench-results
       COMMAND dr-bench clean
       # devcloud does not have p2p, so only 1 gpu for shp
-      COMMAND dr-bench suite --shp-gpus 1 --mhp-gpus 4 --cores-per-socket 56
+      COMMAND dr-bench suite --p2p-gpus 1 --gpus 4 --cores-per-socket 56
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 

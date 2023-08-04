@@ -200,16 +200,10 @@ def run(
     help="Number of GPUs",
 )
 @click.option(
-    "--mhp-gpus",
+    "--p2p-gpus",
     type=int,
     default=-1,
-    help="Number of GPUs for MHP",
-)
-@click.option(
-    "--shp-gpus",
-    type=int,
-    default=-1,
-    help="Number of GPUs for SHP",
+    help="Number of GPUs for p2p",
 )
 @click.option(
     "--cores-per-socket",
@@ -226,8 +220,7 @@ def suite(
     vec_size,
     reps,
     gpus,
-    shp_gpus,
-    mhp_gpus,
+    p2p_gpus,
     cores_per_socket,
 ):
     # Base options
@@ -257,30 +250,36 @@ def suite(
             }
         )
 
-    dr_filters = [
+    dr_nop2p = [
         '^Stream_',
         '^Black_Scholes',
+    ]
+
+    dr_p2p = [
         '^Inclusive_Scan_DR',
         '^Reduce_DR',
     ]
 
-    shp_gpus = shp_gpus if shp_gpus != -1 else gpus
-    mhp_gpus = mhp_gpus if mhp_gpus != -1 else gpus
+    dr_filters = dr_nop2p + dr_p2p
+
+    if p2p_gpus == -1:
+        p2p_gpus = gpus
 
     if clean and not dry_run:
         do_clean(prefix)
 
-    if shp_gpus > 0:
+    if gpus > 0:
         # DPL is 1 device
         suite_run(1, ['.*_DPL'], ['shp_sycl_gpu'])
-        suite_run(shp_gpus, dr_filters, ['shp_sycl_gpu'])
+        suite_run(gpus, dr_nop2p, ['shp_sycl_gpu', 'mhp_sycl_gpu'])
+        suite_run(gpus, dr_p2p, ['mhp_sycl_gpu'])
+
+    if p2p_gpus > 0:
+        suite_run(p2p_gpus, dr_p2p, ['shp_sycl_gpu'])
 
     if cores_per_socket > 0:
         suite_run(1, ['.*_DPL'], ['shp_sycl_cpu'])
         suite_run(2, dr_filters, ['mhp_sycl_cpu', 'shp_sycl_cpu'])
-
-    if mhp_gpus > 0:
-        suite_run(mhp_gpus, dr_filters, ['mhp_sycl_gpu'])
 
     # 1 and 2 sockets for direct cpu
     if cores_per_socket > 0:
