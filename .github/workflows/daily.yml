@@ -44,6 +44,7 @@ jobs:
         path: |
           build/benchmarks/gbench/dr-bench*.json
           build/benchmarks/gbench/*.png
+          build/benchmarks/gbench/*.csv
 
   publish:
     needs: [devcloud]
