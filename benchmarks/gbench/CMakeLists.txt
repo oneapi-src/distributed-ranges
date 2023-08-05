@@ -33,7 +33,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-results
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --gpus 12 --cores-per-socket 52
+      COMMAND dr-bench suite --gpus 12 --cores-per-socket 0
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
