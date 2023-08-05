@@ -34,10 +34,12 @@ Stream
 GPU:
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_gpu.png
+   :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_gpu.csv
 
 CPU:
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.png
+   :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.csv
 
 Algorithms
 ----------
@@ -45,10 +47,12 @@ Algorithms
 GPU:
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_gpu.png
+   :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_gpu.csv
 
 CPU:
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_cpu.png
+   :target:  https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_cpu.csv
 
 Environment Setup
 =================
