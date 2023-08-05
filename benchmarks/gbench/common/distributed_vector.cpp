@@ -149,58 +149,74 @@ static void Copy_Serial(benchmark::State &state) {
 
 DR_BENCHMARK(Copy_Serial);
 
-static void Reduce_DR(benchmark::State &state) {
-  T ref, actual{};
-  {
+int iota_base = 100;
+void check_reduce(T actual) {
+  if (comm_rank == 0) {
     std::vector<T> local_src(default_vector_size);
-    rng::iota(local_src, 100);
-    ref = std::reduce(local_src.begin(), local_src.end());
+    rng::iota(local_src, iota_base);
+    auto ref = std::reduce(local_src.begin(), local_src.end());
+
+    if ((ref - actual) / ref > .001) {
+      fmt::print("Mismatch:\n  Ref {} Actual {}\n", ref, actual);
+      exit(1);
+    }
+  }
+}
+
+static void Reduce_DR(benchmark::State &state) {
+  T actual{};
+  if (comm_rank == 0) {
+    std::vector<T> local_src(default_vector_size);
+    rng::iota(local_src, iota_base);
+    actual = std::reduce(local_src.begin(), local_src.end());
   }
   xhp::distributed_vector<T> src(default_vector_size);
-  xhp::iota(src, 100);
+  xhp::iota(src, iota_base);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
       actual = xhp::reduce(src);
-      benchmark::DoNotOptimize(actual);
     }
   }
-  if ((ref - actual) / ref > .001) {
-    fmt::print("Mismatch:\n  Ref {} Actual {}\n", ref, actual);
-    exit(1);
-  }
+  check_reduce(actual);
 }
 DR_BENCHMARK(Reduce_DR);
 
 static void Reduce_Serial(benchmark::State &state) {
+  T actual{};
   std::vector<T> src(default_vector_size);
+  rng::iota(src, iota_base);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      auto res = std::reduce(std::execution::par_unseq, src.begin(), src.end());
-      benchmark::DoNotOptimize(res);
+      actual = std::reduce(std::execution::par_unseq, src.begin(), src.end());
     }
   }
+  check_reduce(actual);
 }
 
 DR_BENCHMARK(Reduce_Serial);
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void Reduce_DPL(benchmark::State &state) {
+  T actual{};
   sycl::queue q;
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto src = sycl::malloc_device<T>(default_vector_size, q);
+  std::vector<T> local_src(default_vector_size);
+  rng::iota(local_src, iota_base);
+  std::copy(policy, local_src.begin(), local_src.end(), src);
   Stats stats(state, sizeof(T) * default_vector_size, 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      auto res = std::reduce(policy, src, src + default_vector_size);
-      benchmark::DoNotOptimize(res);
+      actual = std::reduce(policy, src, src + default_vector_size);
     }
   }
   sycl::free(src, q);
+  check_reduce(actual);
 }
 
 DR_BENCHMARK(Reduce_DPL);
