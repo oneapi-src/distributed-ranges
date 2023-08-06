@@ -15,6 +15,8 @@ repos:
   rev: 23.7.0
   hooks:
   - id: black
+    args: ['--line-length=79']
+
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.4.0
@@ -31,7 +33,7 @@ repos:
     args: ['--maxkb=800']
 
 - repo: https://github.com/pycqa/flake8
-  rev: 6.0.0
+  rev: 6.1.0
   hooks:
   - id: flake8
 

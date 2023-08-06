@@ -72,24 +72,24 @@ def choice_to_target(c):
 
 
 def do_run(options):
-    if options['rank_range'] > 0:
-        options['ranks'] = list(range(1, options['rank_range'] + 1))
+    if options["rank_range"] > 0:
+        options["ranks"] = list(range(1, options["rank_range"] + 1))
 
     click.echo(f"Targets: {options['target']}")
     click.echo(f"Ranks: {options['ranks']}")
     r = runner.Runner(
         runner.AnalysisConfig(
-            options['prefix'],
-            "\\|".join(options['filter']),
-            options['reps'],
-            options['dry_run'],
-            options['mhp_bench'],
-            options['shp_bench'],
+            options["prefix"],
+            "\\|".join(options["filter"]),
+            options["reps"],
+            options["dry_run"],
+            options["mhp_bench"],
+            options["shp_bench"],
         )
     )
-    for t in options['target']:
-        for s in options['vec_size']:
-            for n in options['ranks']:
+    for t in options["target"]:
+        for s in options["vec_size"]:
+            for n in options["ranks"]:
                 r.run_one_analysis(
                     runner.AnalysisCase(choice_to_target(t), s, n)
                 )
@@ -124,7 +124,7 @@ def do_run(options):
     default=0,
     help="Run with 1 ... N ranks",
 )
-@click.option("--reps", default=100, type=int, help="Number of reps")
+@click.option("--reps", default=50, type=int, help="Number of reps")
 @click.option(
     "-f",
     "--filter",
@@ -161,16 +161,16 @@ def run(
     do_run(
         options
         | {
-            'prefix': prefix,
-            'target': target,
-            'vec_size': vec_size,
-            'ranks': ranks,
-            'rank_range': rank_range,
-            'reps': reps,
-            'filter': filter,
-            'mhp_bench': mhp_bench,
-            'shp_bench': shp_bench,
-            'dry_run': dry_run,
+            "prefix": prefix,
+            "target": target,
+            "vec_size": vec_size,
+            "ranks": ranks,
+            "rank_range": rank_range,
+            "reps": reps,
+            "filter": filter,
+            "mhp_bench": mhp_bench,
+            "shp_bench": shp_bench,
+            "dry_run": dry_run,
         }
     )
 
@@ -190,25 +190,26 @@ def run(
 @click.option(
     "--reps",
     type=int,
-    default=100,
+    default=50,
     help="Number of repetitions",
 )
 @click.option(
     "--gpus",
     type=int,
-    default=1,
+    default=0,
     help="Number of GPUs",
 )
 @click.option(
-    "--p2p-gpus",
-    type=int,
-    default=-1,
-    help="Number of GPUs for p2p",
+    "--no-p2p",
+    "p2p",
+    is_flag=True,
+    default=True,
+    help="Do not run benchmarks that require p2p",
 )
 @click.option(
     "--cores-per-socket",
     type=int,
-    default=2,
+    default=0,
     help="Number of cores per CPU socket",
 )
 def suite(
@@ -220,73 +221,75 @@ def suite(
     vec_size,
     reps,
     gpus,
-    p2p_gpus,
+    p2p,
     cores_per_socket,
 ):
     # Base options
     base = {
-        'prefix': prefix,
-        'mhp_bench': mhp_bench,
-        'shp_bench': shp_bench,
-        'dry_run': dry_run,
-        'vec_size': [vec_size],
-        'reps': reps,
+        "prefix": prefix,
+        "mhp_bench": mhp_bench,
+        "shp_bench": shp_bench,
+        "dry_run": dry_run,
+        "vec_size": [vec_size],
+        "reps": reps,
     }
 
-    def suite_run(rank_range, filters, targets):
+    def suite_run_range(rank_range, filters, targets):
         do_run(
             base
-            | {'rank_range': rank_range, 'filter': filters, 'target': targets}
+            | {"rank_range": rank_range, "filter": filters, "target": targets}
         )
 
     def suite_run_ranks(ranks, filters, targets):
         do_run(
             base
             | {
-                'ranks': ranks,
-                'rank_range': 0,
-                'filter': filters,
-                'target': targets,
+                "ranks": ranks,
+                "rank_range": 0,
+                "filter": filters,
+                "target": targets,
             }
         )
 
     dr_nop2p = [
-        '^Stream_',
-        '^Black_Scholes',
+        "^Stream_",
+        "^Black_Scholes",
     ]
 
     dr_p2p = [
-        '^Inclusive_Scan_DR',
-        '^Reduce_DR',
+        "^Inclusive_Scan_DR",
+        "^Reduce_DR",
     ]
 
     dr_filters = dr_nop2p + dr_p2p
 
-    if p2p_gpus == -1:
+    if p2p:
         p2p_gpus = gpus
+    else:
+        p2p_gpus = min(gpus, 1)
 
     if clean and not dry_run:
         do_clean(prefix)
 
     if gpus > 0:
         # DPL is 1 device
-        suite_run(1, ['.*_DPL'], ['shp_sycl_gpu'])
-        suite_run(gpus, dr_nop2p, ['shp_sycl_gpu', 'mhp_sycl_gpu'])
-        suite_run(gpus, dr_p2p, ['mhp_sycl_gpu'])
+        suite_run_range(1, [".*_DPL"], ["shp_sycl_gpu"])
+        suite_run_range(gpus, dr_nop2p, ["shp_sycl_gpu", "mhp_sycl_gpu"])
+        suite_run_range(gpus, dr_p2p, ["mhp_sycl_gpu"])
 
     if p2p_gpus > 0:
-        suite_run(p2p_gpus, dr_p2p, ['shp_sycl_gpu'])
+        suite_run_range(p2p_gpus, dr_p2p, ["shp_sycl_gpu"])
 
     if cores_per_socket > 0:
-        suite_run(1, ['.*_DPL'], ['shp_sycl_cpu'])
-        suite_run(2, dr_filters, ['mhp_sycl_cpu', 'shp_sycl_cpu'])
+        suite_run_range(1, [".*_DPL"], ["shp_sycl_cpu"])
+        suite_run_range(2, dr_filters, ["mhp_sycl_cpu", "shp_sycl_cpu"])
 
     # 1 and 2 sockets for direct cpu
     if cores_per_socket > 0:
         suite_run_ranks(
             [cores_per_socket, 2 * cores_per_socket],
             dr_filters,
-            ['mhp_direct_cpu'],
+            ["mhp_direct_cpu"],
         )
 
 

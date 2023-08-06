@@ -25,7 +25,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       OUTPUT devcloud-bench-results
       COMMAND dr-bench clean
       # devcloud does not have p2p, so only 1 gpu for shp
-      COMMAND dr-bench suite --p2p-gpus 1 --gpus 4 --cores-per-socket 56
+      COMMAND dr-bench suite --no-p2p --gpus 4 --cores-per-socket 56
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
@@ -33,7 +33,23 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-results
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --gpus 12 --cores-per-socket 0
+      COMMAND dr-bench suite --gpus 12
+      COMMAND dr-bench plot
+      DEPENDS mhp-bench shp-bench)
+
+    add_custom_target(quick-bench-gpu DEPENDS quick-bench-gpu-results)
+    add_custom_command(
+      OUTPUT quick-bench-gpu-results
+      COMMAND dr-bench clean
+      COMMAND dr-bench suite --reps 10 --gpus 2
+      COMMAND dr-bench plot
+      DEPENDS mhp-bench shp-bench)
+
+    add_custom_target(quick-bench-cpu DEPENDS quick-bench-cpu-results)
+    add_custom_command(
+      OUTPUT quick-bench-cpu-results
+      COMMAND dr-bench clean
+      COMMAND dr-bench suite --reps 10 --cores-per-socket 4
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
