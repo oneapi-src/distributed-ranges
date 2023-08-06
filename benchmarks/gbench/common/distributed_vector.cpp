@@ -165,11 +165,6 @@ void check_reduce(T actual) {
 
 static void Reduce_DR(benchmark::State &state) {
   T actual{};
-  if (comm_rank == 0) {
-    std::vector<T> local_src(default_vector_size);
-    rng::iota(local_src, iota_base);
-    actual = std::reduce(local_src.begin(), local_src.end());
-  }
   xhp::distributed_vector<T> src(default_vector_size);
   xhp::iota(src, iota_base);
   Stats stats(state, sizeof(T) * src.size(), 0);
