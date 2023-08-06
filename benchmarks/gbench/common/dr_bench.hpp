@@ -26,8 +26,10 @@ extern std::size_t ranks;
 extern std::size_t default_vector_size;
 extern std::size_t default_repetitions;
 
-#define DR_BENCHMARK(x)                                                        \
-  BENCHMARK(x)->UseRealTime()->Unit(benchmark::kMillisecond)->MinWarmUpTime(1)
+#define DR_BENCHMARK(x) DR_BENCHMARK_BASE(x)->MinWarmUpTime(1)
+
+#define DR_BENCHMARK_BASE(x)                                                   \
+  BENCHMARK(x)->UseRealTime()->Unit(benchmark::kMillisecond)
 
 #ifdef SYCL_LANGUAGE_VERSION
 

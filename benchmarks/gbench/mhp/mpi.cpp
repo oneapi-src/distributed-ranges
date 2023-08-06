@@ -10,7 +10,7 @@ static void Barrier(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Barrier)->Iterations(1000000);
+DR_BENCHMARK_BASE(Barrier)->Iterations(1000000);
 
 static void Fence(benchmark::State &state) {
   for (auto _ : state) {
@@ -18,4 +18,4 @@ static void Fence(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Fence)->Iterations(100000000);
+DR_BENCHMARK_BASE(Fence)->Iterations(100000000);
