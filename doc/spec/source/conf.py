@@ -21,8 +21,8 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'distributed-ranges'
-copyright = '2022-2023, Intel'
+project = "distributed-ranges"
+copyright = "2022-2023, Intel"
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,10 +30,10 @@ copyright = '2022-2023, Intel'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe', 'sphinxcontrib.spelling']
+extensions = ["breathe", "sphinxcontrib.spelling"]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -45,22 +45,22 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_book_theme'
+html_theme = "sphinx_book_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 html_theme_options = {
-    'repository_url': (
-        'https://github.com/intel-sandbox/'
-        'personal.rscohn1.distributed-ranges'
+    "repository_url": (
+        "https://github.com/intel-sandbox/"
+        "personal.rscohn1.distributed-ranges"
     ),
-    'path_to_docs': 'doc/spec/source',
-    'use_issues_button': True,
-    'use_edit_page_button': True,
-    'repository_branch': 'main',
-    'search_bar_text': 'Search the spec...',
+    "path_to_docs": "doc/spec/source",
+    "use_issues_button": True,
+    "use_edit_page_button": True,
+    "repository_branch": "main",
+    "search_bar_text": "Search the spec...",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -73,5 +73,5 @@ spelling_warning = True
 
 # -- Options for breathe
 
-breathe_projects = {'DR': '../build/xml'}
-breathe_default_project = 'DR'
+breathe_projects = {"DR": "../build/xml"}
+breathe_default_project = "DR"
