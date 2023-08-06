@@ -45,7 +45,7 @@ class Runner:
 
         mpirun_params = []
         mpirun_params.append(f"-n {str(ranks)}")
-        extra = 'MPIEXEC_EXTRA_FLAGS'
+        extra = "MPIEXEC_EXTRA_FLAGS"
         if extra in os.environ:
             mpirun_params.append(os.environ[extra])
 

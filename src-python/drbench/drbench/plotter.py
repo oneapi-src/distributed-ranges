@@ -98,6 +98,8 @@ class Plotter:
     def __make_plot(fname, data, **kwargs):
         plot = sns.relplot(data=data, kind="line", marker="d", **kwargs)
         plot.savefig(f"{fname}.png", dpi=200, bbox_inches="tight")
+        click.echo(f"writing {fname}.csv")
+        data.to_csv(f"{fname}.csv")
 
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
@@ -125,9 +127,6 @@ class Plotter:
             col="Benchmark",
             style="Target",
         )
-
-        db_gpu.to_csv("stream_strong_scaling_gpu.csv")
-        db_cpu.to_csv("stream_strong_scaling_cpu.csv")
 
     def __algorithm_plots(self):
         m = self.db_maxvec
@@ -157,8 +156,6 @@ class Plotter:
             col="Benchmark",
             style="Target",
         )
-        db_gpu.to_csv("algorithms_gpu.csv")
-        db_cpu.to_csv("algorithms_cpu.csv")
 
     def create_plots(self):
         sns.set_theme(style="ticks")
