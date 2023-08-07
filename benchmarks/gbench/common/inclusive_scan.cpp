@@ -14,7 +14,7 @@ static void Inclusive_Scan_DR(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      xhp::inclusive_scan(a, b);
+      xhp::inclusive_scan(a, b, std::plus<>{});
     }
   }
 }
@@ -33,7 +33,7 @@ static void Inclusive_Scan_DPL(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      std::inclusive_scan(policy, a, a + default_vector_size, b);
+      std::inclusive_scan(policy, a, a + default_vector_size, b, std::plus<>{});
     }
   }
   sycl::free(a, q);
