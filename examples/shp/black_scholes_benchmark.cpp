@@ -207,27 +207,35 @@ void black_scholes_distributed(T r, T sig, RS &&s0, RX &&x, RT &&t, RC &&vcall,
 }
 
 int main(int argc, char **argv) {
-  auto devices_ = dr::shp::get_devices(sycl::default_selector_v);
 
-  std::size_t n_devices = devices_.size();
+  if (argc != 3) {
+    fmt::print("usage: ./dot_product_benchmark [n_devices] [n_elements]\n");
+    return 1;
+  }
+
+  std::size_t n_devices = std::atoll(argv[1]);
+
+  std::size_t n = std::atoll(argv[2]);
+
+  auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
+
+  // std::size_t n_devices = devices_.size();
 
   auto devices =
       dr::shp::trim_devices(devices_, std::min(n_devices, devices_.size()));
 
   dr::shp::init(devices);
 
-  fmt::print("Running with {} devices.\n", devices.size());
+  fmt::print("Running with {} devices, {} elements\n", devices.size(), n);
   dr::shp::print_device_details(devices);
 
-  std::size_t n = 2ll * 1000 * 1000 * 1000;
+  // std::size_t n = 2ll * 1000 * 1000 * 1000;
   using T = float;
 
   // Risk-free rate
   T r = 0.1;
   // Volatility
   T sig = 0.2;
-
-  fmt::print("Initializing arrays...\n");
 
   auto &&[s0, x, t, vcall, vput] = InitData<T>(n);
 
