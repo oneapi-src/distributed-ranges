@@ -44,7 +44,7 @@ DR_BENCHMARK(Fill_Serial);
 #ifdef SYCL_LANGUAGE_VERSION
 
 static void Fill_QueueFill_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
   Stats stats(state, 0, sizeof(T) * default_vector_size);
@@ -59,7 +59,7 @@ static void Fill_QueueFill_SYCL(benchmark::State &state) {
 DR_BENCHMARK(Fill_QueueFill_SYCL);
 
 static void Fill_ParallelFor_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
   Stats stats(state, 0, sizeof(T) * default_vector_size);
@@ -78,7 +78,7 @@ static void Fill_ParallelFor_SYCL(benchmark::State &state) {
 DR_BENCHMARK(Fill_ParallelFor_SYCL);
 
 static void Copy_ParallelFor_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto src = sycl::malloc_device<T>(default_vector_size, q);
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
@@ -101,7 +101,7 @@ static void Copy_ParallelFor_SYCL(benchmark::State &state) {
 DR_BENCHMARK(Copy_ParallelFor_SYCL);
 
 static void Copy_QueueCopy_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto src = sycl::malloc_device<T>(default_vector_size, q);
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
@@ -197,7 +197,7 @@ DR_BENCHMARK(Reduce_Serial);
 #ifdef SYCL_LANGUAGE_VERSION
 static void Reduce_DPL(benchmark::State &state) {
   T actual{};
-  sycl::queue q;
+  auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto src = sycl::malloc_device<T>(default_vector_size, q);
   std::vector<T> local_src(default_vector_size);
@@ -207,7 +207,8 @@ static void Reduce_DPL(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      actual = std::reduce(policy, src, src + default_vector_size);
+      actual = std::reduce(policy, src, src + default_vector_size, T(0),
+                           std::plus<>{});
     }
   }
   sycl::free(src, q);

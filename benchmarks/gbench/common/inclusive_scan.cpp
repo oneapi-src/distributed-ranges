@@ -23,7 +23,7 @@ DR_BENCHMARK(Inclusive_Scan_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void Inclusive_Scan_DPL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto a = sycl::malloc_device<T>(default_vector_size, q);
   auto b = sycl::malloc_device<T>(default_vector_size, q);

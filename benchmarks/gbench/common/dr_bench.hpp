@@ -125,3 +125,53 @@ inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
     }
   }
 }
+
+inline auto partitionable(sycl::device device) {
+  // Earlier commits used the query API, but they return true even
+  // though a partition will fail:  Intel MPI mpirun with multiple
+  // processes.
+  try {
+    device.create_sub_devices<
+        sycl::info::partition_property::partition_by_affinity_domain>(
+        sycl::info::partition_affinity_domain::numa);
+  } catch (sycl::exception const &e) {
+    if (e.code() == sycl::errc::invalid ||
+        e.code() == sycl::errc::feature_not_supported) {
+      return false;
+    } else {
+      throw;
+    }
+  }
+
+  return true;
+}
+
+inline sycl::queue get_queue() {
+  std::vector<sycl::device> devices;
+
+  auto root_devices = sycl::platform().get_devices();
+
+  for (auto &&root_device : root_devices) {
+    dr::drlog.debug("Root device: {}\n",
+                    root_device.get_info<sycl::info::device::name>());
+    if (partitionable(root_device)) {
+      auto subdevices = root_device.create_sub_devices<
+          sycl::info::partition_property::partition_by_affinity_domain>(
+          sycl::info::partition_affinity_domain::numa);
+      assert(rng::size(subdevices) > 0);
+
+      for (auto &&subdevice : subdevices) {
+        dr::drlog.debug("  add subdevice: {}\n",
+                        subdevice.get_info<sycl::info::device::name>());
+        devices.push_back(subdevice);
+      }
+    } else {
+      dr::drlog.debug("  add root device: {}\n",
+                      root_device.get_info<sycl::info::device::name>());
+      devices.push_back(root_device);
+    }
+  }
+
+  assert(rng::size(devices) > 0);
+  return sycl::queue(devices[0]);
+}

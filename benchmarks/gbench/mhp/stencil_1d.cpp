@@ -89,7 +89,7 @@ DR_BENCHMARK(Stencil1D_Subrange_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
 static void Stencil1D_Subrange_DPL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
 
   auto in = sycl::malloc_device<T>(default_vector_size, q);
