@@ -14,11 +14,15 @@
 #include <sycl/sycl.hpp>
 #endif
 
-#include "cxxopts.hpp"
 #include <benchmark/benchmark.h>
+#include <cxxopts.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <vendor/source_location/source_location.hpp>
+
+#include <dr/detail/logger.hpp>
+#include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/sycl_utils.hpp>
 
 extern std::size_t comm_rank;
 extern std::size_t ranks;
@@ -37,6 +41,36 @@ inline auto device_info(sycl::device device) {
   return fmt::format("{}, max_compute_units: {}",
                      device.get_info<sycl::info::device::name>(),
                      device.get_info<sycl::info::device::max_compute_units>());
+}
+
+inline sycl::queue get_queue() {
+  std::vector<sycl::device> devices;
+
+  auto root_devices = sycl::platform().get_devices();
+
+  for (auto &&root_device : root_devices) {
+    dr::drlog.debug("Root device: {}\n",
+                    root_device.get_info<sycl::info::device::name>());
+    if (dr::__detail::partitionable(root_device)) {
+      auto subdevices = root_device.create_sub_devices<
+          sycl::info::partition_property::partition_by_affinity_domain>(
+          sycl::info::partition_affinity_domain::numa);
+      assert(rng::size(subdevices) > 0);
+
+      for (auto &&subdevice : subdevices) {
+        dr::drlog.debug("  add subdevice: {}\n",
+                        subdevice.get_info<sycl::info::device::name>());
+        devices.push_back(subdevice);
+      }
+    } else {
+      dr::drlog.debug("  add root device: {}\n",
+                      root_device.get_info<sycl::info::device::name>());
+      devices.push_back(root_device);
+    }
+  }
+
+  assert(rng::size(devices) > 0);
+  return sycl::queue(devices[0]);
 }
 
 #endif

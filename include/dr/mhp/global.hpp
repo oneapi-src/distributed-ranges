@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include <dr/mhp/sycl_support.hpp>
 #include <unistd.h>
+
+#include <dr/detail/sycl_utils.hpp>
+#include <dr/mhp/sycl_support.hpp>
 
 namespace dr::mhp {
 
@@ -81,26 +83,6 @@ inline void init(sycl::queue q) {
   __detail::global_context_ = new __detail::global_context(q);
 }
 
-inline auto partitionable(sycl::device device) {
-  // Earlier commits used the query API, but they return true even
-  // though a partition will fail:  Intel MPI mpirun with multiple
-  // processes.
-  try {
-    device.create_sub_devices<
-        sycl::info::partition_property::partition_by_affinity_domain>(
-        sycl::info::partition_affinity_domain::numa);
-  } catch (sycl::exception const &e) {
-    if (e.code() == sycl::errc::invalid ||
-        e.code() == sycl::errc::feature_not_supported) {
-      return false;
-    } else {
-      throw;
-    }
-  }
-
-  return true;
-}
-
 inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   std::vector<sycl::device> devices;
 
@@ -109,7 +91,7 @@ inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   for (auto &&root_device : root_devices) {
     dr::drlog.debug("Root device: {}\n",
                     root_device.get_info<sycl::info::device::name>());
-    if (partitionable(root_device)) {
+    if (dr::__detail::partitionable(root_device)) {
       auto subdevices = root_device.create_sub_devices<
           sycl::info::partition_property::partition_by_affinity_domain>(
           sycl::info::partition_affinity_domain::numa);

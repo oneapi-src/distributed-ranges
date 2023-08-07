@@ -11,6 +11,26 @@
 
 namespace dr::__detail {
 
+inline auto partitionable(sycl::device device) {
+  // Earlier commits used the query API, but they return true even
+  // though a partition will fail:  Intel MPI mpirun with multiple
+  // processes.
+  try {
+    device.create_sub_devices<
+        sycl::info::partition_property::partition_by_affinity_domain>(
+        sycl::info::partition_affinity_domain::numa);
+  } catch (sycl::exception const &e) {
+    if (e.code() == sycl::errc::invalid ||
+        e.code() == sycl::errc::feature_not_supported) {
+      return false;
+    } else {
+      throw;
+    }
+  }
+
+  return true;
+}
+
 // With the ND-range workaround, the maximum kernel size is
 // `std::numeric_limits<std::int32_t>::max()` rounded down to
 // the nearest multiple of the block size.

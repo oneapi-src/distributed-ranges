@@ -4,9 +4,11 @@
 
 #pragma once
 
-#include <dr/detail/format_shim.hpp>
+#include <fstream>
 
 #include <vendor/source_location/source_location.hpp>
+
+#include <dr/detail/format_shim.hpp>
 
 namespace dr {
 
