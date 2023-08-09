@@ -25,34 +25,9 @@ C++ Ranges.
 The documentation is built from main branch on every commit and
 published at `latest spec`_ and `latest doxygen`_.
 
-Benchmark Results
-=================
+`Benchmark results`_
 
-Stream
-------
-
-GPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_gpu.png
-   :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_gpu.csv
-
-CPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.png
-   :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.csv
-
-Algorithms
-----------
-
-GPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_gpu.png
-   :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_gpu.csv
-
-CPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_cpu.png
-   :target:  https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_cpu.csv
+.. _`Benchmark results`: devcloud.rst
 
 Environment Setup
 =================

@@ -3,9 +3,12 @@
 # SPDX-FileCopyrightText: Intel Corporation
 #
 # SPDX-License-Identifier: BSD-3-Clause
-hostname
-source /opt/intel/oneapi/setvars.sh
+
+# system bashrc does this
+# source /opt/intel/oneapi/setvars.sh
+
 set -e
+hostname
 
 # devcloud requires --launcher=fork for mpi
 cmake -B build -DENABLE_SYCL=on -DENABLE_MPIFORK=on
