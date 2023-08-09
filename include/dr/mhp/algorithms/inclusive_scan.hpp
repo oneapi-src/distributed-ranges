@@ -11,6 +11,34 @@
 namespace dr::mhp {
 namespace __detail {
 
+void local_inclusive_scan(auto in, auto out, auto binary_op, auto init,
+                          bool use_init) {
+  if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    auto in_begin_direct = dr::__detail::direct_iterator(in.begin());
+    auto in_end_direct = dr::__detail::direct_iterator(in.end());
+    auto out_begin_direct = dr::__detail::direct_iterator(out.begin());
+    if (use_init) {
+      std::inclusive_scan(dpl_policy(), in_begin_direct, in_end_direct,
+                          out_begin_direct, binary_op, init.value());
+    } else {
+      std::inclusive_scan(dpl_policy(), in_begin_direct, in_end_direct,
+                          out_begin_direct, binary_op);
+    }
+#else
+    assert(false);
+#endif
+  } else {
+    if (use_init) {
+      std::inclusive_scan(std::execution::par_unseq, in.begin(), in.end(),
+                          out.begin(), binary_op, init.value());
+    } else {
+      std::inclusive_scan(std::execution::par_unseq, in.begin(), in.end(),
+                          out.begin(), binary_op);
+    }
+  }
+}
+
 template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
           typename BinaryOp, typename U = rng::range_value_t<R>>
 auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
@@ -28,14 +56,8 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   for (auto io_segment : io_segments) {
     auto [in_segment, out_segment] = io_segment;
     dr::drlog.debug("in segment: {}\n", in_segment);
-    if (init && first_rank && first_segment) {
-      std::inclusive_scan(std::execution::par_unseq, in_segment.begin(),
-                          in_segment.end(), out_segment.begin(), binary_op,
-                          init.value());
-    } else {
-      std::inclusive_scan(std::execution::par_unseq, in_segment.begin(),
-                          in_segment.end(), out_segment.begin(), binary_op);
-    }
+    local_inclusive_scan(in_segment, out_segment, binary_op, init,
+                         init && first_rank && first_segment);
     segment_bases.push_back(out_segment.back());
     first_segment = false;
     dr::drlog.debug("out segment: {}\n", out_segment);
@@ -77,9 +99,20 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         base = binary_op(base, segment_bases[i++]);
       }
 
-      std::for_each(std::execution::par_unseq, rng::begin(segment),
-                    rng::end(segment),
-                    [binary_op, base](auto &v) { v = binary_op(v, base); });
+      if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+        std::for_each(dpl_policy(),
+                      dr::__detail::direct_iterator(rng::begin(segment)),
+                      dr::__detail::direct_iterator(rng::end(segment)),
+                      [binary_op, base](auto &v) { v = binary_op(v, base); });
+#else
+        assert(false);
+#endif
+      } else {
+        std::for_each(std::execution::par_unseq, rng::begin(segment),
+                      rng::end(segment),
+                      [binary_op, base](auto &v) { v = binary_op(v, base); });
+      }
     }
     first_segment = false;
     dr::drlog.debug("segment after rebase: {}\n", segment);
