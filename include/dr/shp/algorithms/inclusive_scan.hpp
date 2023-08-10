@@ -112,11 +112,9 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto &&local_policy = __detail::dpl_policy(dr::ranges::rank(out_segment));
 
       if (idx > 0) {
-        auto first = rng::begin(out_segment);
-        auto last = rng::end(out_segment);
-
         auto &&q = __detail::queue(dr::ranges::rank(out_segment));
 
+        auto first = rng::begin(out_segment);
         dr::__detail::direct_iterator d_first(first);
 
         auto d_sum =
