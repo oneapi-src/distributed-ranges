@@ -37,33 +37,40 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
   if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                device_policy>) {
 
-    U *d_inits = sycl::malloc_device<U>(rng::size(zipped_segments),
-                                        shp::devices()[0], shp::context());
-
     std::vector<sycl::event> events;
 
-    std::size_t segment_id = 0;
-    for (auto &&segs : zipped_segments) {
-      auto &&[in_segment, out_segment] = segs;
+    std::vector<U> inits;
 
-      auto last_element = rng::prev(rng::end(__detail::local(in_segment)));
-      auto dest = d_inits + segment_id;
+    if constexpr (sycl::has_known_identity_v<BinaryOp, U>) {
+      inits.assign(rng::size(zipped_segments),
+                   sycl::known_identity_v<BinaryOp, U>);
+    } else {
+      inits.resize(rng::size(zipped_segments));
 
-      auto &&q = __detail::queue(dr::ranges::rank(in_segment));
+      U *d_inits = sycl::malloc_device<U>(rng::size(zipped_segments),
+                                          shp::devices()[0], shp::context());
 
-      auto e = q.single_task([=] { *dest = *last_element; });
-      events.push_back(e);
-      segment_id++;
+      std::size_t segment_id = 0;
+      for (auto &&segs : zipped_segments) {
+        auto &&[in_segment, out_segment] = segs;
+
+        auto last_element = rng::prev(rng::end(__detail::local(in_segment)));
+        auto dest = d_inits + segment_id;
+
+        auto &&q = __detail::queue(dr::ranges::rank(in_segment));
+
+        auto e = q.single_task([=] { *dest = *last_element; });
+        events.push_back(e);
+        segment_id++;
+      }
+
+      __detail::wait(events);
+      events.clear();
+
+      shp::copy(d_inits, d_inits + inits.size(), inits.data() + 1);
+
+      sycl::free(d_inits, shp::context());
     }
-
-    __detail::wait(events);
-    events.clear();
-
-    std::vector<U> inits(rng::size(zipped_segments));
-
-    shp::copy(d_inits, d_inits + inits.size(), inits.data() + 1);
-
-    sycl::free(d_inits, shp::context());
 
     inits[0] = init;
 
@@ -72,7 +79,7 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
     dr::shp::vector<T, dr::shp::device_allocator<T>> partial_sums(
         std::size_t(zipped_segments.size()), allocator);
 
-    segment_id = 0;
+    std::size_t segment_id = 0;
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
 
