@@ -168,9 +168,14 @@ private:
 class rma_window {
 public:
   void create(communicator comm, void *data, std::size_t size) {
+    local_data_ = data;
     communicator_ = comm;
     drlog.debug("win create:: size: {}\n", size);
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
+  }
+
+  template <typename T> auto local_data() {
+    return static_cast<T *>(local_data_);
   }
 
   void free() { MPI_Win_free(&win_); }
@@ -221,6 +226,7 @@ public:
 private:
   dr::communicator communicator_;
   MPI_Win win_ = MPI_WIN_NULL;
+  void *local_data_ = nullptr;
 };
 
 } // namespace dr

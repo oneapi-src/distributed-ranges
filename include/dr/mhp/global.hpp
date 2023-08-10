@@ -14,19 +14,37 @@ namespace dr::mhp {
 namespace __detail {
 
 struct global_context {
-  global_context() {}
+  void init() {
+    void *data = nullptr;
+    std::size_t size = 0;
+    if (comm_.rank() == 0) {
+      root_scratchpad_.resize(scratchpad_size_);
+      data = root_scratchpad_.data();
+      size = rng::size(root_scratchpad_) * sizeof(root_scratchpad_[0]);
+    }
+    root_win_.create(comm_, data, size);
+    root_win_.fence();
+  }
+
+  global_context() { init(); }
 #ifdef SYCL_LANGUAGE_VERSION
   global_context(sycl::queue q)
-      : sycl_queue_(q), dpl_policy_(q), use_sycl_(true) {}
+      : sycl_queue_(q), dpl_policy_(q), use_sycl_(true) {
+    init();
+  }
+
   sycl::queue sycl_queue_;
   decltype(oneapi::dpl::execution::make_device_policy(
       std::declval<sycl::queue>())) dpl_policy_;
 #endif
 
+  static constexpr std::size_t scratchpad_size_ = 1000000;
   bool use_sycl_ = false;
   dr::communicator comm_;
   // container owns the window, we just track MPI handle
   std::set<MPI_Win> wins_;
+  dr::rma_window root_win_;
+  std::vector<char> root_scratchpad_;
 };
 
 inline global_context *global_context_ = nullptr;
@@ -43,6 +61,7 @@ inline void final() {
   __detail::global_context_ = nullptr;
 }
 
+inline auto root_win() { return __detail::gcontext()->root_win_; }
 inline dr::communicator &default_comm() { return __detail::gcontext()->comm_; }
 
 inline std::size_t rank() { return default_comm().rank(); }

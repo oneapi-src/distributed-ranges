@@ -11,31 +11,17 @@
 namespace dr::mhp {
 namespace __detail {
 
-void local_inclusive_scan(auto in, auto out, auto binary_op, auto init,
-                          bool use_init) {
-  if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-    auto in_begin_direct = dr::__detail::direct_iterator(in.begin());
-    auto in_end_direct = dr::__detail::direct_iterator(in.end());
-    auto out_begin_direct = dr::__detail::direct_iterator(out.begin());
-    if (use_init) {
-      std::inclusive_scan(dpl_policy(), in_begin_direct, in_end_direct,
-                          out_begin_direct, binary_op, init.value());
-    } else {
-      std::inclusive_scan(dpl_policy(), in_begin_direct, in_end_direct,
-                          out_begin_direct, binary_op);
-    }
-#else
-    assert(false);
-#endif
+void local_inclusive_scan(auto policy, auto in, auto out, auto binary_op,
+                          auto init, std::size_t seg_index) {
+  auto in_begin_direct = dr::__detail::direct_iterator(in.begin());
+  auto in_end_direct = dr::__detail::direct_iterator(in.end());
+  auto out_begin_direct = dr::__detail::direct_iterator(out.begin());
+  if (init && seg_index == 0) {
+    std::inclusive_scan(policy, in_begin_direct, in_end_direct,
+                        out_begin_direct, binary_op, init.value());
   } else {
-    if (use_init) {
-      std::inclusive_scan(std::execution::par_unseq, in.begin(), in.end(),
-                          out.begin(), binary_op, init.value());
-    } else {
-      std::inclusive_scan(std::execution::par_unseq, in.begin(), in.end(),
-                          out.begin(), binary_op);
-    }
+    std::inclusive_scan(policy, in_begin_direct, in_end_direct,
+                        out_begin_direct, binary_op);
   }
 }
 
@@ -43,6 +29,106 @@ template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
           typename BinaryOp, typename U = rng::range_value_t<R>>
 auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
                           std::optional<U> init = {}) {
+  using value_type = U;
+  assert(aligned(r, d_first));
+
+  auto comm = default_comm();
+  auto rank = comm.rank();
+  auto local_segs = rng::views::zip(local_segments(r), local_segments(d_first));
+  auto global_segs =
+      rng::views::zip(dr::ranges::segments(r), dr::ranges::segments(d_first));
+  std::size_t num_segs = std::size_t(rng::size(dr::ranges::segments(r)));
+
+  // Pass 1 local inclusive scan
+  std::size_t seg_index = 0;
+  for (auto global_seg : global_segs) {
+    auto [global_in, global_out] = global_seg;
+
+    if (dr::ranges::rank(global_in) == rank) {
+      auto local_in = dr::ranges::__detail::local(global_in);
+      auto local_out = dr::ranges::__detail::local(global_out);
+      if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+        local_inclusive_scan(dpl_policy(), local_in, local_out, binary_op, init,
+                             seg_index);
+#else
+        assert(false);
+#endif
+      } else {
+        local_inclusive_scan(std::execution::par_unseq, local_in, local_out,
+                             binary_op, init, seg_index);
+      }
+    }
+
+    seg_index++;
+  }
+
+  // Pass 2 put partial sums on root
+  seg_index = 0;
+  auto win = root_win();
+  for (auto global_seg : global_segs) {
+    // Do not need last segment
+    if (seg_index == num_segs - 1) {
+      break;
+      ;
+    }
+
+    auto [global_in, global_out] = global_seg;
+    if (dr::ranges::rank(global_in) == rank) {
+      auto local_out = dr::ranges::__detail::local(global_out);
+      auto back = local_out.back();
+      win.put(back, 0, seg_index);
+    }
+
+    seg_index++;
+  }
+  win.fence();
+
+  // Pass 3: scan of partial sums on root
+  if (rank == 0) {
+    value_type *partials = win.local_data<value_type>();
+    std::inclusive_scan(partials, partials + num_segs, partials, binary_op);
+  }
+  barrier();
+
+  // Pass 4: rebase
+  seg_index = 0;
+  for (auto global_seg : global_segs) {
+    if (seg_index > 0) {
+      auto [global_in, global_out] = global_seg;
+
+      auto offset = win.get<value_type>(0, seg_index - 1);
+      auto rebase = [offset, binary_op](auto &v) { v = binary_op(v, offset); };
+      if (dr::ranges::rank(global_in) == rank) {
+        auto local_in = dr::ranges::__detail::local(global_in);
+        auto local_out = rng::views::take(
+            dr::ranges::__detail::local(global_out), rng::size(local_in));
+        if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+          dr::__detail::parallel_for(dr::mhp::sycl_queue(),
+                                     rng::distance(local_out), rebase)
+              .wait();
+#else
+          assert(false);
+#endif
+        } else {
+          std::for_each(std::execution::par_unseq, local_out.begin(),
+                        local_out.end(), rebase);
+        }
+      }
+    }
+
+    seg_index++;
+  }
+
+  barrier();
+  return d_first + rng::size(r);
+}
+
+template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
+          typename BinaryOp, typename U = rng::range_value_t<R>>
+auto inclusive_scan_impl_2(R &&r, O &&d_first, BinaryOp &&binary_op,
+                           std::optional<U> init = {}) {
   assert(aligned(r, d_first));
 
   using value_type = U;
@@ -121,7 +207,6 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   barrier();
   return d_first + rng::size(r);
 }
-
 } // namespace __detail
 
 template <dr::distributed_contiguous_range R,
