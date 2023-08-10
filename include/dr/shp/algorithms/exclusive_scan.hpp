@@ -130,15 +130,17 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
       auto &&local_policy = __detail::dpl_policy(dr::ranges::rank(out_segment));
 
       if (idx > 0) {
-        T sum = partial_sums[idx - 1];
+        auto &&q = __detail::queue(dr::ranges::rank(out_segment));
 
         auto first = rng::begin(out_segment);
-        auto last = rng::end(out_segment);
+        dr::__detail::direct_iterator d_first(first);
 
-        sycl::event e = oneapi::dpl::experimental::for_each_async(
-            local_policy, dr::__detail::direct_iterator(first),
-            dr::__detail::direct_iterator(last),
-            [=](auto &&x) { x = binary_op(x, sum); });
+        auto d_sum =
+            dr::ranges::__detail::local(partial_sums).begin() + idx - 1;
+
+        sycl::event e = dr::__detail::parallel_for(
+            q, rng::distance(out_segment),
+            [=](auto idx) { d_first[idx] = binary_op(d_first[idx], *d_sum); });
 
         events.push_back(e);
       }
