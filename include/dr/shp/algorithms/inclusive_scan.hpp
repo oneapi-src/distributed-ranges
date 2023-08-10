@@ -22,6 +22,8 @@
 #include <dr/shp/vector.hpp>
 #include <dr/shp/views/views.hpp>
 
+#include <fmt/core.h>
+
 namespace dr::shp {
 
 template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
@@ -42,11 +44,19 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
     std::vector<sycl::event> events;
 
+    bool print_timings = true;
+
+    auto begin = std::chrono::high_resolution_clock::now();
     auto root = dr::shp::devices()[0];
     dr::shp::device_allocator<T> allocator(dr::shp::context(), root);
     dr::shp::vector<T, dr::shp::device_allocator<T>> partial_sums(
         std::size_t(zipped_segments.size()), allocator);
+    auto end = std::chrono::high_resolution_clock::now();
+    double duration = std::chrono::duration<double>(end - begin).count();
+    if (print_timings)
+      fmt::print("{} ms allocating\n", duration * 1000);
 
+    begin = std::chrono::high_resolution_clock::now();
     std::size_t segment_id = 0;
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
@@ -92,11 +102,22 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
       segment_id++;
     }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration<double>(end - begin).count();
+    if (print_timings)
+      fmt::print("{} ms launching kernels.\n", duration * 1000);
 
+    begin = std::chrono::high_resolution_clock::now();
     __detail::wait(events);
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration<double>(end - begin).count();
+    if (print_timings)
+      fmt::print("{} ms synchronizing on kernels.\n", duration * 1000);
     events.clear();
 
+    begin = std::chrono::high_resolution_clock::now();
     auto &&local_policy = __detail::dpl_policy(0);
+    end = std::chrono::high_resolution_clock::now();
 
     auto first = dr::ranges::local(partial_sums).data();
     auto last = first + partial_sums.size();
@@ -105,6 +126,11 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
                                                     first, binary_op)
         .wait();
 
+    duration = std::chrono::duration<double>(end - begin).count();
+    if (print_timings)
+      fmt::print("{} ms running serial inclusive scan...\n", duration * 1000);
+
+    begin = std::chrono::high_resolution_clock::now();
     std::size_t idx = 0;
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
@@ -112,22 +138,38 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
       auto &&local_policy = __detail::dpl_policy(dr::ranges::rank(out_segment));
 
       if (idx > 0) {
-        T sum = partial_sums[idx - 1];
+        // T sum = partial_sums[idx - 1];
 
         auto first = rng::begin(out_segment);
         auto last = rng::end(out_segment);
 
-        sycl::event e = oneapi::dpl::experimental::for_each_async(
-            local_policy, dr::__detail::direct_iterator(first),
-            dr::__detail::direct_iterator(last),
-            [=](auto &&x) { x = binary_op(x, sum); });
+        auto &&q = __detail::queue(dr::ranges::rank(out_segment));
+
+        dr::__detail::direct_iterator d_first(first);
+
+        auto sum_idx = idx - 1;
+        auto d_sum =
+            dr::ranges::__detail::local(partial_sums).begin() + idx - 1;
+
+        sycl::event e = dr::__detail::parallel_for(
+            q, rng::distance(out_segment),
+            [=](auto idx) { d_first[idx] = binary_op(d_first[idx], *d_sum); });
 
         events.push_back(e);
       }
       idx++;
     }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration<double>(end - begin).count();
+    if (print_timings)
+      fmt::print("{} ms launching sums...\n", duration * 1000);
 
+    begin = std::chrono::high_resolution_clock::now();
     __detail::wait(events);
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration<double>(end - begin).count();
+    if (print_timings)
+      fmt::print("{} ms waiting for sums...\n", duration * 1000);
 
   } else {
     assert(false);
