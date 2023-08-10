@@ -103,10 +103,14 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         auto local_in = dr::ranges::__detail::local(global_in);
         auto local_out = rng::views::take(
             dr::ranges::__detail::local(global_out), rng::size(local_in));
+        // dr::drlog.debug("rebase before: {}\n", local_out);
         if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+          auto wrap_rebase = [rebase, base = rng::begin(local_out)](auto idx) {
+            rebase(base[idx]);
+          };
           dr::__detail::parallel_for(dr::mhp::sycl_queue(),
-                                     rng::distance(local_out), rebase)
+                                     rng::distance(local_out), wrap_rebase)
               .wait();
 #else
           assert(false);
@@ -115,6 +119,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           std::for_each(std::execution::par_unseq, local_out.begin(),
                         local_out.end(), rebase);
         }
+        // dr::drlog.debug("rebase after: {}\n", local_out);
       }
     }
 
