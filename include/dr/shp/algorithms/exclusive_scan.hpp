@@ -127,8 +127,6 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
     for (auto &&segs : zipped_segments) {
       auto &&[in_segment, out_segment] = segs;
 
-      auto &&local_policy = __detail::dpl_policy(dr::ranges::rank(out_segment));
-
       if (idx > 0) {
         auto &&q = __detail::queue(dr::ranges::rank(out_segment));
 
