@@ -147,7 +147,6 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
         dr::__detail::direct_iterator d_first(first);
 
-        auto sum_idx = idx - 1;
         auto d_sum =
             dr::ranges::__detail::local(partial_sums).begin() + idx - 1;
 
