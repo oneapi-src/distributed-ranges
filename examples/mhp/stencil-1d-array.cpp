@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
   dr::drlog.debug("Rank: {}\n", comm_rank);
 
   auto error = stencil();
+  dr::mhp::finalize();
   MPI_Finalize();
   return error;
 }

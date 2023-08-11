@@ -240,5 +240,7 @@ int main(int argc, char **argv) {
     stats(durations, sum, v_serial, x_local, y_local);
   }
 
+  mhp::finalize();
+  MPI_Finalize();
   return error;
 }

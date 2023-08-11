@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
 
   transpose();
 
+  dr::mhp::finalize();
   MPI_Finalize();
   return 0;
 }

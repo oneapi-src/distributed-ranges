@@ -131,6 +131,7 @@ int main(int argc, char *argv[]) {
     delete logfile;
   }
 
+  dr::mhp::finalize();
   MPI_Finalize();
 
   return 0;

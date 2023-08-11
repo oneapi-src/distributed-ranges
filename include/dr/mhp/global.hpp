@@ -26,6 +26,8 @@ struct global_context {
     root_win_.fence();
   }
 
+  ~global_context() { root_win_.free(); }
+
   global_context() { init(); }
 #ifdef SYCL_LANGUAGE_VERSION
   global_context(sycl::queue q)
@@ -83,6 +85,12 @@ inline void init() {
   assert(__detail::global_context_ == nullptr &&
          "Do not call mhp::init() more than once");
   __detail::global_context_ = new __detail::global_context;
+}
+
+inline void finalize() {
+  assert(__detail::global_context_ != nullptr);
+  delete __detail::global_context_;
+  __detail::global_context_ = nullptr;
 }
 
 inline std::string hostname() {
