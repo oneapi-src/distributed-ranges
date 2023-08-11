@@ -109,16 +109,4 @@ sycl::event parallel_for(sycl::queue &q, sycl::range<1> numWorkItems, Fn &&fn) {
 
 } // namespace dr::__detail
 
-#else
-
-namespace dr::__detail {
-
-// define here to avoid ifdefs where it is called
-template <typename T> T sycl_get(T &v) {
-  assert(false);
-  return v;
-}
-
-} // namespace dr::__detail
-
 #endif // SYCL_LANGUAGE_VERSION

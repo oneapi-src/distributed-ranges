@@ -47,10 +47,20 @@ struct device_policy {
 
 #else // !SYCL_LANGUAGE_VERSION
 
-namespace namespace dr::mhp {
+namespace dr::mhp {
 
 struct device_policy {};
 
 } // namespace dr::mhp
+
+namespace dr::mhp::__detail {
+
+// define here to avoid ifdefs where it is called
+template <typename T> T sycl_get(T &v) {
+  assert(false);
+  return v;
+}
+
+} // namespace dr::mhp::__detail
 
 #endif // SYCL_LANGUAGE_VERSION
