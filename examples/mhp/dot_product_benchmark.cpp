@@ -207,37 +207,39 @@ int main(int argc, char **argv) {
 
   auto v_serial = dot_product_sequential(x_local, y_local);
 
-  mhp::distributed_vector<T> x(n);
-  mhp::distributed_vector<T> y(n);
-
-  mhp::copy(0, x_local, x.begin());
-  mhp::copy(0, y_local, y.begin());
-
-  std::vector<double> durations;
-  durations.reserve(n_iterations);
-
-  // Execute on all devices with MHP:
-  T sum = 0;
   int error = 0;
-  for (std::size_t i = 0; i < n_iterations; i++) {
-    auto begin = std::chrono::high_resolution_clock::now();
-    auto v = dot_product_distributed(x, y);
-    auto end = std::chrono::high_resolution_clock::now();
-    double duration = std::chrono::duration<double>(end - begin).count();
-    durations.push_back(duration);
-    if (comm_rank == 0) {
-      if (!is_equal(v, v_serial, tolerance)) {
-        fmt::print("DR dot product result mismatch:\n"
-                   "  expected: {}\n"
-                   "  actual:   {}\n",
-                   v_serial, v);
-        error = 1;
+  {
+    mhp::distributed_vector<T> x(n);
+    mhp::distributed_vector<T> y(n);
+
+    mhp::copy(0, x_local, x.begin());
+    mhp::copy(0, y_local, y.begin());
+
+    std::vector<double> durations;
+    durations.reserve(n_iterations);
+
+    // Execute on all devices with MHP:
+    T sum = 0;
+    for (std::size_t i = 0; i < n_iterations; i++) {
+      auto begin = std::chrono::high_resolution_clock::now();
+      auto v = dot_product_distributed(x, y);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+      durations.push_back(duration);
+      if (comm_rank == 0) {
+        if (!is_equal(v, v_serial, tolerance)) {
+          fmt::print("DR dot product result mismatch:\n"
+                     "  expected: {}\n"
+                     "  actual:   {}\n",
+                     v_serial, v);
+          error = 1;
+        }
       }
+      sum += v;
     }
-    sum += v;
-  }
-  if (comm_rank == 0) {
-    stats(durations, sum, v_serial, x_local, y_local);
+    if (comm_rank == 0) {
+      stats(durations, sum, v_serial, x_local, y_local);
+    }
   }
 
   mhp::finalize();
