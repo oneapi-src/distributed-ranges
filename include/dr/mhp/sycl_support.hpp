@@ -16,7 +16,7 @@ namespace dr::mhp::__detail {
 
 template <typename T> T sycl_get(T &v) {
   T temp;
-  sycl_queue().memcpy(&temp, &v, sizeof(v));
+  sycl_queue().memcpy(&temp, &v, sizeof(v)).wait();
   return temp;
 }
 
