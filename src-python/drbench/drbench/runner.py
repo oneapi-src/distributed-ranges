@@ -13,7 +13,10 @@ from drbench.common import Device, Model, Runtime
 AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
-    "prefix benchmark_filter reps dry_run mhp_bench shp_bench weak_scaling",
+    (
+        "prefix benchmark_filter reps dry_run mhp_bench shp_bench "
+        "weak_scaling ranks_per_node"
+    ),
 )
 
 
@@ -26,7 +29,7 @@ class Runner:
         if not self.analysis_config.dry_run:
             subprocess.run(command, shell=True, check=True)
 
-    def __run_mhp_analysis(self, params, ranks, target):
+    def __run_mhp_analysis(self, params, ranks, ranks_per_node, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
             if target.device == Device.CPU:
@@ -44,7 +47,7 @@ class Runner:
             )
 
         mpirun_params = []
-        mpirun_params.append(f"-n {str(ranks)}")
+        mpirun_params.append(f"-n {str(ranks)} -ppn {str(ranks_per_node)}")
         extra = "MPIEXEC_EXTRA_FLAGS"
         if extra in os.environ:
             mpirun_params.append(os.environ[extra])
@@ -101,5 +104,8 @@ class Runner:
             )
         else:
             self.__run_mhp_analysis(
-                params, analysis_case.ranks, analysis_case.target
+                params,
+                analysis_case.ranks,
+                self.analysis_config.ranks_per_node,
+                analysis_case.target,
             )

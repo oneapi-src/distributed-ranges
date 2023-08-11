@@ -37,6 +37,14 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
+    add_custom_target(aurora-bench-2 DEPENDS aurora-bench-2-results)
+    add_custom_command(
+      OUTPUT aurora-bench-2-results
+      COMMAND dr-bench clean
+      COMMAND dr-bench suite --nodes 2 --gpus 12
+      COMMAND dr-bench plot
+      DEPENDS mhp-bench shp-bench)
+
     add_custom_target(quick-bench-gpu DEPENDS quick-bench-gpu-results)
     add_custom_command(
       OUTPUT quick-bench-gpu-results
