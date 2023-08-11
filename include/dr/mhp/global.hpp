@@ -26,7 +26,10 @@ struct global_context {
     root_win_.fence();
   }
 
-  ~global_context() { root_win_.free(); }
+  ~global_context() {
+    root_win_.fence();
+    root_win_.free();
+  }
 
   global_context() { init(); }
 #ifdef SYCL_LANGUAGE_VERSION
