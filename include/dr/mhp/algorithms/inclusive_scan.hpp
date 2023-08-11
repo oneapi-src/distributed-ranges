@@ -8,14 +8,21 @@
 #include <oneapi/dpl/async>
 #endif
 
-namespace dr::mhp {
-namespace __detail {
+#include <dr/detail/sycl_utils.hpp>
+
+namespace dr::mhp::__detail {
+
+namespace detail = dr::__detail;
+
+}
+
+namespace dr::mhp::__detail {
 
 void local_inclusive_scan(auto policy, auto in, auto out, auto binary_op,
                           auto init, std::size_t seg_index) {
-  auto in_begin_direct = dr::__detail::direct_iterator(in.begin());
-  auto in_end_direct = dr::__detail::direct_iterator(in.end());
-  auto out_begin_direct = dr::__detail::direct_iterator(out.begin());
+  auto in_begin_direct = detail::direct_iterator(in.begin());
+  auto in_end_direct = detail::direct_iterator(in.end());
+  auto out_begin_direct = detail::direct_iterator(out.begin());
   if (init && seg_index == 0) {
     std::inclusive_scan(policy, in_begin_direct, in_end_direct,
                         out_begin_direct, binary_op, init.value());
@@ -32,6 +39,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   using value_type = U;
   assert(aligned(r, d_first));
 
+  bool use_sycl = mhp::use_sycl();
   auto comm = default_comm();
   auto rank = comm.rank();
   auto local_segs = rng::views::zip(local_segments(r), local_segments(d_first));
@@ -47,7 +55,7 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     if (dr::ranges::rank(global_in) == rank) {
       auto local_in = dr::ranges::__detail::local(global_in);
       auto local_out = dr::ranges::__detail::local(global_out);
-      if (mhp::use_sycl()) {
+      if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
         local_inclusive_scan(dpl_policy(), local_in, local_out, binary_op, init,
                              seg_index);
@@ -70,13 +78,12 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     // Do not need last segment
     if (seg_index == num_segs - 1) {
       break;
-      ;
     }
 
     auto [global_in, global_out] = global_seg;
     if (dr::ranges::rank(global_in) == rank) {
       auto local_out = dr::ranges::__detail::local(global_out);
-      auto back = local_out.back();
+      auto back = use_sycl ? sycl_get(local_out.back()) : local_out.back();
       win.put(back, 0, seg_index);
     }
 
@@ -104,13 +111,13 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         auto local_out = rng::views::take(
             dr::ranges::__detail::local(global_out), rng::size(local_in));
         // dr::drlog.debug("rebase before: {}\n", local_out);
-        if (mhp::use_sycl()) {
+        if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
           auto wrap_rebase = [rebase, base = rng::begin(local_out)](auto idx) {
             rebase(base[idx]);
           };
-          dr::__detail::parallel_for(dr::mhp::sycl_queue(),
-                                     rng::distance(local_out), wrap_rebase)
+          detail::parallel_for(dr::mhp::sycl_queue(), rng::distance(local_out),
+                               wrap_rebase)
               .wait();
 #else
           assert(false);
@@ -193,8 +200,8 @@ auto inclusive_scan_impl_2(R &&r, O &&d_first, BinaryOp &&binary_op,
       if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
         std::for_each(dpl_policy(),
-                      dr::__detail::direct_iterator(rng::begin(segment)),
-                      dr::__detail::direct_iterator(rng::end(segment)),
+                      detail::direct_iterator(rng::begin(segment)),
+                      detail::direct_iterator(rng::end(segment)),
                       [binary_op, base](auto &v) { v = binary_op(v, base); });
 #else
         assert(false);
@@ -212,7 +219,10 @@ auto inclusive_scan_impl_2(R &&r, O &&d_first, BinaryOp &&binary_op,
   barrier();
   return d_first + rng::size(r);
 }
-} // namespace __detail
+
+} // namespace dr::mhp::__detail
+
+namespace dr::mhp {
 
 template <dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O, typename BinaryOp, typename T>

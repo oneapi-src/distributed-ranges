@@ -4,26 +4,36 @@
 
 #pragma once
 
-namespace dr::mhp {
-
 #ifdef SYCL_LANGUAGE_VERSION
+
+namespace dr::mhp {
 
 sycl::queue &sycl_queue();
 
-namespace _detail {
+} // namespace dr::mhp
+
+namespace dr::mhp::__detail {
+
+template <typename T> T sycl_get(T &v) {
+  T temp;
+  sycl_queue().memcpy(&temp, &v, sizeof(v));
+  return temp;
+}
 
 template <typename T, std::size_t Alignment>
 using shared_base_allocator =
     sycl::usm_allocator<T, sycl::usm::alloc::shared, Alignment>;
 
-}; // namespace _detail
+}; // namespace dr::mhp::__detail
+
+namespace dr::mhp {
 
 template <typename T, std::size_t Alignment = 0>
 class sycl_shared_allocator
-    : public _detail::shared_base_allocator<T, Alignment> {
+    : public __detail::shared_base_allocator<T, Alignment> {
 public:
   sycl_shared_allocator(sycl::queue q = sycl_queue())
-      : _detail::shared_base_allocator<T, Alignment>(q) {}
+      : __detail::shared_base_allocator<T, Alignment>(q) {}
 };
 
 struct device_policy {
@@ -33,10 +43,14 @@ struct device_policy {
   decltype(oneapi::dpl::execution::make_device_policy(queue)) dpl_policy;
 };
 
+} // namespace dr::mhp
+
 #else // !SYCL_LANGUAGE_VERSION
+
+namespace namespace dr::mhp {
 
 struct device_policy {};
 
-#endif // SYCL_LANGUAGE_VERSION
-
 } // namespace dr::mhp
+
+#endif // SYCL_LANGUAGE_VERSION

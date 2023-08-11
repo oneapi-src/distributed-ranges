@@ -4,13 +4,17 @@
 
 #pragma once
 
+#include <limits>
+
 #ifdef SYCL_LANGUAGE_VERSION
 
-#include <limits>
 #include <sycl/sycl.hpp>
 
 namespace dr::__detail {
 
+//
+// return true if the device can be partitoned by affinity domain
+//
 inline auto partitionable(sycl::device device) {
   // Earlier commits used the query API, but they return true even
   // though a partition will fail:  Intel MPI mpirun with multiple
@@ -101,6 +105,18 @@ sycl::event parallel_for(sycl::queue &q, sycl::range<1> numWorkItems, Fn &&fn) {
   } else {
     return parallel_for_64bit(q, numWorkItems, std::forward<Fn>(fn));
   }
+}
+
+} // namespace dr::__detail
+
+#else
+
+namespace dr::__detail {
+
+// define here to avoid ifdefs where it is called
+template <typename T> T sycl_get(T &v) {
+  assert(false);
+  return v;
 }
 
 } // namespace dr::__detail
