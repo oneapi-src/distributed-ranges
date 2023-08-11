@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
 
   vector_add();
 
+  dr::mhp::finalize();
   MPI_Finalize();
   return 0;
 }

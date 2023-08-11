@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
   auto error =
       stencil(options["n"].as<std::size_t>(), options["s"].as<std::size_t>());
 
+  dr::mhp::finalize();
   MPI_Finalize();
   return error;
 }

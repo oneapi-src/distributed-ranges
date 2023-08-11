@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
     break;
   }
 
+  dr::mhp::finalize();
   MPI_Finalize();
   return error;
 }
