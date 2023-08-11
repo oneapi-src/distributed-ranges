@@ -39,6 +39,13 @@ option_clean = click.option(
     "-c", "--clean", is_flag=True, help="Delete all json files with the prefix"
 )
 
+option_weak_scaling = click.option(
+    "--weak-scaling",
+    is_flag=True,
+    default=False,
+    help="Scales the vector size by the number of ranks",
+)
+
 
 # common arguments
 @click.group()
@@ -85,6 +92,7 @@ def do_run(options):
             options["dry_run"],
             options["mhp_bench"],
             options["shp_bench"],
+            options["weak_scaling"],
         )
     )
     for t in options["target"]:
@@ -137,6 +145,7 @@ def do_run(options):
 @option_shp_bench
 @option_dry_run
 @option_clean
+@option_weak_scaling
 def run(
     prefix,
     target,
@@ -149,6 +158,7 @@ def run(
     shp_bench,
     dry_run,
     clean,
+    weak_scaling,
 ):
     assert target
     assert vec_size
@@ -171,6 +181,7 @@ def run(
             "mhp_bench": mhp_bench,
             "shp_bench": shp_bench,
             "dry_run": dry_run,
+            "weak_scaling": weak_scaling,
         }
     )
 
@@ -181,6 +192,7 @@ def run(
 @option_shp_bench
 @option_dry_run
 @option_clean
+@option_weak_scaling
 @click.option(
     "--vec-size",
     type=int,
@@ -223,6 +235,7 @@ def suite(
     gpus,
     p2p,
     cores_per_socket,
+    weak_scaling,
 ):
     # Base options
     base = {
@@ -232,6 +245,7 @@ def suite(
         "dry_run": dry_run,
         "vec_size": [vec_size],
         "reps": reps,
+        "weak_scaling": weak_scaling,
     }
 
     def suite_run_range(rank_range, filters, targets):

@@ -6,6 +6,7 @@
 
 std::size_t default_vector_size;
 std::size_t default_repetitions;
+bool weak_scaling;
 
 std::size_t comm_rank = 0;
 std::size_t comm_size = 1;
@@ -25,6 +26,7 @@ int main(int argc, char *argv[]) {
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
+    ("weak-scaling", "Scale the vector size by the number of ranks", cxxopts::value<bool>()->default_value("false"))
     ;
   // clang-format on
 
@@ -43,11 +45,15 @@ int main(int argc, char *argv[]) {
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
   ranks = options["num-devices"].as<std::size_t>();
+  weak_scaling = options["weak-scaling"].as<bool>();
 
   auto available_devices = dr::shp::get_numa_devices(sycl::default_selector_v);
   if (ranks == 0) {
     ranks = available_devices.size();
   }
+
+  if (options["weak-scaling"].as<bool>())
+    default_vector_size = default_vector_size * ranks;
 
   add_configuration(0, options);
 

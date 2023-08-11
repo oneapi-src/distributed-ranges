@@ -13,7 +13,7 @@ from drbench.common import Device, Model, Runtime
 AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
-    "prefix benchmark_filter reps dry_run mhp_bench shp_bench",
+    "prefix benchmark_filter reps dry_run mhp_bench shp_bench weak_scaling",
 )
 
 
@@ -91,6 +91,9 @@ class Runner:
             params.append(
                 f"--benchmark_filter={self.analysis_config.benchmark_filter}"
             )
+
+        if self.analysis_config.weak_scaling:
+            params.append("--weak-scaling")
 
         if analysis_case.target.model == Model.SHP:
             self.__run_shp_analysis(

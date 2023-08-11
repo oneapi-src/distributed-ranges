@@ -14,6 +14,7 @@ std::size_t stencil_steps;
 std::size_t num_rows;
 std::size_t num_columns;
 bool check_results;
+bool weak_scaling;
 
 cxxopts::ParseResult options;
 
@@ -80,6 +81,7 @@ int main(int argc, char *argv[]) {
     ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("100"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
+    ("weak-scaling", "Scale the vector size by the number of ranks", cxxopts::value<bool>()->default_value("false"))
     ;
   // clang-format on
 
@@ -108,6 +110,10 @@ int main(int argc, char *argv[]) {
   num_rows = options["rows"].as<std::size_t>();
   num_columns = options["columns"].as<std::size_t>();
   check_results = options.count("check");
+  weak_scaling = options["weak-scaling"].as<bool>();
+
+  if (options["weak-scaling"].as<bool>())
+    default_vector_size = default_vector_size * ranks;
 
   add_configuration(comm_rank, options);
 
