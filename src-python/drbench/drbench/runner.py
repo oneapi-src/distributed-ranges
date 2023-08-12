@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import subprocess
 import uuid
 from collections import namedtuple
@@ -47,11 +46,9 @@ class Runner:
             )
 
         mpirun_params = []
-        mpirun_params.append(f"-n {str(ranks)} -ppn {str(ranks_per_node)}")
-        extra = "MPIEXEC_EXTRA_FLAGS"
-        if extra in os.environ:
-            mpirun_params.append(os.environ[extra])
-
+        mpirun_params.append(f"-n {str(ranks)}")
+        if ranks_per_node:
+            mpirun_params.append(f"-ppn {str(ranks_per_node)}")
         self.__execute(
             env
             + " mpirun "

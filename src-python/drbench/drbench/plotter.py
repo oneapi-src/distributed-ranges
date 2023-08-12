@@ -93,13 +93,17 @@ class Plotter:
 
         self.ranks = self.db["Ranks"].unique()
         self.ranks.sort()
+        self.prefix = prefix
 
-    @staticmethod
-    def __make_plot(fname, data, **kwargs):
+    def __make_plot(self, fname, data, **kwargs):
         plot = sns.relplot(data=data, kind="line", marker="d", **kwargs)
-        plot.savefig(f"{fname}.png", dpi=200, bbox_inches="tight")
-        click.echo(f"writing {fname}.csv")
-        data.to_csv(f"{fname}.csv")
+        plot.savefig(
+            f"{self.prefix}-{fname}.png", dpi=200, bbox_inches="tight"
+        )
+        csv_name = f"{self.prefix}-{fname}.csv"
+        click.echo(f"writing {csv_name}")
+        sorted = data.sort_values(by=["Benchmark", "Target", "Ranks"])
+        sorted.to_csv(csv_name)
 
     def __stream_strong_scaling_plots(self):
         db = self.db_maxvec.loc[
@@ -108,7 +112,7 @@ class Plotter:
 
         db_gpu = db.loc[db["device"] == "GPU"]
 
-        Plotter.__make_plot(
+        self.__make_plot(
             "stream_strong_scaling_gpu",
             db_gpu,
             x="GPU Tiles",
@@ -119,7 +123,7 @@ class Plotter:
 
         db_cpu = db.loc[db["device"] == "CPU"]
 
-        Plotter.__make_plot(
+        self.__make_plot(
             "stream_strong_scaling_cpu",
             db_cpu,
             x="CPU Sockets",
@@ -137,7 +141,7 @@ class Plotter:
 
         db_gpu = db.loc[db["device"] == "GPU"]
 
-        Plotter.__make_plot(
+        self.__make_plot(
             "algorithms_gpu",
             db_gpu,
             x="GPU Tiles",
@@ -148,7 +152,7 @@ class Plotter:
 
         db_cpu = db.loc[db["device"] == "CPU"]
 
-        Plotter.__make_plot(
+        self.__make_plot(
             "algorithms_cpu",
             db_cpu,
             x="CPU Sockets",
