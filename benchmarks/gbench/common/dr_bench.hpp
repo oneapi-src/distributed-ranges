@@ -136,6 +136,7 @@ inline std::string exec(const char *cmd) {
 }
 
 inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
+  benchmark::AddCustomContext("hostname", exec("hostname"));
   benchmark::AddCustomContext("lscpu", exec("lscpu"));
   benchmark::AddCustomContext("numactl", exec("numactl -H"));
   benchmark::AddCustomContext("default_vector_size",
