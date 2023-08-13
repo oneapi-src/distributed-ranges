@@ -4,7 +4,7 @@
 
 #include "../common/dr_bench.hpp"
 
-using T = double;
+using T = float;
 
 static void Stream_Copy(benchmark::State &state) {
   T init = 0;

@@ -4,7 +4,7 @@
 
 #include "../common/dr_bench.hpp"
 
-using T = double;
+using T = float;
 T initval = 0;
 
 T normalCDF(T value) { return 0.5 * std::erfc(-value * M_SQRT1_2); }
