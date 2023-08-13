@@ -32,7 +32,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-results
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --gpus 12
+      COMMAND dr-bench suite --vec-size 4000000000 --gpus 12
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
@@ -40,7 +40,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-2-results
       COMMAND dr-bench clean --prefix aurora-2
-      COMMAND dr-bench suite --prefix aurora-2 --nodes 2 --gpus 12
+      COMMAND dr-bench suite --prefix aurora-2 --vec-size 4000000000 --nodes 2
+              --gpus 12
       COMMAND dr-bench plot --prefix aurora-2
       DEPENDS mhp-bench shp-bench)
 
@@ -48,7 +49,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-4-results
       COMMAND dr-bench clean --prefix aurora-4
-      COMMAND dr-bench suite --prefix aurora-4 --nodes 4 --gpus 12
+      COMMAND dr-bench suite --prefix aurora-4 --vec-size 4000000000 --nodes 4
+              --gpus 12
       COMMAND dr-bench plot --prefix aurora-4
       DEPENDS mhp-bench shp-bench)
 
