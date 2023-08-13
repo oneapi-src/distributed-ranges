@@ -11,7 +11,7 @@
 #include <oneapi/dpl/numeric>
 #endif
 
-using T = double;
+using T = float;
 
 static void Fill_DR(benchmark::State &state) {
   T init = 0;

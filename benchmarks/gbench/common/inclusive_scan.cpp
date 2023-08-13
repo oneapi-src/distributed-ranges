@@ -4,7 +4,7 @@
 
 #include "../common/dr_bench.hpp"
 
-using T = double;
+using T = float;
 
 static void Inclusive_Scan_DR(benchmark::State &state) {
   xhp::distributed_vector<T> a(default_vector_size, 3);
