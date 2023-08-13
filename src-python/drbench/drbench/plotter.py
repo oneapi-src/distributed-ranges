@@ -46,6 +46,9 @@ class Plotter:
                     r"Core\(s\) per socket:\s*(\d+)", ctx["lscpu"]
                 ).group(1)
             )
+            cpu_cores = (
+                ranks if runtime == "DIRECT" else ranks * cores_per_socket
+            )
             for b in benchs:
                 bname = b["name"].partition("/")[0]
                 bname, btarget = Plotter.__name_target(bname, target, device)
@@ -61,9 +64,7 @@ class Plotter:
                         "Benchmark": bname,
                         "Ranks": ranks,
                         "GPU Tiles": ranks,
-                        "CPU Sockets": ranks / cores_per_socket
-                        if runtime == "DIRECT" and device == "CPU"
-                        else ranks,
+                        "CPU Cores": cpu_cores,
                         "rtime": rtime,
                         Plotter.bandwidth_title: bw / 1e12,
                     }
@@ -126,7 +127,7 @@ class Plotter:
         self.__make_plot(
             "stream_strong_scaling_cpu",
             db_cpu,
-            x="CPU Sockets",
+            x="CPU Cores",
             y=Plotter.bandwidth_title,
             col="Benchmark",
             style="Target",
@@ -155,7 +156,7 @@ class Plotter:
         self.__make_plot(
             "algorithms_cpu",
             db_cpu,
-            x="CPU Sockets",
+            x="CPU Cores",
             y=Plotter.bandwidth_title,
             col="Benchmark",
             style="Target",
