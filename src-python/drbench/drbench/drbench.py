@@ -227,7 +227,7 @@ def run(
 @click.option(
     "--vec-size",
     type=int,
-    default=4000000000,
+    default=2000000000,
     help="Size of a vector",
 )
 @click.option(
