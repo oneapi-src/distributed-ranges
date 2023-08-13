@@ -131,12 +131,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(mdspan)
 
 function(add_mpi_test test_name name processes)
-  add_test(
-    NAME ${test_name}
-    COMMAND
-      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
-      ${MPIEXEC_PREFLAGS} $ENV{MPIEXEC_EXTRA_FLAGS} ./${name} ${ARGN}
-      COMMAND_EXPAND_LISTS)
+  add_test(NAME ${test_name}
+           COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+                   ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})

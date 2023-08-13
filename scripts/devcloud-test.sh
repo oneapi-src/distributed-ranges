@@ -7,6 +7,11 @@
 source /opt/intel/oneapi/setvars.sh
 set -e
 hostname
+
+# SLURM/MPI integration is broken
+unset SLURM_TASKS_PER_NODE
+unset SLURM_JOBID
+
 cmake -B build -DENABLE_SYCL=on
 
 # default sycl device will be GPU, if available. Only use 1 GPU:
