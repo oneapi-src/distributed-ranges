@@ -102,7 +102,7 @@ public:
   size_type size_;
 };
 
-template <std::random_access_iterator Iter>
+template <dr::random_access_iterator Iter>
 dense_matrix_row_view(Iter, std::size_t, std::size_t)
     -> dense_matrix_row_view<std::iter_value_t<Iter>, Iter>;
 

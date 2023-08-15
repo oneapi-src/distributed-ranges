@@ -13,7 +13,7 @@
 
 namespace dr {
 
-template <std::random_access_iterator Iter, std::copy_constructible F>
+template <dr::random_access_iterator Iter, std::copy_constructible F>
 class transform_iterator {
 public:
   using value_type = std::invoke_result_t<F, std::iter_value_t<Iter>>;

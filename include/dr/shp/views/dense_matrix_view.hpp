@@ -109,11 +109,11 @@ private:
   size_type rank_;
 };
 
-template <std::random_access_iterator Iter>
+template <dr::random_access_iterator Iter>
 dense_matrix_view(Iter, dr::index<>, std::size_t)
     -> dense_matrix_view<std::iter_value_t<Iter>, Iter>;
 
-template <std::random_access_iterator Iter>
+template <dr::random_access_iterator Iter>
 dense_matrix_view(Iter, dr::index<>)
     -> dense_matrix_view<std::iter_value_t<Iter>, Iter>;
 

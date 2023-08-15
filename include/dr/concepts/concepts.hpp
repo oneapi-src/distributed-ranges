@@ -22,7 +22,7 @@ concept distributed_range =
 
 template <typename I>
 concept remote_contiguous_iterator =
-    std::random_access_iterator<I> && requires(I &iter) {
+    dr::random_access_iterator<I> && requires(I &iter) {
       dr::ranges::rank(iter);
       { dr::ranges::local(iter) } -> std::contiguous_iterator;
     };

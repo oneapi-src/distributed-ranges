@@ -16,7 +16,7 @@ namespace dr::shp {
 
 namespace __detail {
 
-template <typename T, typename I, std::random_access_iterator Iter,
+template <typename T, typename I, dr::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
 auto custom_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
@@ -52,7 +52,7 @@ auto custom_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
 
 #ifdef USE_MKL
 
-template <typename T, typename I, std::random_access_iterator Iter,
+template <typename T, typename I, dr::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
 auto mkl_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
@@ -75,7 +75,7 @@ auto mkl_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
   return event;
 }
 
-template <typename T, typename I, std::random_access_iterator Iter,
+template <typename T, typename I, dr::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
 auto local_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
@@ -85,7 +85,7 @@ auto local_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
 
 #else
 
-template <typename T, typename I, std::random_access_iterator Iter,
+template <typename T, typename I, dr::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
 auto local_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
