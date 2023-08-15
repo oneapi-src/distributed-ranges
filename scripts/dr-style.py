@@ -88,6 +88,14 @@ all_rules = [
         "use constructor instead of get_host_access",
     ),
     (
+        r"std::input_iterator( |<)",
+        "use dr::input_iterator",
+    ),
+    (
+        r"std::output_iterator( |<)",
+        "use dr::output_iterator",
+    ),
+    (
         r"std::random_access_iterator( |<)",
         "use dr::random_access_iterator",
     ),
