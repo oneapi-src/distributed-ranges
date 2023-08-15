@@ -281,17 +281,19 @@ def suite(
     weak_scaling,
 ):
     # Run a list of ranks
-    def run_rank_list(base, ranks, filters, targets):
+    def run_rank_list(base, weak_scaling, ranks, filters, targets):
         options = base
         options.ranks = ranks
         options.filter = filters
         options.target = targets
+        options.weak_scaling = weak_scaling
         do_run(options)
 
     # Run a range of ranks on a single node
-    def run_rank_range(base, ranks, filters, targets):
+    def run_rank_range(base, weak_scaling, ranks, filters, targets):
         run_rank_list(
             base,
+            weak_scaling,
             list(range(1, ranks + 1)),
             filters,
             targets,
@@ -303,6 +305,7 @@ def suite(
         options.ranks_per_node = ranks_per_node
         run_rank_list(
             options,
+            False,
             list(
                 range(
                     ranks_per_node, ranks_per_node * nodes + 1, ranks_per_node
@@ -319,15 +322,16 @@ def suite(
         if gpus > 0:
             # if benchmark does not need p2p run xhp on all gpus
             run_rank_range(
-                base, gpus, dr_nop2p, ["shp_sycl_gpu", "mhp_sycl_gpu"]
+                base, False, gpus, dr_nop2p, ["shp_sycl_gpu", "mhp_sycl_gpu"]
             )
             # if benchmark needs p2p run on mhp on all gpus
-            run_rank_range(base, gpus, dr_p2p, ["mhp_sycl_gpu"])
+            run_rank_range(base, False, gpus, dr_p2p, ["mhp_sycl_gpu"])
+            run_rank_range(base, True, gpus, dr_p2p, ["mhp_sycl_gpu"])
             # DPL is 1 device, use shp_sycl_cpu to get sycl env vars
-            run_rank_range(base, 1, [".*_DPL"], ["shp_sycl_gpu"])
+            run_rank_range(base, False, 1, [".*_DPL"], ["shp_sycl_gpu"])
         if p2p_gpus > 0:
             # if benchmark needs p2p run on shp on 1 gpu
-            run_rank_range(base, p2p_gpus, dr_p2p, ["shp_sycl_gpu"])
+            run_rank_range(base, False, p2p_gpus, dr_p2p, ["shp_sycl_gpu"])
 
         #
         # CPU devices
@@ -335,13 +339,18 @@ def suite(
         if sockets > 0:
             # SYCL on CPU, a socket (Affinity domain) is a device
             run_rank_range(
-                base, sockets, dr_filters, ["mhp_sycl_cpu", "shp_sycl_cpu"]
+                base,
+                False,
+                sockets,
+                dr_filters,
+                ["mhp_sycl_cpu", "shp_sycl_cpu"],
             )
             # DPL is 1 device, use shp_sycl_cpu to get sycl env vars
-            run_rank_range(base, 1, [".*_DPL"], ["shp_sycl_cpu"])
+            run_rank_range(base, False, 1, [".*_DPL"], ["shp_sycl_cpu"])
             # 1 and 2 sockets for direct cpu
             run_rank_list(
                 base,
+                False,
                 list(
                     range(
                         cores_per_socket,
