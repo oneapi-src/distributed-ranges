@@ -10,7 +10,7 @@
 
 namespace dr::shp {
 
-template <typename T, rng::random_access_iterator Iter = T *>
+template <typename T, std_rng::random_access_iterator Iter = T *>
 class span : public rng::view_interface<dr::shp::span<T, Iter>> {
 public:
   static_assert(std::is_same_v<std::iter_value_t<Iter>, T>);
