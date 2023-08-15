@@ -13,10 +13,10 @@ on:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
-  IMPI: impi@2021.9.0
-  MKL:  mkl@2023.1.0
-  TBB:  tbb@2021.9.0
-  ICX:  icx@2023.1.0
+  IMPI: impi@2021.10.0
+  MKL:  mkl@2023.2.0
+  TBB:  tbb@2021.10.0
+  ICX:  icx@2023.2.0
 
 jobs:
   checks:
