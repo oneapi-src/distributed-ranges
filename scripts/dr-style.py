@@ -107,10 +107,6 @@ all_rules = [
         r"std::random_access_iterator( |<)",
         "use std_dr::random_access_iterator",
     ),
-    (
-        r"std_dr::",
-        "use std_dr::input_iterator",
-    ),
 ]
 
 all_rules_compiled = []
