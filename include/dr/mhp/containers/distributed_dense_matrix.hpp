@@ -486,8 +486,11 @@ void transform(rng::subrange<dm_rows_iterator<DM>> &in,
 
 } // namespace dr::mhp
 
+#if !defined(DR_SPEC)
+
 // Needed to satisfy rng::viewable_range
 
 template <typename T>
 inline constexpr bool rng::enable_borrowed_range<
     dr::mhp::dm_rows<dr::mhp::distributed_dense_matrix<T>>> = true;
+#endif

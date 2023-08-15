@@ -60,7 +60,7 @@ template <typename T>
 concept forward_iterator = rng::forward_iterator<T>;
 
 template <typename T>
-concept bidrectional_iterator = rng::bidirectional_iterator<T>;
+concept bidirectional_iterator = rng::bidirectional_iterator<T>;
 
 template <typename T>
 concept contiguous_iterator = rng::contiguous_iterator<T>;
