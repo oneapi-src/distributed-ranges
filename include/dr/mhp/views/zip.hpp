@@ -85,8 +85,8 @@ template <typename Base> auto base_to_segments(Base &&base) {
 
 } // namespace __detail
 
-template <dr::random_access_iterator RngIter,
-          dr::random_access_iterator... BaseIters>
+template <std_rng::random_access_iterator RngIter,
+          std_rng::random_access_iterator... BaseIters>
 class zip_iterator {
 public:
   using value_type = rng::iter_value_t<RngIter>;

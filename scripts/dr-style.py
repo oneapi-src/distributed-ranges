@@ -89,23 +89,27 @@ all_rules = [
     ),
     (
         r"std::input_iterator( |<)",
-        "use dr::input_iterator",
+        "use std_dr::input_iterator",
     ),
     (
         r"std::output_iterator( |<)",
-        "use dr::output_iterator",
+        "use std_dr::output_iterator",
     ),
     (
         r"std::bidirectional_iterator( |<)",
-        "use dr::bidirectional_iterator",
+        "use std_dr::bidirectional_iterator",
     ),
     (
         r"std::contiguous_iterator( |<)",
-        "use dr::contiguous_iterator",
+        "use std_dr::contiguous_iterator",
     ),
     (
         r"std::random_access_iterator( |<)",
-        "use dr::random_access_iterator",
+        "use std_dr::random_access_iterator",
+    ),
+    (
+        r"std_dr::",
+        "use std_dr::input_iterator",
     ),
 ]
 

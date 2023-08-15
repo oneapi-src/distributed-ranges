@@ -104,7 +104,7 @@ public:
   size_type ld_;
 };
 
-template <dr::random_access_iterator Iter>
+template <std_rng::random_access_iterator Iter>
 dense_matrix_column_view(Iter, std::size_t, std::size_t, std::size_t)
     -> dense_matrix_column_view<std::iter_value_t<Iter>, Iter>;
 

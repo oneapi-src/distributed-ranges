@@ -20,7 +20,7 @@ template <std::size_t Rank> using md_extents = md::dextents<std::size_t, Rank>;
 //
 // Mdspan accessor using an iterator
 //
-template <dr::random_access_iterator Iter> class mdspan_iter_accessor {
+template <std_rng::random_access_iterator Iter> class mdspan_iter_accessor {
 public:
   using data_handle_type = Iter;
   using reference = std::iter_reference_t<Iter>;

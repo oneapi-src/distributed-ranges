@@ -21,7 +21,7 @@ template <typename Src, typename Dest>
 concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
                              std::is_trivially_copyable_v<Dest>;
 
-template <dr::contiguous_iterator Iter>
+template <std_rng::contiguous_iterator Iter>
 sycl::usm::alloc get_pointer_type(Iter iter) {
   return sycl::get_pointer_type(std::to_address(iter), shp::context());
 }
@@ -31,7 +31,7 @@ sycl::usm::alloc get_pointer_type(shp::device_ptr<T> ptr) {
   return sycl::get_pointer_type(ptr.get_raw_pointer(), shp::context());
 }
 
-template <dr::contiguous_iterator Iter>
+template <std_rng::contiguous_iterator Iter>
 sycl::device get_pointer_device(Iter iter) {
   return sycl::get_pointer_device(std::to_address(iter), shp::context());
 }

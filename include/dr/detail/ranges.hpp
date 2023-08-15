@@ -196,7 +196,7 @@ struct local_fn_ {
 
   template <std::forward_iterator Iter>
     requires(has_local_adl<Iter> || iter_has_local_method<Iter> ||
-             dr::contiguous_iterator<Iter> || is_localizable<Iter>)
+             std_rng::contiguous_iterator<Iter> || is_localizable<Iter>)
   auto operator()(Iter iter) const {
     if constexpr (iter_has_local_method<Iter>) {
       return iter.local();
@@ -204,7 +204,7 @@ struct local_fn_ {
       return local_(iter);
     } else if constexpr (is_localizable<Iter>) {
       return rng::basic_iterator<cursor_over_local_ranges<Iter>>(iter);
-    } else if constexpr (dr::contiguous_iterator<Iter>) {
+    } else if constexpr (std_rng::contiguous_iterator<Iter>) {
       return iter;
     }
   }
@@ -212,8 +212,8 @@ struct local_fn_ {
   template <rng::forward_range R>
     requires(has_local_adl<R> || iter_has_local_method<rng::iterator_t<R>> ||
              segment_has_local_method<R> ||
-             dr::contiguous_iterator<rng::iterator_t<R>> || is_localizable<R> ||
-             rng::contiguous_range<R>)
+             std_rng::contiguous_iterator<rng::iterator_t<R>> ||
+             is_localizable<R> || rng::contiguous_range<R>)
   auto operator()(R &&r) const {
     if constexpr (segment_has_local_method<R>) {
       return r.local();
@@ -226,7 +226,7 @@ struct local_fn_ {
           rng::basic_iterator<cursor_over_local_ranges<rng::iterator_t<R>>>(
               rng::begin(r)),
           rng::size(r));
-    } else if constexpr (dr::contiguous_iterator<rng::iterator_t<R>>) {
+    } else if constexpr (std_rng::contiguous_iterator<rng::iterator_t<R>>) {
       return std::span(rng::begin(r), rng::size(r));
     }
   }

@@ -12,7 +12,7 @@ namespace dr {
 
 namespace __detail {
 
-template <dr::random_access_iterator Iter> class direct_iterator {
+template <std_rng::random_access_iterator Iter> class direct_iterator {
 public:
   using value_type = std::iter_value_t<Iter>;
   using difference_type = std::iter_difference_t<Iter>;
