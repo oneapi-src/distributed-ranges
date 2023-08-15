@@ -149,11 +149,10 @@ static void Copy_Serial(benchmark::State &state) {
 
 DR_BENCHMARK(Copy_Serial);
 
-int iota_base = 100;
+T fill = 100;
 void check_reduce(T actual) {
   if (comm_rank == 0) {
-    std::vector<T> local_src(default_vector_size);
-    rng::iota(local_src, iota_base);
+    std::vector<T> local_src(default_vector_size, fill);
     auto ref = std::reduce(local_src.begin(), local_src.end());
 
     if ((ref - actual) / ref > .001) {
@@ -165,8 +164,7 @@ void check_reduce(T actual) {
 
 static void Reduce_DR(benchmark::State &state) {
   T actual{};
-  xhp::distributed_vector<T> src(default_vector_size);
-  xhp::iota(src, iota_base);
+  xhp::distributed_vector<T> src(default_vector_size, fill);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
@@ -180,8 +178,7 @@ DR_BENCHMARK(Reduce_DR);
 
 static void Reduce_Serial(benchmark::State &state) {
   T actual{};
-  std::vector<T> src(default_vector_size);
-  rng::iota(src, iota_base);
+  std::vector<T> src(default_vector_size, fill);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
@@ -200,8 +197,7 @@ static void Reduce_DPL(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto src = sycl::malloc_device<T>(default_vector_size, q);
-  std::vector<T> local_src(default_vector_size);
-  rng::iota(local_src, iota_base);
+  std::vector<T> local_src(default_vector_size, fill);
   std::copy(policy, local_src.begin(), local_src.end(), src);
   Stats stats(state, sizeof(T) * default_vector_size, 0);
   for (auto _ : state) {
