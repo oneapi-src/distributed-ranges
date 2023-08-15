@@ -19,8 +19,8 @@ namespace {
 
 // Precondition: rng::distance(first, last) >= 2
 // Postcondition: return future to [first, last) reduced with fn
-template <typename T, typename ExecutionPolicy,
-          std::bidirectional_iterator Iter, typename Fn>
+template <typename T, typename ExecutionPolicy, dr::bidirectional_iterator Iter,
+          typename Fn>
 auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
                           Fn &&fn) {
   Iter new_last = last;
@@ -36,8 +36,8 @@ auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
       static_cast<T>(init), std::forward<Fn>(fn));
 }
 
-template <typename T, typename ExecutionPolicy,
-          std::bidirectional_iterator Iter, typename Fn>
+template <typename T, typename ExecutionPolicy, dr::bidirectional_iterator Iter,
+          typename Fn>
   requires(sycl::has_known_identity_v<Fn, T>)
 auto reduce_no_init_async(ExecutionPolicy &&policy, Iter first, Iter last,
                           Fn &&fn) {

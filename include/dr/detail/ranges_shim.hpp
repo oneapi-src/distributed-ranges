@@ -28,6 +28,13 @@ template <typename T>
 concept forward_iterator = std::forward_iterator<T>; // dr-style ignore
 
 template <typename T>
+concept bidirectional_iterator =
+    std::bidirectional_iterator<T>; // dr-style ignore
+
+template <typename T>
+concept contiguous_iterator = std::contiguous_iterator<T>; // dr-style ignore
+
+template <typename T>
 concept random_access_iterator =
     std::random_access_iterator<T>; // dr-style ignore
 
@@ -51,6 +58,12 @@ concept output_iterator = rng::output_iterator<I, T>;
 
 template <typename T>
 concept forward_iterator = rng::forward_iterator<T>;
+
+template <typename T>
+concept bidrectional_iterator = rng::bidirectional_iterator<T>;
+
+template <typename T>
+concept contiguous_iterator = rng::contiguous_iterator<T>;
 
 template <typename T>
 concept random_access_iterator = rng::random_access_iterator<T>;

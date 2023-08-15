@@ -27,7 +27,7 @@ void copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out) {
 
 /// Copy distributed to local
 void copy(std::size_t root, dr::distributed_contiguous_range auto &&in,
-          std::contiguous_iterator auto out) {
+          dr::contiguous_iterator auto out) {
   if (default_comm().rank() == root) {
     for (const auto &segment : dr::ranges::segments(in)) {
       auto sz = rng::size(segment);

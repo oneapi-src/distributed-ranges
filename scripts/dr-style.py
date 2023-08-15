@@ -96,6 +96,14 @@ all_rules = [
         "use dr::output_iterator",
     ),
     (
+        r"std::bidirectional_iterator( |<)",
+        "use dr::bidirectional_iterator",
+    ),
+    (
+        r"std::contiguous_iterator( |<)",
+        "use dr::contiguous_iterator",
+    ),
+    (
         r"std::random_access_iterator( |<)",
         "use dr::random_access_iterator",
     ),

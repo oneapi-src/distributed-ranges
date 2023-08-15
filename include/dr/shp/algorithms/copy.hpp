@@ -18,7 +18,7 @@
 namespace dr::shp {
 
 // Copy between contiguous ranges
-template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
+template <dr::contiguous_iterator InputIt, dr::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
@@ -29,7 +29,7 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 }
 
 /// Copy
-template <std::contiguous_iterator InputIt, std::contiguous_iterator OutputIt>
+template <dr::contiguous_iterator InputIt, dr::contiguous_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
@@ -38,7 +38,7 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 }
 
 // Copy from contiguous range to device
-template <std::contiguous_iterator Iter, typename T>
+template <dr::contiguous_iterator Iter, typename T>
   requires __detail::is_syclmemcopyable<std::iter_value_t<Iter>, T>
 sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
   // auto &&q = dr::shp::__detail::default_queue();
@@ -47,7 +47,7 @@ sycl::event copy_async(Iter first, Iter last, device_ptr<T> d_first) {
                   sizeof(T) * (last - first));
 }
 
-template <std::contiguous_iterator Iter, typename T>
+template <dr::contiguous_iterator Iter, typename T>
   requires __detail::is_syclmemcopyable<std::iter_value_t<Iter>, T>
 device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
   copy_async(first, last, d_first).wait();
@@ -55,7 +55,7 @@ device_ptr<T> copy(Iter first, Iter last, device_ptr<T> d_first) {
 }
 
 // Copy from device to contiguous range
-template <typename T, std::contiguous_iterator Iter>
+template <typename T, dr::contiguous_iterator Iter>
   requires __detail::is_syclmemcopyable<T, std::iter_value_t<Iter>>
 sycl::event copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
   // auto &&q = dr::shp::__detail::default_queue();
@@ -64,7 +64,7 @@ sycl::event copy_async(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
                   sizeof(T) * (last - first));
 }
 
-template <typename T, std::contiguous_iterator Iter>
+template <typename T, dr::contiguous_iterator Iter>
   requires __detail::is_syclmemcopyable<T, std::iter_value_t<Iter>>
 Iter copy(device_ptr<T> first, device_ptr<T> last, Iter d_first) {
   copy_async(first, last, d_first).wait();

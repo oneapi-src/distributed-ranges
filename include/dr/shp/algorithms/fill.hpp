@@ -17,7 +17,7 @@
 
 namespace dr::shp {
 
-template <std::contiguous_iterator Iter>
+template <dr::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>> &&
            std::is_trivially_copyable_v<std::iter_value_t<Iter>>)
 sycl::event fill_async(Iter first, Iter last,
@@ -29,7 +29,7 @@ sycl::event fill_async(Iter first, Iter last,
                                     [=](auto idx) { arr[idx] = value; });
 }
 
-template <std::contiguous_iterator Iter>
+template <dr::contiguous_iterator Iter>
   requires(!std::is_const_v<std::iter_value_t<Iter>>)
 void fill(Iter first, Iter last, const std::iter_value_t<Iter> &value) {
   fill_async(first, last, value).wait();
