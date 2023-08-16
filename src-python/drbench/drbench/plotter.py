@@ -99,7 +99,7 @@ class Plotter:
         self.prefix = prefix
 
     def __make_plot(self, fname, data, **kwargs):
-        plot = sns.relplot(data=data, kind="line", marker="d", **kwargs)
+        plot = sns.relplot(data=data, kind="line", marker="d", hue="Target", **kwargs)
         plot.savefig(
             f"{self.prefix}-{fname}.png", dpi=200, bbox_inches="tight"
         )
