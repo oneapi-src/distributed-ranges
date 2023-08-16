@@ -108,73 +108,34 @@ class Plotter:
         sorted = data.sort_values(by=["Benchmark", "Target", "Ranks"])
         sorted.to_csv(csv_name)
 
-    def __stream_scaling_plots(self, weak_scaling: bool = False):
-        db = self.db_maxvec.loc[
-            self.db["Benchmark"].str.startswith("Stream_")
-        ].copy()
-
-        if weak_scaling:
-            db = db.loc[db["Weak Scaling"]]
-            gpu_title = "stream_weak_scaling_gpu"
-            cpu_title = "stream_weak_scaling_cpu"
-        else:
-            gpu_title = "stream_strong_scaling_gpu"
-            cpu_title = "stream_strong_scaling_cpu"
-
-        db_gpu = db.loc[db["device"] == "GPU"]
-
-        self.__make_plot(
-            gpu_title,
-            db_gpu,
-            x="GPU Tiles",
-            y=Plotter.bandwidth_title,
-            col="Benchmark",
-            style="Target",
-        )
-
-        db_cpu = db.loc[db["device"] == "CPU"]
-
-        self.__make_plot(
-            cpu_title,
-            db_cpu,
-            x="CPU Cores",
-            y=Plotter.bandwidth_title,
-            col="Benchmark",
-            style="Target",
-        )
-
-    def __algorithm_plots(self, weak_scaling: bool = False):
+    def __stream_algorithms_scaling_plots(
+        self, plot: str, device: str, scaling: str
+    ):
+        algorithms = ["Black_Scholes", "Inclusive_Scan", "Reduce"]
         m = self.db_maxvec
+        title = f"{plot}_{device}_{scaling}_scaling"
 
-        db = m.loc[
-            m["Benchmark"].isin(["Black_Scholes", "Inclusive_Scan", "Reduce"])
-        ].copy()
-
-        if weak_scaling:
-            db = db.loc[db["Weak Scaling"]]
-            gpu_title = "algorithms_gpu_weak_scaling"
-            cpu_title = "algorithms_cpu_weak_scaling"
+        if plot == "Stream_":
+            db = m.loc[self.db["Benchmark"].str.startswith("Stream_")].copy()
+        elif plot == "algorithms":
+            db = m.loc[m["Benchmark"].isin(algorithms)].copy()
+        print(db["Weak Scaling"])
+        if scaling == "weak":
+            db = db.loc[db["Weak Scaling"] == "1"]
         else:
-            gpu_title = "algorithms_gpu_strong_scaling"
-            cpu_title = "algorithms_cpu_strong_scaling"
+            db = db.loc[db["Weak Scaling"] == "0"]
 
-        db_gpu = db.loc[db["device"] == "GPU"]
-
-        self.__make_plot(
-            gpu_title,
-            db_gpu,
-            x="GPU Tiles",
-            y=Plotter.bandwidth_title,
-            col="Benchmark",
-            style="Target",
-        )
-
-        db_cpu = db.loc[db["device"] == "CPU"]
+        if device == "gpu":
+            db = db.loc[db["device"] == "GPU"]
+            x_title = "GPU Tiles"
+        else:
+            db = db.loc[db["device"] == "CPU"]
+            x_title = "CPU Cores"
 
         self.__make_plot(
-            cpu_title,
-            db_cpu,
-            x="CPU Cores",
+            title,
+            db,
+            x=x_title,
             y=Plotter.bandwidth_title,
             col="Benchmark",
             style="Target",
@@ -183,8 +144,11 @@ class Plotter:
     def create_plots(self):
         sns.set_theme(style="ticks")
 
-        self.__stream_scaling_plots(weak_scaling=False)
-        self.__algorithm_plots(weak_scaling=False)
+        self.__stream_algorithms_scaling_plots("Stream_", "cpu", "strong")
+        self.__stream_algorithms_scaling_plots("Stream_", "gpu", "strong")
 
-        self.__stream_scaling_plots(weak_scaling=True)
-        self.__algorithm_plots(weak_scaling=True)
+        self.__stream_algorithms_scaling_plots("algorithms", "cpu", "strong")
+        self.__stream_algorithms_scaling_plots("algorithms", "gpu", "strong")
+
+        self.__stream_algorithms_scaling_plots("algorithms", "cpu", "weak")
+        self.__stream_algorithms_scaling_plots("algorithms", "gpu", "weak")
