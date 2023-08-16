@@ -119,7 +119,6 @@ class Plotter:
             db = m.loc[self.db["Benchmark"].str.startswith("Stream_")].copy()
         elif plot == "algorithms":
             db = m.loc[m["Benchmark"].isin(algorithms)].copy()
-        print(db["Weak Scaling"])
         if scaling == "weak":
             db = db.loc[db["Weak Scaling"] == "1"]
         else:
