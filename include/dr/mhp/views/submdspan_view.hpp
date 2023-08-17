@@ -19,6 +19,8 @@ class mdsub_segment : public BaseSegment {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
+
+  mdsub_segment(){};
   mdsub_segment(BaseSegment segment, const index_type &slice_starts,
                 const index_type &slice_ends)
       : BaseSegment(segment),

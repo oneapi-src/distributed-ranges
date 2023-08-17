@@ -319,20 +319,31 @@ TEST_F(Submdspan, Segments) {
   auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   auto sspan = sub.mdspan();
   auto sub_segments = dr::ranges::segments(sub);
+  using segment_type = rng::range_value_t<decltype(sub_segments)>;
 
-  auto front = rng::front(sub_segments);
-  if (comm_rank == dr::ranges::rank(front)) {
-    auto fspan = front.mdspan();
-    auto message = fmt::format("Sub:\n{}Front:\n{}", sspan, fspan);
+  segment_type first, last;
+  bool found_first = false;
+  for (auto segment : sub_segments) {
+    if (segment.mdspan().extent(0) != 0) {
+      if (!found_first) {
+        first = segment;
+        found_first = true;
+      }
+      last = segment;
+    }
+  }
+
+  if (comm_rank == dr::ranges::rank(first)) {
+    auto fspan = first.mdspan();
+    auto message = fmt::format("Sub:\n{}First:\n{}", sspan, fspan);
     EXPECT_EQ(sspan(0, 0), fspan(0, 0)) << message;
   }
 
-  auto back = rng::back(sub_segments);
-  if (comm_rank == dr::ranges::rank(back)) {
-    auto bspan = back.mdspan();
-    auto message = fmt::format("Sub:\n{}Back:\n{}", sspan, bspan);
+  if (comm_rank == dr::ranges::rank(last)) {
+    auto lspan = last.mdspan();
+    auto message = fmt::format("Sub:\n{}Last:\n{}", sspan, lspan);
     EXPECT_EQ(sspan(sspan.extent(0) - 1, sspan.extent(1) - 1),
-              bspan(bspan.extent(0) - 1, bspan.extent(1) - 1))
+              lspan(lspan.extent(0) - 1, lspan.extent(1) - 1))
         << message;
   }
 
