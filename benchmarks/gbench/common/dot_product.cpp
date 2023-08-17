@@ -11,7 +11,7 @@
 #include <oneapi/dpl/numeric>
 #endif
 
-using T = float;
+using T = double;
 
 static T init_val = 1;
 
