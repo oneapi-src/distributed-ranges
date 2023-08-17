@@ -313,6 +313,32 @@ TEST_F(Submdspan, GridLocalReference) {
   EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
 
+TEST_F(Submdspan, Segments) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  auto sspan = sub.mdspan();
+  auto sub_segments = dr::ranges::segments(sub);
+
+  auto front = rng::front(sub_segments);
+  if (comm_rank == dr::ranges::rank(front)) {
+    auto fspan = front.mdspan();
+    auto message = fmt::format("Sub:\n{}Front:\n{}", sspan, fspan);
+    EXPECT_EQ(sspan(0, 0), fspan(0, 0)) << message;
+  }
+
+  auto back = rng::back(sub_segments);
+  if (comm_rank == dr::ranges::rank(back)) {
+    auto bspan = back.mdspan();
+    auto message = fmt::format("Sub:\n{}Back:\n{}", sspan, bspan);
+    EXPECT_EQ(sspan(sspan.extent(0) - 1, sspan.extent(1) - 1),
+              bspan(bspan.extent(0) - 1, bspan.extent(1) - 1))
+        << message;
+  }
+
+  dr::mhp::barrier();
+}
+
 using MdForeach = Mdspan;
 
 TEST_F(MdForeach, 2ops) {
