@@ -27,6 +27,8 @@ class md_segment : public rng::view_interface<md_segment<BaseSegment, Rank>> {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
+
+  md_segment() {}
   md_segment(index_type origin, BaseSegment segment, index_type tile_lengths)
       : base_(segment), origin_(origin),
         mdspan_(local_tile(segment, tile_lengths)) {}

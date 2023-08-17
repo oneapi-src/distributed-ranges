@@ -313,6 +313,43 @@ TEST_F(Submdspan, GridLocalReference) {
   EXPECT_EQ(99, mdarray[flat_index]) << mdrange_message(mdarray);
 }
 
+TEST_F(Submdspan, Segments) {
+  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xhp::iota(mdarray, 100);
+  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  auto sspan = sub.mdspan();
+  auto sub_segments = dr::ranges::segments(sub);
+  using segment_type = rng::range_value_t<decltype(sub_segments)>;
+
+  segment_type first, last;
+  bool found_first = false;
+  for (auto segment : sub_segments) {
+    if (segment.mdspan().extent(0) != 0) {
+      if (!found_first) {
+        first = segment;
+        found_first = true;
+      }
+      last = segment;
+    }
+  }
+
+  if (comm_rank == dr::ranges::rank(first)) {
+    auto fspan = first.mdspan();
+    auto message = fmt::format("Sub:\n{}First:\n{}", sspan, fspan);
+    EXPECT_EQ(sspan(0, 0), fspan(0, 0)) << message;
+  }
+
+  if (comm_rank == dr::ranges::rank(last)) {
+    auto lspan = last.mdspan();
+    auto message = fmt::format("Sub:\n{}Last:\n{}", sspan, lspan);
+    EXPECT_EQ(sspan(sspan.extent(0) - 1, sspan.extent(1) - 1),
+              lspan(lspan.extent(0) - 1, lspan.extent(1) - 1))
+        << message;
+  }
+
+  dr::mhp::barrier();
+}
+
 using MdForeach = Mdspan;
 
 TEST_F(MdForeach, 2ops) {
