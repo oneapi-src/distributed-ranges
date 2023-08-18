@@ -28,7 +28,13 @@ Benchmark Results
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Reduce-GPU-strong.csv
      - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Reduce-CPU-strong.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Reduce-CPU-strong.csv
+   * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Reduce-GPU-weak.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Reduce-GPU-weak.csv
+     -
    * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Inclusive_Scan-GPU-strong.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Inclusive_Scan-GPU-strong.csv
      - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Inclusive_Scan-CPU-strong.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Inclusive_Scan-CPU-strong.csv
+   * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Inclusive_Scan-GPU-weak.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Inclusive_Scan-GPU-weak.csv
+     -
