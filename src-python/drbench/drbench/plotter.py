@@ -15,6 +15,7 @@ from matplotlib.ticker import FormatStrFormatter
 class Plotter:
     tbs_title = "Bandwidth (TB/s)"
     gbs_title = "Bandwidth (GB/s)"
+    speedup_title = "Speedup vs DPL"
 
     @staticmethod
     def __name_target(bname, target, device):
@@ -52,6 +53,9 @@ class Plotter:
             cpu_cores = (
                 ranks if runtime == "DIRECT" else ranks * cores_per_socket
             )
+            cpu_sockets = (
+                ranks if runtime == "SYCL" else ranks / cores_per_socket
+            )
             for b in benchs:
                 bname = b["name"].partition("/")[0]
                 bname, btarget = Plotter.__name_target(bname, target, device)
@@ -59,19 +63,20 @@ class Plotter:
                 bw = b["bytes_per_second"]
                 rows.append(
                     {
+                        "Benchmark": bname,
                         "Target": btarget,
+                        "Ranks": ranks,
+                        "Scaling": "weak" if weak_scaling else "strong",
+                        Plotter.tbs_title: bw / 1e12,
+                        Plotter.gbs_title: bw / 1e9,
                         "model": model,
                         "runtime": runtime,
                         "device": device,
                         "vsize": vsize,
-                        "Benchmark": bname,
-                        "Ranks": ranks,
                         "Number of GPU Tiles": ranks,
                         "Number of CPU Cores": cpu_cores,
+                        "Number of CPU Sockets": cpu_sockets,
                         "rtime": rtime,
-                        "Scaling": "weak" if weak_scaling else "strong",
-                        Plotter.tbs_title: bw / 1e12,
-                        Plotter.gbs_title: bw / 1e9,
                     }
                 )
 
@@ -164,18 +169,17 @@ class Plotter:
         plt.legend(loc="best")
 
         plt.tight_layout()
-        plt.savefig(file_name)
+        plt.savefig(f"{file_name}.png")
+        plt.savefig(f"{file_name}.pdf")
 
     stream_info = {
         "GPU": {
             "y_domain": [1, 2, 4, 8, 16],
             "y_title": tbs_title,
-            "targets": ["MHP_SYCL_GPU", "SHP_SYCL_GPU"],
         },
         "CPU": {
             "y_domain": [100, 200, 400, 800],
             "y_title": gbs_title,
-            "targets": ["MHP_SYCL_CPU", "MHP_DIRECT_CPU"],
         },
     }
 
@@ -189,15 +193,13 @@ class Plotter:
     device_info = {
         "GPU": {
             "x_title": "Number of GPU Tiles",
+            "targets": ["MHP_SYCL_GPU", "SHP_SYCL_GPU"],
         },
         "CPU": {
-            "x_title": "Number of CPU Cores",
+            "x_title": "Number of CPU Sockets",
+            "targets": ["MHP_SYCL_CPU", "MHP_DIRECT_CPU"],
         },
     }
-
-    def __line_info(self, db, target, x_title, y_title):
-        points = db.loc[db["Target"] == target]
-        return [points[x_title].values, points[y_title].values, target]
 
     def __x_domain(self, db, target, x_title):
         points = db.loc[db["Target"] == target]
@@ -209,8 +211,9 @@ class Plotter:
             val = 2 * val
         return x_domain
 
-    def __bench_plot(self, benchmark, device, scaling):
-        x_title = self.device_info[device]["x_title"]
+    def __bw_plot(self, benchmark, device, scaling):
+        di = self.device_info[device]
+        x_title = di["x_title"]
         bi = self.benchmark_info[benchmark][device]
         y_domain = bi["y_domain"]
         y_title = bi["y_title"]
@@ -225,17 +228,53 @@ class Plotter:
         click.echo(f"writing {fname}")
         db.to_csv(f"{fname}.csv")
 
+        def points(target):
+            p = db.loc[db["Target"] == target]
+            return [p[x_title].values, p[y_title].values, target]
+
         self.__plot(
             benchmark,
             x_title,
             y_title,
-            self.__x_domain(db, bi["targets"][0], x_title),
+            self.__x_domain(db, di["targets"][0], x_title),
             y_domain,
-            [
-                self.__line_info(db, target, x_title, y_title)
-                for target in bi["targets"]
-            ],
-            f"{fname}.png",
+            [points(target) for target in di["targets"]],
+            fname,
+        )
+
+    def __speedup_plot(self, benchmark, device, scaling):
+        di = self.device_info[device]
+        x_title = self.device_info[device]["x_title"]
+        y_title = self.speedup_title
+
+        db = self.db.copy()
+        db = db.loc[db["Benchmark"] == benchmark]
+        db = db.loc[db["Scaling"] == scaling]
+        db = db.loc[db["device"] == device]
+        db = db.sort_values(by=["Benchmark", "Target", x_title])
+
+        x_domain = self.__x_domain(db, di["targets"][0], x_title)
+        fname = f"{self.prefix}-{benchmark}-{device}-{scaling}"
+        click.echo(f"writing {fname}")
+        db.to_csv(f"{fname}.csv")
+
+        dpl = db.loc[db["Target"] == f"DPL_{device}"]
+        dpl = dpl.loc[dpl["Ranks"] == 1]
+        dpl_rtime = dpl["rtime"].values[0]
+
+        def points(target):
+            p = db.loc[db["Target"] == target]
+            return [p[x_title].values, dpl_rtime / p["rtime"].values, target]
+
+        self.__plot(
+            benchmark,
+            x_title,
+            y_title,
+            x_domain,
+            x_domain,
+            [points(target) for target in di["targets"]],
+            fname,
+            # display_perfect_scaling=False
         )
 
     def create_plots(self):
@@ -246,4 +285,10 @@ class Plotter:
                 "Stream_Add",
                 "Stream_Triad",
             ]:
-                self.__bench_plot(bench, device, "strong")
+                self.__bw_plot(bench, device, "strong")
+            for bench in [
+                "Inclusive_Scan",
+                "Reduce",
+            ]:
+                for scaling in ["strong"]:
+                    self.__speedup_plot(bench, device, scaling)
