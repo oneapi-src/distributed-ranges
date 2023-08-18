@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 #endif
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10000"))
-    ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("100"))
+    ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("10"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
     ("weak-scaling", "Scale the vector size by the number of ranks", cxxopts::value<bool>()->default_value("false"))

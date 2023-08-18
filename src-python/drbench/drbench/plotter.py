@@ -21,7 +21,7 @@ class Plotter:
     def __name_target(bname, target, device):
         names = bname.split("_")
         last = names[-1]
-        if last in ["DPL", "Std", "Serial"]:
+        if last in ["SYCL", "DPL", "Std", "Serial"]:
             bname = "_".join(names[0:-1])
             target = f"{last}_{device}"
         elif last == "DR":
