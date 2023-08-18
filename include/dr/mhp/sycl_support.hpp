@@ -65,6 +65,10 @@ template <typename T> T sycl_get(T &v) {
   return v;
 }
 
+template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
+  assert(false);
+}
+
 } // namespace dr::mhp::__detail
 
 #endif // SYCL_LANGUAGE_VERSION
