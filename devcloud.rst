@@ -6,36 +6,70 @@
 Benchmark Results
 =================
 
-Stream
-------
+Stream_Copy
+-----------
 
 GPU:
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-stream_strong_scaling_gpu.png
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Copy-GPU-strong.png
 
-`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-stream_strong_scaling_gpu.csv>`__
-`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-stream_strong_scaling_gpu.png>`__
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Copy-GPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Copy-GPU-strong.png>`__
 
 CPU:
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-stream_strong_scaling_cpu.png
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Copy-CPU-strong.png
 
-`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-stream_strong_scaling_cpu.csv>`__
-`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-stream_strong_scaling_cpu.png>`__
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Copy-CPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Copy-CPU-strong.png>`__
 
-Algorithms
+Stream_Scale
+------------
+
+GPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Scale-GPU-strong.png
+
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Scale-GPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Scale-GPU-strong.png>`__
+
+CPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Scale-CPU-strong.png
+
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Scale-CPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Scale-CPU-strong.png>`__
+
+Stream_Add
 ----------
 
 GPU:
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-algorithms_gpu.png
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Add-GPU-strong.png
 
-`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-algorithms_gpu.csv>`__
-`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-algorithms_gpu.png>`__
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Add-GPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Add-GPU-strong.png>`__
 
 CPU:
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-algorithms_cpu.png
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Add-CPU-strong.png
 
-`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-algorithms_cpu.csv>`__
-`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-algorithms_cpu.png>`__
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Add-CPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Add-CPU-strong.png>`__
+
+Stream_Triad
+------------
+
+GPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Triad-GPU-strong.png
+
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Triad-GPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Triad-GPU-strong.png>`__
+
+CPU:
+
+.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Triad-CPU-strong.png
+
+`CSV <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Triad-CPU-strong.csv>`__
+`PNG <https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stream_Triad-CPU-strong.png>`__
