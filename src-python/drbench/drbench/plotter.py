@@ -205,15 +205,24 @@ class Plotter:
         points = db.loc[db["Target"] == target]
         val = points[x_title].values[0]
         last = points[x_title].values[-1]
-        x_domain = []
+        x_domain = [val]
         while val <= last:
-            x_domain.append(val)
             val = 2 * val
+            x_domain.append(val)
         return x_domain
 
+    def __find_targets(self, db, device):
+        targets = []
+        for target in self.device_info[device]["targets"]:
+            tdb = db.loc[db["Target"] == target]
+            if tdb.shape[0] == 0:
+                print(f"no data for {target}")
+            else:
+                targets.append(target)
+        return targets
+
     def __bw_plot(self, benchmark, device, scaling):
-        di = self.device_info[device]
-        x_title = di["x_title"]
+        x_title = self.device_info[device]["x_title"]
         bi = self.benchmark_info[benchmark][device]
         y_domain = bi["y_domain"]
         y_title = bi["y_title"]
@@ -223,6 +232,12 @@ class Plotter:
         db = db.loc[db["Scaling"] == scaling]
         db = db.loc[db["device"] == device]
         db = db.sort_values(by=["Benchmark", "Target", x_title])
+
+        targets = self.__find_targets(db, device)
+
+        if db.shape[0] == 0 or len(targets) == 0:
+            print(f"no data for {benchmark} {device} {scaling}")
+            return
 
         fname = f"{self.prefix}-{benchmark}-{device}-{scaling}"
         click.echo(f"writing {fname}")
@@ -236,14 +251,13 @@ class Plotter:
             benchmark,
             x_title,
             y_title,
-            self.__x_domain(db, di["targets"][0], x_title),
+            self.__x_domain(db, targets[0], x_title),
             y_domain,
-            [points(target) for target in di["targets"]],
+            [points(target) for target in targets],
             fname,
         )
 
     def __speedup_plot(self, benchmark, device, scaling):
-        di = self.device_info[device]
         x_title = self.device_info[device]["x_title"]
         y_title = self.speedup_title
 
@@ -253,7 +267,13 @@ class Plotter:
         db = db.loc[db["device"] == device]
         db = db.sort_values(by=["Benchmark", "Target", x_title])
 
-        x_domain = self.__x_domain(db, di["targets"][0], x_title)
+        targets = self.__find_targets(db, device)
+
+        if db.shape[0] == 0 or len(targets) == 0:
+            print(f"no data for {benchmark} {device} {scaling}")
+            return
+
+        x_domain = self.__x_domain(db, targets[0], x_title)
         fname = f"{self.prefix}-{benchmark}-{device}-{scaling}"
         click.echo(f"writing {fname}")
         db.to_csv(f"{fname}.csv")
@@ -277,7 +297,7 @@ class Plotter:
             y_title,
             x_domain,
             x_domain,
-            [points(target) for target in di["targets"]],
+            [points(target) for target in targets],
             fname,
             # display_perfect_scaling=False
         )
