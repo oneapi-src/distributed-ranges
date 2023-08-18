@@ -20,6 +20,10 @@ template <typename T> T sycl_get(T &v) {
   return temp;
 }
 
+template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
+  sycl_queue().memcpy(dst, begin, (end - begin) * sizeof(T)).wait();
+}
+
 template <typename T, std::size_t Alignment>
 using shared_base_allocator =
     sycl::usm_allocator<T, sycl::usm::alloc::shared, Alignment>;

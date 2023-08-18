@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <dr/mhp/global.hpp>
+#include <dr/mhp/sycl_support.hpp>
+
 namespace dr::mhp {
 
 template <typename Group> class halo_impl {
@@ -62,7 +65,7 @@ public:
 
   /// Complete a halo exchange
   void exchange_finalize() {
-    reduce_finalize(second);
+    reduce_finalize();
     drlog.debug("Halo exchange finalize\n");
   }
 
@@ -87,6 +90,20 @@ public:
       auto &g = *map_[completed];
       if (g.receive && g.buffered) {
         g.unpack(op);
+      }
+    }
+  }
+
+  /// Complete a halo reduction
+  void reduce_finalize() {
+    for (int pending = rng::size(requests_); pending > 0; pending--) {
+      int completed;
+      MPI_Waitany(rng::size(requests_), requests_.data(), &completed,
+                  MPI_STATUS_IGNORE);
+      drlog.debug("Completed: {}\n", completed);
+      auto &g = *map_[completed];
+      if (g.receive && g.buffered) {
+        g.unpack();
       }
     }
   }
@@ -289,14 +306,31 @@ public:
       : data_(data), rank_(rank), tag_(tag) {}
 
   void unpack(const auto &op) {
-    for (std::size_t i = 0; i < rng::size(data_); i++) {
-      drlog.debug("unpack before {}, {}: {}\n", i, data_[i], *buffer);
-      data_[i] = op(data_[i], buffer[i]);
-      drlog.debug("       after {}\n", data_[i]);
+    if (mhp::use_sycl()) {
+      __detail::sycl_copy(buffer, buffer + rng::size(data_), data_.data());
+    } else {
+      for (std::size_t i = 0; i < rng::size(data_); i++) {
+        data_[i] = op(data_[i], buffer[i]);
+      }
     }
   }
 
-  void pack() { std::copy(data_.begin(), data_.end(), buffer); }
+  void unpack() {
+    if (mhp::use_sycl()) {
+      __detail::sycl_copy(buffer, buffer + rng::size(data_), data_.data());
+    } else {
+      std::copy(buffer, buffer + rng::size(data_), data_.data());
+    }
+  }
+
+  void pack() {
+    if (mhp::use_sycl()) {
+      __detail::sycl_copy(data_.data(), data_.data() + rng::size(data_),
+                          buffer);
+    } else {
+      std::copy(data_.begin(), data_.end(), buffer);
+    }
+  }
   std::size_t buffer_size() { return rng::size(data_); }
 
   std::size_t data_size() { return rng::size(data_); }
