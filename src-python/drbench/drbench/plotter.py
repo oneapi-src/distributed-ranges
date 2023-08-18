@@ -258,16 +258,21 @@ class Plotter:
         click.echo(f"writing {fname}")
         db.to_csv(f"{fname}.csv")
 
-        dpl = db.loc[db["Target"] == f"DPL_{device}"]
+        dpl = self.db.copy()
+        dpl = dpl.loc[dpl["Target"] == f"DPL_{device}"]
+        dpl = dpl.loc[dpl["Benchmark"] == benchmark]
         dpl = dpl.loc[dpl["Ranks"] == 1]
         dpl_rtime = dpl["rtime"].values[0]
 
         def points(target):
             p = db.loc[db["Target"] == target]
-            return [p[x_title].values, dpl_rtime / p["rtime"].values, target]
+            total_time = p["rtime"].values / (
+                1 if scaling == "strong" else p["Ranks"].values
+            )
+            return [p[x_title].values, dpl_rtime / total_time, target]
 
         self.__plot(
-            benchmark,
+            f"{benchmark} ({scaling} scaling)",
             x_title,
             y_title,
             x_domain,
@@ -290,5 +295,6 @@ class Plotter:
                 "Inclusive_Scan",
                 "Reduce",
             ]:
-                for scaling in ["strong"]:
-                    self.__speedup_plot(bench, device, scaling)
+                self.__speedup_plot(bench, device, "strong")
+                if device == "GPU":
+                    self.__speedup_plot(bench, device, "weak")
