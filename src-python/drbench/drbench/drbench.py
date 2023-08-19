@@ -347,7 +347,6 @@ def suite(
             # SYCL on CPU, a socket (Affinity domain) is a device
             run_rank_range(
                 base,
-                False,
                 sockets,
                 dr_filters,
                 ["mhp_sycl_cpu", "shp_sycl_cpu"],
