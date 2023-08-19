@@ -398,7 +398,9 @@ def suite(
         "^Reduce_DR",
     ]
     dr_filters = dr_nop2p + dr_p2p
-    mhp_filters = ["Stencil2D_StencilForeach_DR"]
+    # Need to support tiles size does not evenly divide full size
+    # mhp_filters = ["Stencil2D_StencilForeach_DR"]
+    mhp_filters = []
 
     if sockets and not cores_per_socket:
         click.get_current_context().fail(
