@@ -206,9 +206,11 @@ class Plotter:
         val = points[x_title].values[0]
         last = points[x_title].values[-1]
         x_domain = [val]
-        while val <= last:
-            val = 2 * val
+        while True:
             x_domain.append(val)
+            if val >= last:
+                break
+            val = 2 * val
         return x_domain
 
     def __find_targets(self, db, device):
