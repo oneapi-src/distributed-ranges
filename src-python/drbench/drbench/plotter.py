@@ -222,7 +222,8 @@ class Plotter:
                 targets.append(target)
         return targets
 
-    def __bw_plot(self, benchmark, device, scaling):
+    def __bw_plot(self, benchmark, device):
+        scaling = "strong"
         x_title = self.device_info[device]["x_title"]
         bi = self.benchmark_info[benchmark][device]
         y_domain = bi["y_domain"]
@@ -240,7 +241,7 @@ class Plotter:
             click.echo(f"no data for {benchmark} {device} {scaling}")
             return
 
-        fname = f"{self.prefix}-{benchmark}-{device}-{scaling}"
+        fname = f"{self.prefix}-{benchmark}-{device}"
         click.echo(f"writing {fname}")
         db.to_csv(f"{fname}.csv")
 
@@ -323,7 +324,7 @@ class Plotter:
                 "Stream_Add",
                 "Stream_Triad",
             ]:
-                self.__bw_plot(bench, device, "strong")
+                self.__bw_plot(bench, device)
             for bench in [
                 "Inclusive_Scan",
                 "Reduce",
