@@ -15,7 +15,7 @@ from matplotlib.ticker import FormatStrFormatter
 class Plotter:
     tbs_title = "Bandwidth (TB/s)"
     gbs_title = "Bandwidth (GB/s)"
-    speedup_title = "Speedup vs DPL"
+    speedup_title = "Speedup"
 
     @staticmethod
     def __name_target(bname, target, device):
@@ -42,8 +42,7 @@ class Plotter:
                 device = ctx["device"]
                 weak_scaling = ctx["weak-scaling"] == "1"
             except KeyError:
-                print(f"could not parse context of {fname}")
-                raise
+                click.fail(f"could not parse context of {fname}")
             benchs = fdata["benchmarks"]
             cores_per_socket = int(
                 re.search(
@@ -218,7 +217,7 @@ class Plotter:
         for target in self.device_info[device]["targets"]:
             tdb = db.loc[db["Target"] == target]
             if tdb.shape[0] == 0:
-                print(f"no data for {target}")
+                click.echo(f"  no data for {target}")
             else:
                 targets.append(target)
         return targets
@@ -238,7 +237,7 @@ class Plotter:
         targets = self.__find_targets(db, device)
 
         if db.shape[0] == 0 or len(targets) == 0:
-            print(f"no data for {benchmark} {device} {scaling}")
+            click.echo(f"no data for {benchmark} {device} {scaling}")
             return
 
         fname = f"{self.prefix}-{benchmark}-{device}-{scaling}"
@@ -259,25 +258,25 @@ class Plotter:
             fname,
         )
 
-    def __speedup_plot(self, benchmark, device, scaling):
+    def __speedup_plot(self, benchmark, device):
+        fname = f"{self.prefix}-{benchmark}-{device}"
+        click.echo(f"writing {fname}")
+
         x_title = self.device_info[device]["x_title"]
         y_title = self.speedup_title
 
         db = self.db.copy()
         db = db.loc[db["Benchmark"] == benchmark]
-        db = db.loc[db["Scaling"] == scaling]
         db = db.loc[db["device"] == device]
         db = db.sort_values(by=["Benchmark", "Target", x_title])
 
         targets = self.__find_targets(db, device)
 
         if db.shape[0] == 0 or len(targets) == 0:
-            print(f"no data for {benchmark} {device} {scaling}")
+            click.echo(f"  no data for {benchmark} {device}")
             return
 
         x_domain = self.__x_domain(db, targets[0], x_title)
-        fname = f"{self.prefix}-{benchmark}-{device}-{scaling}"
-        click.echo(f"writing {fname}")
         db.to_csv(f"{fname}.csv")
 
         dpl = self.db.copy()
@@ -286,20 +285,32 @@ class Plotter:
         dpl = dpl.loc[dpl["Ranks"] == 1]
         dpl_rtime = dpl["rtime"].values[0]
 
-        def points(target):
-            p = db.loc[db["Target"] == target]
-            total_time = p["rtime"].values / (
-                1 if scaling == "strong" else p["Ranks"].values
-            )
-            return [p[x_title].values, dpl_rtime / total_time, target]
+        lines = []
+        for scaling in ["weak", "strong"]:
+            for target in targets:
+                p = db.loc[db["Target"] == target]
+                p = p.loc[db["Scaling"] == scaling]
+                if p.shape[0] == 0:
+                    click.echo(f"  no data for {target} {scaling}")
+                    continue
+
+                total_time = p["rtime"].values / (
+                    1 if scaling == "strong" else p["Ranks"].values
+                )
+                label = target
+                if scaling == "weak":
+                    label += " weak scaling"
+                lines.append(
+                    [p[x_title].values, dpl_rtime / total_time, label]
+                )
 
         self.__plot(
-            f"{benchmark} ({scaling} scaling)",
+            benchmark,
             x_title,
             y_title,
             x_domain,
             x_domain,
-            [points(target) for target in targets],
+            lines,
             fname,
             # display_perfect_scaling=False
         )
@@ -317,6 +328,4 @@ class Plotter:
                 "Inclusive_Scan",
                 "Reduce",
             ]:
-                self.__speedup_plot(bench, device, "strong")
-                if device == "GPU":
-                    self.__speedup_plot(bench, device, "weak")
+                self.__speedup_plot(bench, device)
