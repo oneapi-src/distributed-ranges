@@ -161,7 +161,7 @@ template <dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O>
 auto inclusive_scan(R &&r, O &&o) {
   return dr::mhp::inclusive_scan(std::forward<R>(r), std::forward<O>(o),
-                                 std::plus<>());
+                                 std::plus<rng::range_value_t<R>>());
 }
 
 // Distributed iterator versions

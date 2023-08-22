@@ -34,7 +34,7 @@ target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)
 
 # cmake-format: off
 add_executable(mhp-quick-bench mhp-bench.cpp
-  ../mhp/stencil_2d.cpp
+  ../common/inclusive_scan.cpp
   )
 # cmake-format: on
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
