@@ -156,7 +156,7 @@ template <typename ExecutionPolicy, dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O>
 void inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o) {
   inclusive_scan(std::forward<ExecutionPolicy>(policy), std::forward<R>(r),
-                 std::forward<O>(o), std::plus<>());
+                 std::forward<O>(o), std::plus<rng::range_value_t<R>>());
 }
 
 // Distributed iterator versions
