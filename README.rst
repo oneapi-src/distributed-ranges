@@ -9,8 +9,8 @@
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/daily.yml/badge.svg
-   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/daily.yml
+.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/devcloud.yml/badge.svg
+   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/devcloud.yml
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml
