@@ -14,7 +14,7 @@ static void Inclusive_Scan_DR(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      xhp::inclusive_scan(a, b, std::plus<>{});
+      xhp::inclusive_scan(a, b);
     }
   }
 }
@@ -22,7 +22,7 @@ static void Inclusive_Scan_DR(benchmark::State &state) {
 DR_BENCHMARK(Inclusive_Scan_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Inclusive_Scan_stdplus_DPLEXP(benchmark::State &state) {
+static void Inclusive_Scan_stdplus_EXP(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto a = sycl::malloc_device<T>(default_vector_size, q);
@@ -40,9 +40,9 @@ static void Inclusive_Scan_stdplus_DPLEXP(benchmark::State &state) {
   sycl::free(b, q);
 }
 
-DR_BENCHMARK(Inclusive_Scan_stdplus_DPLEXP);
+DR_BENCHMARK(Inclusive_Scan_stdplus_EXP);
 
-static void Inclusive_Scan_stdplusT_DPLEXP(benchmark::State &state) {
+static void Inclusive_Scan_stdplusT_EXP(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto a = sycl::malloc_device<T>(default_vector_size, q);
@@ -61,9 +61,9 @@ static void Inclusive_Scan_stdplusT_DPLEXP(benchmark::State &state) {
   sycl::free(b, q);
 }
 
-DR_BENCHMARK(Inclusive_Scan_stdplusT_DPLEXP);
+DR_BENCHMARK(Inclusive_Scan_stdplusT_EXP);
 
-static void Inclusive_Scan_none_DPLEXP(benchmark::State &state) {
+static void Inclusive_Scan_none_EXP(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto a = sycl::malloc_device<T>(default_vector_size, q);
@@ -81,7 +81,7 @@ static void Inclusive_Scan_none_DPLEXP(benchmark::State &state) {
   sycl::free(b, q);
 }
 
-DR_BENCHMARK(Inclusive_Scan_none_DPLEXP);
+DR_BENCHMARK(Inclusive_Scan_none_EXP);
 
 static void Inclusive_Scan_DPL(benchmark::State &state) {
   auto q = get_queue();
