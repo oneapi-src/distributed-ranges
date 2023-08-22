@@ -22,7 +22,7 @@ static void Inclusive_Scan_DR(benchmark::State &state) {
 DR_BENCHMARK(Inclusive_Scan_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Inclusive_Scan_DPL(benchmark::State &state) {
+static void Inclusive_Scan_stdplusDPL(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto a = sycl::malloc_device<T>(default_vector_size, q);
@@ -34,6 +34,68 @@ static void Inclusive_Scan_DPL(benchmark::State &state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
       std::inclusive_scan(policy, a, a + default_vector_size, b, std::plus<>{});
+    }
+  }
+  sycl::free(a, q);
+  sycl::free(b, q);
+}
+
+DR_BENCHMARK(Inclusive_Scan_stdplusDPL);
+
+static void Inclusive_Scan_stdplusTDPL(benchmark::State &state) {
+  auto q = get_queue();
+  auto policy = oneapi::dpl::execution::make_device_policy(q);
+  auto a = sycl::malloc_device<T>(default_vector_size, q);
+  auto b = sycl::malloc_device<T>(default_vector_size, q);
+  Stats stats(state, sizeof(T) * default_vector_size,
+              sizeof(T) * default_vector_size);
+
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
+      std::inclusive_scan(policy, a, a + default_vector_size, b,
+                          std::plus<T>{});
+    }
+  }
+  sycl::free(a, q);
+  sycl::free(b, q);
+}
+
+DR_BENCHMARK(Inclusive_Scan_stdplusTDPL);
+
+static void Inclusive_Scan_noneDPL(benchmark::State &state) {
+  auto q = get_queue();
+  auto policy = oneapi::dpl::execution::make_device_policy(q);
+  auto a = sycl::malloc_device<T>(default_vector_size, q);
+  auto b = sycl::malloc_device<T>(default_vector_size, q);
+  Stats stats(state, sizeof(T) * default_vector_size,
+              sizeof(T) * default_vector_size);
+
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
+      std::inclusive_scan(policy, a, a + default_vector_size, b);
+    }
+  }
+  sycl::free(a, q);
+  sycl::free(b, q);
+}
+
+DR_BENCHMARK(Inclusive_Scan_noneDPL);
+
+static void Inclusive_Scan_DPL(benchmark::State &state) {
+  auto q = get_queue();
+  auto policy = oneapi::dpl::execution::make_device_policy(q);
+  auto a = sycl::malloc_device<T>(default_vector_size, q);
+  auto b = sycl::malloc_device<T>(default_vector_size, q);
+  Stats stats(state, sizeof(T) * default_vector_size,
+              sizeof(T) * default_vector_size);
+
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
+      std::inclusive_scan(policy, a, a + default_vector_size, b,
+                          std::plus<T>{});
     }
   }
   sycl::free(a, q);
