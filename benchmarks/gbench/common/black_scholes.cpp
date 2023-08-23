@@ -16,7 +16,17 @@ T initval = 0;
 
 T normalCDF(T value) { return 0.5 * std::erfc(-value * M_SQRT1_2); }
 
-static void Black_Scholes(benchmark::State &state) {
+auto black_scholes = [](auto r, auto sig, auto &&e) {
+  auto &&[s0, x, t, vcall, vput] = e;
+  T d1 =
+      (std::log(s0 / x) + (r + T(0.5) * sig * sig) * t) / (sig * std::sqrt(t));
+  T d2 =
+      (std::log(s0 / x) + (r - T(0.5) * sig * sig) * t) / (sig * std::sqrt(t));
+  vcall = s0 * normalCDF(d1) - std::exp(-r * t) * x * normalCDF(d2);
+  vput = std::exp(-r * t) * x * normalCDF(-d2) - s0 * normalCDF(-d1);
+};
+
+static void BlackScholes_DR(benchmark::State &state) {
   T scalar = initval;
   T r = 0;
   T sig = 0;
@@ -27,16 +37,6 @@ static void Black_Scholes(benchmark::State &state) {
   xhp::distributed_vector<T> vcall(default_vector_size, scalar);
   xhp::distributed_vector<T> vput(default_vector_size, scalar);
 
-  auto black_scholes = [=](auto &&e) {
-    auto &&[s0, x, t, vcall, vput] = e;
-    T d1 = (std::log(s0 / x) + (r + T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
-    T d2 = (std::log(s0 / x) + (r - T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
-    vcall = s0 * normalCDF(d1) - std::exp(-r * t) * x * normalCDF(d2);
-    vput = std::exp(-r * t) * x * normalCDF(-d2) - s0 * normalCDF(-d1);
-  };
-
   Stats stats(state, sizeof(T) * (s0.size() + x.size() + t.size()),
               sizeof(T) * (vcall.size() + vput.size()));
 
@@ -44,29 +44,20 @@ static void Black_Scholes(benchmark::State &state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
 
-      xhp::for_each(xhp::views::zip(s0, x, t, vcall, vput), black_scholes);
+      xhp::for_each(xhp::views::zip(s0, x, t, vcall, vput),
+                    [r, sig, bs = black_scholes](auto e) { bs(r, sig, e); });
     }
   }
 }
 
-DR_BENCHMARK(Black_Scholes);
+DR_BENCHMARK(BlackScholes_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Black_Scholes_DPL(benchmark::State &state) {
+static void BlackScholes_DPL(benchmark::State &state) {
   T r = 0;
   T sig = 0;
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
-
-  auto black_scholes = [=](auto &&e) {
-    auto &&[s0, x, t, vcall, vput] = e;
-    T d1 = (std::log(s0 / x) + (r + T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
-    T d2 = (std::log(s0 / x) + (r - T(0.5) * sig * sig) * t) /
-           (sig * std::sqrt(t));
-    vcall = s0 * normalCDF(d1) - std::exp(-r * t) * x * normalCDF(d2);
-    vput = std::exp(-r * t) * x * normalCDF(-d2) - s0 * normalCDF(-d1);
-  };
 
   auto s0 = sycl::malloc_device<T>(default_vector_size, q);
   auto x = sycl::malloc_device<T>(default_vector_size, q);
@@ -96,7 +87,8 @@ static void Black_Scholes_DPL(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      std::for_each(policy, d_first, d_last, black_scholes);
+      std::for_each(policy, d_first, d_last,
+                    [r, sig, bs = black_scholes](auto e) { bs(r, sig, e); });
     }
   }
 
@@ -107,5 +99,5 @@ static void Black_Scholes_DPL(benchmark::State &state) {
   sycl::free(vput, q);
 }
 
-DR_BENCHMARK(Black_Scholes_DPL);
+DR_BENCHMARK(BlackScholes_DPL);
 #endif
