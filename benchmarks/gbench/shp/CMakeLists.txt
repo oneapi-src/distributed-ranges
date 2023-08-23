@@ -8,7 +8,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_executable(
   shp-bench
   shp-bench.cpp
-  sort.cpp
+  ../common/sort.cpp
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
   ../common/inclusive_scan.cpp

@@ -17,10 +17,8 @@ static void Sort_DR(benchmark::State &state) {
   fill_random(a);
   Stats stats(state, sizeof(T) * a.size());
   for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      dr::shp::sort(a);
-    }
+    stats.rep();
+    dr::shp::sort(a);
   }
 }
 
@@ -37,13 +35,24 @@ static void Sort_DPL(benchmark::State &state) {
   Stats stats(state, sizeof(T) * default_vector_size);
 
   for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      std::sort(policy, a, a + default_vector_size);
-    }
+    stats.rep();
+    std::sort(policy, a, a + default_vector_size);
   }
   sycl::free(a, q);
 }
 
 DR_BENCHMARK(Sort_DPL);
 #endif
+
+static void Sort_Std(benchmark::State &state) {
+  std::vector<T> a(default_vector_size);
+  fill_random(a);
+  Stats stats(state, sizeof(T) * default_vector_size);
+
+  for (auto _ : state) {
+    stats.rep();
+    std::sort(a.begin(), a.end());
+  }
+}
+
+DR_BENCHMARK(Sort_Std);
