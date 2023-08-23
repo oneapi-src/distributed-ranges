@@ -15,8 +15,9 @@ public:
 
   distributed_mdarray(dr::__detail::dr_extents<Rank> extents,
                       distribution dist = distribution())
-      : dv_(md_size(extents), dv_dist(dist, extents)),
-        md_view_(make_md_view(dv_, extents)) {}
+      : tile_extents_(tile_extents(extents)),
+        dv_(dv_size(), dv_dist(dist, extents)),
+        md_view_(make_md_view(dv_, extents, tile_extents_)) {}
 
   auto begin() const { return rng::begin(md_view_); }
   auto end() const { return rng::end(md_view_); }
@@ -35,6 +36,14 @@ public:
   }
 
 private:
+  using DV = distributed_vector<T>;
+
+  static auto tile_extents(auto extents) {
+    extents[0] = dr::__detail::round_up(
+        extents[0], default_comm().size()); // dr-style ignore
+    return extents;
+  }
+
   static auto md_size(auto extents) {
     std::size_t size = 1;
     for (auto extent : extents) {
@@ -43,27 +52,32 @@ private:
     return size;
   }
 
+  auto dv_size() {
+    return default_comm().size() * md_size(tile_extents_); // dr-style ignore
+  }
+
   static auto dv_dist(distribution incoming_dist, auto extents) {
-    // Granularity matches tile size
-    auto tile_extents = extents;
+    // Decomp is 1 "row" in decomp dimension
     // TODO: only supports dist on leading dimension
-    tile_extents[0] = 1;
-    std::size_t tile_size = md_size(tile_extents);
+    extents[0] = 1;
+    std::size_t row_size = md_size(extents);
     auto incoming_halo = incoming_dist.halo();
-    return distribution().granularity(tile_size).halo(
-        incoming_halo.prev * tile_size, incoming_halo.next * tile_size);
+    return distribution().halo(incoming_halo.prev * row_size,
+                               incoming_halo.next * row_size);
   }
 
   // This wrapper seems to avoid an issue with template argument
   // deduction for mdspan_view
-  template <typename DV> static auto make_md_view(DV &&dv, auto extents) {
-    return views::mdspan(dv, extents);
+  static auto make_md_view(const DV &dv, extents_type extents,
+                           extents_type tile_extents) {
+    return views::mdspan(dv, extents, tile_extents);
   }
 
-  using DV = distributed_vector<T>;
+  extents_type tile_extents_;
   DV dv_;
-  using mdspan_type = decltype(make_md_view(
-      std::declval<DV>(), std::declval<dr::__detail::dr_extents<Rank>>()));
+  using mdspan_type =
+      decltype(make_md_view(std::declval<DV>(), std::declval<extents_type>(),
+                            std::declval<extents_type>()));
   mdspan_type md_view_;
 };
 

@@ -8,6 +8,17 @@
 
 namespace dr::__detail {
 
+inline std::size_t round_up(std::size_t n, std::size_t multiple) {
+  if (multiple == 0)
+    return n;
+
+  int remainder = n % multiple;
+  if (remainder == 0)
+    return n;
+
+  return n + multiple - remainder;
+}
+
 template <typename Mdspan>
 concept mdspan_like = requires(Mdspan &mdspan) {
   mdspan.rank();
