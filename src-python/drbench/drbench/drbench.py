@@ -330,7 +330,10 @@ def suite(
             )
             # DPL is 1 device, use shp_sycl_cpu to get sycl env vars
             run_rank_range(
-                base, 1, [".*_DPL", "Stencil2D.*_SYCL"], ["shp_sycl_gpu"]
+                base,
+                1,
+                ["(Reduce|Inclusive).*_DPL", "Stencil2D.*_SYCL"],
+                ["shp_sycl_gpu"],
             )
         if p2p_gpus > 0:
             # if benchmark needs p2p run on shp on 1 gpu
