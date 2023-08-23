@@ -398,7 +398,7 @@ def suite(
     # benchmark filters
     dr_nop2p = [
         "^Stream_",
-        "^BlackScholes",
+        "^BlackScholes_DR",
     ]
     dr_p2p = [
         "^Inclusive_Scan_DR",
