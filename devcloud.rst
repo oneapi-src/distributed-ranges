@@ -32,3 +32,7 @@ Benchmark Results
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Inclusive_Scan-GPU.csv
      - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Inclusive_Scan-CPU.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Inclusive_Scan-CPU.csv
+   * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-BlackScholes-GPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-BlackScholes-GPU.csv
+     - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-BlackScholes-CPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-BlackScholes-CPU.csv
