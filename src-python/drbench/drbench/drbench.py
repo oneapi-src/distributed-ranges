@@ -332,7 +332,7 @@ def suite(
             run_rank_range(
                 base,
                 1,
-                ["(Reduce|Inclusive).*_DPL", "Stencil2D.*_SYCL"],
+                ["Reduce_DPL", "Inclusive_Scan_DPL", "Stencil2D.*_SYCL"],
                 ["shp_sycl_gpu"],
             )
         if p2p_gpus > 0:
