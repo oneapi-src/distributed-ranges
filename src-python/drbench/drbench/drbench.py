@@ -332,7 +332,12 @@ def suite(
             run_rank_range(
                 base,
                 1,
-                ["Reduce_DPL", "Inclusive_Scan_DPL", "Stencil2D.*_SYCL"],
+                [
+                    "BlackScholes_DPL",
+                    "Reduce_DPL",
+                    "Inclusive_Scan_DPL",
+                    "Stencil2D.*_SYCL",
+                ],
                 ["shp_sycl_gpu"],
             )
         if p2p_gpus > 0:
@@ -393,7 +398,7 @@ def suite(
     # benchmark filters
     dr_nop2p = [
         "^Stream_",
-        "^Black_Scholes",
+        "^BlackScholes",
     ]
     dr_p2p = [
         "^Inclusive_Scan_DR",
