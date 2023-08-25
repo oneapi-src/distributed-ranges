@@ -8,15 +8,47 @@
 
 namespace dr::__detail {
 
+template <typename Index> auto shape_to_strides(const Index &shape) {
+  const std::size_t rank = rng::size(shape);
+  Index strides;
+  strides[rank - 1] = 1;
+  for (std::size_t i = 1; i < rank; i++) {
+    strides[rank - i - 1] = strides[rank - i] * shape[rank - i];
+  }
+  return strides;
+}
+
+template <typename Index>
+auto linear_to_index(std::size_t linear, const Index &shape) {
+  Index index, strides(shape_to_strides(shape));
+
+  for (std::size_t i = 0; i < rng::size(shape); i++) {
+    index[i] = linear / strides[i];
+    linear = linear % strides[i];
+  }
+
+  return index;
+}
+
 inline std::size_t round_up(std::size_t n, std::size_t multiple) {
-  if (multiple == 0)
+  if (multiple == 0) {
     return n;
+  }
 
   int remainder = n % multiple;
-  if (remainder == 0)
+  if (remainder == 0) {
     return n;
+  }
 
   return n + multiple - remainder;
+}
+
+inline std::size_t partition_up(std::size_t n, std::size_t multiple) {
+  if (multiple == 0) {
+    return n;
+  }
+
+  return round_up(n, multiple) / multiple;
 }
 
 template <typename Mdspan>

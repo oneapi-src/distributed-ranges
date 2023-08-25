@@ -39,8 +39,8 @@ private:
   using DV = distributed_vector<T>;
 
   static auto tile_extents(auto extents) {
-    extents[0] = dr::__detail::round_up(
-        extents[0], default_comm().size()); // dr-style ignore
+    std::size_t n = default_comm().size(); // dr-style ignore
+    extents[0] = dr::__detail::partition_up(extents[0], n);
     return extents;
   }
 

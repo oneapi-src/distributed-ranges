@@ -49,6 +49,7 @@ private:
       ends[i] = std::max(base_starts[i], std::min(slice_ends[i], base_end)) -
                 base_starts[i];
     }
+
     return dr::__detail::make_submdspan(base_mdspan, starts, ends);
   }
 
