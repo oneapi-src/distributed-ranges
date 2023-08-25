@@ -59,9 +59,7 @@ MDA generate_v() {
   return a;
 }
 
-TEST(MhpTests, WaveKernelCreateE) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, CreateE) {
   MDA a = generate_e();
   // first row is unused (all arrays must have the same number of rows)
   // clang-format off
@@ -73,9 +71,7 @@ TEST(MhpTests, WaveKernelCreateE) {
   // clang-format on
 }
 
-TEST(MhpTests, WaveKernelCreateU) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, CreateU) {
   MDA a = generate_u();
   // clang-format off
   EXPECT_TRUE(equal(a, {10, 11, 12,
@@ -86,9 +82,7 @@ TEST(MhpTests, WaveKernelCreateU) {
   // clang-format on
 }
 
-TEST(MhpTests, WaveKernelCreateV) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, CreateV) {
   MDA a = generate_v();
   // first row is unused (all arrays must have the same number of rows)
   // clang-format off
@@ -101,9 +95,7 @@ TEST(MhpTests, WaveKernelCreateV) {
   // clang-format on
 }
 
-TEST(MhpTests, WaveKernelDeDx) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, DeDx) {
   MDA e = generate_e();
   MDA dedx({nx + 1, ny}, dist);
   dr::mhp::fill(dedx, 0.0);
@@ -134,9 +126,7 @@ TEST(MhpTests, WaveKernelDeDx) {
   // clang-format on
 }
 
-TEST(MhpTests, WaveKernelDeDy) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, DeDy) {
   MDA e = generate_e();
   MDA dedy({nx + 1, ny + 1}, dist);
   dr::mhp::fill(dedy, 0.0);
@@ -165,9 +155,7 @@ TEST(MhpTests, WaveKernelDeDy) {
   // clang-format on
 }
 
-TEST(MhpTests, WaveKernelDuDx) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, DuDx) {
   MDA u = generate_u();
   MDA dudx({nx + 1, ny}, dist);
   dr::mhp::fill(dudx, 0.0);
@@ -194,9 +182,7 @@ TEST(MhpTests, WaveKernelDuDx) {
   // clang-format on
 }
 
-TEST(MhpTests, WaveKernelDvDy) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, DvDy) {
   MDA v = generate_v();
   MDA dvdy({nx + 1, ny}, dist);
   dr::mhp::fill(dvdy, 0.0);
@@ -223,9 +209,7 @@ TEST(MhpTests, WaveKernelDvDy) {
   // clang-format on
 }
 
-TEST(MhpTests, WaveKernelDivergence) {
-  if (comm_size > 1)
-    return;
+TEST(WaveKernel, Divergence) {
   MDA u = generate_u();
   MDA v = generate_v();
   MDA divuv({nx + 1, ny}, dist);
