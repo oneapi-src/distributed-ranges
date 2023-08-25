@@ -27,7 +27,7 @@ add_executable(mhp-tests-3 mhp-tests.cpp communicator-3.cpp halo-3.cpp
 # cmake-format: off
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  mdstar.cpp
+  wave_kernel.cpp
   )
 # cmake-format: on
 
