@@ -284,6 +284,9 @@ class Plotter:
         reference = reference.loc[reference["Target"] == f"Reference_{device}"]
         reference = reference.loc[reference["Benchmark"] == benchmark]
         reference = reference.loc[reference["Ranks"] == 1]
+        if reference.shape[0] == 0:
+            click.echo(f"  no reference data for {benchmark} {device}")
+            return
         reference_rtime = reference["rtime"].values[0]
 
         lines = []

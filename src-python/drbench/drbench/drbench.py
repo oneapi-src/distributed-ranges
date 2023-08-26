@@ -335,6 +335,7 @@ def suite(
             # Run reference benchmarkson 1 device, use shp_sycl_cpu to
             # get sycl env vars
             run_rank_range(base, 1, reference_filters, ["shp_sycl_gpu"])
+            run_rank_range(base, 1, mhp_reference_filters, ["mhp_sycl_gpu"])
         if p2p_gpus > 0:
             # if benchmark needs p2p run on shp on 1 gpu
             run_rank_range(base, p2p_gpus, dr_p2p, ["shp_sycl_gpu"])
@@ -357,6 +358,7 @@ def suite(
             # Run reference benchmarkson 1 device, use shp_sycl_cpu to
             # get sycl env vars
             run_rank_range(base, 1, reference_filters, ["shp_sycl_cpu"])
+            run_rank_range(base, 1, mhp_reference_filters, ["mhp_sycl_cpu"])
             # 1 and 2 sockets for direct cpu
             run_rank_list(
                 base,
@@ -406,6 +408,8 @@ def suite(
         "BlackScholes_Reference",
         "Reduce_Reference",
         "Inclusive_Scan_Reference",
+    ]
+    mhp_reference_filters = [
         "Stencil2D_Reference",
     ]
 
