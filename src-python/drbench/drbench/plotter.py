@@ -21,7 +21,7 @@ class Plotter:
     def __name_target(bname, target, device):
         names = bname.split("_")
         last = names[-1]
-        if last in ["SYCL", "DPL", "Std", "Serial"]:
+        if last == "Reference":
             bname = "_".join(names[0:-1])
             target = f"{last}_{device}"
         elif last == "DR":
@@ -280,11 +280,11 @@ class Plotter:
         x_domain = self.__x_domain(db, targets[0], x_title)
         db.to_csv(f"{fname}.csv")
 
-        dpl = self.db.copy()
-        dpl = dpl.loc[dpl["Target"] == f"DPL_{device}"]
-        dpl = dpl.loc[dpl["Benchmark"] == benchmark]
-        dpl = dpl.loc[dpl["Ranks"] == 1]
-        dpl_rtime = dpl["rtime"].values[0]
+        reference = self.db.copy()
+        reference = reference.loc[reference["Target"] == f"Reference_{device}"]
+        reference = reference.loc[reference["Benchmark"] == benchmark]
+        reference = reference.loc[reference["Ranks"] == 1]
+        reference_rtime = reference["rtime"].values[0]
 
         lines = []
         for scaling in ["weak", "strong"]:
@@ -302,7 +302,7 @@ class Plotter:
                 if scaling == "weak":
                     label += " weak scaling"
                 lines.append(
-                    [p[x_title].values, dpl_rtime / total_time, label]
+                    [p[x_title].values, reference_rtime / total_time, label]
                 )
 
         self.__plot(
@@ -329,5 +329,6 @@ class Plotter:
                 "BlackScholes",
                 "Inclusive_Scan",
                 "Reduce",
+                "Stencil2D",
             ]:
                 self.__speedup_plot(bench, device)

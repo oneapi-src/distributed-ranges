@@ -370,7 +370,7 @@ DR_BENCHMARK(Stencil2D_MdspanTuple_DR);
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style.
 //
-static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
+static void Stencil2D_DR(benchmark::State &state) {
   auto shape = default_shape();
   std::size_t radius = 1;
   std::array slice_starts{radius, radius};
@@ -405,7 +405,7 @@ static void Stencil2D_StencilForeach_DR(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Stencil2D_StencilForeach_DR);
+DR_BENCHMARK(Stencil2D_DR);
 
 #endif //__GNUC__ == 10 && __GNUC_MINOR__ == 4
 
@@ -413,7 +413,7 @@ DR_BENCHMARK(Stencil2D_StencilForeach_DR);
 // Single process SYCL baseline
 //
 #ifdef SYCL_LANGUAGE_VERSION
-static void Stencil2D_Basic_SYCL(benchmark::State &state) {
+static void Stencil2D_Reference(benchmark::State &state) {
   auto s = default_shape();
   auto rows = s[0];
   auto cols = s[1];
@@ -447,7 +447,7 @@ static void Stencil2D_Basic_SYCL(benchmark::State &state) {
   sycl::free(out, q);
 }
 
-DR_BENCHMARK(Stencil2D_Basic_SYCL);
+DR_BENCHMARK(Stencil2D_Reference);
 
 //
 // Distributed vector of floats. Granularity ensures segments contain

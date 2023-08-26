@@ -53,7 +53,7 @@ static void BlackScholes_DR(benchmark::State &state) {
 DR_BENCHMARK(BlackScholes_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void BlackScholes_DPL(benchmark::State &state) {
+static void BlackScholes_Reference(benchmark::State &state) {
   T r = 0;
   T sig = 0;
   auto q = get_queue();
@@ -99,5 +99,5 @@ static void BlackScholes_DPL(benchmark::State &state) {
   sycl::free(vput, q);
 }
 
-DR_BENCHMARK(BlackScholes_DPL);
+DR_BENCHMARK(BlackScholes_Reference);
 #endif

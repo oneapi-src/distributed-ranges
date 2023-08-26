@@ -192,7 +192,7 @@ static void Reduce_Serial(benchmark::State &state) {
 DR_BENCHMARK(Reduce_Serial);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Reduce_DPL(benchmark::State &state) {
+static void Reduce_Reference(benchmark::State &state) {
   T actual{};
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
@@ -211,7 +211,7 @@ static void Reduce_DPL(benchmark::State &state) {
   check_reduce(actual);
 }
 
-DR_BENCHMARK(Reduce_DPL);
+DR_BENCHMARK(Reduce_Reference);
 #endif
 
 static void TransformIdentity_DR(benchmark::State &state) {

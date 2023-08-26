@@ -326,20 +326,15 @@ def suite(
             # if benchmark needs p2p run on mhp on all gpus
             run_rank_range(base, gpus, mhp_filters + dr_p2p, ["mhp_sycl_gpu"])
             run_rank_range(
-                base, gpus, dr_p2p, ["mhp_sycl_gpu"], weak_scaling=True
-            )
-            # DPL is 1 device, use shp_sycl_cpu to get sycl env vars
-            run_rank_range(
                 base,
-                1,
-                [
-                    "BlackScholes_DPL",
-                    "Reduce_DPL",
-                    "Inclusive_Scan_DPL",
-                    "Stencil2D.*_SYCL",
-                ],
-                ["shp_sycl_gpu"],
+                gpus,
+                mhp_filters + dr_p2p,
+                ["mhp_sycl_gpu"],
+                weak_scaling=True,
             )
+            # Run reference benchmarkson 1 device, use shp_sycl_cpu to
+            # get sycl env vars
+            run_rank_range(base, 1, reference_filters, ["shp_sycl_gpu"])
         if p2p_gpus > 0:
             # if benchmark needs p2p run on shp on 1 gpu
             run_rank_range(base, p2p_gpus, dr_p2p, ["shp_sycl_gpu"])
@@ -359,8 +354,9 @@ def suite(
                 dr_filters,
                 ["mhp_sycl_cpu", "shp_sycl_cpu"],
             )
-            # DPL is 1 device, use shp_sycl_cpu to get sycl env vars
-            run_rank_range(base, 1, [".*_DPL"], ["shp_sycl_cpu"])
+            # Run reference benchmarkson 1 device, use shp_sycl_cpu to
+            # get sycl env vars
+            run_rank_range(base, 1, reference_filters, ["shp_sycl_cpu"])
             # 1 and 2 sockets for direct cpu
             run_rank_list(
                 base,
@@ -405,9 +401,13 @@ def suite(
         "^Reduce_DR",
     ]
     dr_filters = dr_nop2p + dr_p2p
-    # Need to support tiles size does not evenly divide full size
-    # mhp_filters = ["Stencil2D_StencilForeach_DR"]
-    mhp_filters = []
+    mhp_filters = ["Stencil2D_DR"]
+    reference_filters = [
+        "BlackScholes_Reference",
+        "Reduce_Reference",
+        "Inclusive_Scan_Reference",
+        "Stencil2D_Reference",
+    ]
 
     if sockets and not cores_per_socket:
         click.get_current_context().fail(

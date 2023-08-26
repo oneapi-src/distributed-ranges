@@ -83,7 +83,7 @@ static void Inclusive_Scan_none_EXP(benchmark::State &state) {
 
 DR_BENCHMARK(Inclusive_Scan_none_EXP);
 
-static void Inclusive_Scan_DPL(benchmark::State &state) {
+static void Inclusive_Scan_Reference(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto a = sycl::malloc_device<T>(default_vector_size, q);
@@ -102,7 +102,7 @@ static void Inclusive_Scan_DPL(benchmark::State &state) {
   sycl::free(b, q);
 }
 
-DR_BENCHMARK(Inclusive_Scan_DPL);
+DR_BENCHMARK(Inclusive_Scan_Reference);
 #endif
 
 static void Inclusive_Scan_Std(benchmark::State &state) {
