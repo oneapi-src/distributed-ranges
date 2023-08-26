@@ -36,3 +36,7 @@ Benchmark Results
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-BlackScholes-GPU.csv
      - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-BlackScholes-CPU.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-BlackScholes-CPU.csv
+   * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Stencil2D-GPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stencil2D-GPU.csv
+     - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Stencil2D-CPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Stencil2D-CPU.csv

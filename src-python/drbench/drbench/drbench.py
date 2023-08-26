@@ -355,7 +355,13 @@ def suite(
                 dr_filters,
                 ["mhp_sycl_cpu", "shp_sycl_cpu"],
             )
-            # Run reference benchmarkson 1 device, use shp_sycl_cpu to
+            run_rank_range(
+                base,
+                sockets,
+                mhp_filters,
+                ["mhp_sycl_cpu"],
+            )
+            # Run reference benchmarks on 1 device, use shp_sycl_cpu to
             # get sycl env vars
             run_rank_range(base, 1, reference_filters, ["shp_sycl_cpu"])
             run_rank_range(base, 1, mhp_reference_filters, ["mhp_sycl_cpu"])
@@ -369,7 +375,7 @@ def suite(
                         cores_per_socket,
                     )
                 ),
-                dr_filters,
+                mhp_filters + dr_filters,
                 ["mhp_direct_cpu"],
             )
 
