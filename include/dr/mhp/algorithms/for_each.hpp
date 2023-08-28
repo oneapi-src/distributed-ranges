@@ -33,7 +33,7 @@ void for_each(dr::distributed_range auto &&dr, auto op) {
       assert(rng::distance(s) > 0);
 #ifdef SYCL_LANGUAGE_VERSION
       dr::__detail::parallel_for(
-          dr::mhp::sycl_queue(), rng::distance(s),
+          dr::mhp::sycl_queue(), sycl::range<1>(rng::distance(s)),
           [first = rng::begin(s), op](auto idx) { op(first[idx]); })
           .wait();
 #else

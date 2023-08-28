@@ -10,7 +10,13 @@
 
 #include <sycl/sycl.hpp>
 
+#define Dim 1
+
 namespace dr::__detail {
+
+inline const std::array dim0 = {0, 0, 0}, dim1 = {128, 0, 0},
+                        dim2 = {16, 16, 0}, dim3 = {8, 8, 8};
+inline const std::array workgroup_shapes = {dim0, dim1, dim2, dim3};
 
 //
 // return true if the device can be partitoned by affinity domain
@@ -38,7 +44,7 @@ inline auto partitionable(sycl::device device) {
 // With the ND-range workaround, the maximum kernel size is
 // `std::numeric_limits<std::int32_t>::max()` rounded down to
 // the nearest multiple of the block size.
-inline std::size_t max_kernel_size_(std::size_t block_size = 128) {
+inline std::size_t max_kernel_size_(std::size_t block_size) {
   std::size_t max_kernel_size = std::numeric_limits<std::int32_t>::max();
   return (max_kernel_size / block_size) * block_size;
 }
@@ -46,8 +52,9 @@ inline std::size_t max_kernel_size_(std::size_t block_size = 128) {
 // This is a workaround to avoid performance degradation
 // in DPC++ for odd range sizes.
 template <typename Fn>
-sycl::event parallel_for_workaround(sycl::queue &q, sycl::range<1> numWorkItems,
-                                    Fn &&fn, std::size_t block_size = 128) {
+sycl::event parallel_for_workaround(sycl::queue &q,
+                                    sycl::range<Dim> numWorkItems, Fn &&fn) {
+  auto block_size = workgroup_shapes[Dim][0];
   std::size_t num_blocks = (numWorkItems.size() + block_size - 1) / block_size;
 
   int32_t range_size = numWorkItems.size();
@@ -63,9 +70,9 @@ sycl::event parallel_for_workaround(sycl::queue &q, sycl::range<1> numWorkItems,
 }
 
 template <typename Fn>
-sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
+sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<Dim> numWorkItems,
                                Fn &&fn) {
-  std::size_t block_size = 128;
+  auto block_size = workgroup_shapes[Dim][0];
   std::size_t max_kernel_size = max_kernel_size_(block_size);
 
   std::vector<sycl::event> events;
@@ -74,13 +81,11 @@ sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
     std::size_t launch_size =
         std::min(numWorkItems.size() - base_idx, max_kernel_size);
 
-    auto e = parallel_for_workaround(
-        q, launch_size,
-        [=](sycl::id<1> idx_) {
-          sycl::id<1> idx(base_idx + idx_);
-          fn(idx);
-        },
-        block_size);
+    auto e = parallel_for_workaround(q, sycl::range<1>(launch_size),
+                                     [=](sycl::id<1> idx_) {
+                                       sycl::id<1> idx(base_idx + idx_);
+                                       fn(idx);
+                                     });
 
     events.push_back(e);
   }
@@ -95,15 +100,19 @@ sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
 }
 
 template <typename Fn>
-sycl::event parallel_for(sycl::queue &q, sycl::range<1> numWorkItems, Fn &&fn) {
-  std::size_t block_size = 128;
-  std::size_t max_kernel_size = max_kernel_size_();
+sycl::event parallel_for(sycl::queue &q, sycl::range<Dim> range, Fn &&fn) {
+  const auto workgroup_shape = workgroup_shapes[Dim];
 
-  if (numWorkItems.size() < max_kernel_size) {
-    return parallel_for_workaround(q, numWorkItems, std::forward<Fn>(fn),
-                                   block_size);
+  bool overflow = false;
+  for (std::size_t i = 0; i < Dim; i++) {
+    if (range[i] >= max_kernel_size_(workgroup_shape[i])) {
+      overflow = true;
+    }
+  }
+  if (overflow) {
+    return parallel_for_64bit(q, range, std::forward<Fn>(fn));
   } else {
-    return parallel_for_64bit(q, numWorkItems, std::forward<Fn>(fn));
+    return parallel_for_workaround(q, range, std::forward<Fn>(fn));
   }
 }
 
