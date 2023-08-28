@@ -98,7 +98,7 @@ jobs:
   icpx:
     runs-on: devcloud
     # if it does not finish in 20 minutes, it is likely hung
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       CXX: icpx
       MPIEXEC_EXTRA_FLAGS: --launcher=fork
