@@ -586,6 +586,7 @@ int main(int argc, char *argv[]) {
   bool fused_kernels = options["f"].as<bool>();
 
   auto error = run(n, benchmark_mode, fused_kernels);
+  dr::mhp::finalize();
   MPI_Finalize();
   return error;
 }

@@ -19,6 +19,8 @@ class mdsub_segment : public BaseSegment {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
+
+  mdsub_segment(){};
   mdsub_segment(BaseSegment segment, const index_type &slice_starts,
                 const index_type &slice_ends)
       : BaseSegment(segment),
@@ -38,11 +40,16 @@ private:
     auto base_mdspan = segment.mdspan();
 
     for (std::size_t i = 0; i < Rank; i++) {
-      // Clip base to area covered by requested span
+      // Clip base to area covered by requested span, and translate from global
+      // to local indexing
       auto base_end = base_starts[i] + base_mdspan.extent(i);
-      starts[i] = std::min(base_end, std::max(slice_starts[i], base_starts[i]));
-      ends[i] = std::max(base_starts[i], std::min(slice_ends[i], base_end));
+      starts[i] =
+          std::min(base_end, std::max(slice_starts[i], base_starts[i])) -
+          base_starts[i];
+      ends[i] = std::max(base_starts[i], std::min(slice_ends[i], base_end)) -
+                base_starts[i];
     }
+
     return dr::__detail::make_submdspan(base_mdspan, starts, ends);
   }
 

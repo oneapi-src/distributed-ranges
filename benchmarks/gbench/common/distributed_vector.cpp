@@ -11,7 +11,7 @@
 #include <oneapi/dpl/numeric>
 #endif
 
-using T = double;
+using T = float;
 
 static void Fill_DR(benchmark::State &state) {
   T init = 0;
@@ -44,7 +44,7 @@ DR_BENCHMARK(Fill_Serial);
 #ifdef SYCL_LANGUAGE_VERSION
 
 static void Fill_QueueFill_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
   Stats stats(state, 0, sizeof(T) * default_vector_size);
@@ -59,7 +59,7 @@ static void Fill_QueueFill_SYCL(benchmark::State &state) {
 DR_BENCHMARK(Fill_QueueFill_SYCL);
 
 static void Fill_ParallelFor_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
   Stats stats(state, 0, sizeof(T) * default_vector_size);
@@ -78,7 +78,7 @@ static void Fill_ParallelFor_SYCL(benchmark::State &state) {
 DR_BENCHMARK(Fill_ParallelFor_SYCL);
 
 static void Copy_ParallelFor_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto src = sycl::malloc_device<T>(default_vector_size, q);
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
@@ -101,7 +101,7 @@ static void Copy_ParallelFor_SYCL(benchmark::State &state) {
 DR_BENCHMARK(Copy_ParallelFor_SYCL);
 
 static void Copy_QueueCopy_SYCL(benchmark::State &state) {
-  sycl::queue q;
+  auto q = get_queue();
   T init = 0;
   auto src = sycl::malloc_device<T>(default_vector_size, q);
   auto dst = sycl::malloc_device<T>(default_vector_size, q);
@@ -149,51 +149,69 @@ static void Copy_Serial(benchmark::State &state) {
 
 DR_BENCHMARK(Copy_Serial);
 
-static void Reduce_DR(benchmark::State &state) {
-  xhp::distributed_vector<T> src(default_vector_size);
-  Stats stats(state, sizeof(T) * src.size(), 0);
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      auto res = xhp::reduce(src);
-      benchmark::DoNotOptimize(res);
+T fill = 100;
+void check_reduce(T actual) {
+  if (comm_rank == 0) {
+    std::vector<T> local_src(default_vector_size, fill);
+    auto ref = std::reduce(local_src.begin(), local_src.end());
+
+    if ((ref - actual) / ref > .001) {
+      fmt::print("Mismatch:\n  Ref {} Actual {}\n", ref, actual);
+      exit(1);
     }
   }
 }
 
-DR_BENCHMARK(Reduce_DR);
-
-static void Reduce_Serial(benchmark::State &state) {
-  std::vector<T> src(default_vector_size);
+static void Reduce_DR(benchmark::State &state) {
+  T actual{};
+  xhp::distributed_vector<T> src(default_vector_size, fill);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      auto res = std::reduce(std::execution::par_unseq, src.begin(), src.end());
-      benchmark::DoNotOptimize(res);
+      actual = xhp::reduce(src);
     }
   }
+  check_reduce(actual);
+}
+DR_BENCHMARK(Reduce_DR);
+
+static void Reduce_Serial(benchmark::State &state) {
+  T actual{};
+  std::vector<T> src(default_vector_size, fill);
+  Stats stats(state, sizeof(T) * src.size(), 0);
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
+      actual = std::reduce(std::execution::par_unseq, src.begin(), src.end());
+    }
+  }
+  check_reduce(actual);
 }
 
 DR_BENCHMARK(Reduce_Serial);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Reduce_DPL(benchmark::State &state) {
-  sycl::queue q;
+static void Reduce_Reference(benchmark::State &state) {
+  T actual{};
+  auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto src = sycl::malloc_device<T>(default_vector_size, q);
+  std::vector<T> local_src(default_vector_size, fill);
+  std::copy(policy, local_src.begin(), local_src.end(), src);
   Stats stats(state, sizeof(T) * default_vector_size, 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      auto res = std::reduce(policy, src, src + default_vector_size);
-      benchmark::DoNotOptimize(res);
+      actual = std::reduce(policy, src, src + default_vector_size, T(0),
+                           std::plus<>{});
     }
   }
   sycl::free(src, q);
+  check_reduce(actual);
 }
 
-DR_BENCHMARK(Reduce_DPL);
+DR_BENCHMARK(Reduce_Reference);
 #endif
 
 static void TransformIdentity_DR(benchmark::State &state) {

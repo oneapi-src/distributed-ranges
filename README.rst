@@ -9,8 +9,8 @@
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/daily.yml/badge.svg
-   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/daily.yml
+.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/devcloud.yml/badge.svg
+   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/devcloud.yml
 
 .. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml/badge.svg
    :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/codeql.yml
@@ -25,30 +25,9 @@ C++ Ranges.
 The documentation is built from main branch on every commit and
 published at `latest spec`_ and `latest doxygen`_.
 
-Benchmark Results
-=================
+`Benchmark results`_
 
-Stream
-------
-
-GPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_gpu.png
-
-CPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/stream_strong_scaling_cpu.png
-
-Algorithms
-----------
-
-GPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_gpu.png
-
-CPU:
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/algorithms_cpu.png
+.. _`Benchmark results`: devcloud.rst
 
 Environment Setup
 =================

@@ -12,7 +12,10 @@ from drbench.common import Device, Model, Runtime
 AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
-    "prefix benchmark_filter fork reps dry_run mhp_bench shp_bench",
+    (
+        "prefix benchmark_filter reps dry_run mhp_bench shp_bench "
+        "weak_scaling ranks_per_node"
+    ),
 )
 
 
@@ -25,7 +28,7 @@ class Runner:
         if not self.analysis_config.dry_run:
             subprocess.run(command, shell=True, check=True)
 
-    def __run_mhp_analysis(self, params, ranks, target):
+    def __run_mhp_analysis(self, params, ranks, ranks_per_node, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
             if target.device == Device.CPU:
@@ -44,9 +47,8 @@ class Runner:
 
         mpirun_params = []
         mpirun_params.append(f"-n {str(ranks)}")
-        if self.analysis_config.fork:
-            mpirun_params.append("-launcher=fork")
-
+        if ranks_per_node:
+            mpirun_params.append(f"-ppn {str(ranks_per_node)}")
         self.__execute(
             env
             + " mpirun "
@@ -90,11 +92,17 @@ class Runner:
                 f"--benchmark_filter={self.analysis_config.benchmark_filter}"
             )
 
+        if self.analysis_config.weak_scaling:
+            params.append("--weak-scaling")
+
         if analysis_case.target.model == Model.SHP:
             self.__run_shp_analysis(
                 params, analysis_case.ranks, analysis_case.target
             )
         else:
             self.__run_mhp_analysis(
-                params, analysis_case.ranks, analysis_case.target
+                params,
+                analysis_case.ranks,
+                self.analysis_config.ranks_per_node,
+                analysis_case.target,
             )

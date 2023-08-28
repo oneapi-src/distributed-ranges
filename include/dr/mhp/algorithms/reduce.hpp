@@ -28,11 +28,13 @@ inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
     using T = rng::range_value_t<decltype(r)>;
     using Fn = decltype(binary_op);
     if constexpr (sycl::has_known_identity_v<Fn, T>) {
+      dr::drlog.debug("  known identity\n");
       return std::reduce(dpl_policy(),
                          dr::__detail::direct_iterator(rng::begin(r)),
                          dr::__detail::direct_iterator(rng::end(r)),
                          sycl::known_identity_v<Fn, T>, binary_op);
     } else {
+      dr::drlog.debug("  peel 1st value\n");
       return std::reduce(dpl_policy(),
                          dr::__detail::direct_iterator(rng::begin(r) + 1),
                          dr::__detail::direct_iterator(rng::end(r)),

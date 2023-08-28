@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-name: Daily
+name: Devcloud
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
   devcloud:
     runs-on: devcloud
     # if it does not finish in 20 minutes, it is likely hung
-    timeout-minutes: 30
+    timeout-minutes: 60
     name: "Devcloud Benchmarking"
     env:
       CXX: icpx
@@ -43,6 +43,7 @@ jobs:
         path: |
           build/benchmarks/gbench/dr-bench*.json
           build/benchmarks/gbench/*.png
+          build/benchmarks/gbench/*.csv
 
   publish:
     needs: [devcloud]

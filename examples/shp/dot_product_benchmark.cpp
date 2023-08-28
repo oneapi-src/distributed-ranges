@@ -50,23 +50,33 @@ auto dot_product_sequential(X &&x, Y &&y) {
 }
 
 int main(int argc, char **argv) {
+
+  if (argc != 3) {
+    fmt::print("usage: ./dot_product_benchmark [n_devices] [n_elements]\n");
+    return 1;
+  }
+
+  std::size_t n_devices = std::atoll(argv[1]);
+
+  std::size_t n = std::atoll(argv[2]);
+
   auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
 
-  std::size_t n_devices = devices_.size();
+  // std::size_t n_devices = devices_.size();
 
   auto devices =
       dr::shp::trim_devices(devices_, std::min(n_devices, devices_.size()));
 
   dr::shp::init(devices);
 
-  fmt::print("Running with {} devices.\n", devices.size());
+  fmt::print("Running with {} devices, {} elements.\n", devices.size(), n);
   dr::shp::print_device_details(devices);
 
   // Note that parallel results will not match sequential
   // results for large sizes due to floating point addition
   // non-determinism.
   // This does not indicate the benchmark is failing.
-  std::size_t n = 32ull * 1000 * 1000ull;
+  // std::size_t n = 4ull * 1000 * 1000 * 1000ull;
 
   using T = float;
 

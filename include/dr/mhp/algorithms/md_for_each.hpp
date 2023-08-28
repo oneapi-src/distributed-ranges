@@ -76,8 +76,17 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
               });
           op(stencils);
         };
+#if 0
+        // Does not vectorize. Something about loop index being forced into memory
         detail::mdspan_foreach<mdspan0.rank(), decltype(invoke_index)>(
             mdspan0.extents(), invoke_index);
+#else
+        for (std::size_t i = 0; i < mdspan0.extents().extent(0); i++) {
+          for (std::size_t j = 0; j < mdspan0.extents().extent(1); j++) {
+            invoke_index(std::array<std::size_t, 2>{i, j});
+          }
+        }
+#endif
       }
     }
   }

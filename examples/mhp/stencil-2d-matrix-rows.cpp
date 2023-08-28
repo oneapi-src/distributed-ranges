@@ -179,6 +179,7 @@ int main(int argc, char *argv[]) {
 
   auto error = stencil();
 
+  dr::mhp::finalize();
   MPI_Finalize();
   return error;
 }

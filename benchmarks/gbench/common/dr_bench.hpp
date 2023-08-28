@@ -14,19 +14,26 @@
 #include <sycl/sycl.hpp>
 #endif
 
-#include "cxxopts.hpp"
 #include <benchmark/benchmark.h>
+#include <cxxopts.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <vendor/source_location/source_location.hpp>
+
+#include <dr/detail/logger.hpp>
+#include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/sycl_utils.hpp>
 
 extern std::size_t comm_rank;
 extern std::size_t ranks;
 
 extern std::size_t default_vector_size;
 extern std::size_t default_repetitions;
+extern bool weak_scaling;
 
-#define DR_BENCHMARK(x)                                                        \
+#define DR_BENCHMARK(x) DR_BENCHMARK_BASE(x)->MinWarmUpTime(.1)->MinTime(.1)
+
+#define DR_BENCHMARK_BASE(x)                                                   \
   BENCHMARK(x)->UseRealTime()->Unit(benchmark::kMillisecond)
 
 #ifdef SYCL_LANGUAGE_VERSION
@@ -35,6 +42,36 @@ inline auto device_info(sycl::device device) {
   return fmt::format("{}, max_compute_units: {}",
                      device.get_info<sycl::info::device::name>(),
                      device.get_info<sycl::info::device::max_compute_units>());
+}
+
+inline sycl::queue get_queue() {
+  std::vector<sycl::device> devices;
+
+  auto root_devices = sycl::platform().get_devices();
+
+  for (auto &&root_device : root_devices) {
+    dr::drlog.debug("Root device: {}\n",
+                    root_device.get_info<sycl::info::device::name>());
+    if (dr::__detail::partitionable(root_device)) {
+      auto subdevices = root_device.create_sub_devices<
+          sycl::info::partition_property::partition_by_affinity_domain>(
+          sycl::info::partition_affinity_domain::numa);
+      assert(rng::size(subdevices) > 0);
+
+      for (auto &&subdevice : subdevices) {
+        dr::drlog.debug("  add subdevice: {}\n",
+                        subdevice.get_info<sycl::info::device::name>());
+        devices.push_back(subdevice);
+      }
+    } else {
+      dr::drlog.debug("  add root device: {}\n",
+                      root_device.get_info<sycl::info::device::name>());
+      devices.push_back(root_device);
+    }
+  }
+
+  assert(rng::size(devices) > 0);
+  return sycl::queue(devices[0]);
 }
 
 #endif
@@ -99,13 +136,16 @@ inline std::string exec(const char *cmd) {
 }
 
 inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
+  benchmark::AddCustomContext("hostname", exec("hostname"));
+  benchmark::AddCustomContext("lscpu", exec("lscpu"));
+  benchmark::AddCustomContext("numactl", exec("numactl -H"));
   benchmark::AddCustomContext("default_vector_size",
                               std::to_string(default_vector_size));
   benchmark::AddCustomContext("default_repetitions",
                               std::to_string(default_repetitions));
   benchmark::AddCustomContext("rank", std::to_string(rank));
   benchmark::AddCustomContext("ranks", std::to_string(ranks));
-  benchmark::AddCustomContext("lscpu", exec("lscpu"));
+  benchmark::AddCustomContext("weak-scaling", std::to_string(weak_scaling));
   if (options.count("context")) {
     for (std::string context :
          options["context"].as<std::vector<std::string>>()) {

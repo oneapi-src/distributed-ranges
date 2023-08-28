@@ -27,6 +27,8 @@ class md_segment : public rng::view_interface<md_segment<BaseSegment, Rank>> {
 private:
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
+
+  md_segment() {}
   md_segment(index_type origin, BaseSegment segment, index_type tile_lengths)
       : base_(segment), origin_(origin),
         mdspan_(local_tile(segment, tile_lengths)) {}
@@ -87,16 +89,16 @@ private:
   static auto segment_index_to_global_origin(std::size_t linear,
                                              index_type full_shape,
                                              index_type tile_shape) {
-    index_type index;
-
-    for (std::size_t d = 0; d < Rank; d++) {
-      std::size_t i = Rank - 1 - d;
-      std::size_t grid_size = full_shape[i] / tile_shape[i];
-      index[i] = (linear % grid_size) * tile_shape[i];
-      linear = linear / grid_size;
+    index_type grid_shape;
+    for (std::size_t i = 0; i < Rank; i++) {
+      grid_shape[i] = dr::__detail::partition_up(full_shape[i], tile_shape[i]);
+    }
+    auto origin = dr::__detail::linear_to_index(linear, grid_shape);
+    for (std::size_t i = 0; i < Rank; i++) {
+      origin[i] *= tile_shape[i];
     }
 
-    return index;
+    return origin;
   }
 
   static auto make_segments(auto base, auto full_lengths, auto tile_lengths) {
@@ -172,8 +174,6 @@ private:
       } else if (tile_lengths_[i] == decomp::all) {
         tile_lengths_[i] = full_lengths_[i];
       }
-      // TODO: Handle this case
-      assert(full_lengths_[i] % tile_lengths_[i] == 0);
     }
   }
 

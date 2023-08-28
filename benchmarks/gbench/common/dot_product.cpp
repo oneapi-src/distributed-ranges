@@ -117,7 +117,7 @@ DR_BENCHMARK(DotProduct_Loop_Serial);
 #ifdef SYCL_LANGUAGE_VERSION
 static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
   T res = 0;
-  sycl::queue q;
+  auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
 
   auto mul = [](auto a, auto b) { return a * b; };

@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(comm);
   }
 
+  dr::mhp::finalize();
   MPI_Finalize();
   return 0;
 }

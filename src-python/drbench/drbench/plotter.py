@@ -7,18 +7,21 @@ import json
 import re
 
 import click
+import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+from matplotlib.ticker import FormatStrFormatter
 
 
 class Plotter:
-    bandwidth_title = 'Memory Bandwidth (TBps)'
+    tbs_title = "Bandwidth (TB/s)"
+    gbs_title = "Bandwidth (GB/s)"
+    speedup_title = "Speedup"
 
     @staticmethod
     def __name_target(bname, target, device):
-        names = bname.split('_')
+        names = bname.split("_")
         last = names[-1]
-        if last in ["DPL", "Std", "Serial"]:
+        if last == "Reference":
             bname = "_".join(names[0:-1])
             target = f"{last}_{device}"
         elif last == "DR":
@@ -29,43 +32,50 @@ class Plotter:
     def __import_file(fname: str, rows):
         with open(fname) as f:
             fdata = json.load(f)
-            ctx = fdata['context']
+            ctx = fdata["context"]
             try:
-                vsize = int(ctx['default_vector_size'])
-                ranks = int(ctx['ranks'])
-                target = ctx['target']
-                model = ctx['model']
-                runtime = ctx['runtime']
-                device = ctx['device']
+                vsize = int(ctx["default_vector_size"])
+                ranks = int(ctx["ranks"])
+                target = ctx["target"]
+                model = ctx["model"]
+                runtime = ctx["runtime"]
+                device = ctx["device"]
+                weak_scaling = ctx["weak-scaling"] == "1"
             except KeyError:
-                print(f'could not parse context of {fname}')
-                raise
-            benchs = fdata['benchmarks']
+                click.fail(f"could not parse context of {fname}")
+            benchs = fdata["benchmarks"]
             cores_per_socket = int(
                 re.search(
-                    r'Core\(s\) per socket:\s*(\d+)', ctx['lscpu']
+                    r"Core\(s\) per socket:\s*(\d+)", ctx["lscpu"]
                 ).group(1)
             )
+            cpu_cores = (
+                ranks if runtime == "DIRECT" else ranks * cores_per_socket
+            )
+            cpu_sockets = (
+                ranks if runtime == "SYCL" else ranks / cores_per_socket
+            )
             for b in benchs:
-                bname = b['name'].partition('/')[0]
+                bname = b["name"].partition("/")[0]
                 bname, btarget = Plotter.__name_target(bname, target, device)
-                rtime = b['real_time']
-                bw = b['bytes_per_second']
+                rtime = b["real_time"]
+                bw = b["bytes_per_second"]
                 rows.append(
                     {
-                        'Target': btarget,
-                        'model': model,
-                        'runtime': runtime,
-                        'device': device,
-                        'vsize': vsize,
-                        'Benchmark': bname,
-                        'Ranks': ranks,
-                        'GPU Tiles': ranks,
-                        'CPU Sockets': ranks / cores_per_socket
-                        if runtime == 'DIRECT' and device == 'CPU'
-                        else ranks,
-                        'rtime': rtime,
-                        Plotter.bandwidth_title: bw / 1e12,
+                        "Benchmark": bname,
+                        "Target": btarget,
+                        "Ranks": ranks,
+                        "Scaling": "weak" if weak_scaling else "strong",
+                        Plotter.tbs_title: bw / 1e12,
+                        Plotter.gbs_title: bw / 1e9,
+                        "model": model,
+                        "runtime": runtime,
+                        "device": device,
+                        "vsize": vsize,
+                        "Number of GPU Tiles": ranks,
+                        "Number of CPU Cores": cpu_cores,
+                        "Number of CPU Sockets": cpu_sockets,
+                        "rtime": rtime,
                     }
                 )
 
@@ -79,84 +89,249 @@ class Plotter:
     # 63     MHP_GPU  40000  Stream_Triad       4  21.714421  4.421025e+09
     def __init__(self, prefix):
         rows = []
-        for fname in glob.glob(f'{prefix}-*.json'):
-            click.echo(f'found file {fname}')
+        for fname in glob.glob(f"{prefix}-*.json"):
+            click.echo(f"found file {fname}")
             Plotter.__import_file(fname, rows)
 
         self.db = pd.DataFrame(rows)
 
         # helper structures that can be used to define plots
-        self.vec_sizes = self.db['vsize'].unique()
-        self.vec_sizes.sort()
-        self.max_vec_size = self.vec_sizes[-1]
-        self.db_maxvec = self.db.loc[(self.db['vsize'] == self.max_vec_size)]
-
-        self.ranks = self.db['Ranks'].unique()
+        self.ranks = self.db["Ranks"].unique()
         self.ranks.sort()
+        self.prefix = prefix
 
-    @staticmethod
-    def __make_plot(fname, data, **kwargs):
-        plot = sns.relplot(data=data, kind='line', marker='d', **kwargs)
-        plot.savefig(f'{fname}.png', dpi=200, bbox_inches='tight')
+    def __plot(
+        self,
+        title,
+        x_title,
+        y_title,
+        x_domain,
+        y_domain,
+        datasets,
+        file_name,
+        flat_lines=[],
+        display_perfect_scaling=True,
+        offset_pct=0.15,
+    ):
+        fig, ax = plt.subplots()
 
-    def __stream_strong_scaling_plots(self):
-        db = self.db_maxvec.loc[
-            self.db['Benchmark'].str.startswith('Stream_')
-        ].copy()
+        if display_perfect_scaling:
+            perfect_scaling_start = datasets[0][1][0]
+            perfect_scaling = [
+                (perfect_scaling_start - offset_pct * perfect_scaling_start)
+                * x
+                / x_domain[0]
+                for x in x_domain
+            ]
+            ax.loglog(
+                x_domain,
+                perfect_scaling,
+                label="perfect scaling",
+                linestyle="dashed",
+                color="grey",
+            )
 
-        db_gpu = db.loc[db['device'] == 'GPU']
+        for flat_line in flat_lines:
+            single_point = flat_line[0]
+            label = flat_line[1]
+            color = flat_line[2]
+            ax.axhline(single_point, label=label, color=color)
 
-        Plotter.__make_plot(
-            'stream_strong_scaling_gpu',
-            db_gpu,
-            x='GPU Tiles',
-            y=Plotter.bandwidth_title,
-            col='Benchmark',
-            style='Target',
+        markers = ["s", ".", "^", "o"]
+        for marker, dataset in zip(markers, datasets):
+            domain = dataset[0]
+            y_points = dataset[1]
+            label = dataset[2]
+            ax.loglog(
+                domain,
+                y_points,
+                label=label,
+                marker=marker,
+                markerfacecolor="white",
+            )
+
+        ax.minorticks_off()
+        ax.set_xticks(x_domain)
+        ax.set_xticklabels([str(x) for x in x_domain])
+
+        yticks = y_domain
+        ax.set_yticks(yticks)
+        ax.yaxis.set_major_formatter(FormatStrFormatter("%d"))
+
+        ax.set_yticks(yticks)
+
+        plt.title(title, fontsize=18)
+        plt.xlabel(x_title, fontsize=12)
+        plt.ylabel(y_title, fontsize=12)
+        plt.rcParams.update({"font.size": 12})
+
+        plt.legend(loc="best")
+
+        plt.tight_layout()
+        plt.savefig(f"{file_name}.png")
+        plt.savefig(f"{file_name}.pdf")
+
+    stream_info = {
+        "GPU": {
+            "y_domain": [1, 2, 4, 8, 16],
+            "y_title": tbs_title,
+        },
+        "CPU": {
+            "y_domain": [100, 200, 400, 800],
+            "y_title": gbs_title,
+        },
+    }
+
+    benchmark_info = {
+        "Stream_Copy": stream_info,
+        "Stream_Add": stream_info,
+        "Stream_Scale": stream_info,
+        "Stream_Triad": stream_info,
+    }
+
+    device_info = {
+        "GPU": {
+            "x_title": "Number of GPU Tiles",
+            "targets": ["MHP_SYCL_GPU", "SHP_SYCL_GPU"],
+        },
+        "CPU": {
+            "x_title": "Number of CPU Sockets",
+            "targets": ["MHP_SYCL_CPU", "MHP_DIRECT_CPU"],
+        },
+    }
+
+    def __x_domain(self, db, target, x_title):
+        points = db.loc[db["Target"] == target]
+        val = points[x_title].values[0]
+        last = points[x_title].values[-1]
+        x_domain = [val]
+        while True:
+            x_domain.append(val)
+            if val >= last:
+                break
+            val = 2 * val
+        return x_domain
+
+    def __find_targets(self, db, device):
+        targets = []
+        for target in self.device_info[device]["targets"]:
+            tdb = db.loc[db["Target"] == target]
+            if tdb.shape[0] == 0:
+                click.echo(f"  no data for {target}")
+            else:
+                targets.append(target)
+        return targets
+
+    def __bw_plot(self, benchmark, device):
+        scaling = "strong"
+        x_title = self.device_info[device]["x_title"]
+        bi = self.benchmark_info[benchmark][device]
+        y_domain = bi["y_domain"]
+        y_title = bi["y_title"]
+
+        db = self.db.copy()
+        db = db.loc[db["Benchmark"] == benchmark]
+        db = db.loc[db["Scaling"] == scaling]
+        db = db.loc[db["device"] == device]
+        db = db.sort_values(by=["Benchmark", "Target", x_title])
+
+        targets = self.__find_targets(db, device)
+
+        if db.shape[0] == 0 or len(targets) == 0:
+            click.echo(f"no data for {benchmark} {device} {scaling}")
+            return
+
+        fname = f"{self.prefix}-{benchmark}-{device}"
+        click.echo(f"writing {fname}")
+        db.to_csv(f"{fname}.csv")
+
+        def points(target):
+            p = db.loc[db["Target"] == target]
+            return [p[x_title].values, p[y_title].values, target]
+
+        self.__plot(
+            benchmark,
+            x_title,
+            y_title,
+            self.__x_domain(db, targets[0], x_title),
+            y_domain,
+            [points(target) for target in targets],
+            fname,
         )
 
-        db_cpu = db.loc[db['device'] == 'CPU']
+    def __speedup_plot(self, benchmark, device):
+        fname = f"{self.prefix}-{benchmark}-{device}"
+        click.echo(f"writing {fname}")
 
-        Plotter.__make_plot(
-            'stream_strong_scaling_cpu',
-            db_cpu,
-            x='CPU Sockets',
-            y=Plotter.bandwidth_title,
-            col='Benchmark',
-            style='Target',
-        )
+        x_title = self.device_info[device]["x_title"]
+        y_title = self.speedup_title
 
-    def __algorithm_plots(self):
-        m = self.db_maxvec
+        db = self.db.copy()
+        db = db.loc[db["Benchmark"] == benchmark]
+        db = db.loc[db["device"] == device]
+        db = db.sort_values(by=["Benchmark", "Target", x_title])
 
-        db = m.loc[
-            m['Benchmark'].isin(['Black_Scholes', 'Inclusive_Scan', 'Reduce'])
-        ].copy()
+        targets = self.__find_targets(db, device)
 
-        db_gpu = db.loc[db['device'] == 'GPU']
+        if db.shape[0] == 0 or len(targets) == 0:
+            click.echo(f"  no data for {benchmark} {device}")
+            return
 
-        Plotter.__make_plot(
-            'algorithms_gpu',
-            db_gpu,
-            x='GPU Tiles',
-            y=Plotter.bandwidth_title,
-            col='Benchmark',
-            style='Target',
-        )
+        x_domain = self.__x_domain(db, targets[0], x_title)
+        db.to_csv(f"{fname}.csv")
 
-        db_cpu = db.loc[db['device'] == 'CPU']
+        reference = self.db.copy()
+        reference = reference.loc[reference["Target"] == f"Reference_{device}"]
+        reference = reference.loc[reference["Benchmark"] == benchmark]
+        reference = reference.loc[reference["Ranks"] == 1]
+        if reference.shape[0] == 0:
+            click.echo(f"  no reference data for {benchmark} {device}")
+            return
+        reference_rtime = reference["rtime"].values[0]
 
-        Plotter.__make_plot(
-            'algorithms_cpu',
-            db_cpu,
-            x='CPU Sockets',
-            y=Plotter.bandwidth_title,
-            col='Benchmark',
-            style='Target',
+        lines = []
+        for scaling in ["weak", "strong"]:
+            for target in targets:
+                p = db.loc[db["Target"] == target]
+                p = p.loc[db["Scaling"] == scaling]
+                if p.shape[0] == 0:
+                    click.echo(f"  no data for {target} {scaling}")
+                    continue
+
+                total_time = p["rtime"].values / (
+                    1 if scaling == "strong" else p["Ranks"].values
+                )
+                label = target
+                if scaling == "weak":
+                    label += " weak scaling"
+                lines.append(
+                    [p[x_title].values, reference_rtime / total_time, label]
+                )
+
+        self.__plot(
+            benchmark,
+            x_title,
+            y_title,
+            x_domain,
+            x_domain,
+            lines,
+            fname,
+            # display_perfect_scaling=False
         )
 
     def create_plots(self):
-        sns.set_theme(style="ticks")
-
-        self.__stream_strong_scaling_plots()
-        self.__algorithm_plots()
+        for device in ["CPU", "GPU"]:
+            for bench in [
+                "Stream_Copy",
+                "Stream_Scale",
+                "Stream_Add",
+                "Stream_Triad",
+            ]:
+                self.__bw_plot(bench, device)
+            for bench in [
+                "BlackScholes",
+                "Inclusive_Scan",
+                "Reduce",
+                "Stencil2D",
+            ]:
+                self.__speedup_plot(bench, device)

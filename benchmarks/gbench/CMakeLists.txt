@@ -20,49 +20,51 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_subdirectory(shp)
 
-    set(COMMON_PREFIX dr-bench run --vec-size 1000000000)
-    set(DR_FILTERS
-        --filter Stream_ --filter Black_Scholes --filter Inclusive_Scan_DR
-        --filter Reduce_DR)
-    set(SERIAL_FILTERS --filter '.*_DPL' --filter '.*_Serial')
-
     add_custom_target(devcloud-bench DEPENDS devcloud-bench-results)
     add_custom_command(
       OUTPUT devcloud-bench-results
-      # devcloud: 4 GPUs, 2 sockets, 112 cores
       COMMAND dr-bench clean
-      # DPL is single socket on cpu and single gpu on gpu
-      COMMAND ${COMMON_PREFIX} --filter '.*_DPL' --ranks 1 --target mhp_sycl_cpu
-              --target mhp_sycl_gpu
-      # p2p does not work on devcloud, 1 gpu only
-      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 1 --target shp_sycl_gpu
-      # 1-4 gpu's for mhp sycl
-      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 1 --ranks 2 --ranks 3
-              --ranks 4 --target mhp_sycl_gpu
-      # 1 and 2 sockets sycl cpu
-      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 1 --ranks 2 --target
-              mhp_sycl_cpu --target shp_sycl_cpu
-      # 1 and 2 sockets direct cpu
-      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --ranks 56 --ranks 112 --target
-              mhp_direct_cpu
+      COMMAND dr-bench suite --no-p2p --gpus 4 --sockets 2 --cores-per-socket 56
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 
     add_custom_target(aurora-bench DEPENDS aurora-bench-results)
     add_custom_command(
       OUTPUT aurora-bench-results
-      # aurora: 12 GPUs, 2 sockets, 104 cores
       COMMAND dr-bench clean
-      COMMAND ${COMMON_PREFIX} --filter '.*_DPL' --ranks 1 --target mhp_sycl_cpu
-              --target shp_sycl_cpu --target mhp_sycl_gpu --target shp_sycl_gpu
-      COMMAND
-        ${COMMON_PREFIX} ${DR_FILTERS} --no-fork --ranks 1 --ranks 2 --ranks 3
-        --ranks 4 --ranks 5 --ranks 6 --ranks 7 --ranks 8 --ranks 9 --ranks 10
-        --ranks 11 --ranks 12 --target mhp_sycl_gpu --target shp_sycl_gpu
-      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --no-fork --ranks 1 --ranks 2
-              --target mhp_sycl_cpu --target shp_sycl_cpu
-      COMMAND ${COMMON_PREFIX} ${DR_FILTERS} --no-fork --ranks 52 --ranks 104
-              --target mhp_direct_cpu
+      COMMAND dr-bench suite --gpus 12
+      COMMAND dr-bench plot
+      DEPENDS mhp-bench shp-bench)
+
+    add_custom_target(aurora-bench-2 DEPENDS aurora-bench-2-results)
+    add_custom_command(
+      OUTPUT aurora-bench-2-results
+      COMMAND dr-bench clean --prefix aurora-2
+      COMMAND dr-bench suite --prefix aurora-2 --nodes 2 --gpus 12
+      COMMAND dr-bench plot --prefix aurora-2
+      DEPENDS mhp-bench shp-bench)
+
+    add_custom_target(aurora-bench-4 DEPENDS aurora-bench-4-results)
+    add_custom_command(
+      OUTPUT aurora-bench-4-results
+      COMMAND dr-bench clean --prefix aurora-4
+      COMMAND dr-bench suite --prefix aurora-4 --nodes 4 --gpus 12
+      COMMAND dr-bench plot --prefix aurora-4
+      DEPENDS mhp-bench shp-bench)
+
+    add_custom_target(quick-bench-gpu DEPENDS quick-bench-gpu-results)
+    add_custom_command(
+      OUTPUT quick-bench-gpu-results
+      COMMAND dr-bench clean
+      COMMAND dr-bench suite --reps 10 --gpus 2
+      COMMAND dr-bench plot
+      DEPENDS mhp-bench shp-bench)
+
+    add_custom_target(quick-bench-cpu DEPENDS quick-bench-cpu-results)
+    add_custom_command(
+      OUTPUT quick-bench-cpu-results
+      COMMAND dr-bench clean
+      COMMAND dr-bench suite --reps 10 --cores-per-socket 4
       COMMAND dr-bench plot
       DEPENDS mhp-bench shp-bench)
 

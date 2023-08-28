@@ -17,14 +17,19 @@ add_executable(
   distributed_dense_matrix.cpp halo.cpp mdstar.cpp reduce.cpp sort.cpp
   stencil.cpp segments.cpp slide_view.cpp wave_kernel.cpp)
 
-add_executable(mhp-tests-3 mhp-tests.cpp halo-3.cpp slide_view-3.cpp
-                           distributed_dense_matrix3.cpp)
+add_executable(mhp-tests-3 mhp-tests.cpp communicator-3.cpp halo-3.cpp
+                           slide_view-3.cpp distributed_dense_matrix3.cpp)
 
 # mhp-quick-test is for development. By reducing the number of source files, it
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
 
-add_executable(mhp-quick-test mhp-tests.cpp mdstar.cpp)
+# cmake-format: off
+add_executable(mhp-quick-test
+  mhp-tests.cpp
+  wave_kernel.cpp
+  )
+# cmake-format: on
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 

@@ -4,27 +4,52 @@
 
 #pragma once
 
-#include <dr/mhp/sycl_support.hpp>
 #include <unistd.h>
+
+#include <dr/detail/sycl_utils.hpp>
+#include <dr/mhp/sycl_support.hpp>
 
 namespace dr::mhp {
 
 namespace __detail {
 
 struct global_context {
-  global_context() {}
+  void init() {
+    void *data = nullptr;
+    std::size_t size = 0;
+    if (comm_.rank() == 0) {
+      root_scratchpad_.resize(scratchpad_size_);
+      data = root_scratchpad_.data();
+      size = rng::size(root_scratchpad_) * sizeof(root_scratchpad_[0]);
+    }
+    root_win_.create(comm_, data, size);
+    root_win_.fence();
+  }
+
+  ~global_context() {
+    root_win_.fence();
+    root_win_.free();
+  }
+
+  global_context() { init(); }
 #ifdef SYCL_LANGUAGE_VERSION
   global_context(sycl::queue q)
-      : sycl_queue_(q), dpl_policy_(q), use_sycl_(true) {}
+      : sycl_queue_(q), dpl_policy_(q), use_sycl_(true) {
+    init();
+  }
+
   sycl::queue sycl_queue_;
   decltype(oneapi::dpl::execution::make_device_policy(
       std::declval<sycl::queue>())) dpl_policy_;
 #endif
 
+  static constexpr std::size_t scratchpad_size_ = 1000000;
   bool use_sycl_ = false;
   dr::communicator comm_;
   // container owns the window, we just track MPI handle
   std::set<MPI_Win> wins_;
+  dr::rma_window root_win_;
+  std::vector<char> root_scratchpad_;
 };
 
 inline global_context *global_context_ = nullptr;
@@ -41,6 +66,7 @@ inline void final() {
   __detail::global_context_ = nullptr;
 }
 
+inline auto root_win() { return __detail::gcontext()->root_win_; }
 inline dr::communicator &default_comm() { return __detail::gcontext()->comm_; }
 
 inline std::size_t rank() { return default_comm().rank(); }
@@ -64,6 +90,12 @@ inline void init() {
   __detail::global_context_ = new __detail::global_context;
 }
 
+inline void finalize() {
+  assert(__detail::global_context_ != nullptr);
+  delete __detail::global_context_;
+  __detail::global_context_ = nullptr;
+}
+
 inline std::string hostname() {
   constexpr std::size_t MH = 2048;
   char buf[MH + 1];
@@ -81,26 +113,6 @@ inline void init(sycl::queue q) {
   __detail::global_context_ = new __detail::global_context(q);
 }
 
-inline auto partitionable(sycl::device device) {
-  // Earlier commits used the query API, but they return true even
-  // though a partition will fail:  Intel MPI mpirun with multiple
-  // processes.
-  try {
-    device.create_sub_devices<
-        sycl::info::partition_property::partition_by_affinity_domain>(
-        sycl::info::partition_affinity_domain::numa);
-  } catch (sycl::exception const &e) {
-    if (e.code() == sycl::errc::invalid ||
-        e.code() == sycl::errc::feature_not_supported) {
-      return false;
-    } else {
-      throw;
-    }
-  }
-
-  return true;
-}
-
 inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   std::vector<sycl::device> devices;
 
@@ -109,7 +121,7 @@ inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   for (auto &&root_device : root_devices) {
     dr::drlog.debug("Root device: {}\n",
                     root_device.get_info<sycl::info::device::name>());
-    if (partitionable(root_device)) {
+    if (dr::__detail::partitionable(root_device)) {
       auto subdevices = root_device.create_sub_devices<
           sycl::info::partition_property::partition_by_affinity_domain>(
           sycl::info::partition_affinity_domain::numa);

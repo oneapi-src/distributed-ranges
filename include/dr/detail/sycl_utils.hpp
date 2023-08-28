@@ -4,12 +4,36 @@
 
 #pragma once
 
+#include <limits>
+
 #ifdef SYCL_LANGUAGE_VERSION
 
-#include <limits>
 #include <sycl/sycl.hpp>
 
 namespace dr::__detail {
+
+//
+// return true if the device can be partitoned by affinity domain
+//
+inline auto partitionable(sycl::device device) {
+  // Earlier commits used the query API, but they return true even
+  // though a partition will fail:  Intel MPI mpirun with multiple
+  // processes.
+  try {
+    device.create_sub_devices<
+        sycl::info::partition_property::partition_by_affinity_domain>(
+        sycl::info::partition_affinity_domain::numa);
+  } catch (sycl::exception const &e) {
+    if (e.code() == sycl::errc::invalid ||
+        e.code() == sycl::errc::feature_not_supported) {
+      return false;
+    } else {
+      throw;
+    }
+  }
+
+  return true;
+}
 
 // With the ND-range workaround, the maximum kernel size is
 // `std::numeric_limits<std::int32_t>::max()` rounded down to
