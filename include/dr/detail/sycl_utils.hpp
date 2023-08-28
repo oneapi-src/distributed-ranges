@@ -10,8 +10,6 @@
 
 #include <sycl/sycl.hpp>
 
-#define Dim 1
-
 namespace dr::__detail {
 
 inline const std::array dim0 = {0, 0, 0}, dim1 = {128, 0, 0},
@@ -52,9 +50,9 @@ inline std::size_t max_kernel_size_(std::size_t block_size) {
 // This is a workaround to avoid performance degradation
 // in DPC++ for odd range sizes.
 template <typename Fn>
-sycl::event parallel_for_workaround(sycl::queue &q,
-                                    sycl::range<Dim> numWorkItems, Fn &&fn) {
-  auto block_size = workgroup_shapes[Dim][0];
+sycl::event parallel_for_workaround(sycl::queue &q, sycl::range<1> numWorkItems,
+                                    Fn &&fn) {
+  auto block_size = workgroup_shapes[1][0];
   std::size_t num_blocks = (numWorkItems.size() + block_size - 1) / block_size;
 
   int32_t range_size = numWorkItems.size();
@@ -70,9 +68,9 @@ sycl::event parallel_for_workaround(sycl::queue &q,
 }
 
 template <typename Fn>
-sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<Dim> numWorkItems,
+sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> numWorkItems,
                                Fn &&fn) {
-  auto block_size = workgroup_shapes[Dim][0];
+  auto block_size = workgroup_shapes[1][0];
   std::size_t max_kernel_size = max_kernel_size_(block_size);
 
   std::vector<sycl::event> events;
@@ -99,7 +97,7 @@ sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<Dim> numWorkItems,
   return e;
 }
 
-template <typename Fn>
+template <int Dim, typename Fn>
 sycl::event parallel_for(sycl::queue &q, sycl::range<Dim> range, Fn &&fn) {
   const auto workgroup_shape = workgroup_shapes[Dim];
 
