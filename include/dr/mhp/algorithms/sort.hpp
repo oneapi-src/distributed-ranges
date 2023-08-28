@@ -25,11 +25,7 @@ namespace dr::mhp {
 
 namespace __detail {
 
-// onedpl sort() temporary disabled due to dpl bug,
-// https://github.com/oneapi-src/oneDPL/issues/1038
-// to enable rename DISABLED_SYCL_LANGUAGE_VERSION --> SYCL_LANGUAGE_VERSION
-
-#ifdef DISABLED_SYCL_LANGUAGE_VERSION
+#ifdef SYCL_LANGUAGE_VERSION
 
 template <typename InputIt, typename Compare>
 void local_dpl_sort(InputIt first, InputIt last, Compare &&comp) {
@@ -45,8 +41,8 @@ void local_dpl_sort(InputIt first, InputIt last, Compare &&comp) {
 
 template <rng::forward_range R, typename Compare>
 void local_sort(R &r, Compare &&comp) {
-#ifdef DISABLED_SYCL_LANGUAGE_VERSION
-  local_dpl_sort(oneapi::dpl::begin(r), oneapi::dpl::end(r), comp);
+#ifdef SYCL_LANGUAGE_VERSION
+  local_dpl_sort(r.begin(), r.end(), comp);
 #else
   rng::sort(rng::begin(r), rng::end(r), comp);
 #endif

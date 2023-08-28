@@ -16,6 +16,7 @@ TEST(MhpSort, Sort) {
       100, 1234};
 
   for (std::size_t n : sizes) {
+    std::cout << "Sort: Test size " << n << std::endl;
     V l_v = generate_random<T>(n, 100);
     DV d_v(n);
     for (std::size_t idx = 0; idx < n; idx++) {
@@ -37,6 +38,7 @@ TEST(MhpSort, Sort_reverse) {
       100, 1234};
 
   for (std::size_t n : sizes) {
+    std::cout << "Sort_reverse: Test size " << n << std::endl;
     V l_v = generate_random<T>(n, 1000);
     DV d_v(n);
 
