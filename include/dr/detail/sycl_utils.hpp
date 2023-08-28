@@ -6,7 +6,7 @@
 
 #include <limits>
 
-#include <dr/detail/mdspan_utils.hpp>
+#include <dr/detail/utils.hpp>
 
 #ifdef SYCL_LANGUAGE_VERSION
 

@@ -58,9 +58,9 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
         };
         // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
         // ndrange and handles > 32 bits.
-        dr::mhp::sycl_queue()
-            .parallel_for(sycl::range(mdspan0.extent(0), mdspan0.extent(1)),
-                          do_point)
+        dr::__detail::parallel_for(
+            mhp::sycl_queue(),
+            sycl::range(mdspan0.extent(0), mdspan0.extent(1)), do_point)
             .wait();
 #else
         assert(false);
@@ -127,9 +127,10 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
 
         // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
         // ndrange and handles > 32 bits.
-        dr::mhp::sycl_queue()
-            .parallel_for(sycl::range(mdspan0.extent(0), mdspan0.extent(1)),
-                          invoke_index)
+
+        dr::__detail::parallel_for(
+            mhp::sycl_queue(),
+            sycl::range(mdspan0.extent(0), mdspan0.extent(1)), invoke_index)
             .wait();
 #else
         assert(false);

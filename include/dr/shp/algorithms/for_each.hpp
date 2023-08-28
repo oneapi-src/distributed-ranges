@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include <sycl/sycl.hpp>
+
+#include <dr/detail/sycl_utils.hpp>
 #include <dr/shp/algorithms/execution_policy.hpp>
 #include <dr/shp/detail.hpp>
 #include <dr/shp/init.hpp>
 #include <dr/shp/util.hpp>
 #include <dr/shp/zip_view.hpp>
-#include <sycl/sycl.hpp>
 
 namespace dr::shp {
 
@@ -30,7 +32,8 @@ void for_each(ExecutionPolicy &&policy, R &&r, Fn &&fn) {
     auto first = rng::begin(local_segment);
 
     auto event = dr::__detail::parallel_for(
-        q, rng::distance(local_segment), [=](auto idx) { fn(*(first + idx)); });
+        q, sycl::range<>(rng::distance(local_segment)),
+        [=](auto idx) { fn(*(first + idx)); });
     events.emplace_back(event);
   }
   __detail::wait(events);
