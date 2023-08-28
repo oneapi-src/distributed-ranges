@@ -562,13 +562,13 @@ int main(int argc, char *argv[]) {
   comm = MPI_COMM_WORLD;
   MPI_Comm_rank(comm, &comm_rank);
   MPI_Comm_size(comm, &comm_size);
-  dr::mhp::init();
 
   cxxopts::Options options_spec(argv[0], "wave equation");
   // clang-format off
   options_spec.add_options()
     ("n", "Grid size", cxxopts::value<std::size_t>()->default_value("128"))
     ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
+    ("sycl", "Execute on SYCL device")
     ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
     ("h,help", "Print help");
   // clang-format on
@@ -579,6 +579,23 @@ int main(int argc, char *argv[]) {
   } catch (const cxxopts::OptionParseException &e) {
     std::cout << options_spec.help() << "\n";
     exit(1);
+  }
+
+  if (options.count("sycl")) {
+#ifdef SYCL_LANGUAGE_VERSION
+    sycl::queue q = dr::mhp::select_queue();
+    std::cout << "Run on: "
+              << q.get_device().get_info<sycl::info::device::name>() << "\n";
+    dr::mhp::init(q);
+#else
+    std::cout << "Sycl support requires icpx\n";
+    exit(1);
+#endif
+  } else {
+    if (comm_rank == 0) {
+      std::cout << "Run on: CPU\n";
+    }
+    dr::mhp::init();
   }
 
   std::size_t n = options["n"].as<std::size_t>();
