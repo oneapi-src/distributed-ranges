@@ -30,27 +30,6 @@ auto linear_to_index(std::size_t linear, const Index &shape) {
   return index;
 }
 
-inline std::size_t round_up(std::size_t n, std::size_t multiple) {
-  if (multiple == 0) {
-    return n;
-  }
-
-  int remainder = n % multiple;
-  if (remainder == 0) {
-    return n;
-  }
-
-  return n + multiple - remainder;
-}
-
-inline std::size_t partition_up(std::size_t n, std::size_t multiple) {
-  if (multiple == 0) {
-    return n;
-  }
-
-  return round_up(n, multiple) / multiple;
-}
-
 template <typename Mdspan>
 concept mdspan_like = requires(Mdspan &mdspan) {
   mdspan.rank();

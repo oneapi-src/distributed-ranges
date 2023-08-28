@@ -116,7 +116,8 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
           auto wrap_rebase = [rebase, base = rng::begin(local_out)](auto idx) {
             rebase(base[idx]);
           };
-          detail::parallel_for(dr::mhp::sycl_queue(), rng::distance(local_out),
+          detail::parallel_for(dr::mhp::sycl_queue(),
+                               sycl::range<>(rng::distance(local_out)),
                                wrap_rebase)
               .wait();
 #else
