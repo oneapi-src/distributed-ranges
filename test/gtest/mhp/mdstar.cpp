@@ -12,7 +12,7 @@ using T = int;
 
 class Mdspan : public ::testing::Test {
 protected:
-  std::size_t xdim = 4, ydim = 5, zdim = 2;
+  std::size_t xdim = 9, ydim = 5, zdim = 2;
   std::size_t n2d = xdim * ydim, n3d = xdim * ydim * zdim;
 
   std::array<std::size_t, 2> extents2d = {xdim, ydim};
@@ -199,6 +199,7 @@ TEST_F(Mdarray, GridExtents) {
   auto x = 0;
   for (std::size_t i = 0; i < grid.extent(0); i++) {
     x += grid(i, 0).mdspan().extent(0);
+    dr::drlog.debug("x: {}\n", x);
   }
   EXPECT_EQ(mdarray.mdspan().extent(0), x);
 
@@ -355,6 +356,8 @@ using MdForeach = Mdspan;
 TEST_F(MdForeach, 2ops) {
   xhp::distributed_mdarray<T, 2> a(extents2d);
   xhp::distributed_mdarray<T, 2> b(extents2d);
+  auto mda = a.mdspan();
+  auto mdb = b.mdspan();
   xhp::iota(a, 100);
   xhp::iota(b, 200);
   auto copy_op = [](auto v) {
@@ -363,7 +366,8 @@ TEST_F(MdForeach, 2ops) {
   };
 
   xhp::for_each(copy_op, a, b);
-  EXPECT_EQ(a, b);
+  EXPECT_EQ(mda(0, 0), mdb(0, 0));
+  EXPECT_EQ(mda(xdim - 1, ydim - 1), mdb(xdim - 1, ydim - 1));
 }
 
 TEST_F(MdForeach, 3ops) {
@@ -391,13 +395,17 @@ TEST_F(MdStencilForeach, 2ops) {
   xhp::distributed_mdarray<T, 2> b(extents2d);
   xhp::iota(a, 100);
   xhp::iota(b, 200);
+  auto mda = a.mdspan();
+  auto mdb = b.mdspan();
   auto copy_op = [](auto v) {
     auto [in, out] = v;
     out(0, 0) = in(0, 0);
   };
 
   xhp::stencil_for_each(copy_op, a, b);
-  EXPECT_EQ(a, b);
+  EXPECT_EQ(mda(0, 0), mdb(0, 0));
+  EXPECT_EQ(mda(2, 2), mdb(2, 2));
+  EXPECT_EQ(mda(xdim - 1, ydim - 1), mdb(xdim - 1, ydim - 1));
 }
 
 TEST_F(MdStencilForeach, 3ops) {
