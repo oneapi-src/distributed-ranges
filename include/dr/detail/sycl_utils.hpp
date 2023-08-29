@@ -37,41 +37,61 @@ inline auto partitionable(sycl::device device) {
   return true;
 }
 
-// Convert a global range to a nd_range using generic block size
-template <int Dim> auto nd_range(sycl::range<Dim> global_size) {
+// Convert a global range to a nd_range using generic block size level
+// gpu requires uniform size workgroup, so round up to a multiple of a
+// workgroup.
+template <int Dim> auto nd_range(sycl::range<Dim> global) {
   if constexpr (Dim == 1) {
-    return sycl::nd_range<Dim>(global_size, sycl::range<Dim>(128));
+    sycl::range local(128);
+    return sycl::nd_range<Dim>(sycl::range(round_up(global[0], local[0])),
+                               local);
   } else if constexpr (Dim == 2) {
-    return sycl::nd_range<Dim>(global_size, sycl::range<Dim>(16, 16));
+    sycl::range local(16, 16);
+    return sycl::nd_range<Dim>(sycl::range(round_up(global[0], local[0]),
+                                           round_up(global[1], local[1])),
+                               local);
   } else if constexpr (Dim == 3) {
-    return sycl::nd_range<Dim>(global_size, sycl::range<Dim>(8, 8, 8));
+    sycl::range local(8, 8, 8);
+    return sycl::nd_range<Dim>(sycl::range(round_up(global[0], local[0]),
+                                           round_up(global[1], local[1]),
+                                           round_up(global[2], local[2])),
+                               local);
   } else {
     assert(false);
-    return sycl::range<>(0);
+    return sycl::range(0);
   }
 }
 
 template <typename Fn>
-sycl::event parallel_for_nd(sycl::queue &q, sycl::range<1> global_size,
-                            Fn &&fn) {
-  return q.parallel_for(nd_range(global_size),
-                        [=](auto nd_idx) { fn(nd_idx.get_global_id(0)); });
-}
-
-template <typename Fn>
-sycl::event parallel_for_nd(sycl::queue &q, sycl::range<2> global_size,
-                            Fn &&fn) {
-  return q.parallel_for(nd_range(global_size), [=](auto nd_idx) {
-    fn(std::array{nd_idx.get_global_id(0), nd_idx.get_global_id(1)});
+sycl::event parallel_for_nd(sycl::queue &q, sycl::range<1> global, Fn &&fn) {
+  return q.parallel_for(nd_range(global), [=](auto nd_idx) {
+    auto idx0 = nd_idx.get_global_id(0);
+    if (idx0 < global[0]) {
+      fn(idx0);
+    }
   });
 }
 
 template <typename Fn>
-sycl::event parallel_for_nd(sycl::queue &q, sycl::range<3> global_size,
-                            Fn &&fn) {
-  return q.parallel_for(nd_range(global_size), [=](auto nd_idx) {
-    fn(std::array{nd_idx.get_global_id(0), nd_idx.get_global_id(1),
-                  nd_idx.get_global_id(2)});
+sycl::event parallel_for_nd(sycl::queue &q, sycl::range<2> global, Fn &&fn) {
+  return q.parallel_for(nd_range(global), [=](auto nd_idx) {
+    auto idx0 = nd_idx.get_global_id(0);
+    auto idx1 = nd_idx.get_global_id(1);
+    if (idx0 < global[0] && idx1 < global[1]) {
+      fn(std::array{idx0, idx1});
+    }
+  });
+}
+
+template <typename Fn>
+sycl::event parallel_for_nd(sycl::queue &q, sycl::range<3> global, Fn &&fn) {
+  return q.parallel_for(nd_range(global), [=](auto nd_idx) {
+    auto idx0 = nd_idx.get_global_id(0);
+    auto idx1 = nd_idx.get_global_id(1);
+    auto idx2 = nd_idx.get_global_id(2);
+    if (idx0 < global[0] && idx1 < global[1] && idx2 < global[2]) {
+      fn(std::array{idx0, idx1, idx2});
+    }
   });
 }
 
@@ -84,11 +104,11 @@ auto combine_events(sycl::queue &q, const auto &events) {
 }
 
 template <typename Fn>
-sycl::event parallel_for(sycl::queue &q, sycl::range<1> global_size, Fn &&fn) {
+sycl::event parallel_for(sycl::queue &q, sycl::range<1> global, Fn &&fn) {
   std::vector<sycl::event> events;
 
   // Chunks are 32 bits
-  for (std::size_t remainder = global_size[0]; remainder != 0;) {
+  for (std::size_t remainder = global[0]; remainder != 0;) {
     std::size_t chunk = std::min(
         remainder, std::size_t(std::numeric_limits<std::int32_t>::max()));
     events.push_back(parallel_for_nd(q, sycl::range<>(chunk), fn));
@@ -99,17 +119,17 @@ sycl::event parallel_for(sycl::queue &q, sycl::range<1> global_size, Fn &&fn) {
 }
 
 template <typename Fn>
-sycl::event parallel_for(sycl::queue &q, sycl::range<2> global_size, Fn &&fn) {
+sycl::event parallel_for(sycl::queue &q, sycl::range<2> global, Fn &&fn) {
   auto max = std::numeric_limits<std::int32_t>::max();
-  assert(global_size[0] < max && global_size[1] < max);
-  return parallel_for_nd(q, global_size, fn);
+  assert(global[0] < max && global[1] < max);
+  return parallel_for_nd(q, global, fn);
 }
 
 template <typename Fn>
-sycl::event parallel_for(sycl::queue &q, sycl::range<3> global_size, Fn &&fn) {
+sycl::event parallel_for(sycl::queue &q, sycl::range<3> global, Fn &&fn) {
   auto max = std::numeric_limits<std::int32_t>::max();
-  assert(global_size[0] < max && global_size[1] < max && global_size[2] < max);
-  return parallel_for_nd(q, global_size, fn);
+  assert(global[0] < max && global[1] < max && global[2] < max);
+  return parallel_for_nd(q, global, fn);
 }
 
 } // namespace dr::__detail
