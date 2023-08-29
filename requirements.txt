@@ -13,7 +13,7 @@ charset-normalizer==3.2.0
 distlib==0.3.7
 docutils==0.19
 filelock==3.12.2
-identify==2.5.26
+identify==2.5.27
 idna==3.4
 imagesize==1.4.1
 Jinja2==3.1.2
@@ -31,11 +31,11 @@ snowballstemmer==2.2.0
 soupsieve==2.4.1
 Sphinx==6.2.1
 sphinx-book-theme==1.0.1
-sphinxcontrib-applehelp==1.0.6
-sphinxcontrib-devhelp==1.0.4
+sphinxcontrib-applehelp==1.0.7
+sphinxcontrib-devhelp==1.0.5
 sphinxcontrib-htmlhelp==2.0.4
 sphinxcontrib-jsmath==1.0.1
-sphinxcontrib-qthelp==1.0.5
+sphinxcontrib-qthelp==1.0.6
 sphinxcontrib-serializinghtml==1.1.9
 sphinxcontrib-spelling==8.0.0
 typing_extensions==4.7.1

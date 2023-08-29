@@ -137,7 +137,7 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
             dr::ranges::__detail::local(partial_sums).begin() + idx - 1;
 
         sycl::event e = dr::__detail::parallel_for(
-            q, rng::distance(out_segment),
+            q, sycl::range<>(rng::distance(out_segment)),
             [=](auto idx) { d_first[idx] = binary_op(d_first[idx], *d_sum); });
 
         events.push_back(e);
