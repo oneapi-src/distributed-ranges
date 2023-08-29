@@ -11,7 +11,7 @@ using T = float;
 TEST(SYCLUtils, ParalelFor1D) {
   const std::size_t size = 10;
   sycl::queue q;
-  sycl::range<1> range(size - 1);
+  sycl::range range(size - 1);
 
   auto a = sycl::malloc_shared<T>(size, q);
   auto b = sycl::malloc_shared<T>(size, q);
@@ -33,7 +33,7 @@ TEST(SYCLUtils, ParalelFor2D) {
   const std::size_t row_size = 5, col_size = row_size,
                     size = row_size * col_size;
   sycl::queue q;
-  sycl::range<2> range(row_size - 2, col_size - 2);
+  sycl::range range(row_size - 2, col_size - 2);
 
   auto a = sycl::malloc_shared<T>(size, q);
   auto b = sycl::malloc_shared<T>(size, q);

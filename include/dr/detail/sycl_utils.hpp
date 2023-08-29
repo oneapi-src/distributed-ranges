@@ -14,10 +14,6 @@
 
 namespace dr::__detail {
 
-inline const std::array dim0 = {0, 0, 0}, dim1 = {128, 0, 0},
-                        dim2 = {16, 16, 0}, dim3 = {8, 8, 8};
-inline const std::array workgroup_shapes = {dim0, dim1, dim2, dim3};
-
 //
 // return true if the device can be partitoned by affinity domain
 //
@@ -41,50 +37,41 @@ inline auto partitionable(sycl::device device) {
   return true;
 }
 
-// With the ND-range workaround, the maximum kernel size is
-// `std::numeric_limits<std::int32_t>::max()` rounded down to
-// the nearest multiple of the block size.
-inline std::size_t max_kernel_size_(std::size_t block_size) {
-  std::size_t max_kernel_size = std::numeric_limits<std::int32_t>::max();
-  return (max_kernel_size / block_size) * block_size;
+// Convert a global range to a nd_range using generic block size
+template <int Dim> auto nd_range(sycl::range<Dim> global_size) {
+  if constexpr (Dim == 1) {
+    return sycl::nd_range<Dim>(global_size, sycl::range<Dim>(128));
+  } else if constexpr (Dim == 2) {
+    return sycl::nd_range<Dim>(global_size, sycl::range<Dim>(16, 16));
+  } else if constexpr (Dim == 3) {
+    return sycl::nd_range<Dim>(global_size, sycl::range<Dim>(8, 8, 8));
+  } else {
+    assert(false);
+    return sycl::range<>(0);
+  }
 }
 
-// This is a workaround to avoid performance degradation
-// in DPC++ for odd range sizes.
 template <typename Fn>
-sycl::event parallel_for_workaround(sycl::queue &q, sycl::range<1> range,
-                                    Fn &&fn) {
-  auto block_size = workgroup_shapes[1][0];
-  std::size_t num_blocks = (range.size() + block_size - 1) / block_size;
-
-  int32_t range_size = range.size();
-
-  return q.parallel_for(sycl::nd_range<>(num_blocks * block_size, block_size),
-                        [=](auto nd_idx) {
-                          auto idx = nd_idx.get_global_id(0);
-                          if (idx < range_size) {
-                            fn(idx);
-                          }
-                        });
+sycl::event parallel_for_nd(sycl::queue &q, sycl::range<1> global_size,
+                            Fn &&fn) {
+  return q.parallel_for(nd_range(global_size),
+                        [=](auto nd_idx) { fn(nd_idx.get_global_id(0)); });
 }
 
-// This is a workaround to avoid performance degradation
-// in DPC++ for odd range sizes.
 template <typename Fn>
-sycl::event parallel_for_workaround(sycl::queue &q, sycl::range<2> flat_range,
-                                    Fn &&fn) {
-  auto workgroup_shape = workgroup_shapes[2];
-  sycl::range<2> rounded_range(round_up(flat_range[0], workgroup_shape[0]),
-                               round_up(flat_range[1], workgroup_shape[1]));
-  sycl::range<2> block_size(workgroup_shape[0], workgroup_shape[1]);
+sycl::event parallel_for_nd(sycl::queue &q, sycl::range<2> global_size,
+                            Fn &&fn) {
+  return q.parallel_for(nd_range(global_size), [=](auto nd_idx) {
+    fn(std::array{nd_idx.get_global_id(0), nd_idx.get_global_id(1)});
+  });
+}
 
-  sycl::nd_range<2> nd_range(rounded_range, block_size);
-
-  return q.parallel_for(nd_range, [=](auto nd_idx) {
-    std::array idx = {nd_idx.get_global_id(0), nd_idx.get_global_id(1)};
-    if (idx[0] < flat_range[0] && idx[1] < flat_range[1]) {
-      fn(idx);
-    }
+template <typename Fn>
+sycl::event parallel_for_nd(sycl::queue &q, sycl::range<3> global_size,
+                            Fn &&fn) {
+  return q.parallel_for(nd_range(global_size), [=](auto nd_idx) {
+    fn(std::array{nd_idx.get_global_id(0), nd_idx.get_global_id(1),
+                  nd_idx.get_global_id(2)});
   });
 }
 
@@ -97,52 +84,32 @@ auto combine_events(sycl::queue &q, const auto &events) {
 }
 
 template <typename Fn>
-sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<1> range, Fn &&fn) {
-  auto block_size = workgroup_shapes[1][0];
-  std::size_t max_kernel_size = max_kernel_size_(block_size);
-
+sycl::event parallel_for(sycl::queue &q, sycl::range<1> global_size, Fn &&fn) {
   std::vector<sycl::event> events;
-  for (std::size_t base_idx = 0; base_idx < range.size();
-       base_idx += max_kernel_size) {
-    std::size_t launch_size =
-        std::min(range.size() - base_idx, max_kernel_size);
 
-    auto e = parallel_for_workaround(q, sycl::range<1>(launch_size),
-                                     [=](sycl::id<1> idx_) {
-                                       sycl::id<1> idx(base_idx + idx_);
-                                       fn(idx);
-                                     });
-
-    events.push_back(e);
+  // Chunks are 32 bits
+  for (std::size_t remainder = global_size[0]; remainder != 0;) {
+    std::size_t chunk = std::min(
+        remainder, std::size_t(std::numeric_limits<std::int32_t>::max()));
+    events.push_back(parallel_for_nd(q, sycl::range<>(chunk), fn));
+    remainder -= chunk;
   }
 
   return combine_events(q, events);
 }
 
 template <typename Fn>
-sycl::event parallel_for_64bit(sycl::queue &q, sycl::range<2> range, Fn &&fn) {
-  std::vector<sycl::event> events;
-  assert(false);
-
-  return combine_events(q, events);
-  ;
+sycl::event parallel_for(sycl::queue &q, sycl::range<2> global_size, Fn &&fn) {
+  auto max = std::numeric_limits<std::int32_t>::max();
+  assert(global_size[0] < max && global_size[1] < max);
+  return parallel_for_nd(q, global_size, fn);
 }
 
-template <int Dim, typename Fn>
-sycl::event parallel_for(sycl::queue &q, sycl::range<Dim> range, Fn &&fn) {
-  const auto workgroup_shape = workgroup_shapes[Dim];
-
-  bool overflow = false;
-  for (std::size_t i = 0; i < Dim; i++) {
-    if (range[i] >= max_kernel_size_(workgroup_shape[i])) {
-      overflow = true;
-    }
-  }
-  if (overflow) {
-    return parallel_for_64bit(q, range, std::forward<Fn>(fn));
-  } else {
-    return parallel_for_workaround(q, range, std::forward<Fn>(fn));
-  }
+template <typename Fn>
+sycl::event parallel_for(sycl::queue &q, sycl::range<3> global_size, Fn &&fn) {
+  auto max = std::numeric_limits<std::int32_t>::max();
+  assert(global_size[0] < max && global_size[1] < max && global_size[2] < max);
+  return parallel_for_nd(q, global_size, fn);
 }
 
 } // namespace dr::__detail

@@ -28,6 +28,7 @@ add_executable(mhp-tests-3 mhp-tests.cpp communicator-3.cpp halo-3.cpp
 add_executable(mhp-quick-test
   mhp-tests.cpp
   ../common/sycl_utils.cpp
+  mdstar.cpp
   )
 # cmake-format: on
 
