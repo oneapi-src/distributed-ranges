@@ -103,10 +103,16 @@ private:
 
   static auto make_segments(auto base, auto full_lengths, auto tile_lengths) {
     auto make_md = [=](auto v) {
-      return __detail::md_segment(
-          segment_index_to_global_origin(std::size_t(std::get<0>(v)),
-                                         full_lengths, tile_lengths),
-          std::get<1>(v), tile_lengths);
+      auto clipped = tile_lengths;
+      std::size_t segment_index = std::get<0>(v);
+      std::size_t end = (segment_index + 1) * tile_lengths[0];
+      if (end > full_lengths[0]) {
+        clipped[0] -= end - full_lengths[0];
+      }
+      return __detail::md_segment(segment_index_to_global_origin(segment_index,
+                                                                 full_lengths,
+                                                                 tile_lengths),
+                                  std::get<1>(v), clipped);
     };
 
     // use bounded_enumerate so we get a std::ranges::common_range
@@ -126,7 +132,6 @@ public:
     tile_lengths_[0] = decomp::div;
 
     replace_decomp();
-
     segments_ = make_segments(base_, full_lengths_, tile_lengths_);
   }
 
@@ -154,8 +159,8 @@ public:
   auto grid() {
     dr::__detail::dr_extents<Rank> grid_extents;
     for (std::size_t i : rng::views::iota(0u, Rank)) {
-      grid_extents[i] = full_lengths_[i] / tile_lengths_[i];
-      assert(full_lengths_[i] % tile_lengths_[i] == 0);
+      grid_extents[i] =
+          dr::__detail::partition_up(full_lengths_[i], tile_lengths_[i]);
     }
     using grid_iterator_type = rng::iterator_t<segments_type>;
     using grid_type =
@@ -170,7 +175,7 @@ private:
     auto n = std::size_t(rng::size(dr::ranges::segments(base_)));
     for (std::size_t i = 0; i < Rank; i++) {
       if (tile_lengths_[i] == decomp::div) {
-        tile_lengths_[i] = full_lengths_[i] / n;
+        tile_lengths_[i] = dr::__detail::partition_up(full_lengths_[i], n);
       } else if (tile_lengths_[i] == decomp::all) {
         tile_lengths_[i] = full_lengths_[i];
       }
