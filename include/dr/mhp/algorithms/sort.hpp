@@ -41,11 +41,20 @@ void local_dpl_sort(InputIt first, InputIt last, Compare &&comp) {
 
 template <rng::forward_range R, typename Compare>
 void local_sort(R &r, Compare &&comp) {
+  if (rng::size(r) >= 2) {
 #ifdef SYCL_LANGUAGE_VERSION
-  local_dpl_sort(r.begin(), r.end(), comp);
+    fmt::print("{}: local sort, seg size {}\n", default_comm().rank(), rng::size(r));
+
+    auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
+    auto &&local_segment = dr::ranges::__detail::local(r);
+
+    oneapi::dpl::sort(policy, rng::begin(local_segment),
+                      rng::end(local_segment), comp);
+
 #else
-  rng::sort(rng::begin(r), rng::end(r), comp);
+    rng::sort(rng::begin(r), rng::end(r), comp);
 #endif
+  }
 }
 
 template <dr::distributed_range R, typename Compare>
