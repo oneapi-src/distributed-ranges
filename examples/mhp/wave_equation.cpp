@@ -389,11 +389,24 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   Array dvdt({nx + 1, ny + 1}, dist);
 
   // initial condition for elevation
-  for (std::size_t i = 1; i < e.mdspan().extent(0); i++) {
-    for (std::size_t j = 0; j < e.mdspan().extent(1); j++) {
-      T x = xmin + dx / 2 + (i - 1) * dx;
-      T y = ymin + dy / 2 + j * dy;
-      e.mdspan()(i, j) = initial_elev(x, y, lx, ly);
+  for (auto segment : dr::ranges::segments(e)) {
+    if (dr::ranges::rank(segment) == comm_rank) {
+      auto origin = segment.origin();
+      auto e = segment.mdspan();
+
+      fmt::print("rank: {} origin: {}\n", comm_rank, origin);
+      fmt::print("  extents {}:{}\n", e.extent(0), e.extent(1));
+      for (std::size_t i = 0; i < e.extent(0); i++) {
+        std::size_t global_i = i + origin[0];
+        if (global_i > 0) {
+          for (std::size_t j = 0; j < e.extent(1); j++) {
+            std::size_t global_j = j + origin[1];
+            T x = xmin + dx / 2 + (global_i - 1) * dx;
+            T y = ymin + dy / 2 + global_j * dy;
+            e(i, j) = initial_elev(x, y, lx, ly);
+          }
+        }
+      }
     }
   }
   dr::mhp::halo(e).exchange();
