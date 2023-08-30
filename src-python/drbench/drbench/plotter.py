@@ -59,7 +59,7 @@ class Plotter:
                 bname = b["name"].partition("/")[0]
                 bname, btarget = Plotter.__name_target(bname, target, device)
                 rtime = b["real_time"]
-                bw = b["bytes_per_second"]
+                bw = b["bytes_per_second"] if "bytes_per_second" in b else 1
                 rows.append(
                     {
                         "Benchmark": bname,
