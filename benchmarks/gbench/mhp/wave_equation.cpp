@@ -8,13 +8,21 @@
 #include <chrono>
 #include <iomanip>
 
-using T = double;
-
-using Array = dr::mhp::distributed_mdarray<T, 2>;
+#ifdef STANDALONE_BENCHMARK
 
 MPI_Comm comm;
 int comm_rank;
 int comm_size;
+
+#else
+
+#include "../common/dr_bench.hpp"
+
+#endif
+
+using T = double;
+
+using Array = dr::mhp::distributed_mdarray<T, 2>;
 
 // gravitational acceleration
 constexpr double g = 9.81;
@@ -389,11 +397,22 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   Array dvdt({nx + 1, ny + 1}, dist);
 
   // initial condition for elevation
-  for (std::size_t i = 1; i < e.mdspan().extent(0); i++) {
-    for (std::size_t j = 0; j < e.mdspan().extent(1); j++) {
-      T x = xmin + dx / 2 + (i - 1) * dx;
-      T y = ymin + dy / 2 + j * dy;
-      e.mdspan()(i, j) = initial_elev(x, y, lx, ly);
+  for (auto segment : dr::ranges::segments(e)) {
+    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
+      auto origin = segment.origin();
+      auto e = segment.mdspan();
+
+      for (std::size_t i = 0; i < e.extent(0); i++) {
+        std::size_t global_i = i + origin[0];
+        if (global_i > 0) {
+          for (std::size_t j = 0; j < e.extent(1); j++) {
+            std::size_t global_j = j + origin[1];
+            T x = xmin + dx / 2 + (global_i - 1) * dx;
+            T y = ymin + dy / 2 + global_j * dy;
+            e(i, j) = initial_elev(x, y, lx, ly);
+          }
+        }
+      }
     }
   }
   dr::mhp::halo(e).exchange();
@@ -497,11 +516,23 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   Array e_exact({nx + 1, ny}, dist);
   dr::mhp::fill(e_exact, 0.0);
   Array error({nx + 1, ny}, dist);
-  for (std::size_t i = 1; i < e_exact.mdspan().extent(0); i++) {
-    for (std::size_t j = 0; j < e_exact.mdspan().extent(1); j++) {
-      T x = xmin + dx / 2 + (i - 1) * dx;
-      T y = ymin + dy / 2 + j * dy;
-      e_exact.mdspan()(i, j) = exact_elev(x, y, t, lx, ly);
+  // initial condition for elevation
+  for (auto segment : dr::ranges::segments(e_exact)) {
+    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
+      auto origin = segment.origin();
+      auto e = segment.mdspan();
+
+      for (std::size_t i = 0; i < e.extent(0); i++) {
+        std::size_t global_i = i + origin[0];
+        if (global_i > 0) {
+          for (std::size_t j = 0; j < e.extent(1); j++) {
+            std::size_t global_j = j + origin[1];
+            T x = xmin + dx / 2 + (global_i - 1) * dx;
+            T y = ymin + dy / 2 + global_j * dy;
+            e(i, j) = exact_elev(x, y, t, lx, ly);
+          }
+        }
+      }
     }
   }
   dr::mhp::halo(e_exact).exchange();
@@ -556,6 +587,8 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   return 0;
 }
 
+#ifdef STANDALONE_BENCHMARK
+
 int main(int argc, char *argv[]) {
 
   MPI_Init(&argc, &argv);
@@ -607,3 +640,15 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
   return error;
 }
+
+#else
+
+static void WaveEquation_DR(benchmark::State &state) {
+  for (auto _ : state) {
+    run(4000, true, true);
+  }
+}
+
+DR_BENCHMARK(WaveEquation_DR);
+
+#endif

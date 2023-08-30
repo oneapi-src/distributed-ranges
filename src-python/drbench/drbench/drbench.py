@@ -409,7 +409,7 @@ def suite(
         "^Reduce_DR",
     ]
     dr_filters = dr_nop2p + dr_p2p
-    mhp_filters = ["Stencil2D_DR"]
+    mhp_filters = ["Stencil2D_DR", "WaveEquation_DR"]
     reference_filters = [
         "BlackScholes_Reference",
         "Reduce_Reference",

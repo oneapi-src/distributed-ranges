@@ -34,7 +34,7 @@ target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)
 
 # cmake-format: off
 add_executable(mhp-quick-bench mhp-bench.cpp
-  stencil_2d.cpp
+  wave_equation.cpp
   )
 # cmake-format: on
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
@@ -55,4 +55,14 @@ if(NOT MPI_IMPL STREQUAL "openmpi")
       mhp-bench-1-sycl mhp-bench 1 --vector-size 30000 --rows 100 --columns 100
       --check --benchmark_filter=-.*DPL.* --sycl)
   endif()
+endif()
+
+add_executable(wave_equation wave_equation.cpp)
+target_link_libraries(wave_equation cxxopts DR::mpi)
+target_compile_definitions(wave_equation PRIVATE STANDALONE_BENCHMARK)
+add_mpi_test(wave_equation wave_equation 1)
+add_mpi_test(wave_equation_fused wave_equation 1 -f)
+if(ENABLE_SYCL)
+  add_mpi_test(wave_equation-sycl wave_equation 2 --sycl)
+  add_mpi_test(wave_equation_fused-sycl wave_equation 2 --sycl -f)
 endif()
