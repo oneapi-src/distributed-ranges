@@ -6,7 +6,15 @@
 
 using T = float;
 
+#include <dr/shp.hpp>
+
 #include <oneapi/mkl.hpp>
+
+template <rng::forward_range X> void fill_random(X &&x) {
+  for (auto &&value : x) {
+    value = drand48() * 100;
+  }
+}
 
 static void Gemm_DR(benchmark::State &state) {
   auto q = get_queue();
@@ -36,3 +44,38 @@ static void Gemm_DR(benchmark::State &state) {
 }
 
 DR_BENCHMARK(Gemm_DR);
+
+static void Gemm_Reference(benchmark::State &state) {
+  auto q = get_queue();
+
+  std::size_t m = 32;
+  std::size_t n = 32;
+  std::size_t k = 32;
+
+  std::vector<T> a_local(m * k);
+  std::vector<T> b_local(k * n);
+  std::vector<T> c_local(m * n);
+
+  fill_random(a_local);
+  fill_random(b_local);
+  fill_random(c_local);
+
+  T *a = sycl::malloc_device<T>(m * k, q);
+  T *b = sycl::malloc_device<T>(k * n, q);
+  T *c = sycl::malloc_device<T>(m * n, q);
+
+  q.memcpy(a, a_local.data(), m * k * sizeof(T)).wait();
+  q.memcpy(b, b_local.data(), k * n * sizeof(T)).wait();
+  q.memcpy(c, c_local.data(), m * n * sizeof(T)).wait();
+
+  Stats stats(state, (m * k + k * n) * sizeof(T), m * n * sizeof(T));
+
+  for (auto _ : state) {
+    stats.rep();
+    oneapi::mkl::blas::row_major::gemm(q, oneapi::mkl::transpose::nontrans,
+                                       oneapi::mkl::transpose::nontrans, m, n,
+                                       k, T(1), a, m, b, n, T(1), c, k);
+  }
+}
+
+DR_BENCHMARK(Gemm_Reference);
