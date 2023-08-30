@@ -11,13 +11,12 @@ namespace dr::mhp {
 
 template <typename T, std::size_t Rank> class distributed_mdarray {
 public:
-  using extents_type = dr::__detail::dr_extents<Rank>;
+  using shape_type = dr::__detail::dr_extents<Rank>;
 
-  distributed_mdarray(dr::__detail::dr_extents<Rank> extents,
+  distributed_mdarray(dr::__detail::dr_extents<Rank> shape,
                       distribution dist = distribution())
-      : tile_extents_(tile_extents(extents)),
-        dv_(dv_size(), dv_dist(dist, extents)),
-        md_view_(make_md_view(dv_, extents, tile_extents_)) {}
+      : tile_shape_(tile_shape(shape)), dv_(dv_size(), dv_dist(dist, shape)),
+        md_view_(make_md_view(dv_, shape, tile_shape_)) {}
 
   auto begin() const { return rng::begin(md_view_); }
   auto end() const { return rng::end(md_view_); }
@@ -38,29 +37,29 @@ public:
 private:
   using DV = distributed_vector<T>;
 
-  static auto tile_extents(auto extents) {
+  static auto tile_shape(auto shape) {
     std::size_t n = default_comm().size(); // dr-style ignore
-    extents[0] = dr::__detail::partition_up(extents[0], n);
-    return extents;
+    shape[0] = dr::__detail::partition_up(shape[0], n);
+    return shape;
   }
 
-  static auto md_size(auto extents) {
+  static auto md_size(auto shape) {
     std::size_t size = 1;
-    for (auto extent : extents) {
+    for (auto extent : shape) {
       size *= extent;
     }
     return size;
   }
 
   auto dv_size() {
-    return default_comm().size() * md_size(tile_extents_); // dr-style ignore
+    return default_comm().size() * md_size(tile_shape_); // dr-style ignore
   }
 
-  static auto dv_dist(distribution incoming_dist, auto extents) {
+  static auto dv_dist(distribution incoming_dist, auto shape) {
     // Decomp is 1 "row" in decomp dimension
     // TODO: only supports dist on leading dimension
-    extents[0] = 1;
-    std::size_t row_size = md_size(extents);
+    shape[0] = 1;
+    std::size_t row_size = md_size(shape);
     auto incoming_halo = incoming_dist.halo();
     return distribution().halo(incoming_halo.prev * row_size,
                                incoming_halo.next * row_size);
@@ -68,16 +67,16 @@ private:
 
   // This wrapper seems to avoid an issue with template argument
   // deduction for mdspan_view
-  static auto make_md_view(const DV &dv, extents_type extents,
-                           extents_type tile_extents) {
-    return views::mdspan(dv, extents, tile_extents);
+  static auto make_md_view(const DV &dv, shape_type shape,
+                           shape_type tile_shape) {
+    return views::mdspan(dv, shape, tile_shape);
   }
 
-  extents_type tile_extents_;
+  shape_type tile_shape_;
   DV dv_;
   using mdspan_type =
-      decltype(make_md_view(std::declval<DV>(), std::declval<extents_type>(),
-                            std::declval<extents_type>()));
+      decltype(make_md_view(std::declval<DV>(), std::declval<shape_type>(),
+                            std::declval<shape_type>()));
   mdspan_type md_view_;
 };
 
