@@ -446,7 +446,7 @@ static void Stencil2D_Reference(benchmark::State &state) {
       auto op = [=](auto nd_idx) {
         std::size_t i = nd_idx.get_global_id(0) + 1;
         std::size_t j = nd_idx.get_global_id(1) + 1;
-        if (i < rows && j < cols) {
+        if (i < rows - 1 && j < cols - 1) {
           stencil_1darray_op(in, out, cols, i, j);
         }
       };
