@@ -29,6 +29,7 @@ endfunction()
 add_mhp_example(stencil-1d)
 add_mhp_example(stencil-1d-array)
 add_mhp_example(stencil-1d-pointer)
+add_mhp_example(hello_world)
 
 add_executable(stencil-2d-matrix stencil-2d-matrix.cpp)
 target_link_libraries(stencil-2d-matrix cxxopts DR::mpi)
