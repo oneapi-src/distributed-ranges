@@ -25,25 +25,10 @@ namespace dr::mhp {
 
 namespace __detail {
 
-#ifdef SYCL_LANGUAGE_VERSION
-
-template <typename InputIt, typename Compare>
-void local_dpl_sort(InputIt first, InputIt last, Compare &&comp) {
-  if (rng::distance(first, last) >= 2) {
-    auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
-    dr::__detail::direct_iterator d_first(first);
-    dr::__detail::direct_iterator d_last(last);
-
-    oneapi::dpl::sort(policy, d_first, d_last, std::forward<Compare>(comp));
-  }
-}
-#endif
-
 template <rng::forward_range R, typename Compare>
 void local_sort(R &r, Compare &&comp) {
   if (rng::size(r) >= 2) {
 #ifdef SYCL_LANGUAGE_VERSION
-    fmt::print("{}: local sort, seg size {}\n", default_comm().rank(), rng::size(r));
 
     auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
     auto &&local_segment = dr::ranges::__detail::local(r);
