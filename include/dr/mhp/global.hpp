@@ -59,6 +59,14 @@ inline auto gcontext() {
   return global_context_;
 }
 
+void initialize_mpi() {
+  int initialized;
+  MPI_Initialized(&initialized);
+  if (!initialized) {
+    MPI_Init(nullptr, nullptr);
+  }
+}
+
 } // namespace __detail
 
 inline void final() {
@@ -87,6 +95,7 @@ inline void fence() {
 inline void init() {
   assert(__detail::global_context_ == nullptr &&
          "Do not call mhp::init() more than once");
+  __detail::initialize_mpi();
   __detail::global_context_ = new __detail::global_context;
 }
 
@@ -110,6 +119,7 @@ inline auto dpl_policy() { return __detail::gcontext()->dpl_policy_; }
 inline void init(sycl::queue q) {
   assert(__detail::global_context_ == nullptr &&
          "Do not call mhp::init() more than once");
+  __detail::initialize_mpi();
   __detail::global_context_ = new __detail::global_context(q);
 }
 
