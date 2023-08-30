@@ -390,7 +390,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
 
   // initial condition for elevation
   for (auto segment : dr::ranges::segments(e)) {
-    if (dr::ranges::rank(segment) == comm_rank) {
+    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
       auto origin = segment.origin();
       auto e = segment.mdspan();
 
@@ -510,7 +510,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   Array error({nx + 1, ny}, dist);
   // initial condition for elevation
   for (auto segment : dr::ranges::segments(e_exact)) {
-    if (dr::ranges::rank(segment) == comm_rank) {
+    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
       auto origin = segment.origin();
       auto e = segment.mdspan();
 
