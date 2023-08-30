@@ -394,8 +394,6 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
       auto origin = segment.origin();
       auto e = segment.mdspan();
 
-      fmt::print("rank: {} origin: {}\n", comm_rank, origin);
-      fmt::print("  extents {}:{}\n", e.extent(0), e.extent(1));
       for (std::size_t i = 0; i < e.extent(0); i++) {
         std::size_t global_i = i + origin[0];
         if (global_i > 0) {
@@ -510,11 +508,23 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   Array e_exact({nx + 1, ny}, dist);
   dr::mhp::fill(e_exact, 0.0);
   Array error({nx + 1, ny}, dist);
-  for (std::size_t i = 1; i < e_exact.mdspan().extent(0); i++) {
-    for (std::size_t j = 0; j < e_exact.mdspan().extent(1); j++) {
-      T x = xmin + dx / 2 + (i - 1) * dx;
-      T y = ymin + dy / 2 + j * dy;
-      e_exact.mdspan()(i, j) = exact_elev(x, y, t, lx, ly);
+  // initial condition for elevation
+  for (auto segment : dr::ranges::segments(e_exact)) {
+    if (dr::ranges::rank(segment) == comm_rank) {
+      auto origin = segment.origin();
+      auto e = segment.mdspan();
+
+      for (std::size_t i = 0; i < e.extent(0); i++) {
+        std::size_t global_i = i + origin[0];
+        if (global_i > 0) {
+          for (std::size_t j = 0; j < e.extent(1); j++) {
+            std::size_t global_j = j + origin[1];
+            T x = xmin + dx / 2 + (global_i - 1) * dx;
+            T y = ymin + dy / 2 + global_j * dy;
+            e(i, j) = exact_elev(x, y, t, lx, ly);
+          }
+        }
+      }
     }
   }
   dr::mhp::halo(e_exact).exchange();
