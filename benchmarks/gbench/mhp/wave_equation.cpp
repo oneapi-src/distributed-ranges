@@ -8,13 +8,21 @@
 #include <chrono>
 #include <iomanip>
 
-using T = double;
-
-using Array = dr::mhp::distributed_mdarray<T, 2>;
+#ifdef STANDALONE_BENCHMARK
 
 MPI_Comm comm;
 int comm_rank;
 int comm_size;
+
+#else
+
+#include "../common/dr_bench.hpp"
+
+#endif
+
+using T = double;
+
+using Array = dr::mhp::distributed_mdarray<T, 2>;
 
 // gravitational acceleration
 constexpr double g = 9.81;
@@ -579,6 +587,8 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   return 0;
 }
 
+#ifdef STANDALONE_BENCHMARK
+
 int main(int argc, char *argv[]) {
 
   MPI_Init(&argc, &argv);
@@ -630,3 +640,15 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
   return error;
 }
+
+#else
+
+static void WaveEquation_DR(benchmark::State &state) {
+  for (auto _ : state) {
+    run(4000, true, true);
+  }
+}
+
+DR_BENCHMARK(WaveEquation_DR);
+
+#endif
