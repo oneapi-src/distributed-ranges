@@ -6,6 +6,8 @@
 
 using T = float;
 
+#include <dr/shp.hpp>
+
 #include <oneapi/mkl.hpp>
 
 static void Gemm_DR(benchmark::State &state) {
@@ -36,3 +38,26 @@ static void Gemm_DR(benchmark::State &state) {
 }
 
 DR_BENCHMARK(Gemm_DR);
+
+static void Gemm_Reference(benchmark::State &state) {
+  auto q = get_queue();
+
+  std::size_t m = 32;
+  std::size_t n = 32;
+  std::size_t k = 32;
+
+  auto a = sycl::malloc_device<T>(m * k, q);
+  auto b = sycl::malloc_device<T>(k * n, q);
+  auto c = sycl::malloc_device<T>(m * n, q);
+
+  Stats stats(state, (m * k + k * n) * sizeof(T), m * n * sizeof(T));
+
+  for (auto _ : state) {
+    stats.rep();
+    oneapi::mkl::blas::row_major::gemm(q, oneapi::mkl::transpose::nontrans,
+                                       oneapi::mkl::transpose::nontrans, m, n,
+                                       k, T(1), a, k, b, n, T(1), c, n);
+  }
+}
+
+DR_BENCHMARK(Gemm_Reference);
