@@ -59,7 +59,7 @@ inline auto gcontext() {
   return global_context_;
 }
 
-void initialize_mpi() {
+inline void initialize_mpi() {
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
