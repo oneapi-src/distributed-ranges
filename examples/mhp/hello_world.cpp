@@ -10,26 +10,32 @@ namespace mhp = dr::mhp;
 int main(int argc, char **argv) {
   mhp::init();
 
-  fmt::print("Hello, World! Distributed ranges is running on rank {} / {} on "
-             "host {}\n",
-             mhp::rank(), mhp::nprocs(), mhp::hostname());
+  {
 
-  std::size_t n = 1000;
+    fmt::print("Hello, World! Distributed ranges is running on rank {} / {} on "
+               "host {}\n",
+               mhp::rank(), mhp::nprocs(), mhp::hostname());
 
-  mhp::distributed_vector<int> v(n);
+    std::size_t n = 1000;
 
-  auto &&segments = v.segments();
+    mhp::distributed_vector<int> v(n);
 
-  fmt::print("Created distributed_vector of size {} with {} segments.\n",
-             v.size(), segments.size());
+    if (mhp::rank() == 0) {
+      auto &&segments = v.segments();
 
-  std::size_t segment_id = 0;
-  for (auto &&segment : segments) {
-    fmt::print("Rank {} owns segment {}, which is size {}\n", segment.rank(),
-               segment_id, segment.size());
-    ++segment_id;
+      fmt::print("Created distributed_vector of size {} with {} segments.\n",
+                 v.size(), segments.size());
+
+      std::size_t segment_id = 0;
+      for (auto &&segment : segments) {
+        fmt::print("Rank {} owns segment {}, which is size {}\n",
+                   dr::ranges::rank(segment), segment_id, segment.size());
+        ++segment_id;
+      }
+    }
   }
 
   mhp::finalize();
+
   return 0;
 }

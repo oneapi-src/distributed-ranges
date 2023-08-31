@@ -128,12 +128,14 @@ public:
   }
 
   ~distributed_vector() {
-    fence();
-    active_wins().erase(win_.mpi_win());
-    win_.free();
-    allocator_.deallocate(data_, data_size_);
-    data_ = nullptr;
-    delete halo_;
+    if (!finalized()) {
+      fence();
+      active_wins().erase(win_.mpi_win());
+      win_.free();
+      allocator_.deallocate(data_, data_size_);
+      data_ = nullptr;
+      delete halo_;
+    }
   }
 
   /// Returns iterator to beginning
