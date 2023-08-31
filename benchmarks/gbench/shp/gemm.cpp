@@ -16,12 +16,12 @@ template <rng::forward_range X> void fill_random(X &&x) {
   }
 }
 
+std::size_t m = 1000;
+std::size_t n = 1000;
+std::size_t k = 1000;
+
 static void Gemm_DR(benchmark::State &state) {
   auto q = get_queue();
-
-  std::size_t m = 32;
-  std::size_t n = 32;
-  std::size_t k = 32;
 
   auto partitions = dr::shp::partition_matmul(m, n, k);
   dr::shp::distributed_dense_matrix<T> a({m, k}, partitions[0]);
@@ -48,10 +48,6 @@ DR_BENCHMARK(Gemm_DR);
 static void Gemm_Reference(benchmark::State &state) {
   auto q = get_queue();
 
-  std::size_t m = 32;
-  std::size_t n = 32;
-  std::size_t k = 32;
-
   std::vector<T> a_local(m * k);
   std::vector<T> b_local(k * n);
   std::vector<T> c_local(m * n);
@@ -74,7 +70,8 @@ static void Gemm_Reference(benchmark::State &state) {
     stats.rep();
     oneapi::mkl::blas::row_major::gemm(q, oneapi::mkl::transpose::nontrans,
                                        oneapi::mkl::transpose::nontrans, m, n,
-                                       k, T(1), a, m, b, n, T(1), c, k);
+                                       k, T(1), a, m, b, n, T(1), c, k)
+        .wait();
   }
 }
 
