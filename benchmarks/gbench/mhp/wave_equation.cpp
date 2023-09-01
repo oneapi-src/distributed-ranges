@@ -336,6 +336,11 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   std::size_t halo_radius = 1;
   auto dist = dr::mhp::distribution().halo(halo_radius);
 
+  // statistics
+  std::size_t nread = (27*nx*ny + 8*(nx+ny)) * sizeof(T);
+  std::size_t nwrite = (9*nx*ny + 3*(nx+ny)) * sizeof(T);
+  std::size_t nflop = 72*nx*ny + 4*(nx+ny);
+
   if (comm_rank == 0) {
     std::cout << "Using backend: dr" << std::endl;
     if (fused_kernels) {
@@ -508,8 +513,21 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   auto toc = std::chrono::steady_clock::now();
   std::chrono::duration<double> duration = toc - tic;
   if (comm_rank == 0) {
-    std::cout << "Duration: " << std::setprecision(2) << duration.count();
+    double t_cpu = duration.count();
+    double t_step = t_cpu / nt;
+    double read_bw = double(nread) / t_step / (1024*1024*1024);
+    double write_bw = double(nwrite) / t_step / (1024*1024*1024);
+    double flop_rate = double(nflop) / t_step / (1000*1000*1000);
+    std::cout << "Duration: " << std::setprecision(3) << t_cpu;
     std::cout << " s" << std::endl;
+    std::cout << "Time per step: " << std::setprecision(2) << t_step * 1000;
+    std::cout << " ms" << std::endl;
+    std::cout << "Reads : " << std::setprecision(3) << read_bw;
+    std::cout << " GB/s" << std::endl;
+    std::cout << "Writes: " << std::setprecision(3) << write_bw;
+    std::cout << " GB/s" << std::endl;
+    std::cout << "FLOP/s: " << std::setprecision(3) << flop_rate;
+    std::cout << " GFLOP/s" << std::endl;
   }
 
   // Compute error against exact solution
