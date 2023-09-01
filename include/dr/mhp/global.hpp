@@ -129,13 +129,6 @@ inline std::string hostname() {
 inline sycl::queue &sycl_queue() { return __detail::gcontext()->sycl_queue_; }
 inline auto dpl_policy() { return __detail::gcontext()->dpl_policy_; }
 
-inline void init(sycl::queue q) {
-  __detail::initialize_mpi();
-  assert(__detail::global_context_ == nullptr &&
-         "Do not call mhp::init() more than once");
-  __detail::global_context_ = new __detail::global_context(q);
-}
-
 inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   std::vector<sycl::device> devices;
 
@@ -166,6 +159,20 @@ inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   // Round robin assignment of devices to ranks
   return sycl::queue(
       devices[dr::communicator(comm).rank() % rng::size(devices)]);
+}
+
+inline void init(sycl::queue q) {
+  __detail::initialize_mpi();
+  assert(__detail::global_context_ == nullptr &&
+         "Do not call mhp::init() more than once");
+  __detail::global_context_ = new __detail::global_context(q);
+}
+
+template <typename Selector = decltype(sycl::default_selector_v)>
+inline void init(Selector &&selector = sycl::default_selector_v) {
+  __detail::initialize_mpi();
+  sycl::queue q = mhp::select_queue(MPI_COMM_WORLD);
+  init(q);
 }
 
 #else // SYCL_LANGUAGE_VERSION

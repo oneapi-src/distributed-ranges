@@ -8,7 +8,11 @@
 namespace mhp = dr::mhp;
 
 int main(int argc, char **argv) {
+#ifdef SYCL_LANGUAGE_VERSION
+  mhp::init(sycl::default_selector_v);
+#else
   mhp::init();
+#endif
 
   {
 
