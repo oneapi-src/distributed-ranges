@@ -16,9 +16,9 @@ template <rng::forward_range X> void fill_random(X &&x) {
   }
 }
 
-std::size_t m = 1000;
-std::size_t n = 1000;
-std::size_t k = 1000;
+const std::size_t m = 16000;
+const std::size_t n = m;
+const std::size_t k = m;
 
 static void Gemm_DR(benchmark::State &state) {
   auto q = get_queue();
@@ -28,7 +28,7 @@ static void Gemm_DR(benchmark::State &state) {
   dr::shp::distributed_dense_matrix<T> b({k, n}, partitions[1]);
   dr::shp::distributed_dense_matrix<T> result({m, n}, partitions[2]);
 
-  Stats stats(state, (m * k + k * n) * sizeof(T), m * n * sizeof(T));
+  Stats stats(state, (m * k + k * n) * sizeof(T), m * n * sizeof(T), m * n * k);
   a[{2, 3}] = 12;
   a[{5, 7}] = 42;
   a[{8, 9}] = 37;
@@ -64,7 +64,7 @@ static void Gemm_Reference(benchmark::State &state) {
   q.memcpy(b, b_local.data(), k * n * sizeof(T)).wait();
   q.memcpy(c, c_local.data(), m * n * sizeof(T)).wait();
 
-  Stats stats(state, (m * k + k * n) * sizeof(T), m * n * sizeof(T));
+  Stats stats(state, (m * k + k * n) * sizeof(T), m * n * sizeof(T), m * n * k);
 
   for (auto _ : state) {
     stats.rep();

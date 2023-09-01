@@ -100,17 +100,26 @@ namespace xhp = dr::shp;
 class Stats {
 public:
   Stats(benchmark::State &state, std::size_t bytes_read = 0,
-        std::size_t bytes_written = 0)
+        std::size_t bytes_written = 0, std::size_t flops = 0)
       : state_(state) {
     bytes_read_ = bytes_read;
     bytes_written_ = bytes_written;
+    flops_ = flops;
   }
 
   ~Stats() {
-    state_.SetBytesProcessed(reps_ * (bytes_read_ + bytes_written_));
-    state_.counters["footprint"] = benchmark::Counter(
-        (bytes_read_ + bytes_written_) / ranks, benchmark::Counter::kDefaults,
-        benchmark::Counter::kIs1024);
+    if (flops_ > 0) {
+      state_.counters["flops"] =
+          benchmark::Counter(flops_, benchmark::Counter::kIsRate);
+    }
+
+    std::size_t mem = bytes_read_ + bytes_written_;
+    if (mem > 0) {
+      state_.SetBytesProcessed(reps_ * mem);
+      state_.counters["footprint"] =
+          benchmark::Counter(mem / ranks, benchmark::Counter::kDefaults,
+                             benchmark::Counter::kIs1024);
+    }
   }
 
   void rep() { reps_++; }
@@ -119,6 +128,7 @@ private:
   benchmark::State &state_;
   std::size_t bytes_read_ = 0;
   std::size_t bytes_written_ = 0;
+  std::size_t flops_ = 0;
   std::size_t reps_ = 0;
 };
 

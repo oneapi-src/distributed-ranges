@@ -22,6 +22,6 @@ if(NOT ENABLE_CUDA)
 endif()
 
 target_compile_definitions(shp-bench PRIVATE BENCH_SHP)
-target_link_libraries(shp-bench benchmark::benchmark cxxopts DR::mpi)
+target_link_libraries(shp-bench benchmark::benchmark cxxopts DR::shp)
 
 add_test(NAME shp-bench COMMAND ./shp-bench --vector-size 20000)
