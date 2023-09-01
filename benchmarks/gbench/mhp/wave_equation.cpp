@@ -431,7 +431,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   std::size_t i_export = 0;
   double next_t_export = 0.0;
   double t = 0.0;
-  double initial_v;
+  double initial_v = 0.0;
   auto tic = std::chrono::steady_clock::now();
   for (std::size_t i = 0; i < nt + 1; i++) {
     t = i * dt;
@@ -562,7 +562,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
     double expected_L2 = 0.007224068445111;
     double rel_tolerance = 1e-6;
     double rel_err = err_L2 / expected_L2 - 1.0;
-    if (fabs(rel_err) > rel_tolerance) {
+    if (!(fabs(rel_err) < rel_tolerance)) {
       if (comm_rank == 0) {
         std::cout << "ERROR: L2 error deviates from reference value: "
                   << expected_L2 << ", relative error: " << rel_err
@@ -572,7 +572,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
     }
   } else {
     double tolerance = 1e-2;
-    if (err_L2 > tolerance) {
+    if (!(err_L2 < tolerance)) {
       if (comm_rank == 0) {
         std::cout << "ERROR: L2 error exceeds tolerance: " << err_L2 << " > "
                   << tolerance << std::endl;
