@@ -677,7 +677,7 @@ static void WaveEquation_DR(benchmark::State &state) {
   int n = 4000;
   std::size_t nread, nwrite, nflop;
   calculate_complexity(n, n, nread, nwrite, nflop);
-  Stats stats(state, nread, nwrite);
+  Stats stats(state, nread, nwrite, nflop);
 
   auto iter_callback = [&stats]() { stats.rep(); };
   for (auto _ : state) {
