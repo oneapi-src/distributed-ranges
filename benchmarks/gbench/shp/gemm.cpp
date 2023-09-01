@@ -39,7 +39,7 @@ static void Gemm_DR(benchmark::State &state) {
 
   for (auto _ : state) {
     stats.rep();
-    dr::shp::gemm_inplace(a, b, result);
+    dr::shp::gemm(a, b, result);
   }
 }
 
