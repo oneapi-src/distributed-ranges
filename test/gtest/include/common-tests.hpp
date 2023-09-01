@@ -77,6 +77,37 @@ template <typename T> struct Ops3 {
   LocalVec<T> vec0, vec1, vec2;
 };
 
+template <std::floating_point T>
+bool fp_equal(T a, T b, T epsilon = 128 * std::numeric_limits<T>::epsilon()) {
+  if (a == b) {
+    return true;
+  }
+
+  auto abs_th = std::numeric_limits<T>::min();
+
+  auto diff = std::abs(a - b);
+
+  auto norm =
+      std::min((std::abs(a) + std::abs(b)), std::numeric_limits<float>::max());
+  return diff < std::max(abs_th, epsilon * norm);
+}
+
+template <std::floating_point T>
+bool fp_equal(std::vector<T> a, std::vector<T> b,
+              T epsilon = 128 * std::numeric_limits<T>::epsilon()) {
+  if (a.size() != b.size()) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < a.size(); i++) {
+    if (!fp_equal(a[i], b[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 template <rng::range R1, rng::range R2> bool is_equal(R1 &&r1, R2 &&r2) {
   if (rng::distance(rng::begin(r1), rng::end(r1)) !=
       rng::distance(rng::begin(r2), rng::end(r2))) {
