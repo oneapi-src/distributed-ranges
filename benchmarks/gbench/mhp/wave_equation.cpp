@@ -29,6 +29,14 @@ constexpr double g = 9.81;
 // water depth
 constexpr double h = 1.0;
 
+// Get number of read/write bytes and flops for a single time step
+// These numbers correspond to the fused kernel version
+void calculate_complexity(std::size_t nx, std::size_t ny, std::size_t &nread, std::size_t &nwrite, std::size_t &nflop) {
+  nread = (27*nx*ny + 8*(nx+ny)) * sizeof(T);
+  nwrite = (9*nx*ny + 3*(nx+ny)) * sizeof(T);
+  nflop = 72*nx*ny + 4*(nx+ny);
+}
+
 double exact_elev(double x, double y, double t, double lx, double ly) {
   /**
    * Exact solution for elevation field.
@@ -306,7 +314,7 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   }
 };
 
-int run(int n, bool benchmark_mode, bool fused_kernels) {
+int run(int n, bool benchmark_mode, bool fused_kernels, std::function<void()> iter_callback = [](){}) {
 
   // Arakava C grid
   //
@@ -337,9 +345,8 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   auto dist = dr::mhp::distribution().halo(halo_radius);
 
   // statistics
-  std::size_t nread = (27*nx*ny + 8*(nx+ny)) * sizeof(T);
-  std::size_t nwrite = (9*nx*ny + 3*(nx+ny)) * sizeof(T);
-  std::size_t nflop = 72*nx*ny + 4*(nx+ny);
+  std::size_t nread, nwrite, nflop;
+  calculate_complexity(nx, ny, nread, nwrite, nflop);
 
   if (comm_rank == 0) {
     std::cout << "Using backend: dr" << std::endl;
@@ -471,6 +478,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
     }
 
     // step
+    iter_callback();
     if (fused_kernels) {
       stage1(u, v, e, u1, v1, e1, g, h, dx_inv, dy_inv, dt);
       stage2(u, v, e, u1, v1, e1, u2, v2, e2, g, h, dx_inv, dy_inv, dt);
@@ -662,8 +670,17 @@ int main(int argc, char *argv[]) {
 #else
 
 static void WaveEquation_DR(benchmark::State &state) {
+
+  int n = 4000;
+  std::size_t nread, nwrite, nflop;
+  calculate_complexity(n, n, nread, nwrite, nflop);
+  Stats stats(state, nread, nwrite);
+
+  auto iter_callback = [&stats]() {
+    stats.rep();
+  };
   for (auto _ : state) {
-    run(4000, true, true);
+    run(n, true, true, iter_callback);
   }
 }
 
