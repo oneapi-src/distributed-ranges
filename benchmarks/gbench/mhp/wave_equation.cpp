@@ -31,10 +31,11 @@ constexpr double h = 1.0;
 
 // Get number of read/write bytes and flops for a single time step
 // These numbers correspond to the fused kernel version
-void calculate_complexity(std::size_t nx, std::size_t ny, std::size_t &nread, std::size_t &nwrite, std::size_t &nflop) {
-  nread = (27*nx*ny + 8*(nx+ny)) * sizeof(T);
-  nwrite = (9*nx*ny + 3*(nx+ny)) * sizeof(T);
-  nflop = 72*nx*ny + 4*(nx+ny);
+void calculate_complexity(std::size_t nx, std::size_t ny, std::size_t &nread,
+                          std::size_t &nwrite, std::size_t &nflop) {
+  nread = (27 * nx * ny + 8 * (nx + ny)) * sizeof(T);
+  nwrite = (9 * nx * ny + 3 * (nx + ny)) * sizeof(T);
+  nflop = 72 * nx * ny + 4 * (nx + ny);
 }
 
 double exact_elev(double x, double y, double t, double lx, double ly) {
@@ -314,7 +315,9 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   }
 };
 
-int run(int n, bool benchmark_mode, bool fused_kernels, std::function<void()> iter_callback = [](){}) {
+int run(
+    int n, bool benchmark_mode, bool fused_kernels,
+    std::function<void()> iter_callback = []() {}) {
 
   // Arakava C grid
   //
@@ -523,9 +526,9 @@ int run(int n, bool benchmark_mode, bool fused_kernels, std::function<void()> it
   if (comm_rank == 0) {
     double t_cpu = duration.count();
     double t_step = t_cpu / nt;
-    double read_bw = double(nread) / t_step / (1024*1024*1024);
-    double write_bw = double(nwrite) / t_step / (1024*1024*1024);
-    double flop_rate = double(nflop) / t_step / (1000*1000*1000);
+    double read_bw = double(nread) / t_step / (1024 * 1024 * 1024);
+    double write_bw = double(nwrite) / t_step / (1024 * 1024 * 1024);
+    double flop_rate = double(nflop) / t_step / (1000 * 1000 * 1000);
     std::cout << "Duration: " << std::setprecision(3) << t_cpu;
     std::cout << " s" << std::endl;
     std::cout << "Time per step: " << std::setprecision(2) << t_step * 1000;
@@ -676,9 +679,7 @@ static void WaveEquation_DR(benchmark::State &state) {
   calculate_complexity(n, n, nread, nwrite, nflop);
   Stats stats(state, nread, nwrite);
 
-  auto iter_callback = [&stats]() {
-    stats.rep();
-  };
+  auto iter_callback = [&stats]() { stats.rep(); };
   for (auto _ : state) {
     run(n, true, true, iter_callback);
   }
