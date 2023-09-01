@@ -30,5 +30,6 @@ TEST(SparseMatrix, Gemv) {
     c_ref[i] += v;
   }
 
-  EXPECT_EQ(c_ref, c_local);
+  EXPECT_TRUE(fp_equal(c_ref, c_local))
+      << fmt::format("Reference:\n  {}\nActual:\n  {}\n", c_ref, c_local);
 }
