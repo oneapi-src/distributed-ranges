@@ -16,7 +16,7 @@ TYPED_TEST(ExclusiveScan, whole_range) {
   xhp::iota(dv_in, 1);
   TypeParam dv_out(5, 0);
 
-  xhp::exclusive_scan(dv_in, dv_out, std::plus<>(), 10);
+  xhp::exclusive_scan(dv_in, dv_out, 10, std::plus<>());
   EXPECT_EQ(10, dv_out[0]);
   EXPECT_EQ(10 + 1, dv_out[1]);
   EXPECT_EQ(10 + 1 + 2, dv_out[2]);

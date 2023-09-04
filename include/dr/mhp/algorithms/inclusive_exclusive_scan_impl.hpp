@@ -32,10 +32,21 @@ void local_inclusive_scan(auto policy, auto in, auto out, auto binary_op,
   }
 }
 
+void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
+                          auto init, std::size_t seg_index) {
+  auto in_begin_direct = detail::direct_iterator(in.begin());
+  auto in_end_direct = detail::direct_iterator(in.end());
+  auto out_begin_direct = detail::direct_iterator(out.begin());
+
+  std::exclusive_scan(policy, in_begin_direct, in_end_direct, out_begin_direct,
+                      init.value(), binary_op);
+}
+
 template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
           typename BinaryOp, typename U = rng::range_value_t<R>>
-auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
-                          std::optional<U> init = {}) {
+auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
+                                    bool is_exclusive,
+                                    std::optional<U> init = {}) {
   using value_type = U;
   assert(aligned(r, d_first));
 
@@ -46,7 +57,10 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   auto global_segs =
       rng::views::zip(dr::ranges::segments(r), dr::ranges::segments(d_first));
   std::size_t num_segs = std::size_t(rng::size(dr::ranges::segments(r)));
-
+  auto input = dr::ranges::segments(r);
+  if (is_exclusive) {
+    assert(init.has_value());
+  }
   // Pass 1 local inclusive scan
   std::size_t seg_index = 0;
   for (auto global_seg : global_segs) {
@@ -55,22 +69,37 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     if (dr::ranges::rank(global_in) == rank) {
       auto local_in = dr::ranges::__detail::local(global_in);
       auto local_out = dr::ranges::__detail::local(global_out);
+      if (is_exclusive && seg_index != 0) {
+        auto input_seg = input[seg_index - 1];
+        auto input_seg_size = input_seg.size();
+        auto input_value = input_seg[input_seg_size - 1];
+        init = {input_value};
+      }
       if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
-        local_inclusive_scan(dpl_policy(), local_in, local_out, binary_op, init,
-                             seg_index);
+        if (is_exclusive) {
+          local_exclusive_scan(dpl_policy(), local_in, local_out, binary_op,
+                               init, seg_index);
+        } else {
+          local_inclusive_scan(dpl_policy(), local_in, local_out, binary_op,
+                               init, seg_index);
+        }
 #else
         assert(false);
 #endif
       } else {
-        local_inclusive_scan(std::execution::par_unseq, local_in, local_out,
-                             binary_op, init, seg_index);
+        if (is_exclusive) {
+          local_exclusive_scan(std::execution::par_unseq, local_in, local_out,
+                               binary_op, init, seg_index);
+        } else {
+          local_inclusive_scan(std::execution::par_unseq, local_in, local_out,
+                               binary_op, init, seg_index);
+        }
       }
     }
 
     seg_index++;
   }
-
   // Pass 2 put partial sums on root
   seg_index = 0;
   auto win = root_win();
@@ -137,5 +166,4 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   barrier();
   return d_first + rng::size(r);
 }
-
 } // namespace dr::mhp::__detail

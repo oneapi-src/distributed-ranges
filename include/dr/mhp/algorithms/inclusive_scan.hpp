@@ -4,6 +4,11 @@
 
 #pragma once
 
+#ifdef SYCL_LANGUAGE_VERSION
+#include <oneapi/dpl/async>
+#endif
+
+#include <dr/detail/sycl_utils.hpp>
 #include <dr/mhp/algorithms/inclusive_exclusive_scan_impl.hpp>
 
 namespace dr::mhp {
@@ -11,17 +16,17 @@ namespace dr::mhp {
 template <dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O, typename BinaryOp, typename T>
 auto inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op, T init) {
-  return __detail::inclusive_scan_impl_(
+  return __detail::inclusive_exclusive_scan_impl_(
       std::forward<R>(r), rng::begin(std::forward<O>(o)),
-      std::forward<BinaryOp>(binary_op), std::optional(init));
+      std::forward<BinaryOp>(binary_op), false, std::optional(init));
 }
 
 template <dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O, typename BinaryOp>
 auto inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op) {
-  return __detail::inclusive_scan_impl_(std::forward<R>(r),
-                                        rng::begin(std::forward<O>(o)),
-                                        std::forward<BinaryOp>(binary_op));
+  return __detail::inclusive_exclusive_scan_impl_(
+      std::forward<R>(r), rng::begin(std::forward<O>(o)),
+      std::forward<BinaryOp>(binary_op), false);
 }
 
 template <dr::distributed_contiguous_range R,
