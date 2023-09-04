@@ -28,7 +28,7 @@ Pygments==2.16.1
 PyYAML==6.0.1
 requests==2.31.0
 snowballstemmer==2.2.0
-soupsieve==2.4.1
+soupsieve==2.5
 Sphinx==6.2.1
 sphinx-book-theme==1.0.1
 sphinxcontrib-applehelp==1.0.7
