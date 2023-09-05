@@ -332,16 +332,22 @@ def suite(
                 ["mhp_sycl_gpu"],
                 weak_scaling=True,
             )
-            # Run reference benchmarkson 1 device, use shp_sycl_cpu to
+            # Run reference benchmarkson 1 device, use shp_sycl_gpu to
             # get sycl env vars
             run_rank_range(base, 1, reference_filters, ["shp_sycl_gpu"])
             run_rank_range(base, 1, mhp_reference_filters, ["mhp_sycl_gpu"])
         if p2p_gpus > 0:
             # if benchmark needs p2p run on shp on 1 gpu
-            run_rank_range(base, p2p_gpus, dr_p2p, ["shp_sycl_gpu"])
+            run_rank_range(
+                base, p2p_gpus, shp_filters + dr_p2p, ["shp_sycl_gpu"]
+            )
         if p2p_gpus > 1:
             run_rank_range(
-                base, p2p_gpus, dr_p2p, ["shp_sycl_gpu"], weak_scaling=True
+                base,
+                p2p_gpus,
+                shp_filters + dr_p2p,
+                ["shp_sycl_gpu"],
+                weak_scaling=True,
             )
 
         #
@@ -409,7 +415,10 @@ def suite(
         "^Reduce_DR",
     ]
     dr_filters = dr_nop2p + dr_p2p
-    mhp_filters = ["Stencil2D_DR"]
+    mhp_filters = ["Stencil2D_DR", "WaveEquation_DR"]
+    # too slow to run
+    # shp_filters = ["Sort_DR"]
+    shp_filters = []
     reference_filters = [
         "BlackScholes_Reference",
         "Reduce_Reference",

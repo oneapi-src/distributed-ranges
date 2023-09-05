@@ -409,6 +409,10 @@ DR_BENCHMARK(Stencil2D_DR);
 
 #endif //__GNUC__ == 10 && __GNUC_MINOR__ == 4
 
+auto round_up(auto n, auto multiple) {
+  return (n + multiple - 1) / multiple * multiple;
+}
+
 //
 // Single process SYCL baseline
 //
@@ -421,6 +425,10 @@ static void Stencil2D_Reference(benchmark::State &state) {
   if (rows == 0) {
     return;
   }
+  sycl::range local(16, 16);
+  sycl::nd_range nd_range(
+      sycl::range(round_up(rows - 2, local[0]), round_up(cols - 2, local[1])),
+      local);
 
   sycl::queue q = dr::mhp::sycl_queue();
 
@@ -435,10 +443,14 @@ static void Stencil2D_Reference(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
       stats.rep();
-      auto op = [=](auto it) {
-        stencil_1darray_op(in, out, cols, it[0] + 1, it[1] + 1);
+      auto op = [=](auto nd_idx) {
+        std::size_t i = nd_idx.get_global_id(0) + 1;
+        std::size_t j = nd_idx.get_global_id(1) + 1;
+        if (i < rows - 1 && j < cols - 1) {
+          stencil_1darray_op(in, out, cols, i, j);
+        }
       };
-      q.parallel_for(sycl::range(rows - 2, cols - 2), op).wait();
+      q.parallel_for(nd_range, op).wait();
       std::swap(in, out);
     }
     checker.check_device(q, in);

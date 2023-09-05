@@ -17,7 +17,7 @@ find_package(MPI REQUIRED)
 find_package(MKL REQUIRED)
 find_package(TBB REQUIRED)
 target_link_libraries(dr_mpi INTERFACE MPI::MPI_CXX range-v3 std::mdspan
-                                       MKL::MKL TBB::tbb)
+                                       TBB::tbb)
 
 # gcc 10 uses TBB API that were removed
 target_compile_definitions(dr_mpi INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
@@ -37,8 +37,9 @@ add_library(dr_shp INTERFACE)
 add_library(DR::shp ALIAS dr_shp)
 
 target_include_directories(dr_shp INTERFACE . vendor)
-target_compile_definitions(dr_shp INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
-target_link_libraries(dr_shp INTERFACE range-v3 oneDPL fmt::fmt)
+target_compile_definitions(dr_shp INTERFACE USE_MKL
+                                            _GLIBCXX_USE_TBB_PAR_BACKEND=0)
+target_link_libraries(dr_shp INTERFACE range-v3 oneDPL fmt::fmt MKL::MKL_DPCPP)
 
 # For use, see:
 # https://github.com/illuhad/hipSYCL/blob/develop/doc/using-hipsycl.md#using-the-cmake-integration

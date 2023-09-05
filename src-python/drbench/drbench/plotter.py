@@ -57,12 +57,15 @@ class Plotter:
             )
             for b in benchs:
                 bname = b["name"].partition("/")[0]
-                bname, btarget = Plotter.__name_target(bname, target, device)
+                benchmark, btarget = Plotter.__name_target(
+                    bname, target, device
+                )
                 rtime = b["real_time"]
-                bw = b["bytes_per_second"]
+                bw = b["bytes_per_second"] if "bytes_per_second" in b else 1
                 rows.append(
                     {
-                        "Benchmark": bname,
+                        "bench_name": bname,
+                        "Benchmark": benchmark,
                         "Target": btarget,
                         "Ranks": ranks,
                         "Scaling": "weak" if weak_scaling else "strong",
@@ -230,9 +233,11 @@ class Plotter:
         y_title = bi["y_title"]
 
         db = self.db.copy()
-        db = db.loc[db["Benchmark"] == benchmark]
-        db = db.loc[db["Scaling"] == scaling]
-        db = db.loc[db["device"] == device]
+        db = db.loc[
+            (db["Benchmark"] == benchmark)
+            & (db["Scaling"] == scaling)
+            & (db["device"] == device)
+        ]
         db = db.sort_values(by=["Benchmark", "Target", x_title])
 
         targets = self.__find_targets(db, device)
@@ -259,16 +264,22 @@ class Plotter:
             fname,
         )
 
-    def __speedup_plot(self, benchmark, device):
+    def __speedup_plot(
+        self, benchmark, device, benchmark_name=None, reference_name=None
+    ):
         fname = f"{self.prefix}-{benchmark}-{device}"
         click.echo(f"writing {fname}")
+
+        if not benchmark_name:
+            benchmark_name = f"{benchmark}_DR"
+        if not reference_name:
+            reference_name = f"{benchmark}_Reference"
 
         x_title = self.device_info[device]["x_title"]
         y_title = self.speedup_title
 
         db = self.db.copy()
-        db = db.loc[db["Benchmark"] == benchmark]
-        db = db.loc[db["device"] == device]
+        db = db.loc[(db["Benchmark"] == benchmark) & (db["device"] == device)]
         db = db.sort_values(by=["Benchmark", "Target", x_title])
 
         targets = self.__find_targets(db, device)
@@ -280,10 +291,11 @@ class Plotter:
         x_domain = self.__x_domain(db, targets[0], x_title)
         db.to_csv(f"{fname}.csv")
 
-        reference = self.db.copy()
-        reference = reference.loc[reference["Target"] == f"Reference_{device}"]
-        reference = reference.loc[reference["Benchmark"] == benchmark]
-        reference = reference.loc[reference["Ranks"] == 1]
+        reference = db.loc[
+            (db["device"] == device)
+            & (db["bench_name"] == reference_name)
+            & (db["Ranks"] == 1)
+        ]
         if reference.shape[0] == 0:
             click.echo(f"  no reference data for {benchmark} {device}")
             return
@@ -292,10 +304,15 @@ class Plotter:
         lines = []
         for scaling in ["weak", "strong"]:
             for target in targets:
-                p = db.loc[db["Target"] == target]
-                p = p.loc[db["Scaling"] == scaling]
+                p = db.loc[
+                    (db["bench_name"] == benchmark_name)
+                    & (db["Target"] == target)
+                    & (db["Scaling"] == scaling)
+                ]
                 if p.shape[0] == 0:
-                    click.echo(f"  no data for {target} {scaling}")
+                    click.echo(
+                        f"  no data for {benchmark_name} {target} {scaling}"
+                    )
                     continue
 
                 total_time = p["rtime"].values / (
@@ -335,3 +352,6 @@ class Plotter:
                 "Stencil2D",
             ]:
                 self.__speedup_plot(bench, device)
+            self.__speedup_plot(
+                "WaveEquation", device, reference_name="WaveEquation_DR"
+            )

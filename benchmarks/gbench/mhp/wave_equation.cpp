@@ -8,18 +8,35 @@
 #include <chrono>
 #include <iomanip>
 
-using T = double;
-
-using Array = dr::mhp::distributed_mdarray<T, 2>;
+#ifdef STANDALONE_BENCHMARK
 
 MPI_Comm comm;
 int comm_rank;
 int comm_size;
 
+#else
+
+#include "../common/dr_bench.hpp"
+
+#endif
+
+using T = double;
+
+using Array = dr::mhp::distributed_mdarray<T, 2>;
+
 // gravitational acceleration
 constexpr double g = 9.81;
 // water depth
 constexpr double h = 1.0;
+
+// Get number of read/write bytes and flops for a single time step
+// These numbers correspond to the fused kernel version
+void calculate_complexity(std::size_t nx, std::size_t ny, std::size_t &nread,
+                          std::size_t &nwrite, std::size_t &nflop) {
+  nread = (27 * nx * ny + 8 * (nx + ny)) * sizeof(T);
+  nwrite = (9 * nx * ny + 3 * (nx + ny)) * sizeof(T);
+  nflop = 72 * nx * ny + 4 * (nx + ny);
+}
 
 double exact_elev(double x, double y, double t, double lx, double ly) {
   /**
@@ -298,7 +315,9 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   }
 };
 
-int run(int n, bool benchmark_mode, bool fused_kernels) {
+int run(
+    int n, bool benchmark_mode, bool fused_kernels,
+    std::function<void()> iter_callback = []() {}) {
 
   // Arakava C grid
   //
@@ -327,6 +346,10 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   const double dy_inv = 1.0 / dy;
   std::size_t halo_radius = 1;
   auto dist = dr::mhp::distribution().halo(halo_radius);
+
+  // statistics
+  std::size_t nread, nwrite, nflop;
+  calculate_complexity(nx, ny, nread, nwrite, nflop);
 
   if (comm_rank == 0) {
     std::cout << "Using backend: dr" << std::endl;
@@ -389,11 +412,22 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   Array dvdt({nx + 1, ny + 1}, dist);
 
   // initial condition for elevation
-  for (std::size_t i = 1; i < e.mdspan().extent(0); i++) {
-    for (std::size_t j = 0; j < e.mdspan().extent(1); j++) {
-      T x = xmin + dx / 2 + (i - 1) * dx;
-      T y = ymin + dy / 2 + j * dy;
-      e.mdspan()(i, j) = initial_elev(x, y, lx, ly);
+  for (auto segment : dr::ranges::segments(e)) {
+    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
+      auto origin = segment.origin();
+      auto e = segment.mdspan();
+
+      for (std::size_t i = 0; i < e.extent(0); i++) {
+        std::size_t global_i = i + origin[0];
+        if (global_i > 0) {
+          for (std::size_t j = 0; j < e.extent(1); j++) {
+            std::size_t global_j = j + origin[1];
+            T x = xmin + dx / 2 + (global_i - 1) * dx;
+            T y = ymin + dy / 2 + global_j * dy;
+            e(i, j) = initial_elev(x, y, lx, ly);
+          }
+        }
+      }
     }
   }
   dr::mhp::halo(e).exchange();
@@ -412,7 +446,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   std::size_t i_export = 0;
   double next_t_export = 0.0;
   double t = 0.0;
-  double initial_v;
+  double initial_v = 0.0;
   auto tic = std::chrono::steady_clock::now();
   for (std::size_t i = 0; i < nt + 1; i++) {
     t = i * dt;
@@ -447,6 +481,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
     }
 
     // step
+    iter_callback();
     if (fused_kernels) {
       stage1(u, v, e, u1, v1, e1, g, h, dx_inv, dy_inv, dt);
       stage2(u, v, e, u1, v1, e1, u2, v2, e2, g, h, dx_inv, dy_inv, dt);
@@ -489,19 +524,44 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
   auto toc = std::chrono::steady_clock::now();
   std::chrono::duration<double> duration = toc - tic;
   if (comm_rank == 0) {
-    std::cout << "Duration: " << std::setprecision(2) << duration.count();
+    double t_cpu = duration.count();
+    double t_step = t_cpu / nt;
+    double read_bw = double(nread) / t_step / (1024 * 1024 * 1024);
+    double write_bw = double(nwrite) / t_step / (1024 * 1024 * 1024);
+    double flop_rate = double(nflop) / t_step / (1000 * 1000 * 1000);
+    std::cout << "Duration: " << std::setprecision(3) << t_cpu;
     std::cout << " s" << std::endl;
+    std::cout << "Time per step: " << std::setprecision(2) << t_step * 1000;
+    std::cout << " ms" << std::endl;
+    std::cout << "Reads : " << std::setprecision(3) << read_bw;
+    std::cout << " GB/s" << std::endl;
+    std::cout << "Writes: " << std::setprecision(3) << write_bw;
+    std::cout << " GB/s" << std::endl;
+    std::cout << "FLOP/s: " << std::setprecision(3) << flop_rate;
+    std::cout << " GFLOP/s" << std::endl;
   }
 
   // Compute error against exact solution
   Array e_exact({nx + 1, ny}, dist);
   dr::mhp::fill(e_exact, 0.0);
   Array error({nx + 1, ny}, dist);
-  for (std::size_t i = 1; i < e_exact.mdspan().extent(0); i++) {
-    for (std::size_t j = 0; j < e_exact.mdspan().extent(1); j++) {
-      T x = xmin + dx / 2 + (i - 1) * dx;
-      T y = ymin + dy / 2 + j * dy;
-      e_exact.mdspan()(i, j) = exact_elev(x, y, t, lx, ly);
+  // initial condition for elevation
+  for (auto segment : dr::ranges::segments(e_exact)) {
+    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
+      auto origin = segment.origin();
+      auto e = segment.mdspan();
+
+      for (std::size_t i = 0; i < e.extent(0); i++) {
+        std::size_t global_i = i + origin[0];
+        if (global_i > 0) {
+          for (std::size_t j = 0; j < e.extent(1); j++) {
+            std::size_t global_j = j + origin[1];
+            T x = xmin + dx / 2 + (global_i - 1) * dx;
+            T y = ymin + dy / 2 + global_j * dy;
+            e(i, j) = exact_elev(x, y, t, lx, ly);
+          }
+        }
+      }
     }
   }
   dr::mhp::halo(e_exact).exchange();
@@ -531,7 +591,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
     double expected_L2 = 0.007224068445111;
     double rel_tolerance = 1e-6;
     double rel_err = err_L2 / expected_L2 - 1.0;
-    if (fabs(rel_err) > rel_tolerance) {
+    if (!(fabs(rel_err) < rel_tolerance)) {
       if (comm_rank == 0) {
         std::cout << "ERROR: L2 error deviates from reference value: "
                   << expected_L2 << ", relative error: " << rel_err
@@ -541,7 +601,7 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
     }
   } else {
     double tolerance = 1e-2;
-    if (err_L2 > tolerance) {
+    if (!(err_L2 < tolerance)) {
       if (comm_rank == 0) {
         std::cout << "ERROR: L2 error exceeds tolerance: " << err_L2 << " > "
                   << tolerance << std::endl;
@@ -555,6 +615,8 @@ int run(int n, bool benchmark_mode, bool fused_kernels) {
 
   return 0;
 }
+
+#ifdef STANDALONE_BENCHMARK
 
 int main(int argc, char *argv[]) {
 
@@ -607,3 +669,22 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
   return error;
 }
+
+#else
+
+static void WaveEquation_DR(benchmark::State &state) {
+
+  int n = 4000;
+  std::size_t nread, nwrite, nflop;
+  calculate_complexity(n, n, nread, nwrite, nflop);
+  Stats stats(state, nread, nwrite, nflop);
+
+  auto iter_callback = [&stats]() { stats.rep(); };
+  for (auto _ : state) {
+    run(n, true, true, iter_callback);
+  }
+}
+
+DR_BENCHMARK(WaveEquation_DR);
+
+#endif
