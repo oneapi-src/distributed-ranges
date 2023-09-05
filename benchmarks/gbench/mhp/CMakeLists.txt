@@ -12,6 +12,7 @@ add_executable(
   ../common/dot_product.cpp
   ../common/inclusive_scan.cpp
   ../common/stream.cpp
+  ../common/sort.cpp
   rooted.cpp
   stencil_1d.cpp
   stencil_2d.cpp

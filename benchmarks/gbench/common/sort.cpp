@@ -13,12 +13,12 @@ template <rng::forward_range X> void fill_random(X &&x) {
 }
 
 static void Sort_DR(benchmark::State &state) {
-  dr::shp::distributed_vector<T> a(default_vector_size);
+  xhp::distributed_vector<T> a(default_vector_size);
   fill_random(a);
   Stats stats(state, sizeof(T) * a.size());
   for (auto _ : state) {
     stats.rep();
-    dr::shp::sort(a);
+    xhp::sort(a);
   }
 }
 
