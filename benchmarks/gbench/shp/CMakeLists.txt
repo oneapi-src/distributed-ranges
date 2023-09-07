@@ -4,15 +4,23 @@
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+if(ENABLE_CUDA)
+  # because sort.cpp compilation fails with
+  # dpl/pstl/hetero/dpcpp/parallel_backend_sycl_radix_sort_one_wg.h warning:
+  # attribute argument 16 is invalid and will be ignored; CUDA requires
+  # sub_group size 32
+  add_compile_options(-Wno-error=cuda-compat)
+endif()
+
 # cmake-format: off
 add_executable(
   shp-bench
   shp-bench.cpp
   gemm.cpp
-  ../common/sort.cpp
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
   ../common/inclusive_scan.cpp
+  ../common/sort.cpp
   ../common/stream.cpp)
 # cmake-format: on
 

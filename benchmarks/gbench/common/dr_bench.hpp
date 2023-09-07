@@ -36,13 +36,23 @@ extern bool weak_scaling;
 #define DR_BENCHMARK_BASE(x)                                                   \
   BENCHMARK(x)->UseRealTime()->Unit(benchmark::kMillisecond)
 
-#ifdef SYCL_LANGUAGE_VERSION
+#define DR_BENCHMARK_REGISTER_F(fixture, case)                                 \
+  BENCHMARK_REGISTER_F(fixture, case)                                          \
+      ->UseRealTime()                                                          \
+      ->Unit(benchmark::kMillisecond)                                          \
+      ->MinWarmUpTime(.1)                                                      \
+      ->MinTime(.1)
 
+#ifdef SYCL_LANGUAGE_VERSION
 inline auto device_info(sycl::device device) {
   return fmt::format("{}, max_compute_units: {}",
                      device.get_info<sycl::info::device::name>(),
                      device.get_info<sycl::info::device::max_compute_units>());
 }
+#endif
+
+#ifdef BENCH_MHP
+#ifdef SYCL_LANGUAGE_VERSION
 
 inline sycl::queue get_queue() {
   std::vector<sycl::device> devices;
@@ -76,8 +86,6 @@ inline sycl::queue get_queue() {
 
 #endif
 
-#ifdef BENCH_MHP
-
 #include "dr/mhp.hpp"
 
 namespace xhp = dr::mhp;
@@ -94,6 +102,8 @@ extern bool check_results;
 #include "dr/shp.hpp"
 
 namespace xhp = dr::shp;
+
+inline sycl::queue &get_queue() { return dr::shp::__detail::default_queue(); }
 
 #endif
 
