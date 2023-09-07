@@ -43,9 +43,11 @@ BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
 
 DR_BENCHMARK_REGISTER_F(DRSortFixture, Sort_DR);
 
+#ifdef SYCL_LANGUAGE_VERSION
 class SyclSortFixture : public benchmark::Fixture {
 protected:
   std::vector<T> local_vec;
+
   sycl::queue queue;
   oneapi::dpl::execution::device_policy<> policy;
   T *vec;
@@ -109,6 +111,7 @@ BENCHMARK_DEFINE_F(SyclSortFixture, Sort_DPL)(benchmark::State &state) {
 }
 
 DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_DPL);
+#endif
 
 class StdSortFixture : public benchmark::Fixture {
 protected:
