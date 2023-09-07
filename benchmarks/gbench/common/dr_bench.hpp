@@ -54,13 +54,18 @@ inline auto device_info(sycl::device device) {
 #ifdef BENCH_MHP
 #ifdef SYCL_LANGUAGE_VERSION
 
+inline sycl::context *mhp_global_context_ = nullptr;
+inline std::vector<sycl::device> devices;
+
 inline sycl::queue get_queue() {
-  std::vector<sycl::device> devices;
+  if (mhp_global_context_ != nullptr) {
+    return sycl::queue(*mhp_global_context_, devices[0]);
+  }
 
   auto root_devices = sycl::platform().get_devices();
 
-  for (auto &&root_device : root_devices) {
-    dr::drlog.debug("Root device: {}\n",
+  for (auto &&[idx, root_device] : rng::views::enumerate(root_devices)) {
+    dr::drlog.debug("Root device no {}: {}\n", idx,
                     root_device.get_info<sycl::info::device::name>());
     if (dr::__detail::partitionable(root_device)) {
       auto subdevices = root_device.create_sub_devices<
@@ -81,7 +86,9 @@ inline sycl::queue get_queue() {
   }
 
   assert(rng::size(devices) > 0);
-  return sycl::queue(devices[0]);
+
+  mhp_global_context_ = new sycl::context(devices);
+  return sycl::queue(*mhp_global_context_, devices[0]);
 }
 
 #endif
