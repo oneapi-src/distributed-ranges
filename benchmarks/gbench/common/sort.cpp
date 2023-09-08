@@ -12,70 +12,135 @@ template <rng::forward_range X> void fill_random(X &&x) {
   }
 }
 
-static void Sort_DR(benchmark::State &state) {
-  xhp::distributed_vector<T> a(default_vector_size);
-  fill_random(a);
-  Stats stats(state, sizeof(T) * a.size());
+class DRSortFixture : public benchmark::Fixture {
+protected:
+  xhp::distributed_vector<T> *a;
+
+public:
+  void SetUp(::benchmark::State &) {
+    a = new xhp::distributed_vector<T>(default_vector_size);
+    fill_random(*a);
+  }
+
+  void TearDown(::benchmark::State &) { delete a; }
+};
+
+BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
+  Stats stats(state, sizeof(T) * a->size());
   for (auto _ : state) {
+    state.PauseTiming();
+    xhp::distributed_vector<T> vec(a->size());
+    xhp::copy(*a, rng::begin(vec));
     stats.rep();
-    xhp::sort(a);
+    state.ResumeTiming();
+
+    // sort not implemented in mhp yet
+#ifdef BENCH_SHP
+    xhp::sort(vec);
+#endif
   }
 }
 
-DR_BENCHMARK(Sort_DR);
+DR_BENCHMARK_REGISTER_F(DRSortFixture, Sort_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Sort_EXP(benchmark::State &state) {
-  auto q = get_queue();
-  auto policy = oneapi::dpl::execution::make_device_policy(q);
-  std::vector<T> a_local(default_vector_size);
-  fill_random(a_local);
-  auto a = sycl::malloc_device<T>(default_vector_size, q);
-  q.memcpy(a, a_local.data(), default_vector_size * sizeof(T)).wait();
+class SyclSortFixture : public benchmark::Fixture {
+protected:
+  std::vector<T> local_vec;
+
+  sycl::queue queue;
+  oneapi::dpl::execution::device_policy<> policy;
+  T *vec;
+
+public:
+  void SetUp(::benchmark::State &) {
+    dr::drlog.debug("setting up SyclSortFixture\n");
+    // when using mhp's get_queue() long execution is observed in this test
+    // (probably due to JIT), now mhp and shp use their own get_queue-s
+    queue = get_queue();
+    policy = oneapi::dpl::execution::make_device_policy(queue);
+    local_vec = std::vector<T>(default_vector_size);
+    fill_random(local_vec);
+    vec = sycl::malloc_device<T>(default_vector_size, queue);
+  }
+
+  void TearDown(::benchmark::State &state) {
+    dr::drlog.debug("tearing down SyclSortFixture\n");
+    // copy back to check if last sort really sorted
+    queue.memcpy(local_vec.data(), vec, default_vector_size * sizeof(T)).wait();
+    sycl::free(vec, queue);
+
+    if (!rng::is_sorted(local_vec)) {
+      state.SkipWithError("sycl sort did not sort the vector");
+    }
+  }
+};
+
+BENCHMARK_DEFINE_F(SyclSortFixture, Sort_EXP)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * default_vector_size);
 
   for (auto _ : state) {
+
+    state.PauseTiming();
+    queue.memcpy(vec, local_vec.data(), default_vector_size * sizeof(T)).wait();
     stats.rep();
-    std::sort(policy, a, a + default_vector_size);
+    state.ResumeTiming();
+
+    std::sort(policy, vec, vec + default_vector_size);
   }
-  sycl::free(a, q);
 }
 
-DR_BENCHMARK(Sort_EXP);
+DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_EXP);
 
-static void Sort_DPL(benchmark::State &state) {
-  auto q = get_queue();
-  auto policy = oneapi::dpl::execution::make_device_policy(q);
-  std::vector<T> a_local(default_vector_size);
-  fill_random(a_local);
-  auto a = sycl::malloc_device<T>(default_vector_size, q);
-  q.memcpy(a, a_local.data(), default_vector_size * sizeof(T)).wait();
-  std::span<T> d_a(a, default_vector_size);
-  dr::__detail::direct_iterator d_first(d_a.begin());
-  dr::__detail::direct_iterator d_last(d_a.end());
+BENCHMARK_DEFINE_F(SyclSortFixture, Sort_DPL)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * default_vector_size);
 
   for (auto _ : state) {
+    state.PauseTiming();
+    queue.memcpy(vec, local_vec.data(), default_vector_size * sizeof(T)).wait();
     stats.rep();
+    state.ResumeTiming();
+
+    std::span<T> d_a(vec, default_vector_size);
+    dr::__detail::direct_iterator d_first(d_a.begin());
+    dr::__detail::direct_iterator d_last(d_a.end());
     oneapi::dpl::experimental::sort_async(policy, d_first, d_last,
                                           std::less<>{})
         .wait();
   }
-  sycl::free(a, q);
 }
 
-DR_BENCHMARK(Sort_DPL);
+DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_DPL);
 #endif
 
-static void Sort_Std(benchmark::State &state) {
-  std::vector<T> a(default_vector_size);
-  fill_random(a);
+class StdSortFixture : public benchmark::Fixture {
+protected:
+  std::vector<T> vec_orig;
+  std::vector<T> vec;
+
+public:
+  void SetUp(::benchmark::State &) {
+    vec_orig = std::vector<T>(default_vector_size);
+    fill_random(vec_orig);
+  }
+
+  void TearDown(::benchmark::State &state) {
+    if (!rng::is_sorted(vec)) {
+      state.SkipWithError("std sort did not sort the vector");
+    }
+  }
+};
+
+BENCHMARK_DEFINE_F(StdSortFixture, Sort_Std)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * default_vector_size);
 
   for (auto _ : state) {
+    state.PauseTiming();
+    vec = vec_orig;
     stats.rep();
-    std::sort(a.begin(), a.end());
+    state.ResumeTiming();
+    std::sort(vec.begin(), vec.end());
   }
 }
 
-DR_BENCHMARK(Sort_Std);
+DR_BENCHMARK_REGISTER_F(StdSortFixture, Sort_Std);

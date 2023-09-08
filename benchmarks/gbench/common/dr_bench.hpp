@@ -36,21 +36,36 @@ extern bool weak_scaling;
 #define DR_BENCHMARK_BASE(x)                                                   \
   BENCHMARK(x)->UseRealTime()->Unit(benchmark::kMillisecond)
 
-#ifdef SYCL_LANGUAGE_VERSION
+#define DR_BENCHMARK_REGISTER_F(fixture, case)                                 \
+  BENCHMARK_REGISTER_F(fixture, case)                                          \
+      ->UseRealTime()                                                          \
+      ->Unit(benchmark::kMillisecond)                                          \
+      ->MinWarmUpTime(.1)                                                      \
+      ->MinTime(.1)
 
+#ifdef SYCL_LANGUAGE_VERSION
 inline auto device_info(sycl::device device) {
   return fmt::format("{}, max_compute_units: {}",
                      device.get_info<sycl::info::device::name>(),
                      device.get_info<sycl::info::device::max_compute_units>());
 }
+#endif
+
+#ifdef BENCH_MHP
+#ifdef SYCL_LANGUAGE_VERSION
+
+inline sycl::context *mhp_global_context_ = nullptr;
+inline std::vector<sycl::device> devices;
 
 inline sycl::queue get_queue() {
-  std::vector<sycl::device> devices;
+  if (mhp_global_context_ != nullptr) {
+    return sycl::queue(*mhp_global_context_, devices[0]);
+  }
 
   auto root_devices = sycl::platform().get_devices();
 
-  for (auto &&root_device : root_devices) {
-    dr::drlog.debug("Root device: {}\n",
+  for (auto &&[idx, root_device] : rng::views::enumerate(root_devices)) {
+    dr::drlog.debug("Root device no {}: {}\n", idx,
                     root_device.get_info<sycl::info::device::name>());
     if (dr::__detail::partitionable(root_device)) {
       auto subdevices = root_device.create_sub_devices<
@@ -71,12 +86,12 @@ inline sycl::queue get_queue() {
   }
 
   assert(rng::size(devices) > 0);
-  return sycl::queue(devices[0]);
+
+  mhp_global_context_ = new sycl::context(devices);
+  return sycl::queue(*mhp_global_context_, devices[0]);
 }
 
 #endif
-
-#ifdef BENCH_MHP
 
 #include "dr/mhp.hpp"
 
@@ -94,6 +109,8 @@ extern bool check_results;
 #include "dr/shp.hpp"
 
 namespace xhp = dr::shp;
+
+inline sycl::queue &get_queue() { return dr::shp::__detail::default_queue(); }
 
 #endif
 

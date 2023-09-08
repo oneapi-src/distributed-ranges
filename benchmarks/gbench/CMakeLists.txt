@@ -14,6 +14,14 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     GIT_TAG v1.8.0)
   FetchContent_MakeAvailable(googlebench)
 
+  if(ENABLE_CUDA)
+    # because sort.cpp compilation fails with
+    # dpl/pstl/hetero/dpcpp/parallel_backend_sycl_radix_sort_one_wg.h warning:
+    # attribute argument 16 is invalid and will be ignored; CUDA requires
+    # sub_group size 32
+    add_compile_options(-Wno-error=cuda-compat)
+  endif()
+
   # mhp is not under ENABLE_SYCL to check bechmarks also compilation in gcc
   add_subdirectory(mhp)
 
