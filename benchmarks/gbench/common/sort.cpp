@@ -14,11 +14,11 @@ template <rng::forward_range X> void fill_random(X &&x) {
 
 class DRSortFixture : public benchmark::Fixture {
 protected:
-  dr::shp::distributed_vector<T> *a;
+  xhp::distributed_vector<T> *a;
 
 public:
   void SetUp(::benchmark::State &) {
-    a = new dr::shp::distributed_vector<T>(default_vector_size);
+    a = new xhp::distributed_vector<T>(default_vector_size);
     fill_random(*a);
   }
 
@@ -29,27 +29,34 @@ BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * a->size());
   for (auto _ : state) {
     state.PauseTiming();
-    dr::shp::distributed_vector<T> vec{*a};
+    xhp::distributed_vector<T> vec(a->size());
+    xhp::copy(*a, rng::begin(vec));
     stats.rep();
     state.ResumeTiming();
 
-    dr::shp::sort(vec);
+    // sort not implemented in mhp yet
+#ifdef BENCH_SHP
+    xhp::sort(vec);
+#endif
   }
 }
 
 DR_BENCHMARK_REGISTER_F(DRSortFixture, Sort_DR);
 
+#ifdef SYCL_LANGUAGE_VERSION
 class SyclSortFixture : public benchmark::Fixture {
 protected:
   std::vector<T> local_vec;
+
   sycl::queue queue;
   oneapi::dpl::execution::device_policy<> policy;
   T *vec;
 
 public:
   void SetUp(::benchmark::State &) {
+    dr::drlog.debug("setting up SyclSortFixture\n");
     // when using mhp's get_queue() long execution is observed in this test
-    // (probably due to JIT), now shp and shp use their own get_queue-s
+    // (probably due to JIT), now mhp and shp use their own get_queue-s
     queue = get_queue();
     policy = oneapi::dpl::execution::make_device_policy(queue);
     local_vec = std::vector<T>(default_vector_size);
@@ -58,6 +65,7 @@ public:
   }
 
   void TearDown(::benchmark::State &state) {
+    dr::drlog.debug("tearing down SyclSortFixture\n");
     // copy back to check if last sort really sorted
     queue.memcpy(local_vec.data(), vec, default_vector_size * sizeof(T)).wait();
     sycl::free(vec, queue);
@@ -103,6 +111,7 @@ BENCHMARK_DEFINE_F(SyclSortFixture, Sort_DPL)(benchmark::State &state) {
 }
 
 DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_DPL);
+#endif
 
 class StdSortFixture : public benchmark::Fixture {
 protected:
