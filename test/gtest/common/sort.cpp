@@ -3,11 +3,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "xhp-tests.hpp"
-#include <dr/detail/communicator.hpp>
-#include <dr/mhp/algorithms/sort.hpp>
 
 using T = int;
-using DV = dr::mhp::distributed_vector<T, dr::mhp::default_allocator<T>>;
+using DV = xhp::distributed_vector<T>;
 using LV = std::vector<T>;
 
 void test_sort(LV &v, auto func) {
@@ -20,7 +18,7 @@ void test_sort(LV &v, auto func) {
   barrier();
 
   std::sort(v.begin(), v.end(), func);
-  dr::mhp::sort(d_v, func);
+  xhp::sort(d_v, func);
 
   barrier();
   EXPECT_TRUE(equal(v, d_v));
@@ -36,7 +34,7 @@ void test_sort_randomvec(std::size_t size, std::size_t bound = 100) {
   test_sort2s(l_v);
 }
 
-TEST(MhpSort, Random) {
+TEST(Sort, Random) {
   test_sort_randomvec(1);
   test_sort_randomvec(comm_size - 1);
   test_sort_randomvec((comm_size - 1) * (comm_size - 1));
@@ -44,9 +42,9 @@ TEST(MhpSort, Random) {
   test_sort_randomvec(123);
 }
 
-TEST(MhpSort, BigRandom) { test_sort_randomvec(1234567, 65535); }
+TEST(Sort, BigRandom) { test_sort_randomvec(1234567, 65535); }
 
-TEST(MhpSort, NonRandom) {
+TEST(Sort, NonRandom) {
   LV v;
   v = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
   test_sort2s(v);
@@ -67,7 +65,7 @@ TEST(MhpSort, NonRandom) {
   test_sort2s(v);
 }
 
-TEST(MhpSort, LongSorted) {
+TEST(Sort, LongSorted) {
   LV v(100000);
   rng::iota(v, 1);
   test_sort2s(v);

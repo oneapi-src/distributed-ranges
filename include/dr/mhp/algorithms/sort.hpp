@@ -210,10 +210,10 @@ void dist_sort(R &r, Compare &&comp) {
                            -shift_right, default_comm().next(), t, &req_r);
     }
 
-      if (shift_left != 0)
-        MPI_Wait(&req_l, &stat_l);
-      if (shift_right != 0)
-        MPI_Wait(&req_r, &stat_r);
+    if (shift_left != 0)
+      MPI_Wait(&req_l, &stat_l);
+    if (shift_right != 0)
+      MPI_Wait(&req_r, &stat_r);
   }
 
   std::size_t invalidate_left = (shift_left < 0) ? -shift_left : 0;
