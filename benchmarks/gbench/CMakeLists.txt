@@ -28,13 +28,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(ENABLE_SYCL)
     add_subdirectory(shp)
 
+    add_custom_target(xhp-bench DEPENDS mhp-bench shp-bench)
+
     add_custom_target(devcloud-bench DEPENDS devcloud-bench-results)
     add_custom_command(
       OUTPUT devcloud-bench-results
       COMMAND dr-bench clean
       COMMAND dr-bench suite --no-p2p --gpus 4 --sockets 2 --cores-per-socket 56
       COMMAND dr-bench plot
-      DEPENDS mhp-bench shp-bench)
+      DEPENDS xhp-bench)
 
     add_custom_target(aurora-bench DEPENDS aurora-bench-results)
     add_custom_command(
@@ -42,7 +44,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       COMMAND dr-bench clean
       COMMAND dr-bench suite --gpus 12
       COMMAND dr-bench plot
-      DEPENDS mhp-bench shp-bench)
+      DEPENDS xhp-bench)
 
     add_custom_target(aurora-bench-2 DEPENDS aurora-bench-2-results)
     add_custom_command(
@@ -50,7 +52,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       COMMAND dr-bench clean --prefix aurora-2
       COMMAND dr-bench suite --prefix aurora-2 --nodes 2 --gpus 12
       COMMAND dr-bench plot --prefix aurora-2
-      DEPENDS mhp-bench shp-bench)
+      DEPENDS xhp-bench)
 
     add_custom_target(aurora-bench-4 DEPENDS aurora-bench-4-results)
     add_custom_command(
@@ -58,7 +60,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       COMMAND dr-bench clean --prefix aurora-4
       COMMAND dr-bench suite --prefix aurora-4 --nodes 4 --gpus 12
       COMMAND dr-bench plot --prefix aurora-4
-      DEPENDS mhp-bench shp-bench)
+      DEPENDS xhp-bench)
 
     add_custom_target(quick-bench-gpu DEPENDS quick-bench-gpu-results)
     add_custom_command(
@@ -66,7 +68,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       COMMAND dr-bench clean
       COMMAND dr-bench suite --reps 10 --gpus 2
       COMMAND dr-bench plot
-      DEPENDS mhp-bench shp-bench)
+      DEPENDS xhp-bench)
 
     add_custom_target(quick-bench-cpu DEPENDS quick-bench-cpu-results)
     add_custom_command(
@@ -74,7 +76,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       COMMAND dr-bench clean
       COMMAND dr-bench suite --reps 10 --cores-per-socket 4
       COMMAND dr-bench plot
-      DEPENDS mhp-bench shp-bench)
+      DEPENDS xhp-bench)
 
   endif()
 endif()

@@ -16,6 +16,19 @@ class Plotter:
     tbs_title = "Bandwidth (TB/s)"
     gbs_title = "Bandwidth (GB/s)"
     speedup_title = "Speedup"
+    gpus_num_title = "Number of GPU Tiles"
+    sockets_num_title = "Number of CPU Sockets"
+
+    device_info = {
+        "GPU": {
+            "x_title": gpus_num_title,
+            "targets": ["MHP_SYCL_GPU", "SHP_SYCL_GPU"],
+        },
+        "CPU": {
+            "x_title": sockets_num_title,
+            "targets": ["MHP_SYCL_CPU", "MHP_DIRECT_CPU"],
+        },
+    }
 
     @staticmethod
     def __name_target(bname, target, device):
@@ -78,9 +91,9 @@ class Plotter:
                         "runtime": runtime,
                         "device": device,
                         "vsize": vsize,
-                        "Number of GPU Tiles": ranks,
+                        Plotter.gpus_num_title: ranks,
                         "Number of CPU Cores": cpu_cores,
-                        "Number of CPU Sockets": cpu_sockets,
+                        Plotter.sockets_num_title: cpu_sockets,
                         "rtime": rtime,
                     }
                 )
@@ -195,18 +208,8 @@ class Plotter:
         "Stream_Triad": stream_info,
     }
 
-    device_info = {
-        "GPU": {
-            "x_title": "Number of GPU Tiles",
-            "targets": ["MHP_SYCL_GPU", "SHP_SYCL_GPU"],
-        },
-        "CPU": {
-            "x_title": "Number of CPU Sockets",
-            "targets": ["MHP_SYCL_CPU", "MHP_DIRECT_CPU"],
-        },
-    }
-
-    def __x_domain(self, db, target, x_title):
+    @staticmethod
+    def __x_domain(db, target, x_title):
         points = db.loc[db["Target"] == target]
         val = points[x_title].values[0]
         last = points[x_title].values[-1]
@@ -283,7 +286,7 @@ class Plotter:
 
         db = self.db.copy()
         db = db.loc[(db["Benchmark"] == benchmark) & (db["device"] == device)]
-        db = db.sort_values(by=["Benchmark", "Target", x_title])
+        db = db.sort_values(by=["Target", x_title])
 
         targets = self.__find_targets(db, device)
 
@@ -291,7 +294,7 @@ class Plotter:
             click.echo(f"  no data for {benchmark} {device}")
             return
 
-        x_domain = self.__x_domain(db, targets[0], x_title)
+        xy_domain = self.__x_domain(db, targets[0], x_title)
         db.to_csv(f"{fname}.csv")
 
         reference = db.loc[
@@ -332,8 +335,8 @@ class Plotter:
             benchmark,
             x_title,
             y_title,
-            x_domain,
-            x_domain,
+            xy_domain,
+            xy_domain,
             lines,
             fname,
             # display_perfect_scaling=False

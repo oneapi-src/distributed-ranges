@@ -623,6 +623,7 @@ int main(int argc, char *argv[]) {
     ("n", "Grid size", cxxopts::value<std::size_t>()->default_value("128"))
     ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
     ("sycl", "Execute on SYCL device")
+    ("l,log", "enable logging")
     ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
     ("h,help", "Print help");
   // clang-format on
@@ -633,6 +634,12 @@ int main(int argc, char *argv[]) {
   } catch (const cxxopts::OptionParseException &e) {
     std::cout << options_spec.help() << "\n";
     exit(1);
+  }
+
+  std::unique_ptr<std::ofstream> logfile;
+  if (options.count("log")) {
+    logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
+    dr::drlog.set_file(*logfile);
   }
 
   if (options.count("sycl")) {
@@ -666,7 +673,8 @@ int main(int argc, char *argv[]) {
 
 static void WaveEquation_DR(benchmark::State &state) {
 
-  int n = 4000;
+  int n = ::sqrtl(default_vector_size);
+
   std::size_t nread, nwrite, nflop;
   WaveEquation::calculate_complexity(n, n, nread, nwrite, nflop);
   Stats stats(state, nread, nwrite, nflop);

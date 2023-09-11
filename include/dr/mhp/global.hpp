@@ -129,7 +129,8 @@ inline std::string hostname() {
 inline sycl::queue &sycl_queue() { return __detail::gcontext()->sycl_queue_; }
 inline auto dpl_policy() { return __detail::gcontext()->dpl_policy_; }
 
-inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
+inline sycl::queue select_queue(MPI_Comm comm,
+                                bool check_different_devices = false) {
   std::vector<sycl::device> devices;
 
   auto root_devices = sycl::platform().get_devices();
@@ -156,6 +157,9 @@ inline sycl::queue select_queue(MPI_Comm comm = MPI_COMM_WORLD) {
   }
 
   assert(rng::size(devices) > 0);
+  assert(!check_different_devices ||
+         dr::communicator(comm).rank() < rng::size(devices));
+
   // Round robin assignment of devices to ranks
   return sycl::queue(
       devices[dr::communicator(comm).rank() % rng::size(devices)]);
