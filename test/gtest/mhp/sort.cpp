@@ -8,47 +8,70 @@
 
 using T = int;
 using DV = dr::mhp::distributed_vector<T, dr::mhp::default_allocator<T>>;
-using V = std::vector<T>;
+using LV = std::vector<T>;
 
-TEST(MhpSort, Sort) {
-  std::vector<std::size_t> sizes = {
-      1, comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23};
+void test_sort(LV &v, auto func) {
+  auto size = v.size();
+  DV d_v(size);
 
-  for (std::size_t n : sizes) {
-    std::cout << "Sort: Test size " << n << std::endl;
-    V l_v = generate_random<T>(n, 100);
-    DV d_v(n);
-    for (std::size_t idx = 0; idx < n; idx++) {
-      d_v[idx] = l_v[idx];
-    }
-    barrier();
-
-    std::sort(l_v.begin(), l_v.end());
-    dr::mhp::sort(d_v);
-
-    barrier();
-    EXPECT_TRUE(equal(l_v, d_v));
+  for (std::size_t idx = 0; idx < size; idx++) {
+    d_v[idx] = v[idx];
   }
+  barrier();
+
+  std::sort(v.begin(), v.end(), func);
+  dr::mhp::sort(d_v, func);
+
+  barrier();
+  EXPECT_TRUE(equal(v, d_v));
 }
 
-TEST(MhpSort, Sort_reverse) {
-  std::vector<std::size_t> sizes = {
-      1, comm_size - 1, (comm_size - 1) * (comm_size - 1), 4, 7, 10, 23};
+void test_sort2s(LV &v) {
+  test_sort(v, std::less<T>());
+  test_sort(v, std::greater<T>());
+}
 
-  for (std::size_t n : sizes) {
-    std::cout << "Sort_reverse: Test size " << n << std::endl;
-    V l_v = generate_random<T>(n, 1000);
-    DV d_v(n);
+void test_sort_randomvec(std::size_t size, std::size_t bound = 100) {
+  LV l_v = generate_random<T>(size, bound);
+  test_sort2s(l_v);
+}
 
-    for (std::size_t idx = 0; idx < n; idx++) {
-      d_v[idx] = l_v[idx];
-    }
-    dr::mhp::barrier();
+TEST(MhpSort, Random) {
+  test_sort_randomvec(1);
+  test_sort_randomvec(comm_size - 1);
+  test_sort_randomvec((comm_size - 1) * (comm_size - 1));
+  test_sort_randomvec(17);
+  test_sort_randomvec(123);
+}
 
-    dr::mhp::sort(d_v, std::greater<T>());
-    std::sort(l_v.begin(), l_v.end(), std::greater<T>());
-    barrier();
+TEST(MhpSort, BigRandom) { test_sort_randomvec(1234567, 65535); }
 
-    EXPECT_TRUE(equal(l_v, d_v));
-  }
+TEST(MhpSort, NonRandom) {
+  LV v;
+  v = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  test_sort2s(v);
+
+  v = {1, 1, 1, 1, 1, 9, 1, 1, 1, 1, 1};
+  test_sort2s(v);
+
+  v = {1, 9, 2, 2, 2, 2, 2, 2, 2, 2, 9, 1};
+  test_sort2s(v);
+
+  v = {1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1};
+  test_sort2s(v);
+
+  v = {6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6};
+  test_sort2s(v);
+
+  v = {1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1};
+  test_sort2s(v);
+}
+
+TEST(MhpSort, LongSorted) {
+  LV v(100000);
+  rng::iota(v, 1);
+  test_sort2s(v);
+
+  rng::reverse(v);
+  test_sort2s(v);
 }

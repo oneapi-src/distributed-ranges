@@ -5,6 +5,7 @@
 #pragma once
 
 #ifdef SYCL_LANGUAGE_VERSION
+#include <dr/shp/init.hpp>
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/iterator>
@@ -30,7 +31,9 @@ void local_sort(R &r, Compare &&comp) {
   if (rng::size(r) >= 2) {
 #ifdef SYCL_LANGUAGE_VERSION
 
-    auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
+    // auto q = dr::shp::__detail::default_queue();
+    auto q = sycl::queue();
+    auto policy = oneapi::dpl::execution::make_device_policy(q);
     auto &&local_segment = dr::ranges::__detail::local(r);
 
     oneapi::dpl::sort(policy, rng::begin(local_segment),
@@ -165,7 +168,6 @@ void dist_sort(R &r, Compare &&comp) {
 
   if ((int)rng::size(vec_recvdata) < -shift_left) {
 
-    /* not enough data to send in vec_recvdata - receive first */
     assert(shift_right > 0);
 
     default_comm().irecv(vec_right, default_comm().next(), t, &req_r);
@@ -187,8 +189,8 @@ void dist_sort(R &r, Compare &&comp) {
     std::swap(vec_left, vec_recvdata);
     vec_left.clear();
 
-    default_comm().isend((valT *)(vec_recvdata.data()) + _recv_elems +
-                             shift_right,
+    default_comm().isend((valT *)(vec_recvdata.data()) +
+                             rng::size(vec_recvdata) + shift_right,
                          -shift_right, default_comm().next(), t, &req_r);
     MPI_Wait(&req_r, &stat_r);
   } else {
@@ -203,15 +205,15 @@ void dist_sort(R &r, Compare &&comp) {
     if (shift_right > 0) {
       default_comm().irecv(vec_right, default_comm().next(), t, &req_r);
     } else if (shift_right < 0) {
-      default_comm().isend((valT *)(vec_recvdata.data()) + _recv_elems +
-                               shift_right,
+      default_comm().isend((valT *)(vec_recvdata.data()) +
+                               rng::size(vec_recvdata) + shift_right,
                            -shift_right, default_comm().next(), t, &req_r);
     }
 
-    if (shift_left != 0)
-      MPI_Wait(&req_l, &stat_l);
-    if (shift_right != 0)
-      MPI_Wait(&req_r, &stat_r);
+      if (shift_left != 0)
+        MPI_Wait(&req_l, &stat_l);
+      if (shift_right != 0)
+        MPI_Wait(&req_r, &stat_r);
   }
 
   std::size_t invalidate_left = (shift_left < 0) ? -shift_left : 0;
