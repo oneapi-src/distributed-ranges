@@ -124,12 +124,12 @@ public:
                  rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
   }
 
-  template <rng::contiguous_range R1, rng::contiguous_range R2>
-  void alltoallv(const R1 &sendbuf, const std::vector<std::size_t> &sendcnt,
-                 const std::vector<std::size_t> &senddsp, R2 &recvbuf,
+  template <rng::contiguous_range SendR, rng::contiguous_range RecvR>
+  void alltoallv(const SendR &sendbuf, const std::vector<std::size_t> &sendcnt,
+                 const std::vector<std::size_t> &senddsp, RecvR &recvbuf,
                  const std::vector<std::size_t> &recvcnt,
                  const std::vector<std::size_t> &recvdsp) {
-    using valT = typename R2::value_type;
+    using valT = typename RecvR::value_type;
 
     assert(rng::size(sendcnt) == size_);
     assert(rng::size(senddsp) == size_);
