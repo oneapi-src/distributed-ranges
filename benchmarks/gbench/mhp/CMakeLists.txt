@@ -13,7 +13,6 @@ add_executable(
   ../common/inclusive_scan.cpp
   ../common/sort.cpp
   ../common/stream.cpp
-  ../common/sort.cpp
   wave_equation.cpp
   rooted.cpp
   stencil_1d.cpp

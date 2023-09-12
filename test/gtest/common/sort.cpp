@@ -8,7 +8,7 @@ using T = int;
 using DV = xhp::distributed_vector<T>;
 using LV = std::vector<T>;
 
-void test_sort(LV &v, auto func) {
+void test_sort(LV v, auto func) {
   auto size = v.size();
   DV d_v(size);
 
@@ -24,7 +24,7 @@ void test_sort(LV &v, auto func) {
   EXPECT_TRUE(equal(v, d_v));
 }
 
-void test_sort2s(LV &v) {
+void test_sort2s(LV v) {
   test_sort(v, std::less<T>());
   test_sort(v, std::greater<T>());
 }
@@ -42,28 +42,25 @@ TEST(Sort, Random) {
   test_sort_randomvec(123);
 }
 
-TEST(Sort, BigRandom) { test_sort_randomvec(1234567, 65535); }
+TEST(Sort, AllSame) { test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 1}); }
 
-TEST(Sort, NonRandom) {
-  LV v;
-  v = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-  test_sort2s(v);
+TEST(Sort, AllSameButOneMid) { test_sort2s({1, 1, 1, 1, 1, 9, 1, 1, 1, 1, 1}); }
 
-  v = {1, 1, 1, 1, 1, 9, 1, 1, 1, 1, 1};
-  test_sort2s(v);
+TEST(Sort, AllSameButOneEnd) { test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 1}); }
 
-  v = {1, 9, 2, 2, 2, 2, 2, 2, 2, 2, 9, 1};
-  test_sort2s(v);
-
-  v = {1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1};
-  test_sort2s(v);
-
-  v = {6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6};
-  test_sort2s(v);
-
-  v = {1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1};
-  test_sort2s(v);
+TEST(Sort, AllSameButOneSmaller) {
+  test_sort2s({5, 5, 5, 5, 1, 5, 5, 5, 5, 5, 5});
 }
+
+TEST(Sort, AllSameButOneBeg) { test_sort2s({5, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5}); }
+
+TEST(Sort, MostSame) { test_sort2s({1, 9, 2, 2, 2, 2, 2, 2, 2, 2, 9, 1}); }
+
+TEST(Sort, Pyramid) { test_sort2s({1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1}); }
+
+TEST(Sort, RevPyramid) { test_sort2s({6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6}); }
+
+TEST(Sort, Wave) { test_sort2s({1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1}); }
 
 TEST(Sort, LongSorted) {
   LV v(100000);

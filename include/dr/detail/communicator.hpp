@@ -131,6 +131,9 @@ public:
                  const std::vector<std::size_t> &recvdsp) {
     using valT = typename RecvR::value_type;
 
+    static_assert(std::is_same_v<std::ranges::range_value_t<SendR>,
+                                 std::ranges::range_value_t<RecvR>>);
+
     assert(rng::size(sendcnt) == size_);
     assert(rng::size(senddsp) == size_);
     assert(rng::size(recvcnt) == size_);
