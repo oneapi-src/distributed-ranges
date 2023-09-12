@@ -33,7 +33,8 @@ static void Exclusive_Scan_stdplus_EXP(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      std::exclusive_scan(policy, a, a + default_vector_size, b, 0, std::plus<>{});
+      std::exclusive_scan(policy, a, a + default_vector_size, b, 0,
+                          std::plus<>{});
     }
   }
   sycl::free(a, q);

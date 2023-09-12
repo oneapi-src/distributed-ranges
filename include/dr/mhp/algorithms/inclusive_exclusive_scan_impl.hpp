@@ -71,7 +71,7 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       auto local_out = dr::ranges::__detail::local(global_out);
       if (is_exclusive && seg_index != 0) {
         auto input_seg = input[seg_index - 1];
-        auto input_seg_size = input_seg.size();
+        auto input_seg_size = rng::size(input_seg);
         auto input_value = input_seg[input_seg_size - 1];
         init = {input_value};
       }
