@@ -19,7 +19,9 @@ protected:
 public:
   void SetUp(::benchmark::State &) {
     a = new xhp::distributed_vector<T>(default_vector_size);
-    fill_random(*a);
+    std::vector<T> local(default_vector_size);
+    fill_random(local);
+    xhp::copy(local.begin(), local.end(), rng::begin(*a));
   }
 
   void TearDown(::benchmark::State &) { delete a; }
@@ -27,17 +29,15 @@ public:
 
 BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * a->size());
+  xhp::distributed_vector<T> vec(a->size());
   for (auto _ : state) {
     state.PauseTiming();
-    xhp::distributed_vector<T> vec(a->size());
     xhp::copy(*a, rng::begin(vec));
     stats.rep();
     state.ResumeTiming();
 
     // sort not implemented in mhp yet
-#ifdef BENCH_SHP
     xhp::sort(vec);
-#endif
   }
 }
 
@@ -92,7 +92,7 @@ BENCHMARK_DEFINE_F(SyclSortFixture, Sort_EXP)(benchmark::State &state) {
 
 DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_EXP);
 
-BENCHMARK_DEFINE_F(SyclSortFixture, Sort_DPL)(benchmark::State &state) {
+BENCHMARK_DEFINE_F(SyclSortFixture, Sort_Reference)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * default_vector_size);
 
   for (auto _ : state) {
@@ -110,7 +110,7 @@ BENCHMARK_DEFINE_F(SyclSortFixture, Sort_DPL)(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_DPL);
+DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_Reference);
 #endif
 
 class StdSortFixture : public benchmark::Fixture {
