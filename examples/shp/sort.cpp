@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   auto devices = shp::get_numa_devices(sycl::default_selector_v);
   shp::init(devices);
 
-  std::size_t n = 1000;
+  std::size_t n = 32;
 
   shp::distributed_vector<int> v(n);
 
