@@ -336,6 +336,7 @@ def suite(
             # get sycl env vars
             run_rank_range(base, 1, reference_filters, ["shp_sycl_gpu"])
             run_rank_range(base, 1, mhp_reference_filters, ["mhp_sycl_gpu"])
+            run_rank_range(base, 1, shp_reference_filters, ["shp_sycl_gpu"])
         if p2p_gpus > 0:
             # if benchmark needs p2p run on shp on 1 gpu
             run_rank_range(
@@ -416,7 +417,7 @@ def suite(
     ]
     dr_filters = dr_nop2p + dr_p2p
     mhp_filters = ["Stencil2D_DR", "WaveEquation_DR"]
-    shp_filters = ["Sort_DR"]
+    shp_filters = [".*Sort_DR"]
     reference_filters = [
         "BlackScholes_Reference",
         "Reduce_Reference",
@@ -424,6 +425,9 @@ def suite(
     ]
     mhp_reference_filters = [
         "Stencil2D_Reference",
+    ]
+    shp_reference_filters = [
+        ".*Sort_Reference",
     ]
 
     if sockets and not cores_per_socket:

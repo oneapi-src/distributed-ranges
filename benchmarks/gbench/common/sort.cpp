@@ -37,9 +37,7 @@ BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
     state.ResumeTiming();
 
     // sort not implemented in mhp yet
-#ifdef BENCH_SHP
     xhp::sort(vec);
-#endif
   }
 }
 
@@ -94,7 +92,7 @@ BENCHMARK_DEFINE_F(SyclSortFixture, Sort_EXP)(benchmark::State &state) {
 
 DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_EXP);
 
-BENCHMARK_DEFINE_F(SyclSortFixture, Sort_DPL)(benchmark::State &state) {
+BENCHMARK_DEFINE_F(SyclSortFixture, Sort_Reference)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * default_vector_size);
 
   for (auto _ : state) {
@@ -112,7 +110,7 @@ BENCHMARK_DEFINE_F(SyclSortFixture, Sort_DPL)(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_DPL);
+DR_BENCHMARK_REGISTER_F(SyclSortFixture, Sort_Reference);
 #endif
 
 class StdSortFixture : public benchmark::Fixture {
