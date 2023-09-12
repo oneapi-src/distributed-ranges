@@ -417,7 +417,7 @@ def suite(
     ]
     dr_filters = dr_nop2p + dr_p2p
     mhp_filters = ["Stencil2D_DR", "WaveEquation_DR"]
-    shp_filters = [".*Sort_DR"]
+    shp_filters = [".*Sort_DR", "Gemm_DR"]
     reference_filters = [
         "BlackScholes_Reference",
         "Reduce_Reference",
@@ -428,6 +428,7 @@ def suite(
     ]
     shp_reference_filters = [
         ".*Sort_Reference",
+        "Gemm_Reference",
     ]
 
     if sockets and not cores_per_socket:
