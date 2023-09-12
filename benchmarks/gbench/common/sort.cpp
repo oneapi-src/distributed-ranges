@@ -19,7 +19,9 @@ protected:
 public:
   void SetUp(::benchmark::State &) {
     a = new xhp::distributed_vector<T>(default_vector_size);
-    fill_random(*a);
+    std::vector<T> local(default_vector_size);
+    fill_random(local);
+    xhp::copy(local.begin(), local.end(), rng::begin(*a));
   }
 
   void TearDown(::benchmark::State &) { delete a; }
@@ -27,9 +29,9 @@ public:
 
 BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * a->size());
+  xhp::distributed_vector<T> vec(a->size());
   for (auto _ : state) {
     state.PauseTiming();
-    xhp::distributed_vector<T> vec(a->size());
     xhp::copy(*a, rng::begin(vec));
     stats.rep();
     state.ResumeTiming();
