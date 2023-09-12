@@ -9,9 +9,10 @@ endfunction()
 
 function(add_shp_example example_name)
   add_shp_example_no_test(${example_name})
-  add_test(NAME ${example_name} COMMAND ./${example_name})
+  add_test(NAME ${example_name} COMMAND ./${example_name} ${ARGN})
 endfunction()
 
+add_shp_example(fft3d 8)
 add_shp_example(vector_example)
 add_shp_example(test_range)
 add_shp_example(dot_product)
