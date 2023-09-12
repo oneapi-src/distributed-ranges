@@ -416,9 +416,7 @@ def suite(
     ]
     dr_filters = dr_nop2p + dr_p2p
     mhp_filters = ["Stencil2D_DR", "WaveEquation_DR"]
-    # too slow to run
-    # shp_filters = ["Sort_DR"]
-    shp_filters = []
+    shp_filters = ["Sort_DR"]
     reference_filters = [
         "BlackScholes_Reference",
         "Reduce_Reference",
