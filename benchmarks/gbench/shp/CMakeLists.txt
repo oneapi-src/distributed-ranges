@@ -20,6 +20,7 @@ add_executable(
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
   ../common/inclusive_scan.cpp
+  ../common/exclusive_scan.cpp
   ../common/sort.cpp
   ../common/stream.cpp)
 # cmake-format: on
