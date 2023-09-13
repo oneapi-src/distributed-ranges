@@ -28,6 +28,10 @@ Benchmark Results
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Reduce-GPU.csv
      - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Reduce-CPU.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Reduce-CPU.csv
+   * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-DotProduct-GPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-DotProduct-GPU.csv
+     - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-DotProduct-CPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-DotProduct-CPU.csv
    * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Inclusive_Scan-GPU.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Inclusive_Scan-GPU.csv
      - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Inclusive_Scan-CPU.png

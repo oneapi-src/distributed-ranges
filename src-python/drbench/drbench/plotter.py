@@ -350,6 +350,7 @@ class Plotter:
                 self.__bw_plot(bench, device)
             for bench in [
                 "BlackScholes",
+                "DotProduct",
                 "Gemm",
                 "Inclusive_Scan",
                 "Reduce",

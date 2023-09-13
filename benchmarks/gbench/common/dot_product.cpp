@@ -29,7 +29,7 @@ void check_dp(auto actual, const nostd::source_location location =
   }
 }
 
-static void DotProduct_ZipReduce_DR(benchmark::State &state) {
+static void DotProduct_DR(benchmark::State &state) {
   xhp::distributed_vector<T> a(default_vector_size, init_val);
   xhp::distributed_vector<T> b(default_vector_size, init_val);
   Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
@@ -48,99 +48,41 @@ static void DotProduct_ZipReduce_DR(benchmark::State &state) {
   check_dp(res);
 }
 
-DR_BENCHMARK(DotProduct_ZipReduce_DR);
-
-static void DotProduct_ZipReduce_Serial(benchmark::State &state) {
-  std::vector<T> a(default_vector_size, init_val);
-  std::vector<T> b(default_vector_size, init_val);
-  auto mul = [](auto v) {
-    auto [a, b] = v;
-    return a * b;
-  };
-  auto &&m = rng::views::zip(a, b) | rng::views::transform(mul);
-
-  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
-  T res = 0;
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      res = std::reduce(std::execution::par_unseq, m.begin(), m.end());
-      benchmark::DoNotOptimize(res);
-    }
-  }
-  check_dp(res);
-}
-
-DR_BENCHMARK(DotProduct_ZipReduce_Serial);
-
-static void DotProduct_TransformReduce_Serial(benchmark::State &state) {
-  std::vector<T> a(default_vector_size, init_val);
-  std::vector<T> b(default_vector_size, init_val);
-  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
-  auto mul = [](auto a, auto b) { return a * b; };
-
-  T res = 0;
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      res = std::transform_reduce(std::execution::par_unseq, a.begin(), a.end(),
-                                  b.begin(), T(0), std::plus(), mul);
-      benchmark::DoNotOptimize(res);
-    }
-  }
-  check_dp(res);
-}
-
-DR_BENCHMARK(DotProduct_TransformReduce_Serial);
-
-static void DotProduct_Loop_Serial(benchmark::State &state) {
-  std::vector<T> a(default_vector_size, init_val);
-  std::vector<T> b(default_vector_size, init_val);
-  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
-  T res = 0;
-
-  for (auto _ : state) {
-    for (std::size_t rep = 0; rep < default_repetitions; rep++) {
-      res = 0;
-      stats.rep();
-      for (std::size_t i = 0; i < default_vector_size; i++) {
-        res += a[i] * b[i];
-      }
-      benchmark::DoNotOptimize(res);
-    }
-  }
-  check_dp(res);
-}
-
-DR_BENCHMARK(DotProduct_Loop_Serial);
+DR_BENCHMARK(DotProduct_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void DotProduct_TransformReduce_DPL(benchmark::State &state) {
-  T res = 0;
+static void DotProduct_Reference(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
 
-  auto mul = [](auto a, auto b) { return a * b; };
+  auto ap = sycl::malloc_device<T>(default_vector_size, q);
+  auto bp = sycl::malloc_device<T>(default_vector_size, q);
+  std::span<T> a(ap, default_vector_size);
+  std::span<T> b(bp, default_vector_size);
 
-  auto a = sycl::malloc_device<T>(default_vector_size, q);
-  auto b = sycl::malloc_device<T>(default_vector_size, q);
-  q.fill(a, init_val, default_vector_size);
-  q.fill(b, init_val, default_vector_size);
+  q.fill(ap, init_val, a.size());
+  q.fill(bp, init_val, b.size());
   q.wait();
-  Stats stats(state, sizeof(T) * 2 * default_vector_size, 0);
 
+  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
+  auto z = rng::views::zip(a, b) | rng::views::transform([](auto &&elem) {
+             return std::get<0>(elem) * std::get<1>(elem);
+           });
+  dr::__detail::direct_iterator d_first(z.begin());
+  dr::__detail::direct_iterator d_last(z.end());
+
+  T res = 0;
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      res = std::transform_reduce(policy, a, a + default_vector_size, b, T(0),
-                                  std::plus(), mul);
+      res = std::reduce(policy, d_first, d_last, T(0), std::plus());
       benchmark::DoNotOptimize(res);
     }
   }
   check_dp(res);
-  sycl::free(a, q);
-  sycl::free(b, q);
+  sycl::free(ap, q);
+  sycl::free(bp, q);
 }
 
-DR_BENCHMARK(DotProduct_TransformReduce_DPL);
+DR_BENCHMARK(DotProduct_Reference);
 #endif
