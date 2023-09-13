@@ -9,7 +9,7 @@ using DV = xhp::distributed_vector<T>;
 using LV = std::vector<T>;
 
 TEST(MhpSort, BigRandom) {
-  LV v = generate_random<T>(1000000, 2048);
+  LV v = generate_random<T>(1200000, 2048);
   auto size = v.size();
   DV d_v(size);
 
@@ -17,7 +17,7 @@ TEST(MhpSort, BigRandom) {
   barrier();
 
   std::sort(v.begin(), v.end());
-  xhp::sort(d_v);
+  dr::mhp::sort(d_v);
 
   barrier();
   EXPECT_TRUE(equal(v, d_v));
