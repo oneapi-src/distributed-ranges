@@ -33,9 +33,18 @@ constexpr double h = 1.0;
 // These numbers correspond to the fused kernel version
 void calculate_complexity(std::size_t nx, std::size_t ny, std::size_t &nread,
                           std::size_t &nwrite, std::size_t &nflop) {
-  nread = (27 * nx * ny + 8 * (nx + ny)) * sizeof(T);
-  nwrite = (9 * nx * ny + 3 * (nx + ny)) * sizeof(T);
-  nflop = 72 * nx * ny + 4 * (nx + ny);
+  // stage1: 2+2+3 = 7
+  // stage2: 3+3+4 = 10
+  // stage3: 3+3+4 = 10
+  nread = (27 * nx * ny) * sizeof(T);
+  // stage1: 3
+  // stage2: 3
+  // stage3: 3
+  nwrite = (9 * nx * ny) * sizeof(T);
+  // stage1: 3+3+6 = 12
+  // stage2: 6+6+9 = 21
+  // stage3: 6+6+9 = 21
+  nflop = 54 * nx * ny;
 }
 
 double exact_elev(double x, double y, double t, double lx, double ly) {
