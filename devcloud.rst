@@ -44,3 +44,9 @@ Benchmark Results
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-WaveEquation-GPU.csv
      - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-WaveEquation-CPU.png
           :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-WaveEquation-CPU.csv
+   * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Sort-GPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Sort-GPU.csv
+     -
+   * - .. image:: https://oneapi-src.github.io/distributed-ranges/bench/devcloud/dr-bench-Gemm-GPU.png
+          :target: https://github.com/oneapi-src/distributed-ranges/blob/gh-pages/bench/devcloud/dr-bench-Gemm-GPU.csv
+     -

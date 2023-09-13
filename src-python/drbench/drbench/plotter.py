@@ -57,6 +57,9 @@ class Plotter:
             )
             for b in benchs:
                 bname = b["name"].partition("/")[0]
+                if bname in ["DRSortFixture", "SyclSortFixture"]:
+                    bname = b["name"].split("/")[1]
+                    print("map", bname)
                 benchmark, btarget = Plotter.__name_target(
                     bname, target, device
                 )
@@ -347,8 +350,10 @@ class Plotter:
                 self.__bw_plot(bench, device)
             for bench in [
                 "BlackScholes",
+                "Gemm",
                 "Inclusive_Scan",
                 "Reduce",
+                "Sort",
                 "Stencil2D",
             ]:
                 self.__speedup_plot(bench, device)
