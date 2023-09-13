@@ -29,7 +29,7 @@ void check_dp(auto actual, const nostd::source_location location =
   }
 }
 
-static void DotProduct_ZipReduce_DR(benchmark::State &state) {
+static void DotProduct_DR(benchmark::State &state) {
   xhp::distributed_vector<T> a(default_vector_size, init_val);
   xhp::distributed_vector<T> b(default_vector_size, init_val);
   Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
@@ -48,7 +48,40 @@ static void DotProduct_ZipReduce_DR(benchmark::State &state) {
   check_dp(res);
 }
 
-DR_BENCHMARK(DotProduct_ZipReduce_DR);
+DR_BENCHMARK(DotProduct_DR);
+
+static void DotProduct_Reference(benchmark::State &state) {
+  auto q = get_queue();
+  auto policy = oneapi::dpl::execution::make_device_policy(q);
+
+  auto ap = sycl::malloc_device<T>(default_vector_size, q);
+  auto bp = sycl::malloc_device<T>(default_vector_size, q);
+  std::span<T> a(ap, default_vector_size);
+  std::span<T> b(bp, default_vector_size);
+
+  q.fill(ap, init_val, a.size());
+  q.fill(bp, init_val, b.size());
+  q.wait();
+
+  Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
+  auto z = rng::views::zip(a, b) | rng::views::transform([](auto &&elem) {
+             return std::get<0>(elem) * std::get<1>(elem);
+           });
+  dr::__detail::direct_iterator d_first(z.begin());
+  dr::__detail::direct_iterator d_last(z.end());
+
+  T res = 0;
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
+      res = std::reduce(policy, d_first, d_last, T(0), std::plus());
+      benchmark::DoNotOptimize(res);
+    }
+  }
+  check_dp(res);
+}
+
+DR_BENCHMARK(DotProduct_Reference);
 
 static void DotProduct_ZipReduce_Serial(benchmark::State &state) {
   std::vector<T> a(default_vector_size, init_val);

@@ -412,6 +412,7 @@ def suite(
         "^BlackScholes_DR",
     ]
     dr_p2p = [
+        "^DotProduct_DR",
         "^Inclusive_Scan_DR",
         "^Reduce_DR",
     ]
@@ -420,8 +421,9 @@ def suite(
     shp_filters = [".*Sort_DR", "Gemm_DR"]
     reference_filters = [
         "BlackScholes_Reference",
-        "Reduce_Reference",
+        "DotProduct_Reference",
         "Inclusive_Scan_Reference",
+        "Reduce_Reference",
     ]
     mhp_reference_filters = [
         "Stencil2D_Reference",
