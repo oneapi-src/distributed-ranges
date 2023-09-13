@@ -79,6 +79,8 @@ static void DotProduct_Reference(benchmark::State &state) {
     }
   }
   check_dp(res);
+  sycl::free(ap, q);
+  sycl::free(bp, q);
 }
 
 DR_BENCHMARK(DotProduct_Reference);
