@@ -31,9 +31,7 @@ void local_sort(R &r, Compare &&comp) {
   if (rng::size(r) >= 2) {
 #ifdef SYCL_LANGUAGE_VERSION
 
-    // auto q = dr::shp::__detail::default_queue();
-    auto q = sycl::queue();
-    auto policy = oneapi::dpl::execution::make_device_policy(q);
+    auto policy = dpl_policy();
     auto &&local_segment = dr::ranges::__detail::local(r);
 
     oneapi::dpl::sort(policy, rng::begin(local_segment),
