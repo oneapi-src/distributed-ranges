@@ -22,68 +22,6 @@ static void Exclusive_Scan_DR(benchmark::State &state) {
 DR_BENCHMARK(Exclusive_Scan_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Exclusive_Scan_stdplus_EXP(benchmark::State &state) {
-  auto q = get_queue();
-  auto policy = oneapi::dpl::execution::make_device_policy(q);
-  auto a = sycl::malloc_device<T>(default_vector_size, q);
-  auto b = sycl::malloc_device<T>(default_vector_size, q);
-  Stats stats(state, sizeof(T) * default_vector_size,
-              sizeof(T) * default_vector_size);
-
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      std::exclusive_scan(policy, a, a + default_vector_size, b, 0,
-                          std::plus<>{});
-    }
-  }
-  sycl::free(a, q);
-  sycl::free(b, q);
-}
-
-DR_BENCHMARK(Exclusive_Scan_stdplus_EXP);
-
-static void Exclusive_Scan_stdplusT_EXP(benchmark::State &state) {
-  auto q = get_queue();
-  auto policy = oneapi::dpl::execution::make_device_policy(q);
-  auto a = sycl::malloc_device<T>(default_vector_size, q);
-  auto b = sycl::malloc_device<T>(default_vector_size, q);
-  Stats stats(state, sizeof(T) * default_vector_size,
-              sizeof(T) * default_vector_size);
-
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      std::exclusive_scan(policy, a, a + default_vector_size, b, 0,
-                          std::plus<T>{});
-    }
-  }
-  sycl::free(a, q);
-  sycl::free(b, q);
-}
-
-DR_BENCHMARK(Exclusive_Scan_stdplusT_EXP);
-
-static void Exclusive_Scan_none_EXP(benchmark::State &state) {
-  auto q = get_queue();
-  auto policy = oneapi::dpl::execution::make_device_policy(q);
-  auto a = sycl::malloc_device<T>(default_vector_size, q);
-  auto b = sycl::malloc_device<T>(default_vector_size, q);
-  Stats stats(state, sizeof(T) * default_vector_size,
-              sizeof(T) * default_vector_size);
-
-  for (auto _ : state) {
-    for (std::size_t i = 0; i < default_repetitions; i++) {
-      stats.rep();
-      std::exclusive_scan(policy, a, a + default_vector_size, b, 0);
-    }
-  }
-  sycl::free(a, q);
-  sycl::free(b, q);
-}
-
-DR_BENCHMARK(Exclusive_Scan_none_EXP);
-
 static void Exclusive_Scan_Reference(benchmark::State &state) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
