@@ -355,6 +355,7 @@ class Plotter:
                 "BlackScholes",
                 "DotProduct",
                 "Gemm",
+                "Exclusive_Scan",
                 "Inclusive_Scan",
                 "Reduce",
                 "Sort",
