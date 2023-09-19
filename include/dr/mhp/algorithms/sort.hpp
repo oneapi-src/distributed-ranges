@@ -29,17 +29,20 @@ namespace __detail {
 template <rng::forward_range R, typename Compare>
 void local_sort(R &r, Compare &&comp) {
   if (rng::size(r) >= 2) {
+    if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+      auto policy = dpl_policy();
+      auto &&local_segment = dr::ranges::__detail::local(r);
 
-    auto policy = dpl_policy();
-    auto &&local_segment = dr::ranges::__detail::local(r);
-
-    oneapi::dpl::sort(policy, rng::begin(local_segment),
-                      rng::end(local_segment), comp);
+      oneapi::dpl::sort(policy, rng::begin(local_segment),
+                        rng::end(local_segment), comp);
 
 #else
-    rng::sort(rng::begin(r), rng::end(r), comp);
+      assert(false);
 #endif
+    } else {
+      rng::sort(rng::begin(r), rng::end(r), comp);
+    }
   }
 }
 
@@ -52,6 +55,9 @@ void dist_sort(R &r, Compare &&comp) {
 
   auto &&lsegment = local_segment(r);
 
+  fmt::print("{}: dist_sort {}({})\n", _comm_rank, lsegment,
+             rng::size(lsegment));
+
   /* sort local segment */
 
   __detail::local_sort(lsegment, comp);
@@ -59,27 +65,33 @@ void dist_sort(R &r, Compare &&comp) {
   std::vector<valT> vec_lmedians(_comm_size - 1);
   std::vector<valT> vec_gmedians((_comm_size - 1) * _comm_size);
 
-  double _step = (double)rng::size(lsegment) / (double)_comm_size;
+  double _step_m = (double)rng::size(lsegment) / (double)_comm_size;
 
   /* calculate splitting values and indices - find n-1 dividers splitting each
    * segment into equal parts */
 
   for (std::size_t _i = 0; _i < rng::size(vec_lmedians); _i++) {
-    vec_lmedians[_i] = lsegment[(std::size_t)(_i + 1) * _step];
+    vec_lmedians[_i] = lsegment[(_i + 1) * _step_m];
   }
+
+  // fmt::print("{}: lsegment {}\n", _comm_rank, lsegment);
+  // fmt::print("{}: lmedians {}\n", _comm_rank, vec_lmedians);
 
   default_comm().all_gather(vec_lmedians, vec_gmedians);
 
   rng::sort(rng::begin(vec_gmedians), rng::end(vec_gmedians), comp);
 
-  std::vector<valT> vec_split_v(_comm_size - 1);
-  _step = rng::size(vec_gmedians) / (_comm_size - 1);
+  // fmt::print("{}: gmedians {}\n", _comm_rank, vec_gmedians);
 
   /* find splitting values - medians of dividers */
 
+  std::vector<valT> vec_split_v(_comm_size - 1);
+
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
-    vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _step)];
+    vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _comm_size)];
   }
+
+  // fmt::print("{}: split_v {}\n", _comm_rank, vec_split_v);
 
   /* calculate splitting indices (start of buffers) and sizes of buffers to send
    */
@@ -89,44 +101,46 @@ void dist_sort(R &r, Compare &&comp) {
 
   std::size_t segidx = 0, vidx = 1;
 
-  while (vidx < _comm_size) {
+  while (vidx < _comm_size && segidx < rng::size(lsegment)) {
     assert(segidx < rng::size(lsegment));
     if (comp(vec_split_v[vidx - 1], *(lsegment.begin() + segidx))) {
       vec_split_i[vidx] = segidx;
       vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
-      std::size_t _sum = std::reduce(vec_split_s.begin(), vec_split_s.end());
-      if (_sum > rng::size(lsegment)) {
-        vec_split_s[vidx - 1] -= _sum - rng::size(lsegment);
-      }
       vidx++;
     } else {
       segidx++;
-      if (segidx >= rng::size(lsegment))
-        break;
     }
   }
-  vec_split_s[vidx - 1] =
-      ((int)(rng::size(lsegment) - vec_split_i[vidx - 1]) > 0)
-          ? (rng::size(lsegment) - vec_split_i[vidx - 1])
-          : 0;
+  assert((rng::size(lsegment) - vec_split_i[vidx - 1]) > 0);
+  vec_split_s[vidx - 1] = (rng::size(lsegment) - vec_split_i[vidx - 1]);
 
-  assert(vec_split_s[vidx - 1] >= 0);
+  // fmt::print("{}: split_s {}\n", _comm_rank, vec_split_s);
 
   /* send data size to each node */
-
   std::vector<std::size_t> vec_rsizes(_comm_size, 0);
   std::vector<std::size_t> vec_rindices(_comm_size, 0); // recv buffers
 
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
+  // fmt::print("{}: rsizes {}\n", _comm_rank, vec_rsizes);
 
-  for (std::size_t i = 1; i < _comm_size; i++) {
-    vec_rindices[i] = std::reduce(vec_rsizes.begin(), vec_rsizes.begin() + i);
-  }
+  std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
+                      vec_rindices.begin(), 0);
+
   std::size_t _recvsum = std::reduce(vec_rsizes.begin(), vec_rsizes.end());
+
+  // fmt::print("{}: rindices(1) {} recv_sum {} \n", _comm_rank, vec_rindices,
+  //            _recvsum);
 
   /* send and receive data belonging to each node */
 
+#ifdef SYCL_LANGUAGE_VERSION
+  auto policy = dpl_policy();
+  sycl::usm_allocator<valT, sycl::usm::alloc::shared> alloc(policy.queue());
+  std::vector<valT, decltype(alloc)> vec_recvdata(_recvsum, alloc);
+#else
   std::vector<valT> vec_recvdata(_recvsum);
+#endif
+
   std::size_t _recv_elems = rng::size(vec_recvdata);
 
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
@@ -164,7 +178,7 @@ void dist_sort(R &r, Compare &&comp) {
   std::vector<valT> vec_left(shift_left > 0 ? (shift_left) : 0);
   std::vector<valT> vec_right(shift_right > 0 ? (shift_right) : 0);
 
-  if ((int)rng::size(vec_recvdata) < -shift_left) {
+  if (static_cast<int>(rng::size(vec_recvdata)) < -shift_left) {
 
     assert(shift_right > 0);
 
@@ -178,13 +192,13 @@ void dist_sort(R &r, Compare &&comp) {
                          default_comm().prev(), t, &req_l);
     MPI_Wait(&req_l, &stat_l);
 
-  } else if ((int)rng::size(vec_recvdata) < -shift_right) {
+  } else if (static_cast<int>(rng::size(vec_recvdata)) < -shift_right) {
 
     assert(shift_left > 0);
     default_comm().irecv(vec_left, default_comm().prev(), t, &req_l);
     MPI_Wait(&req_l, &stat_l);
-    vec_left.insert(vec_left.end(), vec_recvdata.begin(), vec_recvdata.end());
-    std::swap(vec_left, vec_recvdata);
+
+    vec_recvdata.insert(vec_recvdata.begin(), vec_left.begin(), vec_left.end());
     vec_left.clear();
 
     default_comm().isend((valT *)(vec_recvdata.data()) +
@@ -243,11 +257,9 @@ void sort(R &r, Compare &&comp = Compare()) {
   std::size_t _comm_rank = default_comm().rank();
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
-  auto &&lsegment = local_segment(r);
+  if (_comm_size == 1) {
 
-  if (_comm_size == 0)
-    return;
-  else if (_comm_size == 1) {
+    auto &&lsegment = local_segment(r);
     __detail::local_sort(lsegment, comp);
 
   } else if (rng::size(r) <= (_comm_size - 1) * (_comm_size - 1)) {
@@ -267,6 +279,7 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   } else {
     __detail::dist_sort(r, comp);
+    dr::mhp::barrier();
   }
 }
 

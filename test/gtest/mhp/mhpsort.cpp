@@ -14,11 +14,9 @@ TEST(MhpSort, BigRandom) {
   DV d_v(size);
 
   dr::mhp::copy(0, v, d_v.begin());
-  barrier();
 
   std::sort(v.begin(), v.end());
   dr::mhp::sort(d_v);
 
-  barrier();
   EXPECT_TRUE(equal(v, d_v));
 }

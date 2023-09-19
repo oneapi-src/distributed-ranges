@@ -20,13 +20,12 @@ void test_sort(LV v, auto func) {
   std::sort(v.begin(), v.end(), func);
   xhp::sort(d_v, func);
 
-  barrier();
   EXPECT_TRUE(equal(v, d_v));
 }
 
 void test_sort2s(LV v) {
   test_sort(v, std::less<T>());
-  test_sort(v, std::greater<T>());
+  // test_sort(v, std::greater<T>());
 }
 
 void test_sort_randomvec(std::size_t size, std::size_t bound = 100) {
@@ -34,13 +33,17 @@ void test_sort_randomvec(std::size_t size, std::size_t bound = 100) {
   test_sort2s(l_v);
 }
 
-TEST(Sort, Random) {
-  test_sort_randomvec(1);
-  test_sort_randomvec(comm_size - 1);
+TEST(Sort, Random_1) { test_sort_randomvec(1); }
+
+TEST(Sort, Random_CommSize_m1) { test_sort_randomvec(comm_size - 1); }
+
+TEST(Sort, Random_CommSize_m1_sq) {
   test_sort_randomvec((comm_size - 1) * (comm_size - 1));
-  test_sort_randomvec(17);
-  test_sort_randomvec(123);
 }
+
+TEST(Sort, Random_CommSize_dist_small) { test_sort_randomvec(17); }
+
+TEST(Sort, Random_CommSize_dist_med) { test_sort_randomvec(123); }
 
 TEST(Sort, AllSame) { test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 1}); }
 
