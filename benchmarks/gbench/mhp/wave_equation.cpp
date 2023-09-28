@@ -33,9 +33,18 @@ constexpr double h = 1.0;
 // These numbers correspond to the fused kernel version
 void calculate_complexity(std::size_t nx, std::size_t ny, std::size_t &nread,
                           std::size_t &nwrite, std::size_t &nflop) {
-  nread = (27 * nx * ny + 8 * (nx + ny)) * sizeof(T);
-  nwrite = (9 * nx * ny + 3 * (nx + ny)) * sizeof(T);
-  nflop = 72 * nx * ny + 4 * (nx + ny);
+  // stage1: 2+2+3 = 7
+  // stage2: 3+3+4 = 10
+  // stage3: 3+3+4 = 10
+  nread = (27 * nx * ny) * sizeof(T);
+  // stage1: 3
+  // stage2: 3
+  // stage3: 3
+  nwrite = (9 * nx * ny) * sizeof(T);
+  // stage1: 3+3+6 = 12
+  // stage2: 6+6+9 = 21
+  // stage3: 6+6+9 = 21
+  nflop = 54 * nx * ny;
 }
 
 double exact_elev(double x, double y, double t, double lx, double ly) {
@@ -65,7 +74,7 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
   /**
    * Evaluate right hand side of the equations
    */
-
+  dr::mhp::halo(e).exchange_finalize();
   auto rhs_dedx = [dt, g, dx_inv](auto v) {
     auto [in, out] = v;
     out(0, 0) = -dt * g * (in(1, 0) - in(0, 0)) * dx_inv;
@@ -94,6 +103,8 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     dr::mhp::stencil_for_each(rhs_dedy, e_view, dvdt_view);
   }
 
+  dr::mhp::halo(u).exchange_finalize();
+  dr::mhp::halo(v).exchange_finalize();
   auto rhs_div = [dt, h, dx_inv, dy_inv](auto args) {
     auto [u, v, out] = args;
     auto dudx = (u(0, 0) - u(-1, 0)) * dx_inv;
@@ -121,6 +132,7 @@ void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
    *
    */
   // u: elevation x gradient
+  dr::mhp::halo(e).exchange_finalize();
   auto rhs_u1 = [dt, g, dx_inv](auto tuple) {
     auto [e, u, out] = tuple;
     auto dedx = (e(1, 0) - e(0, 0)) * dx_inv;
@@ -135,8 +147,8 @@ void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
     auto u1_view = dr::mhp::views::submdspan(u1.view(), start, end);
     dr::mhp::stencil_for_each(rhs_u1, e_view, u_view, u1_view);
-    dr::mhp::halo(u1).exchange();
   }
+  dr::mhp::halo(u1).exchange_begin();
 
   // v: elevation y gradient
   auto rhs_v1 = [dt, g, dy_inv](auto tuple) {
@@ -153,10 +165,12 @@ void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
     auto v1_view = dr::mhp::views::submdspan(v1.view(), start, end);
     dr::mhp::stencil_for_each(rhs_v1, e_view, v_view, v1_view);
-    dr::mhp::halo(v1).exchange();
   }
+  dr::mhp::halo(v1).exchange_begin();
 
   // e: divergence of (u, v)
+  dr::mhp::halo(u).exchange_finalize();
+  dr::mhp::halo(v).exchange_finalize();
   auto rhs_e1 = [dt, h, dx_inv, dy_inv](auto tuple) {
     auto [e, u, v, out] = tuple;
     auto dudx = (u(0, 0) - u(-1, 0)) * dx_inv;
@@ -173,8 +187,8 @@ void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
     auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
     dr::mhp::stencil_for_each(rhs_e1, e_view, u_view, v_view, e1_view);
-    dr::mhp::halo(e1).exchange();
   }
+  dr::mhp::halo(e1).exchange_begin();
 };
 
 void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
@@ -187,6 +201,7 @@ void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
    *
    */
   // u: elevation x gradient
+  dr::mhp::halo(e1).exchange_finalize();
   auto rhs_u2 = [dt, g, dx_inv](auto tuple) {
     auto [e1, u1, u, out] = tuple;
     auto dedx = (e1(1, 0) - e1(0, 0)) * dx_inv;
@@ -202,8 +217,8 @@ void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
     auto u2_view = dr::mhp::views::submdspan(u2.view(), start, end);
     dr::mhp::stencil_for_each(rhs_u2, e1_view, u1_view, u_view, u2_view);
-    dr::mhp::halo(u2).exchange();
   }
+  dr::mhp::halo(u2).exchange_begin();
 
   // v: elevation y gradient
   auto rhs_v2 = [dt, g, dy_inv](auto tuple) {
@@ -221,10 +236,12 @@ void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
     auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);
     dr::mhp::stencil_for_each(rhs_v2, e1_view, v1_view, v_view, v2_view);
-    dr::mhp::halo(v2).exchange();
   }
+  dr::mhp::halo(v2).exchange_begin();
 
   // e: divergence of (u, v)
+  dr::mhp::halo(u1).exchange_finalize();
+  dr::mhp::halo(v1).exchange_finalize();
   auto rhs_e2 = [dt, h, dx_inv, dy_inv](auto tuple) {
     auto [e1, u1, v1, e, out] = tuple;
     auto dudx = (u1(0, 0) - u1(-1, 0)) * dx_inv;
@@ -243,8 +260,8 @@ void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
     auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
     dr::mhp::stencil_for_each(rhs_e2, e1_view, u1_view, v1_view, e_view,
                               e2_view);
-    dr::mhp::halo(e2).exchange();
   }
+  dr::mhp::halo(e2).exchange_begin();
 };
 
 void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
@@ -256,6 +273,7 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
    *
    */
   // u: elevation x gradient
+  dr::mhp::halo(e2).exchange_finalize();
   auto rhs_u3 = [dt, g, dx_inv](auto tuple) {
     auto [e2, u2, out] = tuple;
     auto dedx = (e2(1, 0) - e2(0, 0)) * dx_inv;
@@ -271,8 +289,8 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
     auto u2_view = dr::mhp::views::submdspan(u2.view(), start, end);
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
     dr::mhp::stencil_for_each(rhs_u3, e2_view, u2_view, u_view);
-    dr::mhp::halo(u).exchange();
   }
+  dr::mhp::halo(u).exchange_begin();
 
   // v: elevation y gradient
   auto rhs_v3 = [dt, g, dy_inv](auto tuple) {
@@ -290,10 +308,12 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
     auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
     dr::mhp::stencil_for_each(rhs_v3, e2_view, v2_view, v_view);
-    dr::mhp::halo(v).exchange();
   }
+  dr::mhp::halo(v).exchange_begin();
 
   // e: divergence of (u, v)
+  dr::mhp::halo(u2).exchange_finalize();
+  dr::mhp::halo(v2).exchange_finalize();
   auto rhs_e3 = [dt, h, dx_inv, dy_inv](auto tuple) {
     auto [e2, u2, v2, out] = tuple;
     auto dudx = (u2(0, 0) - u2(-1, 0)) * dx_inv;
@@ -311,8 +331,8 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
     auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);
     auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
     dr::mhp::stencil_for_each(rhs_e3, e2_view, u2_view, v2_view, e_view);
-    dr::mhp::halo(e).exchange();
   }
+  dr::mhp::halo(e).exchange_begin();
 };
 
 int run(
@@ -430,7 +450,9 @@ int run(
       }
     }
   }
-  dr::mhp::halo(e).exchange();
+  dr::mhp::halo(e).exchange_begin();
+  dr::mhp::halo(u).exchange_begin();
+  dr::mhp::halo(v).exchange_begin();
 
   auto add = [](auto ops) { return ops.first + ops.second; };
   auto max = [](double x, double y) { return std::max(x, y); };
@@ -490,37 +512,40 @@ int run(
       // RK stage 1: u1 = u + dt*rhs(u)
       rhs(u, v, e, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
       dr::mhp::transform(dr::mhp::views::zip(u, dudt), u1.begin(), add);
+      dr::mhp::halo(u1).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(v, dvdt), v1.begin(), add);
+      dr::mhp::halo(v1).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(e, dedt), e1.begin(), add);
-      dr::mhp::halo(u1).exchange();
-      dr::mhp::halo(v1).exchange();
-      dr::mhp::halo(e1).exchange();
+      dr::mhp::halo(e1).exchange_begin();
 
       // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
       rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
       dr::mhp::transform(dr::mhp::views::zip(u, u1, dudt), u2.begin(),
                          rk_update2);
+      dr::mhp::halo(u2).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(v, v1, dvdt), v2.begin(),
                          rk_update2);
+      dr::mhp::halo(v2).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(e, e1, dedt), e2.begin(),
                          rk_update2);
-      dr::mhp::halo(u2).exchange();
-      dr::mhp::halo(v2).exchange();
-      dr::mhp::halo(e2).exchange();
+      dr::mhp::halo(e2).exchange_begin();
 
       // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
       rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
       dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(),
                          rk_update3);
+      dr::mhp::halo(u).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(v, v2, dvdt), v.begin(),
                          rk_update3);
+      dr::mhp::halo(v).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(e, e2, dedt), e.begin(),
                          rk_update3);
-      dr::mhp::halo(u).exchange();
-      dr::mhp::halo(e).exchange();
-      dr::mhp::halo(v).exchange();
+      dr::mhp::halo(e).exchange_begin();
     }
   }
+  dr::mhp::halo(u).exchange_finalize();
+  dr::mhp::halo(v).exchange_finalize();
+  dr::mhp::halo(e).exchange_finalize();
   auto toc = std::chrono::steady_clock::now();
   std::chrono::duration<double> duration = toc - tic;
   if (comm_rank == 0) {

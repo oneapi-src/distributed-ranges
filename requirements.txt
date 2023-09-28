@@ -12,7 +12,7 @@ cfgv==3.4.0
 charset-normalizer==3.2.0
 distlib==0.3.7
 docutils==0.19
-filelock==3.12.3
+filelock==3.12.4
 identify==2.5.27
 idna==3.4
 imagesize==1.4.1
@@ -22,7 +22,7 @@ nodeenv==1.8.0
 packaging==23.1
 platformdirs==3.10.0
 pre-commit==3.4.0
-pydata-sphinx-theme==0.13.3
+pydata-sphinx-theme==0.14.0
 pyenchant==3.2.2
 Pygments==2.16.1
 PyYAML==6.0.1
@@ -40,4 +40,4 @@ sphinxcontrib-serializinghtml==1.1.9
 sphinxcontrib-spelling==8.0.0
 typing_extensions==4.7.1
 urllib3==2.0.4
-virtualenv==20.24.4
+virtualenv==20.24.5

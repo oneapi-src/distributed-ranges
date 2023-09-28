@@ -10,7 +10,7 @@ DevCloud Runners
 ================
 
 We have 2 self-hosted runners on devcloud. We run in tmux so it will
-continue to run after disconnecting. ``ssh`` to DevCloud.
+continue to run after disconnecting. ``ssh`` to DevCloud::
 
   tmux
   cd github/runner-1
