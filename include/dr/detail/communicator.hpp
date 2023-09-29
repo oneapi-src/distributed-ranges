@@ -86,6 +86,20 @@ public:
     all_gather(rng::data(src), rng::data(dst), rng::size(src));
   }
 
+  template <typename T>
+  void i_all_gather(const T *src, T *dst, std::size_t count,
+                    MPI_Request *req) const {
+    // Gather size elements from each rank
+    MPI_Iallgather(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
+                   MPI_BYTE, mpi_comm_, req);
+  }
+
+  template <typename T>
+  void i_all_gather(const T &src, std::vector<T> &dst, MPI_Request *req) const {
+    assert(rng::size(dst) >= size_);
+    i_all_gather(&src, rng::data(dst), 1, req);
+  }
+
   void gatherv(const void *src, int *counts, int *offsets, void *dst,
                std::size_t root) const {
     MPI_Gatherv(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
@@ -95,6 +109,8 @@ public:
   template <typename T>
   void isend(const T *data, std::size_t count, std::size_t dst_rank, tag t,
              MPI_Request *request) const {
+    drlog.debug("isend {}->{} cnt {} size {}\n", rank_, dst_rank, count,
+                count * sizeof(T));
     MPI_Isend(data, count * sizeof(T), MPI_BYTE, dst_rank, int(t), mpi_comm_,
               request);
   }
@@ -108,6 +124,7 @@ public:
   template <typename T>
   void irecv(T *data, std::size_t size, std::size_t src_rank, tag t,
              MPI_Request *request) const {
+    drlog.debug("irecv {}<-{} size {}\n", rank_, src_rank, size);
     MPI_Irecv(data, size * sizeof(T), MPI_BYTE, src_rank, int(t), mpi_comm_,
               request);
   }

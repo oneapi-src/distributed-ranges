@@ -25,7 +25,7 @@ void test_sort(LV v, auto func) {
 
 void test_sort2s(LV v) {
   test_sort(v, std::less<T>());
-  // test_sort(v, std::greater<T>());
+  test_sort(v, std::greater<T>());
 }
 
 void test_sort_randomvec(std::size_t size, std::size_t bound = 100) {
@@ -41,21 +41,36 @@ TEST(Sort, Random_CommSize_m1_sq) {
   test_sort_randomvec((comm_size - 1) * (comm_size - 1));
 }
 
-TEST(Sort, Random_CommSize_dist_small) { test_sort_randomvec(17); }
+TEST(Sort, Random_dist_small) { test_sort_randomvec(17); }
 
-TEST(Sort, Random_CommSize_dist_med) { test_sort_randomvec(123); }
+TEST(Sort, Random_dist_med) { test_sort_randomvec(123); }
 
-TEST(Sort, AllSame) { test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 1}); }
-
-TEST(Sort, AllSameButOneMid) { test_sort2s({1, 1, 1, 1, 1, 9, 1, 1, 1, 1, 1}); }
-
-TEST(Sort, AllSameButOneEnd) { test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 1}); }
-
-TEST(Sort, AllSameButOneSmaller) {
-  test_sort2s({5, 5, 5, 5, 1, 5, 5, 5, 5, 5, 5});
+TEST(Sort, AllSame) {
+  test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
 }
 
-TEST(Sort, AllSameButOneBeg) { test_sort2s({5, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5}); }
+TEST(Sort, AllSameButOneMid) {
+  test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 1, 1, 1, 1, 1, 1});
+}
+
+TEST(Sort, AllSameButOneEnd) {
+  test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9});
+}
+
+TEST(Sort, AllSameButOneSmaller) {
+  test_sort2s({5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+}
+
+TEST(Sort, AllSameButOneBigger) {
+  test_sort2s({5, 5, 5, 5, 5, 5, 5, 5, 5, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+}
+
+TEST(Sort, AllSameButOneSBeg) {
+  test_sort2s({5, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+}
+TEST(Sort, AllSameButOneBBeg) {
+  test_sort2s({5, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+}
 
 TEST(Sort, MostSame) { test_sort2s({1, 9, 2, 2, 2, 2, 2, 2, 2, 2, 9, 1}); }
 
