@@ -14,6 +14,7 @@
 extern MPI_Comm comm;
 extern std::size_t comm_rank;
 extern std::size_t comm_size;
+extern cxxopts::ParseResult options;
 
 namespace xhp = dr::mhp;
 

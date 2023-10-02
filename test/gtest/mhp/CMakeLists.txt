@@ -95,4 +95,8 @@ if(ENABLE_SYCL)
   add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
   add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl
                --gtest_filter=-*Slide*)
+  set(MPIEXEC_PREFLAGS -genv I_MPI_OFFLOAD=1)
+  add_mpi_test(mhp-sycl-device-mem-tests-4 mhp-tests 4 --sycl --device-memory
+               --gtest_filter=-*Slide*)
+  set(MPIEXEC_PREFLAGS)
 endif()
