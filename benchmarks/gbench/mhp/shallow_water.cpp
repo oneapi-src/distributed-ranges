@@ -282,7 +282,7 @@ void compute_total_depth(Array &e, Array &h, Array &H_at_f) {
 void compute_aux_fields(Array &u, Array &v, Array &e, Array &hu, Array &hv,
                         Array &dudy, Array &dvdx, Array &H_at_f, Array &q,
                         Array &qa, Array &qb, Array &qg, Array &qd, Array &h,
-                        double f, double dx_inv, double dy_inv) {
+                        double f, double dx_inv, double dy_inv, bool finalize_halo) {
   { // dudy
     auto kernel = [dy_inv](auto args) {
       auto [u, out] = args;
@@ -297,7 +297,9 @@ void compute_aux_fields(Array &u, Array &v, Array &e, Array &hu, Array &hv,
 
   compute_total_depth(e, h, H_at_f);
 
-  dr::mhp::halo(v).exchange_finalize();
+  if (finalize_halo) {
+    dr::mhp::halo(v).exchange_finalize();
+  }
   { // dvdx
     auto kernel = [dx_inv](auto args) {
       auto [v, out] = args;
@@ -359,7 +361,9 @@ void compute_aux_fields(Array &u, Array &v, Array &e, Array &hu, Array &hv,
   }
   dr::mhp::halo(hv).exchange_begin();
 
-  dr::mhp::halo(u).exchange_finalize();
+  if (finalize_halo) {
+    dr::mhp::halo(u).exchange_finalize();
+  }
   { // hu
     auto kernel = [](auto args) {
       auto [u, e, h, out] = args;
@@ -386,12 +390,12 @@ void compute_aux_fields(Array &u, Array &v, Array &e, Array &hu, Array &hv,
 void rhs(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
          Array &dvdx, Array &H_at_f, Array &q, Array &qa, Array &qb, Array &qg,
          Array &qd, Array &dudt, Array &dvdt, Array &dedt, Array &h, double g,
-         double f, double dx_inv, double dy_inv, double dt) {
+         double f, double dx_inv, double dy_inv, double dt, bool finalize_halo) {
   /**
    * Evaluate right hand side of the equations, vector invariant form
    */
   compute_aux_fields(u, v, e, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, h,
-                     f, dx_inv, dy_inv);
+                     f, dx_inv, dy_inv, finalize_halo);
   { // dudt
     auto kernel = [dt, g, dx_inv](auto tuple) {
       auto [e, u, v, hv, qa, qb, qg, qd, out] = tuple;
@@ -477,7 +481,7 @@ void rhs(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
 void stage1(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
             Array &dvdx, Array &H_at_f, Array &q, Array &qa, Array &qb,
             Array &qg, Array &qd, Array &u1, Array &v1, Array &e1, Array &h,
-            double g, double f, double dx_inv, double dy_inv, double dt) {
+            double g, double f, double dx_inv, double dy_inv, double dt, bool finalize_halo) {
   /**
    * Evaluate stage 1 of the RK time stepper
    *
@@ -485,7 +489,7 @@ void stage1(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
    *
    */
   compute_aux_fields(u, v, e, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, h,
-                     f, dx_inv, dy_inv);
+                     f, dx_inv, dy_inv, finalize_halo);
   { // u update
     auto kernel = [dt, g, dx_inv](auto tuple) {
       auto [e, u, v, hv, qa, qb, qg, qd, out] = tuple;
@@ -576,7 +580,7 @@ void stage2(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
             Array &dvdx, Array &H_at_f, Array &q, Array &qa, Array &qb,
             Array &qg, Array &qd, Array &u1, Array &v1, Array &e1, Array &u2,
             Array &v2, Array &e2, Array &h, double g, double f, double dx_inv,
-            double dy_inv, double dt) {
+            double dy_inv, double dt, bool finalize_halo) {
   /**
    * Evaluate stage 2 of the RK time stepper
    *
@@ -584,7 +588,7 @@ void stage2(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
    *
    */
   compute_aux_fields(u1, v1, e1, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd,
-                     h, f, dx_inv, dy_inv);
+                     h, f, dx_inv, dy_inv, finalize_halo);
   { // u update
     auto kernel = [dt, g, dx_inv](auto tuple) {
       auto [e, u, v, hv, qa, qb, qg, qd, u0, out] = tuple;
@@ -682,7 +686,7 @@ void stage2(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
 void stage3(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
             Array &dvdx, Array &H_at_f, Array &q, Array &qa, Array &qb,
             Array &qg, Array &qd, Array &u2, Array &v2, Array &e2, Array &h,
-            double g, double f, double dx_inv, double dy_inv, double dt) {
+            double g, double f, double dx_inv, double dy_inv, double dt, bool finalize_halo) {
   /**
    * Evaluate stage 3 of the RK time stepper
    *
@@ -690,7 +694,7 @@ void stage3(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
    *
    */
   compute_aux_fields(u2, v2, e2, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd,
-                     h, f, dx_inv, dy_inv);
+                     h, f, dx_inv, dy_inv, finalize_halo);
   { // u update
     auto kernel = [dt, g, dx_inv](auto tuple) {
       auto [e, u, v, hv, qa, qb, qg, qd, out] = tuple;
@@ -944,11 +948,15 @@ int run(
   double t = 0.0;
   double initial_vol = 0.0;
   double initial_ene = 0.0;
+  bool finalize_halo;
   auto tic = std::chrono::steady_clock::now();
   for (std::size_t i = 0; i < nt + 1; i++) {
     t = i * dt;
 
     if (t >= next_t_export - 1e-8) {
+      dr::mhp::halo(u).exchange_finalize();
+      dr::mhp::halo(v).exchange_finalize();
+      finalize_halo = false;
 
       double elev_max = dr::mhp::reduce(e, static_cast<T>(0), max);
       double u_max = dr::mhp::reduce(u, static_cast<T>(0), max);
@@ -1021,21 +1029,23 @@ int run(
       }
       i_export += 1;
       next_t_export = i_export * t_export;
+    } else {
+      finalize_halo = true;
     }
 
     // step
     iter_callback();
     if (fused_kernels) {
       stage1(u, v, e, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, u1, v1, e1,
-             h, g, f, grid.dx_inv, grid.dy_inv, dt);
+             h, g, f, grid.dx_inv, grid.dy_inv, dt, finalize_halo);
       stage2(u, v, e, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, u1, v1, e1,
-             u2, v2, e2, h, g, f, grid.dx_inv, grid.dy_inv, dt);
+             u2, v2, e2, h, g, f, grid.dx_inv, grid.dy_inv, dt, true);
       stage3(u, v, e, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, u2, v2, e2,
-             h, g, f, grid.dx_inv, grid.dy_inv, dt);
+             h, g, f, grid.dx_inv, grid.dy_inv, dt, true);
     } else {
       // RK stage 1: u1 = u + dt*rhs(u)
       rhs(u, v, e, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, dudt, dvdt,
-          dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt);
+          dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt, finalize_halo);
       dr::mhp::transform(dr::mhp::views::zip(u, dudt), u1.begin(), add);
       dr::mhp::halo(u1).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(v, dvdt), v1.begin(), add);
@@ -1045,7 +1055,7 @@ int run(
 
       // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
       rhs(u1, v1, e1, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, dudt, dvdt,
-          dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt);
+          dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt, true);
       dr::mhp::transform(dr::mhp::views::zip(u, u1, dudt), u2.begin(),
                          rk_update2);
       dr::mhp::halo(u2).exchange_begin();
@@ -1058,7 +1068,7 @@ int run(
 
       // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
       rhs(u2, v2, e2, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, dudt, dvdt,
-          dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt);
+          dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt, true);
       dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(),
                          rk_update3);
       dr::mhp::halo(u).exchange_begin();
