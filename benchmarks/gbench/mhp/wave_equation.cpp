@@ -81,9 +81,7 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0) - 1, e.extent(1)};
     auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
     auto dudt_view = dr::mhp::views::submdspan(dudt.view(), start, end);
     dr::mhp::stencil_for_each(rhs_dedx, e_view, dudt_view);
@@ -95,9 +93,7 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
   };
   {
     std::array<std::size_t, 2> start{0, 1};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0)),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0), e.extent(1)};
     auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
     auto dvdt_view = dr::mhp::views::submdspan(dvdt.view(), start, end);
     dr::mhp::stencil_for_each(rhs_dedy, e_view, dvdt_view);
@@ -113,9 +109,7 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(u.mdspan().extent(0)),
-        static_cast<std::size_t>(u.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{u.extent(0), u.extent(1)};
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
     auto dedt_view = dr::mhp::views::submdspan(dedt.view(), start, end);
@@ -140,9 +134,7 @@ void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0) - 1, e.extent(1)};
     auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
     auto u1_view = dr::mhp::views::submdspan(u1.view(), start, end);
@@ -158,9 +150,7 @@ void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
   };
   {
     std::array<std::size_t, 2> start{0, 1};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0)),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0), e.extent(1)};
     auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
     auto v1_view = dr::mhp::views::submdspan(v1.view(), start, end);
@@ -179,9 +169,7 @@ void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(u.mdspan().extent(0)),
-        static_cast<std::size_t>(u.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{u.extent(0), u.extent(1)};
     auto e_view = dr::mhp::views::submdspan(e.view(), start, end);
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
@@ -209,9 +197,7 @@ void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0) - 1, e.extent(1)};
     auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
     auto u1_view = dr::mhp::views::submdspan(u1.view(), start, end);
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
@@ -228,9 +214,7 @@ void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
   };
   {
     std::array<std::size_t, 2> start{0, 1};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0)),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0), e.extent(1)};
     auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
     auto v1_view = dr::mhp::views::submdspan(v1.view(), start, end);
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
@@ -250,9 +234,7 @@ void stage2(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(u.mdspan().extent(0)),
-        static_cast<std::size_t>(u.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{u.extent(0), u.extent(1)};
     auto e1_view = dr::mhp::views::submdspan(e1.view(), start, end);
     auto u1_view = dr::mhp::views::submdspan(u1.view(), start, end);
     auto v1_view = dr::mhp::views::submdspan(v1.view(), start, end);
@@ -282,9 +264,7 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0) - 1),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0) - 1, e.extent(1)};
     auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
     auto u2_view = dr::mhp::views::submdspan(u2.view(), start, end);
     auto u_view = dr::mhp::views::submdspan(u.view(), start, end);
@@ -301,9 +281,7 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   };
   {
     std::array<std::size_t, 2> start{0, 1};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(e.mdspan().extent(0)),
-        static_cast<std::size_t>(e.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{e.extent(0), e.extent(1)};
     auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
     auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);
     auto v_view = dr::mhp::views::submdspan(v.view(), start, end);
@@ -323,9 +301,7 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   };
   {
     std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{
-        static_cast<std::size_t>(u.mdspan().extent(0)),
-        static_cast<std::size_t>(u.mdspan().extent(1))};
+    std::array<std::size_t, 2> end{u.extent(0), u.extent(1)};
     auto e2_view = dr::mhp::views::submdspan(e2.view(), start, end);
     auto u2_view = dr::mhp::views::submdspan(u2.view(), start, end);
     auto v2_view = dr::mhp::views::submdspan(v2.view(), start, end);

@@ -27,6 +27,7 @@ public:
   auto &halo() const { return dr::mhp::halo(dv_); }
 
   auto mdspan() const { return md_view_.mdspan(); }
+  auto extent(std::size_t r) const { return mdspan().extent(r); }
   auto grid() { return md_view_.grid(); }
   auto view() const { return md_view_; }
 
