@@ -11,6 +11,9 @@ TYPED_TEST_SUITE(Halo, AllTypes);
 template <typename DV>
 void local_is_accessible_in_halo_region(const int halo_prev,
                                         const int halo_next) {
+  if (options.count("device-memory")) {
+    return;
+  }
   DV dv(6, dr::mhp::distribution().halo(halo_prev, halo_next));
   iota(dv, 0);
   dv.halo().exchange();

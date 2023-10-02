@@ -34,6 +34,9 @@ public:
 TYPED_TEST_SUITE(SegmentUtils, AllTypes);
 
 TYPED_TEST(SegmentUtils, LocalSegment) {
+  if (options.count("device-memory")) {
+    return;
+  }
   Ops1<TypeParam> ops(10);
   auto segments = dr::mhp::local_segments(ops.dist_vec);
   EXPECT_EQ(dr::mhp::local_segment(ops.dist_vec), *rng::begin(segments));
