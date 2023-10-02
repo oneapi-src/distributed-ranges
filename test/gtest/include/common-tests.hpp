@@ -296,9 +296,9 @@ concept streamable = requires(std::ostream &os, T value) {
 namespace dr::mhp {
 
 // gtest relies on ADL to find the printer
-template <typename T, typename Alloc>
+template <typename T>
 std::ostream &operator<<(std::ostream &os,
-                         const xhp::distributed_vector<T, Alloc> &dist) {
+                         const xhp::distributed_vector<T> &dist) {
   os << "{ ";
   bool first = true;
   for (const auto &val : dist) {
@@ -317,8 +317,8 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-template <typename T, typename Allocator>
-bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
+template <typename T>
+bool operator==(const xhp::distributed_vector<T> &dist_vec,
                 const std::vector<T> &local_vec) {
   return is_equal(local_vec, dist_vec);
 }
@@ -328,9 +328,9 @@ bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
 namespace dr::shp {
 
 // gtest relies on ADL to find the printer
-template <typename T, typename Alloc>
+template <typename T>
 std::ostream &operator<<(std::ostream &os,
-                         const xhp::distributed_vector<T, Alloc> &dist) {
+                         const xhp::distributed_vector<T> &dist) {
   os << "{ ";
   bool first = true;
   for (const auto &val : dist) {
@@ -349,8 +349,8 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-template <typename T, typename Allocator>
-bool operator==(const xhp::distributed_vector<T, Allocator> &dist_vec,
+template <typename T>
+bool operator==(const xhp::distributed_vector<T> &dist_vec,
                 const std::vector<T> &local_vec) {
   return is_equal(dist_vec, local_vec);
 }
