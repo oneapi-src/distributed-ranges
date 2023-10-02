@@ -1081,6 +1081,7 @@ int run(
     double read_bw = double(nread) / t_step / (1024 * 1024 * 1024);
     double write_bw = double(nwrite) / t_step / (1024 * 1024 * 1024);
     double flop_rate = double(nflop) / t_step / (1000 * 1000 * 1000);
+    double ai = double(nflop) / double(nread + nwrite);
     std::cout << "Duration: " << std::setprecision(3) << t_cpu;
     std::cout << " s" << std::endl;
     std::cout << "Time per step: " << std::setprecision(2) << t_step * 1000;
@@ -1091,6 +1092,8 @@ int run(
     std::cout << " GB/s" << std::endl;
     std::cout << "FLOP/s: " << std::setprecision(3) << flop_rate;
     std::cout << " GFLOP/s" << std::endl;
+    std::cout << "Arithmetic intensity: " << std::setprecision(5) << ai;
+    std::cout << " FLOP/Byte" << std::endl;
   }
 
   // printArray(e, "Final elev");
