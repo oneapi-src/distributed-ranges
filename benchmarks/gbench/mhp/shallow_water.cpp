@@ -948,6 +948,7 @@ int run(
   double t = 0.0;
   double initial_vol = 0.0;
   double initial_ene = 0.0;
+  double diff_ene;
   bool finalize_halo;
   auto tic = std::chrono::steady_clock::now();
   for (std::size_t i = 0; i < nt + 1; i++) {
@@ -1008,7 +1009,7 @@ int run(
         initial_ene = total_ene;
       }
       double diff_vol = total_vol - initial_vol;
-      double diff_ene = total_ene - initial_ene;
+      diff_ene = total_ene - initial_ene;
 
       if (comm_rank == 0) {
         printf("%2lu %4lu %.3f ", i_export, i, t);
@@ -1155,7 +1156,9 @@ int run(
       std::cout << "Skipping correctness test due to small problem size."
                 << std::endl;
     }
-  } else if (nx == 128 && ny == 128) {
+    return 0;
+  }
+  if (nx == 128 && ny == 128) {
     double expected_L2 = 4.315799035627906e-05;
     double rel_tolerance = 1e-6;
     double rel_err = err_L2 / expected_L2 - 1.0;
@@ -1176,6 +1179,14 @@ int run(
       }
       return 1;
     }
+  }
+  double ene_tolerance = 1e-8;
+  if (!(fabs(diff_ene) < ene_tolerance)) {
+      if (comm_rank == 0) {
+        std::cout << "ERROR: Energy error exceeds tolerance: |" << diff_ene << "| > "
+                  << ene_tolerance << std::endl;
+      }
+      return 1;
   }
   if (comm_rank == 0) {
     std::cout << "SUCCESS" << std::endl;
