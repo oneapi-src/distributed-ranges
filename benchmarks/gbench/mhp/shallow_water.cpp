@@ -129,7 +129,7 @@ double initial_v(double x, double y, double lx, double ly) {
 void set_field(Array &arr,
                std::function<double(double, double, double, double)> func,
                ArakawaCGrid &grid, double x_offset = 0.0, double y_offset = 0.0,
-               int row_offset = 0) {
+               std::size_t row_offset = 0) {
   /**
    * Assign Array values based on coordinate-dependent function `func`.
    *
