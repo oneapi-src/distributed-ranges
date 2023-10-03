@@ -952,7 +952,7 @@ int run(
   double t = 0.0;
   double initial_vol = 0.0;
   double initial_ene = 0.0;
-  double diff_ene;
+  double diff_ene = 0.0;
   bool finalize_halo;
   auto tic = std::chrono::steady_clock::now();
   for (std::size_t i = 0; i < nt + 1; i++) {
