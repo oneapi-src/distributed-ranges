@@ -13,6 +13,7 @@ add_executable(
   ../common/inclusive_scan.cpp
   ../common/stream.cpp
   wave_equation.cpp
+  shallow_water.cpp
   rooted.cpp
   stencil_1d.cpp
   stencil_2d.cpp
@@ -66,4 +67,14 @@ add_mpi_test(wave_equation_fused wave_equation 1 -f)
 if(ENABLE_SYCL)
   add_mpi_test(wave_equation-sycl wave_equation 2 --sycl)
   add_mpi_test(wave_equation_fused-sycl wave_equation 2 --sycl -f)
+endif()
+
+add_executable(shallow_water shallow_water.cpp)
+target_link_libraries(shallow_water cxxopts DR::mpi)
+target_compile_definitions(shallow_water PRIVATE STANDALONE_BENCHMARK)
+add_mpi_test(shallow_water shallow_water 1)
+add_mpi_test(shallow_water_fused shallow_water 1 -f)
+if(ENABLE_SYCL)
+  add_mpi_test(shallow_water-sycl shallow_water 2 --sycl)
+  add_mpi_test(shallow_water_fused-sycl shallow_water 2 --sycl -f)
 endif()

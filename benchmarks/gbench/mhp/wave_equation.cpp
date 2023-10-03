@@ -5,6 +5,7 @@
 #include "cxxopts.hpp"
 #include "dr/mhp.hpp"
 #include "mpi.h"
+#include "wave_utils.hpp"
 #include <chrono>
 #include <iomanip>
 
@@ -20,8 +21,9 @@ int comm_size;
 
 #endif
 
-using T = double;
+namespace WaveEquation {
 
+using T = double;
 using Array = dr::mhp::distributed_mdarray<T, 2>;
 
 // gravitational acceleration
@@ -314,32 +316,14 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
 int run(
     int n, bool benchmark_mode, bool fused_kernels,
     std::function<void()> iter_callback = []() {}) {
-
-  // Arakava C grid
-  //
-  // T points at cell centers
-  // U points at center of x edges
-  // V points at center of y edges
-  // F points at vertices
-  //
-  //   |       |       |       |       |
-  //   f---v---f---v---f---v---f---v---f-
-  //   |       |       |       |       |
-  //   u   t   u   t   u   t   u   t   u
-  //   |       |       |       |       |
-  //   f---v---f---v---f---v---f---v---f-
-
+  // construct grid
   // number of cells in x, y direction
   std::size_t nx = n;
   std::size_t ny = n;
   const double xmin = -1, xmax = 1;
   const double ymin = -1, ymax = 1;
-  const double lx = xmax - xmin;
-  const double ly = ymax - ymin;
-  const double dx = lx / nx;
-  const double dy = ly / ny;
-  const double dx_inv = 1.0 / dx;
-  const double dy_inv = 1.0 / dy;
+  ArakawaCGrid grid(xmin, xmax, ymin, ymax, nx, ny);
+
   std::size_t halo_radius = 1;
   auto dist = dr::mhp::distribution().halo(halo_radius);
 
@@ -366,7 +350,7 @@ int run(
 
   double c = std::sqrt(g * h);
   double alpha = 0.5;
-  double dt = alpha * dx / c;
+  double dt = alpha * std::min(grid.dx, grid.dy) / c;
   dt = t_export / static_cast<int>(ceil(t_export / dt));
   std::size_t nt = static_cast<int>(ceil(t_end / dt));
   if (benchmark_mode) {
@@ -418,9 +402,9 @@ int run(
         if (global_i > 0) {
           for (std::size_t j = 0; j < e.extent(1); j++) {
             std::size_t global_j = j + origin[1];
-            T x = xmin + dx / 2 + (global_i - 1) * dx;
-            T y = ymin + dy / 2 + global_j * dy;
-            e(i, j) = initial_elev(x, y, lx, ly);
+            T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
+            T y = ymin + grid.dy / 2 + global_j * grid.dy;
+            e(i, j) = initial_elev(x, y, grid.lx, grid.ly);
           }
         }
       }
@@ -455,7 +439,8 @@ int run(
       double u_max = dr::mhp::reduce(u, static_cast<T>(0), max);
 
       double total_v =
-          (dr::mhp::reduce(e, static_cast<T>(0), std::plus{}) + h) * dx * dy;
+          (dr::mhp::reduce(e, static_cast<T>(0), std::plus{}) + h) * grid.dx *
+          grid.dy;
       if (i == 0) {
         initial_v = total_v;
       }
@@ -481,12 +466,13 @@ int run(
     // step
     iter_callback();
     if (fused_kernels) {
-      stage1(u, v, e, u1, v1, e1, g, h, dx_inv, dy_inv, dt);
-      stage2(u, v, e, u1, v1, e1, u2, v2, e2, g, h, dx_inv, dy_inv, dt);
-      stage3(u, v, e, u2, v2, e2, g, h, dx_inv, dy_inv, dt);
+      stage1(u, v, e, u1, v1, e1, g, h, grid.dx_inv, grid.dy_inv, dt);
+      stage2(u, v, e, u1, v1, e1, u2, v2, e2, g, h, grid.dx_inv, grid.dy_inv,
+             dt);
+      stage3(u, v, e, u2, v2, e2, g, h, grid.dx_inv, grid.dy_inv, dt);
     } else {
       // RK stage 1: u1 = u + dt*rhs(u)
-      rhs(u, v, e, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+      rhs(u, v, e, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt);
       dr::mhp::transform(dr::mhp::views::zip(u, dudt), u1.begin(), add);
       dr::mhp::halo(u1).exchange_begin();
       dr::mhp::transform(dr::mhp::views::zip(v, dvdt), v1.begin(), add);
@@ -495,7 +481,7 @@ int run(
       dr::mhp::halo(e1).exchange_begin();
 
       // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
-      rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+      rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt);
       dr::mhp::transform(dr::mhp::views::zip(u, u1, dudt), u2.begin(),
                          rk_update2);
       dr::mhp::halo(u2).exchange_begin();
@@ -507,7 +493,7 @@ int run(
       dr::mhp::halo(e2).exchange_begin();
 
       // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
-      rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, dx_inv, dy_inv, dt);
+      rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt);
       dr::mhp::transform(dr::mhp::views::zip(u, u2, dudt), u.begin(),
                          rk_update3);
       dr::mhp::halo(u).exchange_begin();
@@ -530,6 +516,7 @@ int run(
     double read_bw = double(nread) / t_step / (1024 * 1024 * 1024);
     double write_bw = double(nwrite) / t_step / (1024 * 1024 * 1024);
     double flop_rate = double(nflop) / t_step / (1000 * 1000 * 1000);
+    double ai = double(nflop) / double(nread + nwrite);
     std::cout << "Duration: " << std::setprecision(3) << t_cpu;
     std::cout << " s" << std::endl;
     std::cout << "Time per step: " << std::setprecision(2) << t_step * 1000;
@@ -540,6 +527,8 @@ int run(
     std::cout << " GB/s" << std::endl;
     std::cout << "FLOP/s: " << std::setprecision(3) << flop_rate;
     std::cout << " GFLOP/s" << std::endl;
+    std::cout << "Arithmetic intensity: " << std::setprecision(5) << ai;
+    std::cout << " FLOP/Byte" << std::endl;
   }
 
   // Compute error against exact solution
@@ -557,9 +546,9 @@ int run(
         if (global_i > 0) {
           for (std::size_t j = 0; j < e.extent(1); j++) {
             std::size_t global_j = j + origin[1];
-            T x = xmin + dx / 2 + (global_i - 1) * dx;
-            T y = ymin + dy / 2 + global_j * dy;
-            e(i, j) = exact_elev(x, y, t, lx, ly);
+            T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
+            T y = ymin + grid.dy / 2 + global_j * grid.dy;
+            e(i, j) = exact_elev(x, y, t, grid.lx, grid.ly);
           }
         }
       }
@@ -572,8 +561,8 @@ int run(
   };
   dr::mhp::transform(dr::mhp::views::zip(e, e_exact), error.begin(),
                      error_kernel);
-  double err_L2 = dr::mhp::reduce(error, static_cast<T>(0), std::plus{}) * dx *
-                  dy / lx / ly;
+  double err_L2 = dr::mhp::reduce(error, static_cast<T>(0), std::plus{}) *
+                  grid.dx * grid.dy / grid.lx / grid.ly;
   err_L2 = std::sqrt(err_L2);
   if (comm_rank == 0) {
     std::cout << "L2 error: " << std::setw(7) << std::scientific;
@@ -616,6 +605,8 @@ int run(
 
   return 0;
 }
+
+} // namespace WaveEquation
 
 #ifdef STANDALONE_BENCHMARK
 
@@ -665,7 +656,7 @@ int main(int argc, char *argv[]) {
   bool benchmark_mode = options["t"].as<bool>();
   bool fused_kernels = options["f"].as<bool>();
 
-  auto error = run(n, benchmark_mode, fused_kernels);
+  auto error = WaveEquation::run(n, benchmark_mode, fused_kernels);
   dr::mhp::finalize();
   MPI_Finalize();
   return error;
@@ -677,12 +668,12 @@ static void WaveEquation_DR(benchmark::State &state) {
 
   int n = 4000;
   std::size_t nread, nwrite, nflop;
-  calculate_complexity(n, n, nread, nwrite, nflop);
+  WaveEquation::calculate_complexity(n, n, nread, nwrite, nflop);
   Stats stats(state, nread, nwrite, nflop);
 
   auto iter_callback = [&stats]() { stats.rep(); };
   for (auto _ : state) {
-    run(n, true, true, iter_callback);
+    WaveEquation::run(n, true, true, iter_callback);
   }
 }
 
