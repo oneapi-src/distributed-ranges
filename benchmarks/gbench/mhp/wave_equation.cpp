@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "wave_utils.hpp"
 #include "cxxopts.hpp"
 #include "dr/mhp.hpp"
 #include "mpi.h"
+#include "wave_utils.hpp"
 #include <chrono>
 #include <iomanip>
 
@@ -350,7 +350,7 @@ int run(
 
   double c = std::sqrt(g * h);
   double alpha = 0.5;
-  double dt = alpha *std::min(grid.dx, grid.dy) / c;
+  double dt = alpha * std::min(grid.dx, grid.dy) / c;
   dt = t_export / static_cast<int>(ceil(t_export / dt));
   std::size_t nt = static_cast<int>(ceil(t_end / dt));
   if (benchmark_mode) {
@@ -439,7 +439,8 @@ int run(
       double u_max = dr::mhp::reduce(u, static_cast<T>(0), max);
 
       double total_v =
-          (dr::mhp::reduce(e, static_cast<T>(0), std::plus{}) + h) * grid.dx * grid.dy;
+          (dr::mhp::reduce(e, static_cast<T>(0), std::plus{}) + h) * grid.dx *
+          grid.dy;
       if (i == 0) {
         initial_v = total_v;
       }
@@ -466,7 +467,8 @@ int run(
     iter_callback();
     if (fused_kernels) {
       stage1(u, v, e, u1, v1, e1, g, h, grid.dx_inv, grid.dy_inv, dt);
-      stage2(u, v, e, u1, v1, e1, u2, v2, e2, g, h, grid.dx_inv, grid.dy_inv, dt);
+      stage2(u, v, e, u1, v1, e1, u2, v2, e2, g, h, grid.dx_inv, grid.dy_inv,
+             dt);
       stage3(u, v, e, u2, v2, e2, g, h, grid.dx_inv, grid.dy_inv, dt);
     } else {
       // RK stage 1: u1 = u + dt*rhs(u)
@@ -559,7 +561,8 @@ int run(
   };
   dr::mhp::transform(dr::mhp::views::zip(e, e_exact), error.begin(),
                      error_kernel);
-  double err_L2 = dr::mhp::reduce(error, static_cast<T>(0), std::plus{}) * grid.dx * grid.dy / grid.lx / grid.ly;
+  double err_L2 = dr::mhp::reduce(error, static_cast<T>(0), std::plus{}) *
+                  grid.dx * grid.dy / grid.lx / grid.ly;
   err_L2 = std::sqrt(err_L2);
   if (comm_rank == 0) {
     std::cout << "L2 error: " << std::setw(7) << std::scientific;

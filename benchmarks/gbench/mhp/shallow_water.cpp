@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "wave_utils.hpp"
 #include "cxxopts.hpp"
 #include "dr/mhp.hpp"
 #include "mpi.h"
+#include "wave_utils.hpp"
 #include <chrono>
 #include <iomanip>
 
@@ -282,7 +282,8 @@ void compute_total_depth(Array &e, Array &h, Array &H_at_f) {
 void compute_aux_fields(Array &u, Array &v, Array &e, Array &hu, Array &hv,
                         Array &dudy, Array &dvdx, Array &H_at_f, Array &q,
                         Array &qa, Array &qb, Array &qg, Array &qd, Array &h,
-                        double f, double dx_inv, double dy_inv, bool finalize_halo) {
+                        double f, double dx_inv, double dy_inv,
+                        bool finalize_halo) {
   { // dudy
     auto kernel = [dy_inv](auto args) {
       auto [u, out] = args;
@@ -390,7 +391,8 @@ void compute_aux_fields(Array &u, Array &v, Array &e, Array &hu, Array &hv,
 void rhs(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
          Array &dvdx, Array &H_at_f, Array &q, Array &qa, Array &qb, Array &qg,
          Array &qd, Array &dudt, Array &dvdt, Array &dedt, Array &h, double g,
-         double f, double dx_inv, double dy_inv, double dt, bool finalize_halo) {
+         double f, double dx_inv, double dy_inv, double dt,
+         bool finalize_halo) {
   /**
    * Evaluate right hand side of the equations, vector invariant form
    */
@@ -481,7 +483,8 @@ void rhs(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
 void stage1(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
             Array &dvdx, Array &H_at_f, Array &q, Array &qa, Array &qb,
             Array &qg, Array &qd, Array &u1, Array &v1, Array &e1, Array &h,
-            double g, double f, double dx_inv, double dy_inv, double dt, bool finalize_halo) {
+            double g, double f, double dx_inv, double dy_inv, double dt,
+            bool finalize_halo) {
   /**
    * Evaluate stage 1 of the RK time stepper
    *
@@ -686,7 +689,8 @@ void stage2(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
 void stage3(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
             Array &dvdx, Array &H_at_f, Array &q, Array &qa, Array &qb,
             Array &qg, Array &qd, Array &u2, Array &v2, Array &e2, Array &h,
-            double g, double f, double dx_inv, double dy_inv, double dt, bool finalize_halo) {
+            double g, double f, double dx_inv, double dy_inv, double dt,
+            bool finalize_halo) {
   /**
    * Evaluate stage 3 of the RK time stepper
    *
@@ -1182,11 +1186,11 @@ int run(
   }
   double ene_tolerance = 1e-8;
   if (!(fabs(diff_ene) < ene_tolerance)) {
-      if (comm_rank == 0) {
-        std::cout << "ERROR: Energy error exceeds tolerance: |" << diff_ene << "| > "
-                  << ene_tolerance << std::endl;
-      }
-      return 1;
+    if (comm_rank == 0) {
+      std::cout << "ERROR: Energy error exceeds tolerance: |" << diff_ene
+                << "| > " << ene_tolerance << std::endl;
+    }
+    return 1;
   }
   if (comm_rank == 0) {
     std::cout << "SUCCESS" << std::endl;
