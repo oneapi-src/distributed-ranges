@@ -1259,7 +1259,7 @@ int main(int argc, char *argv[]) {
 
 static void ShallowWater_DR(benchmark::State &state) {
 
-  int n = 4000;
+  int n = 1400;
   std::size_t nread, nwrite, nflop;
   ShallowWater::calculate_complexity(n, n, nread, nwrite, nflop);
   Stats stats(state, nread, nwrite, nflop);
