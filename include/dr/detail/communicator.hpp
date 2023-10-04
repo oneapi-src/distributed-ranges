@@ -109,8 +109,6 @@ public:
   template <typename T>
   void isend(const T *data, std::size_t count, std::size_t dst_rank, tag t,
              MPI_Request *request) const {
-    drlog.debug("isend {}->{} cnt {} size {}\n", rank_, dst_rank, count,
-                count * sizeof(T));
     MPI_Isend(data, count * sizeof(T), MPI_BYTE, dst_rank, int(t), mpi_comm_,
               request);
   }
@@ -124,7 +122,6 @@ public:
   template <typename T>
   void irecv(T *data, std::size_t size, std::size_t src_rank, tag t,
              MPI_Request *request) const {
-    drlog.debug("irecv {}<-{} size {}\n", rank_, src_rank, size);
     MPI_Irecv(data, size * sizeof(T), MPI_BYTE, src_rank, int(t), mpi_comm_,
               request);
   }
@@ -170,9 +167,11 @@ public:
     rng::transform(recvdsp, _recvdsp.begin(),
                    [](auto e) { return e * sizeof(valT); });
 
+    assert(_sendcnt[1] == sendcnt[1] * sizeof(valT));
+
     MPI_Alltoallv(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
                   MPI_BYTE, rng::data(recvbuf), rng::data(_recvcnt),
-                  rng::data(_recvdsp), MPI_BYTE, MPI_COMM_WORLD);
+                  rng::data(_recvdsp), MPI_BYTE, mpi_comm_);
   }
 
   bool operator==(const communicator &other) const {

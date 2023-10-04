@@ -47,6 +47,7 @@ void local_sort(R &r, Compare &&comp) {
   }
 }
 
+// TODO: quite a long function, refactor to make the code more clear
 template <dr::distributed_range R, typename Compare>
 void dist_sort(R &r, Compare &&comp) {
   using valT = typename R::value_type;
@@ -59,17 +60,20 @@ void dist_sort(R &r, Compare &&comp) {
 
   __detail::local_sort(lsegment, comp);
 
-  std::vector<valT> vec_lmedians(_comm_size - 1);
-  std::vector<valT> vec_gmedians((_comm_size - 1) * _comm_size);
+  std::vector<valT> vec_lmedians(_comm_size + 1);
+  std::vector<valT> vec_gmedians((_comm_size + 1) * _comm_size);
 
-  double _step_m = (double)rng::size(lsegment) / (double)_comm_size;
+  const double _step_m = static_cast<double>(rng::size(lsegment)) /
+                         static_cast<double>(_comm_size);
 
   /* calculate splitting values and indices - find n-1 dividers splitting each
    * segment into equal parts */
 
   for (std::size_t _i = 0; _i < rng::size(vec_lmedians); _i++) {
-    vec_lmedians[_i] = lsegment[(_i + 1) * _step_m];
+    // vec_lmedians[_i] = lsegment[(_i + 1) * _step_m];
+    vec_lmedians[_i] = lsegment[_i * _step_m];
   }
+  vec_lmedians.back() = lsegment.back();
 
   default_comm().all_gather(vec_lmedians, vec_gmedians);
 
@@ -80,7 +84,7 @@ void dist_sort(R &r, Compare &&comp) {
   std::vector<valT> vec_split_v(_comm_size - 1);
 
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
-    vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _comm_size)];
+    vec_split_v[_i] = vec_gmedians[(_i + 1) * (_comm_size + 1) - 1];
   }
 
   /* calculate splitting indices (start of buffers) and sizes of buffers to send
@@ -101,8 +105,8 @@ void dist_sort(R &r, Compare &&comp) {
       segidx++;
     }
   }
-  assert((rng::size(lsegment) - vec_split_i[vidx - 1]) > 0);
-  vec_split_s[vidx - 1] = (rng::size(lsegment) - vec_split_i[vidx - 1]);
+  assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
+  vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
 
   /* send data size to each node */
   std::vector<std::size_t> vec_rsizes(_comm_size, 0);
@@ -113,11 +117,13 @@ void dist_sort(R &r, Compare &&comp) {
   std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
                       vec_rindices.begin(), 0);
 
-  const std::size_t _recv_elems =
-      std::reduce(vec_rsizes.begin(), vec_rsizes.end());
+  // const std::size_t _recv_elems =
+  //     std::reduce(vec_rsizes.begin(), vec_rsizes.end());
 
-  /* send and receive data belonging to each node, then redistribute data to
-   * achieve size of data equal to size of local segment */
+  const std::size_t _recv_elems = vec_rindices.back() + vec_rsizes.back();
+
+  /* send and receive data belonging to each node, then redistribute
+   * data to achieve size of data equal to size of local segment */
 
   std::vector<std::size_t> vec_recv_elems(_comm_size);
   MPI_Request req_recvelems;
@@ -127,7 +133,7 @@ void dist_sort(R &r, Compare &&comp) {
 
 #ifdef SYCL_LANGUAGE_VERSION
   auto policy = dpl_policy();
-  sycl::usm_allocator<valT, sycl::usm::alloc::shared> alloc(policy.queue());
+  sycl::usm_allocator<valT, sycl::usm::alloc::host> alloc(policy.queue());
   std::vector<valT, decltype(alloc)> vec_recvdata(_recv_elems, alloc);
 #else
   std::vector<valT> vec_recvdata(_recv_elems);
@@ -142,7 +148,7 @@ void dist_sort(R &r, Compare &&comp) {
 
   MPI_Wait(&req_recvelems, &stat_recvelemes);
 
-  std::size_t _total_elems =
+  const std::size_t _total_elems =
       std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
 
   assert(_total_elems == rng::size(r));
@@ -218,8 +224,8 @@ void dist_sort(R &r, Compare &&comp) {
       MPI_Wait(&req_r, &stat_r);
   }
 
-  std::size_t invalidate_left = std::max(-shift_left, 0);
-  std::size_t invalidate_right = std::max(-shift_right, 0);
+  const std::size_t invalidate_left = std::max(-shift_left, 0);
+  const std::size_t invalidate_right = std::max(-shift_right, 0);
 
   const std::size_t size_l = rng::size(vec_left);
   const std::size_t size_r = rng::size(vec_right);
