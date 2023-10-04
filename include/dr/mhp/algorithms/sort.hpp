@@ -232,9 +232,9 @@ void dist_sort(R &r, Compare &&comp) {
   std::size_t invalidate_left = std::max(-shift_left, 0);
   std::size_t invalidate_right = std::max(-shift_right, 0);
 
-  const size_t size_l = rng::size(vec_left);
-  const size_t size_r = rng::size(vec_right);
-  const size_t size_d =
+  const std::size_t size_l = rng::size(vec_left);
+  const std::size_t size_r = rng::size(vec_right);
+  const std::size_t size_d =
       rng::size(vec_recvdata) - (invalidate_left + invalidate_right);
 
   if (mhp::use_sycl()) {
