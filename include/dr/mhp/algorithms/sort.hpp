@@ -55,7 +55,6 @@ void dist_sort(R &r, Compare &&comp) {
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
   auto &&lsegment = local_segment(r);
-  drlog.debug("lsegment {}\n", lsegment);
   /* sort local segment */
 
   __detail::local_sort(lsegment, comp);
@@ -73,11 +72,8 @@ void dist_sort(R &r, Compare &&comp) {
   }
 
   default_comm().all_gather(vec_lmedians, vec_gmedians);
-  drlog.debug("gmedians {}\n", vec_gmedians);
 
   rng::sort(rng::begin(vec_gmedians), rng::end(vec_gmedians), comp);
-
-  drlog.debug("gmedians {}\n", vec_gmedians);
 
   /* find splitting values - medians of dividers */
 
@@ -86,8 +82,6 @@ void dist_sort(R &r, Compare &&comp) {
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
     vec_split_v[_i] = vec_gmedians[std::size_t((_i + 0.5) * _comm_size)];
   }
-
-  drlog.debug("splits {}\n", vec_split_v);
 
   /* calculate splitting indices (start of buffers) and sizes of buffers to send
    */
@@ -177,9 +171,7 @@ void dist_sort(R &r, Compare &&comp) {
   std::vector<valT> vec_left(std::max(shift_left, 0));
   std::vector<valT> vec_right(std::max(shift_right, 0));
 #endif
-  drlog.debug("vec_recvdata {}\n", vec_recvdata);
-  drlog.debug("vrd size {} shift left {} shift right {}\n",
-              rng::size(vec_recvdata), shift_left, shift_right);
+
   if (static_cast<int>(rng::size(vec_recvdata)) < -shift_left) {
     // Too little data in recv buffer to shift left - first get from right, then
     // send left
@@ -190,9 +182,6 @@ void dist_sort(R &r, Compare &&comp) {
   } else if (static_cast<int>(rng::size(vec_recvdata)) < -shift_right) {
     // Too little data in buffer to shift right - first get from left, then send
     // right
-
-    drlog.debug("Get from left first, recvdata size {} shr {}\n",
-                rng::size(vec_recvdata), -shift_right);
     assert(shift_left > 0);
     default_comm().irecv(vec_left, _comm_rank - 1, t, &req_l);
     MPI_Wait(&req_l, &stat_l);
