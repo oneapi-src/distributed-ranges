@@ -634,6 +634,7 @@ int main(int argc, char *argv[]) {
     ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
     ("sycl", "Execute on SYCL device")
     ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
+    ("device-memory", "Use device memory")
     ("h,help", "Print help");
   // clang-format on
 
@@ -650,7 +651,8 @@ int main(int argc, char *argv[]) {
     sycl::queue q = dr::mhp::select_queue();
     std::cout << "Run on: "
               << q.get_device().get_info<sycl::info::device::name>() << "\n";
-    dr::mhp::init(q);
+    dr::mhp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
+                                                    : sycl::usm::alloc::shared);
 #else
     std::cout << "Sycl support requires icpx\n";
     exit(1);
