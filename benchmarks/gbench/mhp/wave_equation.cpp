@@ -644,7 +644,7 @@ int main(int argc, char *argv[]) {
 
   if (options.count("sycl")) {
 #ifdef SYCL_LANGUAGE_VERSION
-    sycl::queue q = dr::mhp::select_queue();
+    sycl::queue q = dr::mhp::select_queue(MPI_COMM_WORLD);
     std::cout << "Run on: "
               << q.get_device().get_info<sycl::info::device::name>() << "\n";
     dr::mhp::init(q);
