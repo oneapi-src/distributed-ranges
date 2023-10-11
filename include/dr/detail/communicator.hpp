@@ -167,8 +167,6 @@ public:
     rng::transform(recvdsp, _recvdsp.begin(),
                    [](auto e) { return e * sizeof(valT); });
 
-    assert(_sendcnt[1] == sendcnt[1] * sizeof(valT));
-
     MPI_Alltoallv(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
                   MPI_BYTE, rng::data(recvbuf), rng::data(_recvcnt),
                   rng::data(_recvdsp), MPI_BYTE, mpi_comm_);
