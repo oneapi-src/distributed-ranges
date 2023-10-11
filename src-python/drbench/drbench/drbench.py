@@ -67,7 +67,7 @@ option_different_devices = click.option(
     "--different-devices",
     is_flag=True,
     default=False,
-    help="Ensures there are no multiple ranks on one SYCL device",
+    help="Ensures there are not multiple ranks on one SYCL device",
 )
 
 
@@ -462,6 +462,9 @@ def suite(
     base.reps = reps
     base.weak_scaling = weak_scaling
     base.different_devices = different_devices
+
+    print(f"weak_scaling is {weak_scaling}\n")
+    print(f"different_devices is {different_devices}\n")
 
     # if the platform does not support p2p, limit gpus to 1
     if p2p:

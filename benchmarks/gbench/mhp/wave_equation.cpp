@@ -644,7 +644,7 @@ int main(int argc, char *argv[]) {
 
   if (options.count("sycl")) {
 #ifdef SYCL_LANGUAGE_VERSION
-    sycl::queue q = dr::mhp::select_queue(MPI_COMM_WORLD);
+    sycl::queue q = dr::mhp::select_queue();
     std::cout << "Run on: "
               << q.get_device().get_info<sycl::info::device::name>() << "\n";
     dr::mhp::init(q);
@@ -674,6 +674,11 @@ int main(int argc, char *argv[]) {
 static void WaveEquation_DR(benchmark::State &state) {
 
   int n = ::sqrtl(default_vector_size);
+
+  // ugly hack to make it working in reasonable time in benchmarking framework
+  // drbench.py should specify right size or there should be another size option
+  // to use here instead of default_vector_size
+  n /= 4;
 
   std::size_t nread, nwrite, nflop;
   WaveEquation::calculate_complexity(n, n, nread, nwrite, nflop);

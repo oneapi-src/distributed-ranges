@@ -31,8 +31,7 @@ public:
 void dr_init() {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.count("sycl")) {
-    sycl::queue q = dr::mhp::select_queue(MPI_COMM_WORLD,
-                                          options.count("different-devices"));
+    sycl::queue q = dr::mhp::select_queue(options.count("different-devices"));
     benchmark::AddCustomContext("device_info", device_info(q.get_device()));
     dr::mhp::init(q);
     return;
