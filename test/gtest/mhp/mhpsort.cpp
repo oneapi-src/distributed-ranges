@@ -8,7 +8,9 @@ using T = int;
 using DV = xhp::distributed_vector<T>;
 using LV = std::vector<T>;
 
-TEST(MhpSort, BigRandom) {
+// disabled until the issue with Intel MPI is solved
+// https://github.com/orgs/oneapi-src/projects/15/views/2?pane=issue&itemId=38871430
+TEST(MhpSort, DISABLED_BigRandom) {
   LV v = generate_random<T>(2000000, 10000);
   auto size = v.size();
   DV d_v(size);
