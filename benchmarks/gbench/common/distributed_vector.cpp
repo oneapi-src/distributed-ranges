@@ -194,7 +194,6 @@ static void Reduce_max_mdarray_DR(benchmark::State &state) {
     fmt::print("Mismatch:\n  Ref {} Actual {}\n", 1, actual);
     exit(1);
   }
-  // check_reduce(actual);
 }
 DR_BENCHMARK(Reduce_max_mdarray_DR);
 
