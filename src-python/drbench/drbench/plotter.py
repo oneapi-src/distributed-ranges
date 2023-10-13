@@ -56,7 +56,7 @@ class Plotter:
                 weak_scaling = ctx["weak-scaling"] == "1"
             except KeyError:
                 click.fail(f"could not parse context of {fname}")
-            benchs = fdata["benchmarks"]
+            benches = fdata["benchmarks"]
             cores_per_socket = int(
                 re.search(
                     r"Core\(s\) per socket:\s*(\d+)", ctx["lscpu"]
@@ -68,7 +68,7 @@ class Plotter:
             cpu_sockets = (
                 ranks if runtime == "SYCL" else ranks / cores_per_socket
             )
-            for b in benchs:
+            for b in benches:
                 bname = b["name"].partition("/")[0]
                 if bname in ["DRSortFixture", "SyclSortFixture"]:
                     bname = b["name"].split("/")[1]

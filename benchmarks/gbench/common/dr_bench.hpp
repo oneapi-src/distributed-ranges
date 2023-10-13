@@ -176,14 +176,14 @@ inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
   if (options.count("context")) {
     for (std::string context :
          options["context"].as<std::vector<std::string>>()) {
-      std::string delimeter = ":";
-      auto split = context.find(delimeter);
+      std::string delimiter = ":";
+      auto split = context.find(delimiter);
       if (split == std::string::npos) {
         std::cerr << fmt::format("Context must use '{}' as delimiter: {}\n",
-                                 delimeter, context);
+                                 delimiter, context);
         exit(1);
       }
-      auto value_pos = split + delimeter.length();
+      auto value_pos = split + delimiter.length();
       benchmark::AddCustomContext(
           context.substr(0, split),
           context.substr(value_pos, context.length() - value_pos));

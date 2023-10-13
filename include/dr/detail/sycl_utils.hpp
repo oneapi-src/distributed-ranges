@@ -15,7 +15,7 @@
 namespace dr::__detail {
 
 //
-// return true if the device can be partitoned by affinity domain
+// return true if the device can be partitioned by affinity domain
 //
 inline auto partitionable(sycl::device device) {
   // Earlier commits used the query API, but they return true even
