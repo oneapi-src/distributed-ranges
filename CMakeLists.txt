@@ -38,8 +38,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   endif()
 
   if(ENABLE_SYCL)
-    add_compile_options(-fsycl -fno-sycl-id-queries-fit-in-int)
-    add_link_options(-fsycl -fno-sycl-id-queries-fit-in-int)
+    add_compile_options(-fsycl)
+    add_link_options(-fsycl)
     if(ENABLE_CUDA)
       add_compile_options(-fsycl-targets=nvptx64-nvidia-cuda
                           -Wno-error=unknown-cuda-version)

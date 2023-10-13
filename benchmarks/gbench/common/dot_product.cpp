@@ -29,7 +29,6 @@ void check_dp(auto actual, const nostd::source_location location =
   }
 }
 
-
 static void DotProduct_DR(benchmark::State &state) {
   xhp::distributed_vector<T> a(default_vector_size, init_val);
   xhp::distributed_vector<T> b(default_vector_size, init_val);

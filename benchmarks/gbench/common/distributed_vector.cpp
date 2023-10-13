@@ -176,26 +176,24 @@ static void Reduce_DR(benchmark::State &state) {
 }
 DR_BENCHMARK(Reduce_DR);
 
-static void Reduce_max_mdarray_DR(benchmark::State &state) {
+static void Reduce_max_DR(benchmark::State &state) {
   T actual{};
-  auto dist = dr::mhp::distribution().halo(1);
   auto max = [](T x, T y) { return std::max(x, y); };
-  xhp::distributed_mdarray<T, 2> src({default_vector_size,default_vector_size}, dist);
-  dr::mhp::fill(src, 1.0);
+  xhp::distributed_vector<T> src(default_vector_size, fill);
 
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      actual = xhp::reduce(src, static_cast<T>(0), max);
+      actual = xhp::reduce(src, fill, max);
     }
   }
-  if (actual != 1){
-    fmt::print("Mismatch:\n  Ref {} Actual {}\n", 1, actual);
+  if (actual != fill) {
+    fmt::print("Mismatch:\n  Ref {} Actual {}\n", fill, actual);
     exit(1);
   }
 }
-DR_BENCHMARK(Reduce_max_mdarray_DR);
+DR_BENCHMARK(Reduce_max_DR);
 
 static void Reduce_Serial(benchmark::State &state) {
   T actual{};
