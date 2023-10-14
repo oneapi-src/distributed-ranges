@@ -116,6 +116,7 @@ jobs:
       run: srun -p pvc-shared scripts/devcloud-test.sh
     - name: Upload build logs
       uses: actions/upload-artifact@v3
+      allow_failure: true
       if: always()
       with:
         name: log-icpx
