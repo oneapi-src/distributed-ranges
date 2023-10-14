@@ -20,6 +20,7 @@ class SuiteConfig:
         self.mhp_bench = None
         self.shp_bench = None
         self.weak_scaling = False
+        self.different_devices = False
         self.ranks = 1
         self.ranks_per_node = None
         self.target = None
@@ -60,6 +61,13 @@ option_weak_scaling = click.option(
     is_flag=True,
     default=False,
     help="Scales the vector size by the number of ranks",
+)
+
+option_different_devices = click.option(
+    "--different-devices",
+    is_flag=True,
+    default=False,
+    help="Ensures there are not multiple ranks on one SYCL device",
 )
 
 
@@ -106,6 +114,7 @@ def do_run(options):
             options.mhp_bench,
             options.shp_bench,
             options.weak_scaling,
+            options.different_devices,
             options.ranks_per_node,
         )
     )
@@ -165,6 +174,7 @@ def do_run(options):
 @option_dry_run
 @option_clean
 @option_weak_scaling
+@option_different_devices
 def run(
     prefix,
     target,
@@ -180,6 +190,7 @@ def run(
     dry_run,
     clean,
     weak_scaling,
+    different_devices,
 ):
     assert target
     assert vec_size
@@ -212,6 +223,7 @@ def run(
     options.mhp_bench = mhp_bench
     options.shp_bench = shp_bench
     options.weak_scaling = weak_scaling
+    options.different_devices = different_devices
     options.dry_run = dry_run
 
     do_run(options)
@@ -224,6 +236,7 @@ def run(
 @option_dry_run
 @option_clean
 @option_weak_scaling
+@option_different_devices
 @click.option(
     "--vec-size",
     type=int,
@@ -279,6 +292,7 @@ def suite(
     sockets,
     cores_per_socket,
     weak_scaling,
+    different_devices,
 ):
     # Run a list of ranks
     def run_rank_list(base, ranks, filters, targets, weak_scaling=False):
@@ -447,6 +461,10 @@ def suite(
     base.vec_size = [vec_size]
     base.reps = reps
     base.weak_scaling = weak_scaling
+    base.different_devices = different_devices
+
+    print(f"weak_scaling is {weak_scaling}\n")
+    print(f"different_devices is {different_devices}\n")
 
     # if the platform does not support p2p, limit gpus to 1
     if p2p:

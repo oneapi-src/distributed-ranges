@@ -19,7 +19,6 @@ namespace mhp = dr::mhp;
 
 using T = double;
 
-MPI_Comm comm;
 std::size_t comm_rank;
 std::size_t comm_size;
 
@@ -134,10 +133,9 @@ void stats(auto &durations, auto &sum, auto v_serial, auto &x_local,
 
 int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
-  comm = MPI_COMM_WORLD;
   int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   comm_rank = rank;
   comm_size = size;
 
@@ -171,7 +169,7 @@ int main(int argc, char **argv) {
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);
 
-  sycl::queue q = mhp::select_queue(comm);
+  sycl::queue q = mhp::select_queue();
   if (options.count("sycl")) {
     mhp::init(q);
   } else {
