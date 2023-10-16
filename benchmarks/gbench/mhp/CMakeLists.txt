@@ -10,9 +10,8 @@ add_executable(
   mhp-bench.cpp
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
-  ../common/inclusive_scan.cpp
+  ../common/inclusive_exclusive_scan.cpp
   ../common/sort.cpp
-  ../common/exclusive_scan.cpp
   ../common/stream.cpp
   wave_equation.cpp
   shallow_water.cpp
