@@ -86,6 +86,20 @@ public:
     all_gather(rng::data(src), rng::data(dst), rng::size(src));
   }
 
+  template <typename T>
+  void i_all_gather(const T *src, T *dst, std::size_t count,
+                    MPI_Request *req) const {
+    // Gather size elements from each rank
+    MPI_Iallgather(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
+                   MPI_BYTE, mpi_comm_, req);
+  }
+
+  template <typename T>
+  void i_all_gather(const T &src, std::vector<T> &dst, MPI_Request *req) const {
+    assert(rng::size(dst) >= size_);
+    i_all_gather(&src, rng::data(dst), 1, req);
+  }
+
   void gatherv(const void *src, int *counts, int *offsets, void *dst,
                std::size_t root) const {
     MPI_Gatherv(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
@@ -124,12 +138,15 @@ public:
                  rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
   }
 
-  template <rng::contiguous_range R>
-  void alltoallv(const R &sendbuf, const std::vector<std::size_t> &sendcnt,
-                 const std::vector<std::size_t> &senddsp, R &recvbuf,
+  template <rng::contiguous_range SendR, rng::contiguous_range RecvR>
+  void alltoallv(const SendR &sendbuf, const std::vector<std::size_t> &sendcnt,
+                 const std::vector<std::size_t> &senddsp, RecvR &recvbuf,
                  const std::vector<std::size_t> &recvcnt,
                  const std::vector<std::size_t> &recvdsp) {
-    using valT = typename R::value_type;
+    using valT = typename RecvR::value_type;
+
+    static_assert(std::is_same_v<std::ranges::range_value_t<SendR>,
+                                 std::ranges::range_value_t<RecvR>>);
 
     assert(rng::size(sendcnt) == size_);
     assert(rng::size(senddsp) == size_);
@@ -152,7 +169,7 @@ public:
 
     MPI_Alltoallv(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
                   MPI_BYTE, rng::data(recvbuf), rng::data(_recvcnt),
-                  rng::data(_recvdsp), MPI_BYTE, MPI_COMM_WORLD);
+                  rng::data(_recvdsp), MPI_BYTE, mpi_comm_);
   }
 
   bool operator==(const communicator &other) const {
