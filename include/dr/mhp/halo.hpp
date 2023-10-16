@@ -298,9 +298,8 @@ public:
   bool receive = false;
   bool buffered = false;
 
-  span_group(T *data, std::size_t size, std::size_t rank, communicator::tag tag,
-             const Memory &memory)
-      : data_(data, size), rank_(rank), tag_(tag), memory_(memory) {
+  span_group(std::span<T> data, std::size_t rank, communicator::tag tag)
+      : data_(data), rank_(rank), tag_(tag) {
 #ifdef SYCL_LANGUAGE_VERSION
     if (use_sycl() && sycl_mem_kind() == sycl::usm::alloc::shared) {
       buffered = true;
@@ -308,12 +307,8 @@ public:
 #endif
   }
 
-  span_group(std::span<T> data, std::size_t rank, communicator::tag tag)
-      : data_(data), rank_(rank), tag_(tag) {}
-
   void unpack() {
     if (buffered) {
-      fmt::print("Skipping buffering");
       if (mhp::use_sycl()) {
         __detail::sycl_copy(buffer, buffer + rng::size(data_), data_.data());
       } else {
