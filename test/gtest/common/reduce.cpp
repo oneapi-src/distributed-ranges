@@ -14,6 +14,14 @@ TYPED_TEST_SUITE(Reduce, AllTypes);
 TYPED_TEST(Reduce, Range) {
   Ops1<TypeParam> ops(10);
 
+  auto max = [](double x, double y) { return std::max(x, y); };
+  EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end(), 3, max),
+            xhp::reduce(ops.dist_vec, 3, max));
+}
+
+TYPED_TEST(Reduce, Max) {
+  Ops1<TypeParam> ops(10);
+
   EXPECT_EQ(std::reduce(ops.vec.begin(), ops.vec.end(), 3, std::plus{}),
             xhp::reduce(ops.dist_vec, 3, std::plus{}));
 }
