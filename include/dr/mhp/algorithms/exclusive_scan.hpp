@@ -16,9 +16,9 @@ namespace dr::mhp {
 template <dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O, typename T, typename BinaryOp>
 auto exclusive_scan(R &&r, O &&o, T init, BinaryOp &&binary_op) {
-  return __detail::inclusive_exclusive_scan_impl_(
+  return __detail::inclusive_exclusive_scan_impl_<true>(
       std::forward<R>(r), rng::begin(std::forward<O>(o)),
-      std::forward<BinaryOp>(binary_op), true, std::optional(init));
+      std::forward<BinaryOp>(binary_op), std::optional(init));
 }
 
 template <dr::distributed_contiguous_range R,

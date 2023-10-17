@@ -38,14 +38,21 @@ void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
   auto in_end_direct = detail::direct_iterator(in.end());
   auto out_begin_direct = detail::direct_iterator(out.begin());
 
+  if (seg_index != 0) {
+    init = {*in_begin_direct};
+    in_begin_direct++;
+    out_begin_direct++;
+  }
+  assert(init.has_value());
+
   std::exclusive_scan(policy, in_begin_direct, in_end_direct, out_begin_direct,
                       init.value(), binary_op);
 }
 
-template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
-          typename BinaryOp, typename U = rng::range_value_t<R>>
+template <bool is_exclusive, dr::distributed_contiguous_range R,
+          dr::distributed_iterator O, typename BinaryOp,
+          typename U = rng::range_value_t<R>>
 auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
-                                    bool is_exclusive,
                                     std::optional<U> init = {}) {
   using value_type = U;
   assert(aligned(r, d_first));
@@ -57,10 +64,7 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   auto global_segs =
       rng::views::zip(dr::ranges::segments(r), dr::ranges::segments(d_first));
   std::size_t num_segs = std::size_t(rng::size(dr::ranges::segments(r)));
-  auto input = dr::ranges::segments(r);
-  if (is_exclusive) {
-    assert(init.has_value());
-  }
+
   // Pass 1 local inclusive scan
   std::size_t seg_index = 0;
   for (auto global_seg : global_segs) {
@@ -69,15 +73,9 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     if (dr::ranges::rank(global_in) == rank) {
       auto local_in = dr::ranges::__detail::local(global_in);
       auto local_out = dr::ranges::__detail::local(global_out);
-      if (is_exclusive && seg_index != 0) {
-        auto input_seg = input[seg_index - 1];
-        auto input_seg_size = rng::size(input_seg);
-        auto input_value = input_seg[input_seg_size - 1];
-        init = {input_value};
-      }
       if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
-        if (is_exclusive) {
+        if constexpr (is_exclusive) {
           local_exclusive_scan(dpl_policy(), local_in, local_out, binary_op,
                                init, seg_index);
         } else {
@@ -88,7 +86,7 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         assert(false);
 #endif
       } else {
-        if (is_exclusive) {
+        if constexpr (is_exclusive) {
           local_exclusive_scan(std::execution::par_unseq, local_in, local_out,
                                binary_op, init, seg_index);
         } else {
@@ -112,7 +110,18 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     auto [global_in, global_out] = global_seg;
     if (dr::ranges::rank(global_in) == rank) {
       auto local_out = dr::ranges::__detail::local(global_out);
-      auto back = use_sycl ? sycl_get(local_out.back()) : local_out.back();
+      auto local_in = dr::ranges::__detail::local(global_in);
+      auto back = [](auto local_in, auto local_out, auto binary_op,
+                     bool use_sycl) {
+        if constexpr (is_exclusive) {
+          return use_sycl ? binary_op(sycl_get(local_out.back()),
+                                      sycl_get(local_in.back()))
+                          : binary_op(local_out.back(), local_in.back());
+        } else {
+          return use_sycl ? sycl_get(local_out.back()) : local_out.back();
+        }
+      }(local_in, local_out, binary_op, use_sycl);
+
       win.put(back, 0, seg_index);
     }
 
@@ -139,24 +148,35 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         auto local_in = dr::ranges::__detail::local(global_in);
         auto local_out = rng::views::take(
             dr::ranges::__detail::local(global_out), rng::size(local_in));
-        // dr::drlog.debug("rebase before: {}\n", local_out);
+        auto local_out_adj = [](auto local_out, auto offset) {
+          if (is_exclusive) {
+            auto local_out_begin_direct =
+                detail::direct_iterator(local_out.begin());
+            *local_out_begin_direct = offset;
+            auto local_out_drop = local_out | rng::views::drop(1);
+            return local_out_drop;
+          } else {
+            auto local_out_drop = local_out | rng::views::drop(0);
+            return local_out_drop;
+          }
+        }(local_out, offset);
+        // dr::drlog.debug("rebase before: {}\n", local_out_adj);
         if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
-          auto wrap_rebase = [rebase, base = rng::begin(local_out)](auto idx) {
-            rebase(base[idx]);
-          };
+          auto wrap_rebase = [rebase, base = rng::begin(local_out_adj)](
+                                 auto idx) { rebase(base[idx]); };
           detail::parallel_for(dr::mhp::sycl_queue(),
-                               sycl::range<>(rng::distance(local_out)),
+                               sycl::range<>(rng::distance(local_out_adj)),
                                wrap_rebase)
               .wait();
 #else
           assert(false);
 #endif
         } else {
-          std::for_each(std::execution::par_unseq, local_out.begin(),
-                        local_out.end(), rebase);
+          std::for_each(std::execution::par_unseq, local_out_adj.begin(),
+                        local_out_adj.end(), rebase);
         }
-        // dr::drlog.debug("rebase after: {}\n", local_out);
+        // dr::drlog.debug("rebase after: {}\n", local_out_adj);
       }
     }
 

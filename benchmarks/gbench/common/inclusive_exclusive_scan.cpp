@@ -26,7 +26,7 @@ void Inclusive_Exclusive_Scan_DR(benchmark::State &state, bool is_inclusive) {
 void Inclusive_Scan_DR(benchmark::State &state) {
   Inclusive_Exclusive_Scan_DR(state, true);
 }
-DR_BENCHMARK(Inclusive_Scan_DR)
+DR_BENCHMARK(Inclusive_Scan_DR);
 
 void Exclusive_Scan_DR(benchmark::State &state) {
   Inclusive_Exclusive_Scan_DR(state, false);
@@ -34,8 +34,8 @@ void Exclusive_Scan_DR(benchmark::State &state) {
 DR_BENCHMARK(Exclusive_Scan_DR);
 
 #ifdef SYCL_LANGUAGE_VERSION
-static void Inclusive_Exclusive_Scan_Reference(benchmark::State &state,
-                                               bool is_inclusive) {
+void Inclusive_Exclusive_Scan_Reference(benchmark::State &state,
+                                        bool is_inclusive) {
   auto q = get_queue();
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto a = sycl::malloc_device<T>(default_vector_size, q);
@@ -62,7 +62,7 @@ static void Inclusive_Exclusive_Scan_Reference(benchmark::State &state,
 void Inclusive_Scan_Reference(benchmark::State &state) {
   Inclusive_Exclusive_Scan_Reference(state, true);
 }
-DR_BENCHMARK(Inclusive_Scan_Reference)
+DR_BENCHMARK(Inclusive_Scan_Reference);
 
 void Exclusive_Scan_Reference(benchmark::State &state) {
   Inclusive_Exclusive_Scan_Reference(state, false);
@@ -70,8 +70,7 @@ void Exclusive_Scan_Reference(benchmark::State &state) {
 DR_BENCHMARK(Exclusive_Scan_Reference);
 #endif
 
-static void Inclusive_Exclusive_Scan_Std(benchmark::State &state,
-                                         bool is_inclusive) {
+void Inclusive_Exclusive_Scan_Std(benchmark::State &state, bool is_inclusive) {
   std::vector<T> a(default_vector_size, 3);
   std::vector<T> b(default_vector_size, 0);
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
@@ -93,7 +92,7 @@ static void Inclusive_Exclusive_Scan_Std(benchmark::State &state,
 void Inclusive_Scan_Std(benchmark::State &state) {
   Inclusive_Exclusive_Scan_Std(state, true);
 }
-DR_BENCHMARK(Inclusive_Scan_Std)
+DR_BENCHMARK(Inclusive_Scan_Std);
 
 void Exclusive_Scan_Std(benchmark::State &state) {
   Inclusive_Exclusive_Scan_Std(state, false);
