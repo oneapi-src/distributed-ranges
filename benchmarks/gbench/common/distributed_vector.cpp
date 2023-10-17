@@ -176,6 +176,25 @@ static void Reduce_DR(benchmark::State &state) {
 }
 DR_BENCHMARK(Reduce_DR);
 
+static void Reduce_max_DR(benchmark::State &state) {
+  T actual{};
+  auto max = [](T x, T y) { return std::max(x, y); };
+  xhp::distributed_vector<T> src(default_vector_size, fill);
+
+  Stats stats(state, sizeof(T) * src.size(), 0);
+  for (auto _ : state) {
+    for (std::size_t i = 0; i < default_repetitions; i++) {
+      stats.rep();
+      actual = xhp::reduce(src, fill, max);
+    }
+  }
+  if (actual != fill) {
+    fmt::print("Mismatch:\n  Ref {} Actual {}\n", fill, actual);
+    exit(1);
+  }
+}
+DR_BENCHMARK(Reduce_max_DR);
+
 static void Reduce_Serial(benchmark::State &state) {
   T actual{};
   std::vector<T> src(default_vector_size, fill);
