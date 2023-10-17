@@ -9,6 +9,10 @@ if(ENABLE_SYCL)
   add_executable(mhp_dot_product_benchmark dot_product_benchmark.cpp)
   target_link_libraries(mhp_dot_product_benchmark DR::mpi cxxopts)
   add_mpi_test(mhp_dot_product mhp_dot_product_benchmark 1 -n 1000)
+
+  add_executable(tile-example tile-example.cpp)
+  target_link_libraries(tile-example cxxopts DR::mpi)
+  add_mpi_test(tile-example tile-example 2)
 endif()
 
 add_executable(vector-add vector-add.cpp)

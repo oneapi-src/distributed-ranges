@@ -31,7 +31,7 @@ public:
 void dr_init() {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.count("sycl")) {
-    sycl::queue q = dr::mhp::select_queue();
+    sycl::queue q = dr::mhp::select_queue(options.count("different-devices"));
     benchmark::AddCustomContext("device_info", device_info(q.get_device()));
     dr::mhp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
                                                     : sycl::usm::alloc::shared);
@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
     ("log", "Enable logging")
 #ifdef SYCL_LANGUAGE_VERSION
     ("sycl", "Execute on SYCL device")
+    ("different-devices", "ensure no multiple ranks on one device")
 #endif
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10000"))

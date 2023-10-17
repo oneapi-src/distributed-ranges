@@ -14,7 +14,7 @@ AnalysisConfig = namedtuple(
     "AnalysisConfig",
     (
         "prefix benchmark_filter reps dry_run mhp_bench shp_bench "
-        "weak_scaling ranks_per_node"
+        "weak_scaling different_devices ranks_per_node"
     ),
 )
 
@@ -31,6 +31,8 @@ class Runner:
     def __run_mhp_analysis(self, params, ranks, ranks_per_node, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
+            if self.analysis_config.different_devices:
+                params.append("--different-devices")
             if target.device == Device.CPU:
                 env = "ONEAPI_DEVICE_SELECTOR=opencl:cpu"
             else:
