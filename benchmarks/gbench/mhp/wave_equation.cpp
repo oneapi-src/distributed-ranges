@@ -431,8 +431,6 @@ int run(
   double initial_v = 0.0;
   auto tic = std::chrono::steady_clock::now();
 
-  std::chrono::duration<double> reduce_duration;
-  auto tic_reduce = std::chrono::steady_clock::now();
   for (std::size_t i = 0; i < nt + 1; i++) {
     t = i * dt;
 
@@ -446,8 +444,6 @@ int run(
       double total_v =
           (dr::mhp::reduce(e, static_cast<T>(0), std::plus{}) + h) * grid.dx *
           grid.dy;
-
-      reduce_duration += (std::chrono::steady_clock::now() - tic_reduce);
 
       if (i == 0) {
         initial_v = total_v;
@@ -527,8 +523,6 @@ int run(
     double ai = double(nflop) / double(nread + nwrite);
     std::cout << "Duration: " << std::setprecision(3) << t_cpu;
     std::cout << " s" << std::endl;
-    std::cout << "Reduce Duration: " << std::setprecision(3)
-              << reduce_duration.count() << " s" << std::endl;
     std::cout << "Time per step: " << std::setprecision(2) << t_step * 1000;
     std::cout << " ms" << std::endl;
     std::cout << "Reads : " << std::setprecision(3) << read_bw;
