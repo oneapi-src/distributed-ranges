@@ -57,6 +57,13 @@ repos:
   hooks:
   - id: cmake-format
 
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.2.4
+  hooks:
+  - id: codespell
+    entry: codespell --ignore-words ignore-spelling-words.txt
+    types: [text]
+
 - repo: local
   hooks:
   - id: dr-style-all

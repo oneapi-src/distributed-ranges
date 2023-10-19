@@ -33,7 +33,7 @@ tests are found in ``test/gtest/include/common``, and included in
 
 There are intentional differences between the shp/mhp that make it
 impossible to directly share tests. We have some support to cover
-frequently occuring differences. Use your judgement to decide if there
+frequently occurring differences. Use your judgement to decide if there
 should be unified or separate tests.
 
 We should converge on common practices for writing shared tests, but

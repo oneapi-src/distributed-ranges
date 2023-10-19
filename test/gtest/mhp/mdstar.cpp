@@ -19,9 +19,9 @@ protected:
   std::array<std::size_t, 2> extents2dt = {ydim, xdim};
   std::array<std::size_t, 3> extents3d = {xdim, ydim, zdim};
 
-  // 2d data with 1d decompostion
+  // 2d data with 1d decomposition
   dr::mhp::distribution dist2d_1d = dr::mhp::distribution().granularity(ydim);
-  // 3d data with 1d decompostion
+  // 3d data with 1d decomposition
   dr::mhp::distribution dist3d_1d =
       dr::mhp::distribution().granularity(ydim * zdim);
 

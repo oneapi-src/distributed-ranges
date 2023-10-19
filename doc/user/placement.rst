@@ -19,7 +19,7 @@ units (hardware threads for CPU, EU's for GPU) in the SYCL devices are
 used for computation. Each SYCL device should be bound to a dedicated
 tile or dedicated CPU socket.
 
-For flexibilty and ease of development, programs should rely on
+For flexibility and ease of development, programs should rely on
 external mechanisms to control placement. MPI can control the
 placement of processes to cores/sockets and binding a specific GPU to
 a process. See `CPU Pinning`_ and `GPU Pinning`_ for more

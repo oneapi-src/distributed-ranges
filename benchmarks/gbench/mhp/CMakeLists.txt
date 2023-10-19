@@ -46,7 +46,7 @@ target_link_libraries(mhp-quick-bench benchmark::benchmark cxxopts DR::mpi)
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if(NOT MPI_IMPL STREQUAL "openmpi")
-  # MPI_Win_create fails for communicator with size 1 30000 is mininum because
+  # MPI_Win_create fails for communicator with size 1 30000 is minimum because
   # of static column size for stencil2D disable DPL benchmarks because we get
   # intermittent fails with: ONEAPI_DEVICE_SELECTOR=opencl:cpu mpirun -n 1
   # ./mhp-bench --vector-size 30000 --rows 100 --columns 100 --check
