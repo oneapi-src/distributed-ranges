@@ -83,19 +83,39 @@ add_mpi_test(mhp-tests-4 mhp-tests 4)
 add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
 
 if(ENABLE_SYCL)
-  if(NOT MPI_IMPL STREQUAL "openmpi")
+  if(MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)
+    set(ranks "2;3;4")
+  else()
+    set(ranks "1;2;3;4")
   endif()
+
+  # Make device memory tests a configuration option. DR library can handle a
+  # runtime decision about whether to use device memory or shared, but there are
+  # issues with MPI.
+  #
+  # * Intel MPI requires setting I_MPI_OFFLOAD=1 when using device memory, and
+  #   it is an error to set it when using USM shared.  *
+  # * CI fails when running device memory tests in the same job as all other
+  #   tests, but it passes when it is a separate job.
+  # * mpich support for device memory and MPI RMA is in development
+  #
+
   # TODO: fix sycl Slide issues, see
   # https://github.com/oneapi-src/distributed-ranges/issues/322
-  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-*Slide*)
-  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-*Slide*)
-  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
+
+  foreach(rank ${ranks})
+    if(ENABLE_DEVICE_MEMORY)
+      set(MPIEXEC_PREFLAGS -genv I_MPI_OFFLOAD=1)
+      add_mpi_test(mhp-sycl-device-mem-tests-${rank} mhp-tests ${rank} --sycl
+                   --gtest_filter=-*Slide* --device-memory)
+      set(MPIEXEC_PREFLAGS)
+    else()
+      add_mpi_test(mhp-sycl-tests-${rank} mhp-tests ${rank} --sycl
+                   --gtest_filter=-*Slide*)
+    endif()
+  endforeach()
+
   add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl
                --gtest_filter=-*Slide*)
-  set(MPIEXEC_PREFLAGS -genv I_MPI_OFFLOAD=1)
-  add_mpi_test(mhp-sycl-device-mem-tests-4 mhp-tests 4 --sycl --device-memory
-               --gtest_filter=-*Slide*)
-  set(MPIEXEC_PREFLAGS)
 endif()

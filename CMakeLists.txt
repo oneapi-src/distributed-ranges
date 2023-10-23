@@ -17,9 +17,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CTest)
 
   option(DISABLED_TESTS "Run disabled tests" OFF)
+
   option(ENABLE_SYCL "Build sycl shp examples" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
+  option(ENABLE_DEVICE_MEMORY "Test device memory" OFF)
+
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
 
   #
