@@ -17,4 +17,6 @@ cmake -B build -DENABLE_SYCL=on
 # default sycl device will be GPU, if available. Only use 1 GPU:
 # workaround for devcloud multi-card not working
 export ONEAPI_DEVICE_SELECTOR=level_zero:0
-make -j -C build/test/gtest/mhp all test
+make -j -C build/test/gtest/mhp mhp-tests
+date
+ctest -VV -R '.*device.*'
