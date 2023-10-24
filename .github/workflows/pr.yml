@@ -96,7 +96,6 @@ jobs:
         path: build/Testing
 
   icpx:
-    needs: icpx-device
     runs-on: devcloud
     timeout-minutes: 60
     env:
