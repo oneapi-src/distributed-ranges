@@ -39,7 +39,7 @@ void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
   auto out_begin_direct = detail::direct_iterator(out.begin());
 
   if (seg_index != 0) {
-    init = {*in_begin_direct};
+    init = *in_begin_direct;
     in_begin_direct++;
     out_begin_direct++;
   }
@@ -111,16 +111,16 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     if (dr::ranges::rank(global_in) == rank) {
       auto local_out = dr::ranges::__detail::local(global_out);
       auto local_in = dr::ranges::__detail::local(global_in);
-      auto back = [](auto local_in, auto local_out, auto binary_op,
-                     bool use_sycl) {
-        if constexpr (is_exclusive) {
-          return use_sycl ? binary_op(sycl_get(local_out.back()),
-                                      sycl_get(local_in.back()))
-                          : binary_op(local_out.back(), local_in.back());
-        } else {
-          return use_sycl ? sycl_get(local_out.back()) : local_out.back();
-        }
-      }(local_in, local_out, binary_op, use_sycl);
+      rng::range_value_t<R> back;
+      if constexpr (is_exclusive) {
+        // TODO: both sycl_get are executed sequetially, add method similar to
+        // sycl_get to read two (N) values in parallel
+        back = use_sycl ? binary_op(sycl_get(local_out.back()),
+                                    sycl_get(local_in.back()))
+                        : binary_op(local_out.back(), local_in.back());
+      } else {
+        back = use_sycl ? sycl_get(local_out.back()) : local_out.back();
+      }
 
       win.put(back, 0, seg_index);
     }
@@ -149,15 +149,16 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         auto local_out = rng::views::take(
             dr::ranges::__detail::local(global_out), rng::size(local_in));
         auto local_out_adj = [](auto local_out, auto offset) {
-          if (is_exclusive) {
+          if constexpr (is_exclusive) {
+            // FIXME: this may probably not work with device allocator, add a
+            // test and check it, see:
+            // https://github.com/oneapi-src/distributed-ranges/issues/589
             auto local_out_begin_direct =
                 detail::direct_iterator(local_out.begin());
             *local_out_begin_direct = offset;
-            auto local_out_drop = local_out | rng::views::drop(1);
-            return local_out_drop;
+            return local_out | rng::views::drop(1);
           } else {
-            auto local_out_drop = local_out | rng::views::drop(0);
-            return local_out_drop;
+            return local_out;
           }
         }(local_out, offset);
         // dr::drlog.debug("rebase before: {}\n", local_out_adj);

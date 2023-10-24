@@ -4,11 +4,6 @@
 
 #pragma once
 
-#ifdef SYCL_LANGUAGE_VERSION
-#include <oneapi/dpl/async>
-#endif
-
-#include <dr/detail/sycl_utils.hpp>
 #include <dr/mhp/algorithms/inclusive_exclusive_scan_impl.hpp>
 
 namespace dr::mhp {
