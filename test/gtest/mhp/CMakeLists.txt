@@ -28,8 +28,7 @@ add_executable(mhp-tests-3 mhp-tests.cpp communicator-3.cpp halo-3.cpp
 # cmake-format: off
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  mhpsort.cpp
-  ../common/sort.cpp
+  ../common/zip.cpp
   )
 # cmake-format: on
 
@@ -38,6 +37,13 @@ target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
   target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
 endforeach()
+
+if(ENABLE_ISHMEM)
+  add_executable(mhp-shmem-test mhp-tests.cpp ../common/zip.cpp)
+
+  target_link_libraries(mhp-shmem-test GTest::gtest_main cxxopts DR::mpi
+                        ze_loader fabric)
+endif()
 
 add_mpi_test(mhp-quick-test-1 mhp-quick-test 1)
 add_mpi_test(mhp-quick-test-2 mhp-quick-test 2)
