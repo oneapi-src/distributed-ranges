@@ -138,7 +138,7 @@ TEST_F(Mdspan, GridExtents) {
 }
 
 TEST_F(Mdspan, GridLocalReference) {
-  // mdspan is not accessbile for device memory
+  // mdspan is not accessible for device memory
   if (options.count("device-memory")) {
     return;
   }
@@ -216,7 +216,7 @@ TEST_F(Mdarray, GridExtents) {
 }
 
 TEST_F(Mdarray, GridLocalReference) {
-  // mdspan is not accessbile for device memory
+  // mdspan is not accessible for device memory
   if (options.count("device-memory")) {
     return;
   }
@@ -235,7 +235,7 @@ TEST_F(Mdarray, GridLocalReference) {
 }
 
 TEST_F(Mdarray, Halo) {
-  // mdspan is not accessbile for device memory
+  // mdspan is not accessible for device memory
   if (options.count("device-memory")) {
     return;
   }
@@ -309,7 +309,7 @@ TEST_F(Submdspan, GridExtents) {
 }
 
 TEST_F(Submdspan, GridLocalReference) {
-  // mdspan is not accessbile for device memory
+  // mdspan is not accessible for device memory
   if (options.count("device-memory")) {
     return;
   }
@@ -335,7 +335,7 @@ TEST_F(Submdspan, GridLocalReference) {
 }
 
 TEST_F(Submdspan, Segments) {
-  // mdspan is not accessbile for device memory
+  // mdspan is not accessible for device memory
   if (options.count("device-memory")) {
     return;
   }
