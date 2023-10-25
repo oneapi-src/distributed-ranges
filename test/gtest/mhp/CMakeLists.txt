@@ -91,6 +91,8 @@ add_mpi_test(mhp-tests-4 mhp-tests 4)
 add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
 
 if(ENABLE_SYCL)
+  add_mpi_offload_test(mhp-sycl-device-tests-2 mhp-tests 2 --sycl
+                       --device-memory --gtest_filter=-Exclusive*:Slide*)
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
     add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)

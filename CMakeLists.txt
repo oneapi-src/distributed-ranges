@@ -202,6 +202,17 @@ function(add_mpi_test test_name name processes)
                    ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
 endfunction()
 
+function(add_mpi_offload_test test_name name processes)
+  # intel mpi needs I_MPI_OFFLOAD=1, mpich does not need anything but it it
+  # harmless so pass it anyway
+  add_test(
+    NAME ${test_name}
+    COMMAND
+      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+      ${MPIEXEC_PREFLAGS} -genv I_MPI_OFFLOAD=1 ./${name} ${ARGN}
+      COMMAND_EXPAND_LISTS)
+endfunction()
+
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 add_subdirectory(include)
@@ -237,6 +248,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     endif()
   endif()
 
+  add_subdirectory(test/gtest/mhp)
+
   if(ENABLE_SYCL)
     # disables rng::detail::box_compress::coalesce which causes rng::box to use
     # global non-const variable, which can not be used in SYCL kernels
@@ -249,7 +262,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   add_subdirectory(examples/serial)
   add_subdirectory(test/gtest/serial)
   add_subdirectory(examples/mhp)
-  add_subdirectory(test/gtest/mhp)
   add_subdirectory(benchmarks/gbench)
 
   # Requires clang, icpx/llvm nightly do not support the tools
