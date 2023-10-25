@@ -138,6 +138,11 @@ TEST_F(Mdspan, GridExtents) {
 }
 
 TEST_F(Mdspan, GridLocalReference) {
+  // mdspan is not accessible for device memory
+  if (options.count("device-memory")) {
+    return;
+  }
+
   xhp::distributed_vector<T> dist(n2d, dist2d_1d);
   xhp::iota(dist, 100);
   auto dmdspan = xhp::views::mdspan(dist, extents2d);
@@ -211,6 +216,11 @@ TEST_F(Mdarray, GridExtents) {
 }
 
 TEST_F(Mdarray, GridLocalReference) {
+  // mdspan is not accessible for device memory
+  if (options.count("device-memory")) {
+    return;
+  }
+
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::iota(mdarray, 100);
   auto grid = mdarray.grid();
@@ -225,6 +235,11 @@ TEST_F(Mdarray, GridLocalReference) {
 }
 
 TEST_F(Mdarray, Halo) {
+  // mdspan is not accessible for device memory
+  if (options.count("device-memory")) {
+    return;
+  }
+
   xhp::distributed_mdarray<T, 2> mdarray(extents2d,
                                          xhp::distribution().halo(1));
   dr::mhp::halo(mdarray);
@@ -294,6 +309,11 @@ TEST_F(Submdspan, GridExtents) {
 }
 
 TEST_F(Submdspan, GridLocalReference) {
+  // mdspan is not accessible for device memory
+  if (options.count("device-memory")) {
+    return;
+  }
+
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::iota(mdarray, 100);
   auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
@@ -315,6 +335,11 @@ TEST_F(Submdspan, GridLocalReference) {
 }
 
 TEST_F(Submdspan, Segments) {
+  // mdspan is not accessible for device memory
+  if (options.count("device-memory")) {
+    return;
+  }
+
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   xhp::iota(mdarray, 100);
   auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
