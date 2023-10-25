@@ -10,11 +10,18 @@ project(
 
 include(FetchContent)
 
+option(ENABLE_ISHMEM OFF)
+
 # Project wide defaults, not needed when another project uses the library
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   include(CheckLanguage)
   include(CTest)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+    # Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24
+    cmake_policy(SET CMP0135 NEW)
+  endif()
+  include(ExternalProject)
 
   option(DISABLED_TESTS "Run disabled tests" OFF)
   option(ENABLE_SYCL "Build sycl shp examples" OFF)
@@ -129,6 +136,65 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/kokkos/mdspan.git
   GIT_TAG mdspan-0.6.0)
 FetchContent_MakeAvailable(mdspan)
+
+if(ENABLE_ISHMEM)
+
+  include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+  link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+
+  ExternalProject_Add(
+    level-zero
+    GIT_REPOSITORY https://github.com/oneapi-src/level-zero.git
+    GIT_TAG v1.14.0
+    INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}")
+
+  ExternalProject_Add(
+    ofi
+    GIT_REPOSITORY git@github.com:ofiwg/libfabric.git
+    GIT_TAG v1.19.0
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ofisrc
+    DEPENDS level-zero
+    CONFIGURE_COMMAND
+      cd ${CMAKE_CURRENT_BINARY_DIR}/ofisrc && ./autogen.sh && ./configure
+      --prefix=${CMAKE_CURRENT_BINARY_DIR} --enable-debug --enable-psm3=auto
+      --enable-rxm=auto --enable-tcp=auto
+    BUILD_IN_SOURCE ON
+    BUILD_COMMAND make
+    INSTALL_COMMAND make install)
+
+  ExternalProject_Add(
+    sos
+    GIT_REPOSITORY git@github.com:Sandia-OpenSHMEM/SOS.git
+    # GIT_TAG v1.5.2
+    GIT_TAG main
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/sossrc
+    DEPENDS ofi
+    CONFIGURE_COMMAND
+      cd ${CMAKE_CURRENT_BINARY_DIR}/sossrc && ./autogen.sh && ./configure
+      --prefix=${CMAKE_CURRENT_BINARY_DIR}
+      --with-ofi=${CMAKE_CURRENT_BINARY_DIR} --enable-pmi-simple
+      --disable-fortran --enable-mr-endpoint --enable-ofi-mr=basic
+      --enable-ofi-manual-progress --disable-ofi-inject --enable-ofi-hmem
+    BUILD_IN_SOURCE ON
+    BUILD_COMMAND make
+    INSTALL_COMMAND make install)
+
+  ExternalProject_Add(
+    ishmem
+    GIT_REPOSITORY
+      git@github.com:intel-innersource/libraries.runtimes.hpc.shmem.ishmem.git
+    GIT_TAG main
+    INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS sos
+    CMAKE_CACHE_ARGS
+      "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
+      "-DL0_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
+      "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}")
+
+  add_custom_target(shmem DEPENDS ishmem)
+
+endif()
 
 function(add_mpi_test test_name name processes)
   add_test(NAME ${test_name}
