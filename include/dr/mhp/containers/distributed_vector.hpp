@@ -11,14 +11,12 @@
 namespace dr::mhp {
 
 /// distributed vector
-template <typename T, typename Allocator = dr::mhp::default_allocator<T>>
-class distributed_vector {
+template <typename T> class distributed_vector {
 
 public:
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using allocator_type = Allocator;
 
   class iterator {
   public:
@@ -117,13 +115,13 @@ public:
 
   /// Constructor
   distributed_vector(std::size_t size = 0, distribution dist = distribution()) {
-    init(size, dist, Allocator());
+    init(size, dist);
   }
 
   /// Constructor
   distributed_vector(std::size_t size, value_type fill_value,
                      distribution dist = distribution()) {
-    init(size, dist, Allocator());
+    init(size, dist);
     mhp::fill(*this, fill_value);
   }
 
@@ -132,7 +130,7 @@ public:
       fence();
       active_wins().erase(win_.mpi_win());
       win_.free();
-      allocator_.deallocate(data_, data_size_);
+      __detail::allocator<T>().deallocate(data_, data_size_);
       data_ = nullptr;
       delete halo_;
     }
@@ -152,8 +150,7 @@ public:
   auto segments() const { return rng::views::all(segments_); }
 
 private:
-  void init(auto size, auto dist, const auto &allocator) {
-    allocator_ = allocator;
+  void init(auto size, auto dist) {
     size_ = size;
     distribution_ = dist;
 
@@ -170,7 +167,7 @@ private:
 
     data_size_ = segment_size_ + hb.prev + hb.next;
     if (size_ > 0) {
-      data_ = allocator_.allocate(data_size_);
+      data_ = __detail::allocator<T>().allocate(data_size_);
     }
 
     halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
@@ -197,11 +194,9 @@ private:
   std::size_t size_;
   std::vector<dv_segment<distributed_vector>> segments_;
   dr::rma_window win_;
-  Allocator allocator_;
 };
 
-template <typename T, typename Allocator>
-auto &halo(const distributed_vector<T, Allocator> &dv) {
+template <typename T> auto &halo(const distributed_vector<T> &dv) {
   return dv.halo();
 }
 
