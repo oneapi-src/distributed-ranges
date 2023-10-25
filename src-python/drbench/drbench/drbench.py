@@ -427,6 +427,7 @@ def suite(
     ]
     dr_p2p = [
         "^DotProduct_DR",
+        "^Exclusive_Scan_DR",
         "^Inclusive_Scan_DR",
         "^Reduce_DR",
     ]
@@ -436,6 +437,7 @@ def suite(
     reference_filters = [
         "BlackScholes_Reference",
         "DotProduct_Reference",
+        "Exclusive_Scan_Reference",
         "Inclusive_Scan_Reference",
         "Reduce_Reference",
     ]

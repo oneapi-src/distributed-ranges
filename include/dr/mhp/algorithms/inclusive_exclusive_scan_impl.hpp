@@ -32,10 +32,28 @@ void local_inclusive_scan(auto policy, auto in, auto out, auto binary_op,
   }
 }
 
-template <dr::distributed_contiguous_range R, dr::distributed_iterator O,
-          typename BinaryOp, typename U = rng::range_value_t<R>>
-auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
-                          std::optional<U> init = {}) {
+void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
+                          auto init, std::size_t seg_index) {
+  auto in_begin_direct = detail::direct_iterator(in.begin());
+  auto in_end_direct = detail::direct_iterator(in.end());
+  auto out_begin_direct = detail::direct_iterator(out.begin());
+
+  if (seg_index != 0) {
+    init = *in_begin_direct;
+    in_begin_direct++;
+    out_begin_direct++;
+  }
+  assert(init.has_value());
+
+  std::exclusive_scan(policy, in_begin_direct, in_end_direct, out_begin_direct,
+                      init.value(), binary_op);
+}
+
+template <bool is_exclusive, dr::distributed_contiguous_range R,
+          dr::distributed_iterator O, typename BinaryOp,
+          typename U = rng::range_value_t<R>>
+auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
+                                    std::optional<U> init = {}) {
   using value_type = U;
   assert(aligned(r, d_first));
 
@@ -57,20 +75,29 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       auto local_out = dr::ranges::__detail::local(global_out);
       if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
-        local_inclusive_scan(dpl_policy(), local_in, local_out, binary_op, init,
-                             seg_index);
+        if constexpr (is_exclusive) {
+          local_exclusive_scan(dpl_policy(), local_in, local_out, binary_op,
+                               init, seg_index);
+        } else {
+          local_inclusive_scan(dpl_policy(), local_in, local_out, binary_op,
+                               init, seg_index);
+        }
 #else
         assert(false);
 #endif
       } else {
-        local_inclusive_scan(std::execution::par_unseq, local_in, local_out,
-                             binary_op, init, seg_index);
+        if constexpr (is_exclusive) {
+          local_exclusive_scan(std::execution::par_unseq, local_in, local_out,
+                               binary_op, init, seg_index);
+        } else {
+          local_inclusive_scan(std::execution::par_unseq, local_in, local_out,
+                               binary_op, init, seg_index);
+        }
       }
     }
 
     seg_index++;
   }
-
   // Pass 2 put partial sums on root
   seg_index = 0;
   auto win = root_win();
@@ -83,7 +110,18 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     auto [global_in, global_out] = global_seg;
     if (dr::ranges::rank(global_in) == rank) {
       auto local_out = dr::ranges::__detail::local(global_out);
-      auto back = use_sycl ? sycl_get(local_out.back()) : local_out.back();
+      auto local_in = dr::ranges::__detail::local(global_in);
+      rng::range_value_t<R> back;
+      if constexpr (is_exclusive) {
+        // TODO: both sycl_get are executed sequetially, add method similar to
+        // sycl_get to read two (N) values in parallel
+        back = use_sycl ? binary_op(sycl_get(local_out.back()),
+                                    sycl_get(local_in.back()))
+                        : binary_op(local_out.back(), local_in.back());
+      } else {
+        back = use_sycl ? sycl_get(local_out.back()) : local_out.back();
+      }
+
       win.put(back, 0, seg_index);
     }
 
@@ -110,24 +148,36 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         auto local_in = dr::ranges::__detail::local(global_in);
         auto local_out = rng::views::take(
             dr::ranges::__detail::local(global_out), rng::size(local_in));
-        // dr::drlog.debug("rebase before: {}\n", local_out);
+        auto local_out_adj = [](auto local_out, auto offset) {
+          if constexpr (is_exclusive) {
+            // FIXME: this may probably not work with device allocator, add a
+            // test and check it, see:
+            // https://github.com/oneapi-src/distributed-ranges/issues/589
+            auto local_out_begin_direct =
+                detail::direct_iterator(local_out.begin());
+            *local_out_begin_direct = offset;
+            return local_out | rng::views::drop(1);
+          } else {
+            return local_out;
+          }
+        }(local_out, offset);
+        // dr::drlog.debug("rebase before: {}\n", local_out_adj);
         if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
-          auto wrap_rebase = [rebase, base = rng::begin(local_out)](auto idx) {
-            rebase(base[idx]);
-          };
+          auto wrap_rebase = [rebase, base = rng::begin(local_out_adj)](
+                                 auto idx) { rebase(base[idx]); };
           detail::parallel_for(dr::mhp::sycl_queue(),
-                               sycl::range<>(rng::distance(local_out)),
+                               sycl::range<>(rng::distance(local_out_adj)),
                                wrap_rebase)
               .wait();
 #else
           assert(false);
 #endif
         } else {
-          std::for_each(std::execution::par_unseq, local_out.begin(),
-                        local_out.end(), rebase);
+          std::for_each(std::execution::par_unseq, local_out_adj.begin(),
+                        local_out_adj.end(), rebase);
         }
-        // dr::drlog.debug("rebase after: {}\n", local_out);
+        // dr::drlog.debug("rebase after: {}\n", local_out_adj);
       }
     }
 
@@ -137,5 +187,4 @@ auto inclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   barrier();
   return d_first + rng::size(r);
 }
-
 } // namespace dr::mhp::__detail
