@@ -16,7 +16,17 @@
 #include <dr/detail/tuple_utils.hpp>
 #include <dr/mhp/global.hpp>
 
+namespace dr::mhp::__detail {
+
+template <typename R, typename ... Types> constexpr size_t argument_count( R(*f)(Types ...))
+{
+   return sizeof...(Types);
+}
+
+};
+
 namespace dr::mhp {
+
 
 namespace detail = dr::__detail;
 
@@ -94,6 +104,7 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
   barrier();
 }
 
+
 /// Collective for_each on distributed range
 template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
   auto ranges = std::tie(drs...);
@@ -109,6 +120,8 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
 
     // If local
     if (dr::ranges::rank(seg0) == default_comm().rank()) {
+      auto origin = seg0.origin();
+      
       // make a tuple of mdspans
       auto operand_mdspans = detail::tuple_transform(
           segs, [](auto &&seg) { return seg.mdspan(); });
@@ -143,7 +156,18 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
           auto references = detail::tie_transform(
               operand_mdspans,
               [index](auto mdspan) -> decltype(auto) { return mdspan(index); });
-          op(references);
+          if constexpr (__detail::argument_count(op) == 1) {
+            op(references);
+          } else if constexpr (__detail::argument_count(op) == 2) {
+            auto global_index = index;
+            for (std::size_t i = 0; i < global_index.size(); i++) {
+              global_index[i] += origin[i];
+            }
+
+            op(global_index, references);
+          } else {
+            static_assert(false);
+          }
         };
         detail::mdspan_foreach<mdspan0.rank(), decltype(invoke_index)>(
             mdspan0.extents(), invoke_index);
