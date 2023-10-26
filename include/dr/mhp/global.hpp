@@ -5,7 +5,9 @@
 #pragma once
 
 #include <unistd.h>
-
+#ifdef DRISHMEM
+#include <ishmem.h>
+#endif
 #include <dr/detail/sycl_utils.hpp>
 #include <dr/mhp/sycl_support.hpp>
 
@@ -70,6 +72,10 @@ inline void initialize_mpi() {
     MPI_Init(nullptr, nullptr);
     we_initialized_mpi_ = true;
   }
+
+#ifdef DRISHMEM
+  ishmem_init();
+#endif
 }
 
 // Finalize MPI *if* we initialized it and it has not been finalized.
@@ -80,6 +86,10 @@ inline void finalize_mpi() {
   if (we_initialized_mpi_ && !finalized) {
     MPI_Finalize();
   }
+
+#ifdef DRISHMEM
+  ishmem_finalize();
+#endif
 }
 
 } // namespace __detail

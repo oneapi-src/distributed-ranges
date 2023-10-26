@@ -40,9 +40,14 @@ endforeach()
 
 if(ENABLE_ISHMEM)
   add_executable(mhp-shmem-test mhp-tests.cpp ../common/zip.cpp)
+  target_link_libraries(
+    mhp-shmem-test GTest::gtest_main cxxopts DR::mpi ze_loader fabric
+    pmi_simple sma)
+  target_link_libraries(mhp-shmem-test ${CMAKE_BINARY_DIR}/lib/libishmem.a)
+  target_compile_definitions(mhp-shmem-test PRIVATE DRISHMEM)
 
-  target_link_libraries(mhp-shmem-test GTest::gtest_main cxxopts DR::mpi
-                        ze_loader fabric)
+  add_shmem_test(mhp-shmem-test-1 mhp-shmem-test 1 --sycl)
+  add_shmem_test(mhp-shmem-test-2 mhp-shmem-test 2 --sycl)
 endif()
 
 add_mpi_test(mhp-quick-test-1 mhp-quick-test 1)
