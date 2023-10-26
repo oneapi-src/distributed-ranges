@@ -33,7 +33,8 @@ void dr_init() {
   if (options.count("sycl")) {
     sycl::queue q = dr::mhp::select_queue(options.count("different-devices"));
     benchmark::AddCustomContext("device_info", device_info(q.get_device()));
-    dr::mhp::init(q);
+    dr::mhp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
+                                                    : sycl::usm::alloc::shared);
     return;
   }
 #endif
@@ -82,6 +83,7 @@ int main(int argc, char *argv[]) {
     ("stencil-steps", "Default steps for stencil", cxxopts::value<std::size_t>()->default_value("10"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
+    ("device-memory", "Use device memory")
     ("weak-scaling", "Scale the vector size by the number of ranks", cxxopts::value<bool>()->default_value("false"))
     ;
   // clang-format on

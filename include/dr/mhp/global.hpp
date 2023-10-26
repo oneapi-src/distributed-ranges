@@ -35,12 +35,13 @@ struct global_context {
 
   global_context() { init(); }
 #ifdef SYCL_LANGUAGE_VERSION
-  global_context(sycl::queue q)
-      : sycl_queue_(q), dpl_policy_(q), use_sycl_(true) {
+  global_context(sycl::queue q, sycl::usm::alloc kind)
+      : sycl_queue_(q), sycl_mem_kind_(kind), dpl_policy_(q), use_sycl_(true) {
     init();
   }
 
   sycl::queue sycl_queue_;
+  sycl::usm::alloc sycl_mem_kind_;
   decltype(oneapi::dpl::execution::make_device_policy(
       std::declval<sycl::queue>())) dpl_policy_;
 #endif
@@ -137,6 +138,7 @@ inline std::string hostname() {
 
 #ifdef SYCL_LANGUAGE_VERSION
 inline sycl::queue &sycl_queue() { return __detail::gcontext()->sycl_queue_; }
+inline auto sycl_mem_kind() { return __detail::gcontext()->sycl_mem_kind_; }
 inline auto dpl_policy() { return __detail::gcontext()->dpl_policy_; }
 
 inline sycl::queue select_queue(bool check_different_devices = false) {
@@ -173,11 +175,12 @@ inline sycl::queue select_queue(bool check_different_devices = false) {
   return sycl::queue(devices[my_rank % rng::size(devices)]);
 }
 
-inline void init(sycl::queue q) {
+inline void init(sycl::queue q,
+                 sycl::usm::alloc kind = sycl::usm::alloc::shared) {
   __detail::initialize_mpi();
   assert(__detail::global_context_ == nullptr &&
          "Do not call mhp::init() more than once");
-  __detail::global_context_ = new __detail::global_context(q);
+  __detail::global_context_ = new __detail::global_context(q, kind);
 }
 
 template <typename Selector = decltype(sycl::default_selector_v)>
@@ -199,40 +202,24 @@ inline const auto &dpl_policy() {
 
 #endif // SYCL_LANGUAGE_VERSION
 
-template <typename T> class default_allocator {
+} // namespace dr::mhp
 
-  struct __dr_unique_ptr_deleter {
-    std::size_t allocated_size;
-    void operator()(T *ptr) {
-      default_allocator<T>().deallocate(ptr, allocated_size);
-    }
-  };
+namespace dr::mhp::__detail {
+
+template <typename T> class allocator {
 
 public:
-  default_allocator() {
-#ifdef SYCL_LANGUAGE_VERSION
-    if (mhp::use_sycl()) {
-      sycl_allocator_ = sycl_shared_allocator<T>(sycl_queue());
-    }
-#endif
-  }
-
   T *allocate(std::size_t sz) {
     if (sz == 0) {
       return nullptr;
     }
 #ifdef SYCL_LANGUAGE_VERSION
     if (mhp::use_sycl()) {
-      return sycl_allocator_.allocate(sz);
+      return sycl::malloc<T>(sz, sycl_queue(), sycl_mem_kind());
     }
 #endif
 
     return std_allocator_.allocate(sz);
-  }
-
-  std::unique_ptr<T, __dr_unique_ptr_deleter> allocate_unique(std::size_t sz) {
-    return std::unique_ptr<T, __dr_unique_ptr_deleter>(
-        allocate(sz), __dr_unique_ptr_deleter{sz});
   }
 
   void deallocate(T *ptr, std::size_t sz) {
@@ -243,7 +230,7 @@ public:
     assert(ptr != nullptr);
 #ifdef SYCL_LANGUAGE_VERSION
     if (mhp::use_sycl()) {
-      sycl_allocator_.deallocate(ptr, sz);
+      sycl::free(ptr, sycl_queue());
       return;
     }
 #endif
@@ -252,10 +239,7 @@ public:
   }
 
 private:
-#ifdef SYCL_LANGUAGE_VERSION
-  sycl_shared_allocator<T> sycl_allocator_;
-#endif
   std::allocator<T> std_allocator_;
 };
 
-} // namespace dr::mhp
+} // namespace dr::mhp::__detail

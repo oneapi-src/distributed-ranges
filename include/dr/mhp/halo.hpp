@@ -296,45 +296,48 @@ public:
   T *buffer = nullptr;
   std::size_t request_index = 0;
   bool receive = false;
-  bool buffered = true;
-
-  span_group(T *data, std::size_t size, std::size_t rank, communicator::tag tag,
-             const Memory &memory)
-      : data_(data, size), rank_(rank), tag_(tag), memory_(memory) {}
+  bool buffered = false;
 
   span_group(std::span<T> data, std::size_t rank, communicator::tag tag)
-      : data_(data), rank_(rank), tag_(tag) {}
+      : data_(data), rank_(rank), tag_(tag) {
+#ifdef SYCL_LANGUAGE_VERSION
+    if (use_sycl() && sycl_mem_kind() == sycl::usm::alloc::shared) {
+      buffered = true;
+    }
+#endif
+  }
 
-  void unpack(const auto &op) {
-    if (mhp::use_sycl()) {
-      __detail::sycl_copy(buffer, buffer + rng::size(data_), data_.data());
-    } else {
-      for (std::size_t i = 0; i < rng::size(data_); i++) {
-        data_[i] = op(data_[i], buffer[i]);
+  void unpack() {
+    if (buffered) {
+      if (mhp::use_sycl()) {
+        __detail::sycl_copy(buffer, buffer + rng::size(data_), data_.data());
+      } else {
+        std::copy(buffer, buffer + rng::size(data_), data_.data());
       }
     }
   }
 
-  void unpack() {
-    if (mhp::use_sycl()) {
-      __detail::sycl_copy(buffer, buffer + rng::size(data_), data_.data());
-    } else {
-      std::copy(buffer, buffer + rng::size(data_), data_.data());
-    }
-  }
-
   void pack() {
-    if (mhp::use_sycl()) {
-      __detail::sycl_copy(data_.data(), data_.data() + rng::size(data_),
-                          buffer);
-    } else {
-      std::copy(data_.begin(), data_.end(), buffer);
+    if (buffered) {
+      if (mhp::use_sycl()) {
+        __detail::sycl_copy(data_.data(), data_.data() + rng::size(data_),
+                            buffer);
+      } else {
+        std::copy(data_.begin(), data_.end(), buffer);
+      }
     }
   }
   std::size_t buffer_size() { return rng::size(data_); }
 
   std::size_t data_size() { return rng::size(data_); }
-  T *data_pointer() { return buffer; }
+
+  T *data_pointer() {
+    if (buffered) {
+      return buffer;
+    } else {
+      return data_.data();
+    }
+  }
 
   std::size_t rank() { return rank_; }
 

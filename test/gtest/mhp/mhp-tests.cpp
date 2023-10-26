@@ -18,7 +18,8 @@ void dr_init() {
       fmt::print("Enable sycl device: {}\n",
                  q.get_device().get_info<sycl::info::device::name>());
     }
-    dr::mhp::init(q);
+    dr::mhp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
+                                                    : sycl::usm::alloc::shared);
     return;
   }
 #endif
@@ -45,6 +46,7 @@ int main(int argc, char *argv[]) {
   options_spec.add_options()
     ("drhelp", "Print help")
     ("log", "Enable logging")
+    ("device-memory", "Use device memory")
     ("sycl", "Execute on SYCL device");
   // clang-format on
 

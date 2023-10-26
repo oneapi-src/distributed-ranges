@@ -10,7 +10,7 @@ add_executable(
   mhp-bench.cpp
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
-  ../common/inclusive_scan.cpp
+  ../common/inclusive_exclusive_scan.cpp
   ../common/sort.cpp
   ../common/stream.cpp
   wave_equation.cpp
@@ -37,7 +37,7 @@ target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)
 
 # cmake-format: off
 add_executable(mhp-quick-bench mhp-bench.cpp
-  ../common/dot_product.cpp
+  stencil_2d.cpp
   )
 # cmake-format: on
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)

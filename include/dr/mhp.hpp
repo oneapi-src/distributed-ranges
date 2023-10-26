@@ -61,6 +61,7 @@
 #include <dr/mhp/algorithms/copy.hpp>
 #include <dr/mhp/algorithms/fill.hpp>
 #include <dr/mhp/algorithms/for_each.hpp>
+#include <dr/mhp/algorithms/exclusive_scan.hpp>
 #include <dr/mhp/algorithms/inclusive_scan.hpp>
 #include <dr/mhp/algorithms/iota.hpp>
 #include <dr/mhp/algorithms/reduce.hpp>
@@ -68,5 +69,4 @@
 #include <dr/mhp/algorithms/md_for_each.hpp>
 #include <dr/mhp/algorithms/transform.hpp>
 #include <dr/mhp/containers/distributed_vector.hpp>
-#include <dr/mhp/containers/distributed_dense_matrix.hpp>
 #include <dr/mhp/containers/distributed_mdarray.hpp>

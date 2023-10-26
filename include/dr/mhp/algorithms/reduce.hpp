@@ -38,7 +38,7 @@ inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
       return std::reduce(dpl_policy(),
                          dr::__detail::direct_iterator(rng::begin(r) + 1),
                          dr::__detail::direct_iterator(rng::end(r)),
-                         *rng::begin(r), binary_op);
+                         sycl_get(*rng::begin(r)), binary_op);
     }
   }
 #else

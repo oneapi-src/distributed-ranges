@@ -6,8 +6,6 @@
 
 using T = int;
 using DV = dr::mhp::distributed_vector<T>;
-using A = std::allocator<T>;
-using DVA = dr::mhp::distributed_vector<T, A>;
 using DVI = typename DV::iterator;
 
 TEST(MhpTests, DistributedVectorQuery) {
@@ -102,19 +100,6 @@ TEST(MhpTests, DistributedVectorReference) {
   dr::mhp::fence();
   EXPECT_EQ(dv[2], 2);
 }
-
-#if 0
-TEST(MhpTests, DistributedVectorAllocator) {
-  std::size_t n = 10;
-  DVA dv(n, dr::halo_bounds(0), std::allocator<T>{});
-  dr::mhp::fill(dv, 22);
-  if (comm_rank == 0) {
-    std::vector<T> v(n);
-    rng::fill(v, 22);
-    EXPECT_TRUE(equal(dv, v));
-  }
-}
-#endif
 
 TEST(MhpTests, DistributedVectorGranularity) {
   std::size_t gran = 3;

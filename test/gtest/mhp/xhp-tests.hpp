@@ -14,6 +14,7 @@
 extern MPI_Comm comm;
 extern std::size_t comm_rank;
 extern std::size_t comm_size;
+extern cxxopts::ParseResult options;
 
 namespace xhp = dr::mhp;
 
@@ -36,7 +37,6 @@ inline void fence() { dr::mhp::fence(); }
 
 // minimal testing for quick builds
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
-using AllTypesDM = ::testing::Types<dr::mhp::distributed_dense_matrix<float>>;
 
 namespace dr::mhp {
 
