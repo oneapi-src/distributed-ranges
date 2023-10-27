@@ -18,15 +18,25 @@
 
 namespace dr::mhp::__detail {
 
-template <typename R, typename ... Types> constexpr size_t argument_count( R(*f)(Types ...))
-{
-   return sizeof...(Types);
-}
-
+struct any {
+  template <typename T> operator T() const noexcept {
+    return std::declval<T>();
+  }
 };
 
-namespace dr::mhp {
+template <typename F, typename Arg1>
+concept one_argument = requires(F &f) {
+  { f(Arg1{}) };
+};
 
+template <typename F, typename Arg1, typename Arg2>
+concept two_arguments = requires(F &f) {
+  { f(Arg1{}, Arg2{}) };
+};
+
+}; // namespace dr::mhp::__detail
+
+namespace dr::mhp {
 
 namespace detail = dr::__detail;
 
@@ -104,9 +114,9 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
   barrier();
 }
 
-
 /// Collective for_each on distributed range
-template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
+template <typename F, typename... Ts>
+void for_each(F op, is_mdspan_view auto &&...drs) {
   auto ranges = std::tie(drs...);
   auto &&dr0 = std::get<0>(ranges);
   if (rng::empty(dr0)) {
@@ -121,7 +131,7 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
     // If local
     if (dr::ranges::rank(seg0) == default_comm().rank()) {
       auto origin = seg0.origin();
-      
+
       // make a tuple of mdspans
       auto operand_mdspans = detail::tuple_transform(
           segs, [](auto &&seg) { return seg.mdspan(); });
@@ -135,7 +145,19 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
               operand_mdspans, [index](auto mdspan) -> decltype(auto) {
                 return mdspan(index[0], index[1]);
               });
-          op(references);
+          static_assert(
+              std::invocable<F, decltype(references)> ||
+              std::invocable<F, decltype(index), decltype(references)>);
+          if constexpr (std::invocable<F, decltype(references)>) {
+            op(references);
+          } else {
+            auto global_index = index;
+            for (std::size_t i = 0; i < rng::size(global_index); i++) {
+              global_index[i] += origin[i];
+            }
+
+            op(global_index, references);
+          }
         };
 
         // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
@@ -156,17 +178,21 @@ template <typename... Ts> void for_each(auto op, is_mdspan_view auto &&...drs) {
           auto references = detail::tie_transform(
               operand_mdspans,
               [index](auto mdspan) -> decltype(auto) { return mdspan(index); });
-          if constexpr (__detail::argument_count(op) == 1) {
+          static_assert(
+              std::invocable<F, decltype(references)> ||
+              std::invocable<F, decltype(index), decltype(references)>);
+          if constexpr (std::invocable<F, decltype(references)>) {
             op(references);
-          } else if constexpr (__detail::argument_count(op) == 2) {
+          } else if constexpr (std::invocable<F, decltype(index),
+                                              decltype(references)>) {
             auto global_index = index;
-            for (std::size_t i = 0; i < global_index.size(); i++) {
+            for (std::size_t i = 0; i < rng::size(global_index); i++) {
               global_index[i] += origin[i];
             }
 
             op(global_index, references);
           } else {
-            static_assert(false);
+            assert(false);
           }
         };
         detail::mdspan_foreach<mdspan0.rank(), decltype(invoke_index)>(
