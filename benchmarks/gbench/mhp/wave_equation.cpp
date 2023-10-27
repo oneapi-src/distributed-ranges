@@ -391,25 +391,19 @@ int run(
   Array dudt({nx + 1, ny}, dist);
   Array dvdt({nx + 1, ny + 1}, dist);
 
-  // initial condition for elevation
-  for (auto segment : dr::ranges::segments(e)) {
-    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
-      auto origin = segment.origin();
-      auto e = segment.mdspan();
+  auto init_op = [xmin, ymin, grid](auto index, auto v) {
+    auto &[o] = v;
 
-      for (std::size_t i = 0; i < e.extent(0); i++) {
-        std::size_t global_i = i + origin[0];
-        if (global_i > 0) {
-          for (std::size_t j = 0; j < e.extent(1); j++) {
-            std::size_t global_j = j + origin[1];
-            T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
-            T y = ymin + grid.dy / 2 + global_j * grid.dy;
-            e(i, j) = initial_elev(x, y, grid.lx, grid.ly);
-          }
-        }
-      }
+    std::size_t global_i = index[0];
+    if (global_i > 0) {
+      std::size_t global_j = index[1];
+      T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
+      T y = ymin + grid.dy / 2 + global_j * grid.dy;
+      o = initial_elev(x, y, grid.lx, grid.ly);
     }
-  }
+  };
+  dr::mhp::for_each(init_op, e);
+
   dr::mhp::halo(e).exchange_begin();
   dr::mhp::halo(u).exchange_begin();
   dr::mhp::halo(v).exchange_begin();
@@ -535,25 +529,19 @@ int run(
   Array e_exact({nx + 1, ny}, dist);
   dr::mhp::fill(e_exact, 0.0);
   Array error({nx + 1, ny}, dist);
-  // initial condition for elevation
-  for (auto segment : dr::ranges::segments(e_exact)) {
-    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
-      auto origin = segment.origin();
-      auto e = segment.mdspan();
 
-      for (std::size_t i = 0; i < e.extent(0); i++) {
-        std::size_t global_i = i + origin[0];
-        if (global_i > 0) {
-          for (std::size_t j = 0; j < e.extent(1); j++) {
-            std::size_t global_j = j + origin[1];
-            T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
-            T y = ymin + grid.dy / 2 + global_j * grid.dy;
-            e(i, j) = exact_elev(x, y, t, grid.lx, grid.ly);
-          }
-        }
-      }
+  auto exact_op = [xmin, ymin, grid, t](auto index, auto v) {
+    auto &[o] = v;
+
+    std::size_t global_i = index[0];
+    if (global_i > 0) {
+      std::size_t global_j = index[1];
+      T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
+      T y = ymin + grid.dy / 2 + global_j * grid.dy;
+      o = exact_elev(x, y, t, grid.lx, grid.ly);
     }
-  }
+  };
+  dr::mhp::for_each(exact_op, e_exact);
   dr::mhp::halo(e_exact).exchange();
   auto error_kernel = [](auto ops) {
     auto err = ops.first - ops.second;

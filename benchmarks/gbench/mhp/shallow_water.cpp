@@ -126,34 +126,6 @@ double initial_v(double x, double y, double lx, double ly) {
   return exact_v(x, y, 0.0, lx, ly);
 }
 
-void set_field(Array &arr,
-               std::function<double(double, double, double, double)> func,
-               ArakawaCGrid &grid, double x_offset = 0.0, double y_offset = 0.0,
-               std::size_t row_offset = 0) {
-  /**
-   * Assign Array values based on coordinate-dependent function `func`.
-   *
-   */
-  for (auto segment : dr::ranges::segments(arr)) {
-    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
-      auto origin = segment.origin();
-      auto s = segment.mdspan();
-
-      for (std::size_t i = 0; i < s.extent(0); i++) {
-        std::size_t global_i = i + origin[0];
-        if (global_i >= row_offset) {
-          for (std::size_t j = 0; j < s.extent(1); j++) {
-            std::size_t global_j = j + origin[1];
-            T x = grid.xmin + x_offset + (global_i - row_offset) * grid.dx;
-            T y = grid.ymin + y_offset + global_j * grid.dy;
-            s(i, j) = func(x, y, grid.lx, grid.ly);
-          }
-        }
-      }
-    }
-  }
-}
-
 // Compute total depth at F points (vertices)
 void compute_total_depth(Array &e, Array &h, Array &H_at_f) {
   dr::mhp::halo(e).exchange_finalize();
@@ -875,7 +847,19 @@ int run(
   dr::mhp::fill(ke, 0.0);
 
   // set bathymetry
-  set_field(h, bathymetry, grid, grid.dx / 2, grid.dy / 2, 1);
+  auto h_init_op = [grid, x_offset = grid.dx / 2, y_offset = grid.dy / 2,
+                    row_offset = 1](auto index, auto v) {
+    auto &[o] = v;
+
+    std::size_t global_i = index[0];
+    if (global_i >= row_offset) {
+      std::size_t global_j = index[1];
+      T x = grid.xmin + x_offset + (global_i - row_offset) * grid.dx;
+      T y = grid.ymin + y_offset + global_j * grid.dy;
+      o = bathymetry(x, y, grid.lx, grid.ly);
+    }
+  };
+  dr::mhp::for_each(h_init_op, h);
   dr::mhp::halo(h).exchange();
 
   // potential energy offset
@@ -925,11 +909,49 @@ int run(
   }
 
   // set initial conditions
-  set_field(e, initial_elev, grid, grid.dx / 2, grid.dy / 2, 1);
+  auto e_init_op = [grid, x_offset = grid.dx / 2, y_offset = grid.dy / 2,
+                    row_offset = 1](auto index, auto v) {
+    auto &[o] = v;
+
+    std::size_t global_i = index[0];
+    if (global_i >= row_offset) {
+      std::size_t global_j = index[1];
+      T x = grid.xmin + x_offset + (global_i - row_offset) * grid.dx;
+      T y = grid.ymin + y_offset + global_j * grid.dy;
+      o = initial_elev(x, y, grid.lx, grid.ly);
+    }
+  };
+  dr::mhp::for_each(e_init_op, e);
   dr::mhp::halo(e).exchange_begin();
-  set_field(u, initial_u, grid, 0.0, grid.dy / 2, 0);
+
+  auto u_init_op = [grid, x_offset = 0.0, y_offset = grid.dy / 2,
+                    row_offset = 0](auto index, auto v) {
+    auto &[o] = v;
+
+    std::size_t global_i = index[0];
+    if (global_i >= row_offset) {
+      std::size_t global_j = index[1];
+      T x = grid.xmin + x_offset + (global_i - row_offset) * grid.dx;
+      T y = grid.ymin + y_offset + global_j * grid.dy;
+      o = initial_u(x, y, grid.lx, grid.ly);
+    }
+  };
+  dr::mhp::for_each(u_init_op, u);
   dr::mhp::halo(u).exchange_begin();
-  set_field(v, initial_v, grid, grid.dx / 2, 0.0, 1);
+
+  auto v_init_op = [grid, x_offset = grid.dx / 2, y_offset = 0.0,
+                    row_offset = 1](auto index, auto v) {
+    auto &[o] = v;
+
+    std::size_t global_i = index[0];
+    if (global_i >= row_offset) {
+      std::size_t global_j = index[1];
+      T x = grid.xmin + x_offset + (global_i - row_offset) * grid.dx;
+      T y = grid.ymin + y_offset + global_j * grid.dy;
+      o = initial_v(x, y, grid.lx, grid.ly);
+    }
+  };
+  dr::mhp::for_each(v_init_op, v);
   dr::mhp::halo(v).exchange_begin();
 
   // printArray(h, "Bathymetry");
@@ -1119,24 +1141,18 @@ int run(
   dr::mhp::fill(e_exact, 0.0);
   Array error({nx + 1, ny}, dist);
   // initial condition for elevation
-  for (auto segment : dr::ranges::segments(e_exact)) {
-    if (dr::ranges::rank(segment) == std::size_t(comm_rank)) {
-      auto origin = segment.origin();
-      auto e = segment.mdspan();
+  auto exact_op = [grid, xmin, ymin, t](auto index, auto v) {
+    auto &[o] = v;
 
-      for (std::size_t i = 0; i < e.extent(0); i++) {
-        std::size_t global_i = i + origin[0];
-        if (global_i > 0) {
-          for (std::size_t j = 0; j < e.extent(1); j++) {
-            std::size_t global_j = j + origin[1];
-            T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
-            T y = ymin + grid.dy / 2 + global_j * grid.dy;
-            e(i, j) = exact_elev(x, y, t, grid.lx, grid.ly);
-          }
-        }
-      }
+    std::size_t global_i = index[0];
+    if (global_i > 0) {
+      std::size_t global_j = index[1];
+      T x = xmin + grid.dx / 2 + (global_i - 1) * grid.dx;
+      T y = ymin + grid.dy / 2 + global_j * grid.dy;
+      o = exact_elev(x, y, t, grid.lx, grid.ly);
     }
-  }
+  };
+  dr::mhp::for_each(exact_op, e_exact);
   dr::mhp::halo(e_exact).exchange();
   auto error_kernel = [](auto ops) {
     auto err = ops.first - ops.second;
@@ -1217,6 +1233,7 @@ int main(int argc, char *argv[]) {
     ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
     ("sycl", "Execute on SYCL device")
     ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
+    ("device-memory", "Use device memory")
     ("h,help", "Print help");
   // clang-format on
 
@@ -1233,7 +1250,8 @@ int main(int argc, char *argv[]) {
     sycl::queue q = dr::mhp::select_queue();
     std::cout << "Run on: "
               << q.get_device().get_info<sycl::info::device::name>() << "\n";
-    dr::mhp::init(q);
+    dr::mhp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
+                                                    : sycl::usm::alloc::shared);
 #else
     std::cout << "Sycl support requires icpx\n";
     exit(1);
