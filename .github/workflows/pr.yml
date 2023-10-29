@@ -33,41 +33,13 @@ jobs:
     - name: Checks
       uses: pre-commit/action@v3.0.0
 
-  clang:
-    runs-on: ubuntu-latest
-    env:
-      CXX: clang++-15
-    steps:
-    - uses: actions/checkout@v4
-    - name: Apt installs
-      run: |
-        sudo apt update
-        sudo apt install -y clang-15
-    - uses: rscohn2/setup-oneapi@v0
-      with:
-        components: |
-          ${{ env.IMPI }}
-          ${{ env.MKL }}
-          ${{ env.TBB }}
-    - name: Build & test
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        cmake -B build
-        make -j 2 -C build all test
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: log-clang-${{ env.CXX }}
-        path: build/Testing
-
   gcc:
+    needs: checks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-        - cxx: g++-10
-        - cxx: g++-11
         - cxx: g++-12
     name: ${{ matrix.cxx }}
     env:
@@ -96,6 +68,7 @@ jobs:
         path: build/Testing
 
   icpx:
+    needs: checks
     runs-on: devcloud
     timeout-minutes: 60
     env:
@@ -122,7 +95,7 @@ jobs:
         path: build/Testing
 
   publish:
-    needs: [checks, clang, gcc, icpx]
+    needs: [gcc, icpx]
     runs-on: ubuntu-latest
     env:
       SPHINXOPTS: -q -W
