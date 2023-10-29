@@ -848,7 +848,7 @@ int run(
 
   // set bathymetry
   auto h_init_op = [grid, x_offset = grid.dx / 2, y_offset = grid.dy / 2,
-                    row_offset = 1](auto index, auto v) {
+                    row_offset = std::size_t(1)](auto index, auto v) {
     auto &[o] = v;
 
     std::size_t global_i = index[0];
@@ -910,7 +910,7 @@ int run(
 
   // set initial conditions
   auto e_init_op = [grid, x_offset = grid.dx / 2, y_offset = grid.dy / 2,
-                    row_offset = 1](auto index, auto v) {
+                    row_offset = std::size_t(1)](auto index, auto v) {
     auto &[o] = v;
 
     std::size_t global_i = index[0];
@@ -925,7 +925,7 @@ int run(
   dr::mhp::halo(e).exchange_begin();
 
   auto u_init_op = [grid, x_offset = 0.0, y_offset = grid.dy / 2,
-                    row_offset = 0](auto index, auto v) {
+                    row_offset = std::size_t(0)](auto index, auto v) {
     auto &[o] = v;
 
     std::size_t global_i = index[0];
@@ -940,7 +940,7 @@ int run(
   dr::mhp::halo(u).exchange_begin();
 
   auto v_init_op = [grid, x_offset = grid.dx / 2, y_offset = 0.0,
-                    row_offset = 1](auto index, auto v) {
+                    row_offset = std::size_t(1)](auto index, auto v) {
     auto &[o] = v;
 
     std::size_t global_i = index[0];
