@@ -17,6 +17,7 @@ env:
   MKL:  mkl@2023.2.0
   TBB:  tbb@2021.10.0
   ICX:  icx@2023.2.0
+  SYCL_CACHE_PERSISTENT: 1
 
 jobs:
   checks:
@@ -34,6 +35,7 @@ jobs:
       uses: pre-commit/action@v3.0.0
 
   gcc:
+    needs: checks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -70,6 +72,7 @@ jobs:
         path: build/Testing
 
   icpx:
+    needs: checks
     runs-on: devcloud
     timeout-minutes: 60
     env:
@@ -86,7 +89,7 @@ jobs:
         path: build/Testing
 
   publish:
-    needs: [checks, gcc, icpx]
+    needs: [gcc, icpx]
     runs-on: ubuntu-latest
     env:
       SPHINXOPTS: -q -W
