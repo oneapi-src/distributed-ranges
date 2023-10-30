@@ -13,24 +13,27 @@ unset SLURM_TASKS_PER_NODE
 unset SLURM_JOBID
 unset ONEAPI_DEVICE_SELECTOR
 
-echo ***Generate***
+echo "::group::Generate"
 time cmake -B build -DENABLE_SYCL=on
+echo "::endgroup::"
 
-echo ***Build***
-time make -C build all
+echo "::group::Build"
+time make -C build all -j
+echo "::endgroup::"
 
-echo ***SHP GPU Test***
+echo "::group::SHP GPU Test"
 # Use 1 device because p2p does not work
-ONEAPI_DEVICE_SELECTOR=level_zero:0 time ctest -B build -L SHP
+ONEAPI_DEVICE_SELECTOR=level_zero:0 time ctest --test-dir build -L SHP
+echo "::endgroup::"
 
-echo ***SHP CPU Test***
-# Use 1 device because p2p does not work
-ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest -B build -L SHP
+echo "::group::SHP CPU Test"
+ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L SHP
+echo "::endgroup::"
 
-echo ***MHP GPU Test***
-# Use 1 device because p2p does not work
-ONEAPI_DEVICE_SELECTOR=level_zero:* time ctest -B build -L MHP
+echo "::group::MHP GPU Test"
+ONEAPI_DEVICE_SELECTOR=level_zero:* time ctest --test-dir build -L MHP
+echo "::endgroup::"
 
-echo ***MHP CPU Test***
-# Use 1 device because p2p does not work
-ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest -B build -L MHP
+echo "::group::MHP CPU Test"
+ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L MHP
+echo "::endgroup::"
