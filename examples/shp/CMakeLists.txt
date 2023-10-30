@@ -9,7 +9,7 @@ endfunction()
 
 function(add_shp_example example_name)
   add_shp_example_no_test(${example_name})
-  add_test(NAME ${example_name} COMMAND ./${example_name} ${ARGN})
+  add_shp_ctest(${example_name} ${example_name} ${ARGN})
 endfunction()
 
 add_shp_example(fft3d 8)

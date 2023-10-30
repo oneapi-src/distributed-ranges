@@ -33,41 +33,12 @@ jobs:
     - name: Checks
       uses: pre-commit/action@v3.0.0
 
-  clang:
-    runs-on: ubuntu-latest
-    env:
-      CXX: clang++-15
-    steps:
-    - uses: actions/checkout@v4
-    - name: Apt installs
-      run: |
-        sudo apt update
-        sudo apt install -y clang-15
-    - uses: rscohn2/setup-oneapi@v0
-      with:
-        components: |
-          ${{ env.IMPI }}
-          ${{ env.MKL }}
-          ${{ env.TBB }}
-    - name: Build & test
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        cmake -B build
-        make -j 2 -C build all test
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: log-clang-${{ env.CXX }}
-        path: build/Testing
-
   gcc:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-        - cxx: g++-10
-        - cxx: g++-11
         - cxx: g++-12
     name: ${{ matrix.cxx }}
     env:
@@ -80,15 +51,18 @@ jobs:
           ${{ env.IMPI }}
           ${{ env.MKL }}
           ${{ env.TBB }}
-    - name: Build
+    - name: Generate
       run: |
         source /opt/intel/oneapi/setvars.sh
         cmake -B build
-        make -j 2 -C build
+    - name: Build
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        make -C build -j 2
     - name: Test
       run: |
         source /opt/intel/oneapi/setvars.sh
-        make -C build test
+        ctest -B build
     - uses: actions/upload-artifact@v3
       if: always()
       with:
@@ -100,18 +74,8 @@ jobs:
     timeout-minutes: 60
     env:
       CXX: icpx
-      MPIEXEC_EXTRA_FLAGS: --launcher=fork
     steps:
     - uses: actions/checkout@v4
-    - name: Python setup
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-        cache: 'pip'
-    - name: Install python packages
-      run: pip install -r requirements.txt
-    - name: Install benchmark framework
-      run: pip install src-python/drbench
     - name: Test
       run: srun -p pvc-shared scripts/devcloud-test.sh
     - name: Upload build logs
@@ -122,7 +86,7 @@ jobs:
         path: build/Testing
 
   publish:
-    needs: [checks, clang, gcc, icpx]
+    needs: [checks, gcc, icpx]
     runs-on: ubuntu-latest
     env:
       SPHINXOPTS: -q -W

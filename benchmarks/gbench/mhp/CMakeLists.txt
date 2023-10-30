@@ -50,11 +50,11 @@ if(NOT MPI_IMPL STREQUAL "openmpi")
   # of static column size for stencil2D disable DPL benchmarks because we get
   # intermittent fails with: ONEAPI_DEVICE_SELECTOR=opencl:cpu mpirun -n 1
   # ./mhp-bench --vector-size 30000 --rows 100 --columns 100 --check
-  add_mpi_test(
+  add_mhp_ctest(
     mhp-bench-1 mhp-bench 1 --vector-size 30000 --rows 100 --columns 100
     --check)
   if(ENABLE_SYCL)
-    add_mpi_test(
+    add_mhp_ctest(
       mhp-bench-1-sycl mhp-bench 1 --vector-size 30000 --rows 100 --columns 100
       --check --benchmark_filter=-.*DPL.* --sycl)
   endif()
@@ -63,19 +63,19 @@ endif()
 add_executable(wave_equation wave_equation.cpp)
 target_link_libraries(wave_equation cxxopts DR::mpi)
 target_compile_definitions(wave_equation PRIVATE STANDALONE_BENCHMARK)
-add_mpi_test(wave_equation wave_equation 1)
-add_mpi_test(wave_equation_fused wave_equation 1 -f)
+add_mhp_ctest(wave_equation wave_equation 1)
+add_mhp_ctest(wave_equation_fused wave_equation 1 -f)
 if(ENABLE_SYCL)
-  add_mpi_test(wave_equation-sycl wave_equation 2 --sycl)
-  add_mpi_test(wave_equation_fused-sycl wave_equation 2 --sycl -f)
+  add_mhp_ctest(wave_equation-sycl wave_equation 2 --sycl)
+  add_mhp_ctest(wave_equation_fused-sycl wave_equation 2 --sycl -f)
 endif()
 
 add_executable(shallow_water shallow_water.cpp)
 target_link_libraries(shallow_water cxxopts DR::mpi)
 target_compile_definitions(shallow_water PRIVATE STANDALONE_BENCHMARK)
-add_mpi_test(shallow_water shallow_water 1)
-add_mpi_test(shallow_water_fused shallow_water 1 -f)
+add_mhp_ctest(shallow_water shallow_water 1)
+add_mhp_ctest(shallow_water_fused shallow_water 1 -f)
 if(ENABLE_SYCL)
-  add_mpi_test(shallow_water-sycl shallow_water 2 --sycl)
-  add_mpi_test(shallow_water_fused-sycl shallow_water 2 --sycl -f)
+  add_mhp_ctest(shallow_water-sycl shallow_water 2 --sycl)
+  add_mhp_ctest(shallow_water_fused-sycl shallow_water 2 --sycl -f)
 endif()
