@@ -62,7 +62,7 @@ jobs:
     - name: Test
       run: |
         source /opt/intel/oneapi/setvars.sh
-        ctest -B build
+        ctest --test-dir build
     - uses: actions/upload-artifact@v3
       if: always()
       with:
