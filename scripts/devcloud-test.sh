@@ -11,12 +11,29 @@ hostname
 # SLURM/MPI integration is broken
 unset SLURM_TASKS_PER_NODE
 unset SLURM_JOBID
+unset ONEAPI_DEVICE_SELECTOR
 
-cmake -B build -DENABLE_SYCL=on
+echo "::group::Generate"
+time cmake -B build -DENABLE_SYCL=on
+echo "::endgroup::"
 
-# default sycl device will be GPU, if available. Only use 1 GPU:
-# workaround for devcloud multi-card not working
-ONEAPI_DEVICE_SELECTOR=level_zero:0 make -j -C build all test
+echo "::group::Build"
+time make -C build all -j
+echo "::endgroup::"
 
-# another run, forcing CPU
-ONEAPI_DEVICE_SELECTOR=opencl:cpu make -j -C build all test
+echo "::group::SHP GPU Test"
+# Use 1 device because p2p does not work
+ONEAPI_DEVICE_SELECTOR=level_zero:0 time ctest --test-dir build -L SHP
+echo "::endgroup::"
+
+echo "::group::SHP CPU Test"
+ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L SHP
+echo "::endgroup::"
+
+echo "::group::MHP GPU Test"
+ONEAPI_DEVICE_SELECTOR=level_zero:* time ctest --test-dir build -L MHP
+echo "::endgroup::"
+
+echo "::group::MHP CPU Test"
+ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L MHP
+echo "::endgroup::"
