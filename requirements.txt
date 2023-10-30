@@ -22,7 +22,7 @@ nodeenv==1.8.0
 packaging==23.2
 platformdirs==3.11.0
 pre-commit==3.5.0
-pydata-sphinx-theme==0.14.1
+pydata-sphinx-theme==0.14.2
 pyenchant==3.2.2
 Pygments==2.16.1
 PyYAML==6.0.1
