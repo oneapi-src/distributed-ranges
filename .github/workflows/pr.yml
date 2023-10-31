@@ -35,7 +35,7 @@ jobs:
 
   gcc:
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
-    depends: checks
+    needs: checks
     strategy:
       fail-fast: false
       matrix:
@@ -72,7 +72,7 @@ jobs:
 
   icpx:
     runs-on: devcloud
-    depends: checks
+    needs: checks
     timeout-minutes: 60
     env:
       CXX: icpx
