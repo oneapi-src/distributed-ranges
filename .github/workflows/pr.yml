@@ -20,7 +20,7 @@ env:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
     - name: Ubuntu dependencies
@@ -34,7 +34,8 @@ jobs:
       uses: pre-commit/action@v3.0.0
 
   gcc:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    needs: checks
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +72,7 @@ jobs:
 
   icpx:
     runs-on: devcloud
+    needs: checks
     timeout-minutes: 60
     env:
       CXX: icpx
@@ -86,8 +88,8 @@ jobs:
         path: build/Testing
 
   publish:
-    needs: [checks, gcc, icpx]
-    runs-on: ubuntu-latest
+    needs: [gcc, icpx]
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     env:
       SPHINXOPTS: -q -W
     if: ${{ github.ref == 'refs/heads/main' }}
