@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import logging
+import resource
 import subprocess
 import uuid
 from collections import namedtuple
 
-import click
 from drbench.common import Device, Model, Runtime
 
 AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
@@ -24,9 +25,16 @@ class Runner:
         self.analysis_config = analysis_config
 
     def __execute(self, command: str):
-        click.echo(command)
+        logging.info(f"running command: {command}")
+        usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         if not self.analysis_config.dry_run:
             subprocess.run(command, shell=True, check=True)
+        usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
+        logging.info(
+            f"command execution time: "
+            f"{usage_end.ru_utime - usage_start.ru_utime}, "
+            f"command: {command}"
+        )
 
     def __run_mhp_analysis(self, params, ranks, ranks_per_node, target):
         if target.runtime == Runtime.SYCL:

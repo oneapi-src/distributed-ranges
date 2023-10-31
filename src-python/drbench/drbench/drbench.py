@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import glob
+import logging
 import os
+import sys
 
 import click
 from drbench import common, plotter, runner
@@ -74,7 +76,13 @@ option_different_devices = click.option(
 # common arguments
 @click.group()
 def cli():
-    pass
+    logging.basicConfig(
+        stream=sys.stdout,
+        format="%(levelname)s %(asctime)s %(message)s"
+        " [%(filename)s:%(lineno)d]",
+        datefmt="%Y-%m-%d_%H:%M:%S",
+        level=logging.INFO,
+    )
 
 
 @cli.command()
@@ -103,8 +111,10 @@ def choice_to_target(c):
 
 
 def do_run(options):
-    click.echo(f"Targets: {options.target}")
-    click.echo(f"Ranks: {options.ranks}")
+    logging.info(
+        f"running analysis over targets*sizes*ranks: "
+        f"{options.target} * {options.vec_size} * {options.ranks}"
+    )
     r = runner.Runner(
         runner.AnalysisConfig(
             options.prefix,
@@ -466,8 +476,10 @@ def suite(
     base.weak_scaling = weak_scaling
     base.different_devices = different_devices
 
-    print(f"weak_scaling is {weak_scaling}\n")
-    print(f"different_devices is {different_devices}\n")
+    logging.info(
+        f"starting suite, weak_scaling:{weak_scaling}, "
+        f"different_devices:{different_devices}"
+    )
 
     # if the platform does not support p2p, limit gpus to 1
     if p2p:
