@@ -85,6 +85,7 @@ class Runner:
         params.append(f"--context model:{target.model.name}")
         params.append(f"--context runtime:{target.runtime.name}")
         params.append(f"--context target:{target}")
+        params.append("--v=3")  # verbosity
 
         prefix = self.analysis_config.prefix
         params.append(f"--benchmark_out={prefix}-{uuid.uuid4().hex}.json")

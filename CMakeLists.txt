@@ -206,14 +206,15 @@ if(ENABLE_ISHMEM)
 
 endif()
 
-function(add_mpi_test test_name name processes)
+function(add_mhp_ctest test_name name processes)
   add_test(NAME ${test_name}
            COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
                    ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL MHP)
 endfunction()
 
-function(add_mpi_offload_test test_name name processes)
-  # intel mpi needs I_MPI_OFFLOAD=1, mpich does not need anything but it it
+function(add_mhp_offload_ctest test_name name processes)
+  # intel mpi needs I_MPI_OFFLOAD=1, mpich does not need anything but it is
   # harmless so pass it anyway
   add_test(
     NAME ${test_name}
@@ -221,6 +222,12 @@ function(add_mpi_offload_test test_name name processes)
       ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
       ${MPIEXEC_PREFLAGS} -genv I_MPI_OFFLOAD=1 ./${name} ${ARGN}
       COMMAND_EXPAND_LISTS)
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL MHP)
+endfunction()
+
+function(add_shp_ctest test_name name)
+  add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SHP)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})

@@ -56,7 +56,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  ../common/reduce.cpp
+  mdstar.cpp
   )
 # cmake-format: on
 
@@ -78,38 +78,38 @@ if(ENABLE_ISHMEM)
   add_shmem_test(mhp-shmem-test-2 mhp-shmem-test 2 --sycl)
 endif()
 
-add_mpi_test(mhp-quick-test-1 mhp-quick-test 1)
-add_mpi_test(mhp-quick-test-2 mhp-quick-test 2)
-add_mpi_test(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl)
-add_mpi_test(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl)
+add_mhp_ctest(mhp-quick-test-1 mhp-quick-test 1)
+add_mhp_ctest(mhp-quick-test-2 mhp-quick-test 2)
+add_mhp_ctest(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl)
+add_mhp_ctest(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl)
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
 if(NOT MPI_IMPL STREQUAL "openmpi")
   # MPI_Win_create fails for communicator with size 1
-  add_mpi_test(mhp-tests-1 mhp-tests 1)
+  add_mhp_ctest(mhp-tests-1 mhp-tests 1)
 endif()
 
-add_mpi_test(mhp-tests-2 mhp-tests 2)
-add_mpi_test(mhp-tests-3 mhp-tests 3)
-add_mpi_test(mhp-tests-4 mhp-tests 4)
-add_mpi_test(mhp-tests-3-only mhp-tests-3 3)
+add_mhp_ctest(mhp-tests-2 mhp-tests 2)
+add_mhp_ctest(mhp-tests-3 mhp-tests 3)
+add_mhp_ctest(mhp-tests-4 mhp-tests 4)
+add_mhp_ctest(mhp-tests-3-only mhp-tests-3 3)
 
 if(ENABLE_SYCL)
   # Excluding tests that failed in CI with segv. They work with manual runs. I
   # have not investigated the cause.
-  add_mpi_offload_test(
+  add_mhp_offload_ctest(
     mhp-sycl-device-tests-2 mhp-tests 2 --sycl --device-memory
     --gtest_filter=-Exclusive*:Slide*:Sort*:ComplexSlide*)
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mpi_test(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)
+    add_mhp_ctest(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)
   endif()
   # TODO: fix sycl Slide issues, see
   # https://github.com/oneapi-src/distributed-ranges/issues/322
-  add_mpi_test(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-*Slide*)
-  add_mpi_test(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-*Slide*)
-  add_mpi_test(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
-  add_mpi_test(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl
-               --gtest_filter=-*Slide*)
+  add_mhp_ctest(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-*Slide*)
+  add_mhp_ctest(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-*Slide*)
+  add_mhp_ctest(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
+  add_mhp_ctest(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl
+                --gtest_filter=-*Slide*)
 endif()

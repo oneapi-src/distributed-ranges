@@ -32,4 +32,4 @@ endif()
 target_compile_definitions(shp-bench PRIVATE BENCH_SHP)
 target_link_libraries(shp-bench benchmark::benchmark cxxopts DR::shp)
 
-add_test(NAME shp-bench COMMAND ./shp-bench --vector-size 20000)
+add_shp_ctest(shp-bench shp-bench --vector-size 20000)

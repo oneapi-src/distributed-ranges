@@ -413,6 +413,22 @@ TEST_F(MdForeach, 3ops) {
                      c.mdspan());
 }
 
+TEST_F(MdForeach, Indexed) {
+  xhp::distributed_mdarray<T, 2> dist(extents2d);
+  auto op = [l = ydim](auto index, auto v) {
+    auto &[o] = v;
+    o = index[0] * l + index[1];
+  };
+
+  xhp::for_each(op, dist);
+  for (std::size_t i = 0; i < xdim; i++) {
+    for (std::size_t j = 0; j < ydim; j++) {
+      EXPECT_EQ(dist.mdspan()(i, j), i * ydim + j)
+          << fmt::format("i: {} j: {}\n", i, j);
+    }
+  }
+}
+
 using MdStencilForeach = Mdspan;
 
 TEST_F(MdStencilForeach, 2ops) {

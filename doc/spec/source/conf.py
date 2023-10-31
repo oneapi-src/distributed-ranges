@@ -61,6 +61,7 @@ html_theme_options = {
     "use_edit_page_button": True,
     "repository_branch": "main",
     "search_bar_text": "Search the spec...",
+    "navigation_with_keys": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
