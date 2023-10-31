@@ -194,6 +194,16 @@ if(ENABLE_ISHMEM)
 
   add_custom_target(shmem DEPENDS ishmem)
 
+  function(add_shmem_test test_name name processes)
+    add_test(
+      NAME ${test_name}
+      # FIXME, can not use ${MPIEXEC_EXECUTABLE} on Borealis because it gives
+      # two ranks 0 and failure in ISHMEM init
+      COMMAND
+        mpiexec ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS}
+        ${CMAKE_BINARY_DIR}/bin/ishmrun ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+  endfunction()
+
 endif()
 
 function(add_mhp_ctest test_name name processes)
