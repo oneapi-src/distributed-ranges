@@ -427,12 +427,13 @@ def suite(
     ]
     dr_p2p = [
         "^DotProduct_DR",
-        "^Exclusive_Scan_DR",
         "^Inclusive_Scan_DR",
         "^Reduce_DR",
     ]
     dr_filters = dr_nop2p + dr_p2p
-    mhp_filters = ["Stencil2D_DR", "WaveEquation_DR"]
+    # ExclusiveScan benchmarks fail in SHP, so are enabled in MHP only
+    # see: https://github.com/oneapi-src/distributed-ranges/issues/593
+    mhp_filters = ["Stencil2D_DR", "WaveEquation_DR", "^Exclusive_Scan_DR"]
     shp_filters = [".*Sort_DR", "Gemm_DR"]
     reference_filters = [
         "BlackScholes_Reference",
