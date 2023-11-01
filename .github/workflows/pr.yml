@@ -75,13 +75,13 @@ jobs:
     needs: checks
     timeout-minutes: 60
     # MPI device memory does not work
-    exclude: "--exclude=idc-beta-batch-pvc-node-17,idc-beta-batch-pvc-node-18,idc-beta-batch-pvc-node-19"
     env:
       CXX: icpx
+      EXCLUDE: "--exclude=idc-beta-batch-pvc-node-17,idc-beta-batch-pvc-node-18,idc-beta-batch-pvc-node-19"
     steps:
     - uses: actions/checkout@v4
     - name: Test
-      run: srun $exclude -p pvc-shared scripts/devcloud-test.sh
+      run: srun ${EXCLUDE} -p pvc-shared scripts/devcloud-test.sh
     - name: Upload build logs
       uses: actions/upload-artifact@v3
       if: always()
