@@ -67,15 +67,21 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
 endforeach()
 
 if(ENABLE_ISHMEM)
-  add_executable(mhp-shmem-test mhp-tests.cpp ../common/zip.cpp)
-  target_link_libraries(
-    mhp-shmem-test GTest::gtest_main cxxopts DR::mpi ze_loader fabric
-    pmi_simple sma)
-  target_link_libraries(mhp-shmem-test ${CMAKE_BINARY_DIR}/lib/libishmem.a)
-  target_compile_definitions(mhp-shmem-test PRIVATE DRISHMEM)
 
-  add_shmem_test(mhp-shmem-test-1 mhp-shmem-test 1 --sycl)
-  add_shmem_test(mhp-shmem-test-2 mhp-shmem-test 2 --sycl)
+  foreach(shmem-test-name IN ITEMS mst msts)
+    add_executable(${shmem-test-name} shmem_basic.cpp) # mhp-tests.cpp
+                                                       # distributed_vector.cpp
+    target_link_libraries(
+      ${shmem-test-name} GTest::gtest_main cxxopts DR::mpi ze_loader # fabric
+      pmi_simple sma)
+    target_link_libraries(${shmem-test-name}
+                          ${CMAKE_BINARY_DIR}/lib/libishmem.a)
+    target_compile_definitions(${shmem-test-name} PRIVATE DRISHMEM)
+    add_shmem_test(${shmem-test-name}-1 ${shmem-test-name} 1 --sycl)
+    add_shmem_test(${shmem-test-name}-2 ${shmem-test-name} 2 --sycl)
+  endforeach()
+  target_compile_definitions(msts PRIVATE STANDALONE_TEST)
+
 endif()
 
 add_mhp_ctest(mhp-quick-test-1 mhp-quick-test 1)

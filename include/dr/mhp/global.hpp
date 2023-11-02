@@ -109,9 +109,13 @@ inline auto use_sycl() { return __detail::gcontext()->use_sycl_; }
 
 inline void fence() {
   dr::drlog.debug("fence\n");
+#ifdef DRISHMEM
   for (auto win : __detail::gcontext()->wins_) {
     MPI_Win_fence(0, win);
   }
+#else
+  // TODO: ishmem needs fence?
+#endif
 }
 
 inline void init() {
