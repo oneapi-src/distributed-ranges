@@ -31,8 +31,9 @@ class Runner:
             subprocess.run(command, shell=True, check=True)
         usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
         logging.info(
-            f"command execution time: "
-            f"{usage_end.ru_utime - usage_start.ru_utime}, "
+            f"command execution time, "
+            f"user:{usage_end.ru_utime - usage_start.ru_utime:.2f}, "
+            f"system:{usage_end.ru_stime - usage_start.ru_stime:.2f}, "
             f"command: {command}"
         )
 
