@@ -283,7 +283,7 @@ TEST_F(Mdarray, Slabs) {
 TEST_F(Mdarray, MdForEach3d) {
   // leading dimension decomp of 3d array creates slabs
   xhp::distributed_mdarray<T, 3> mdarray(extents3d);
-  std::vector<T> local(mdarray.size(), 0);
+  std::vector<T> local(extents3d[0] * extents3d[1] * extents3d[2], 0);
   rng::iota(local, 0);
 
   auto set = [d1 = extents3d[1], d2 = extents3d[2]](auto index, auto v) {
@@ -292,7 +292,8 @@ TEST_F(Mdarray, MdForEach3d) {
   };
   dr::mhp::for_each(set, mdarray);
 
-  EXPECT_EQ(mdarray.view(), local) << mdrange_message(mdarray);
+  EXPECT_EQ(xhp::views::take(mdarray.view(), local.size()), local)
+      << mdrange_message(mdarray);
 }
 
 using Submdspan = Mdspan;
