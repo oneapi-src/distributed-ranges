@@ -26,9 +26,10 @@ echo "::group::SHP GPU Test"
 ONEAPI_DEVICE_SELECTOR=level_zero:0 time ctest --test-dir build -L SHP
 echo "::endgroup::"
 
-echo "::group::SHP CPU Test"
-ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L SHP
-echo "::endgroup::"
+# disabled: very slow or fails when cryptominer is on devcloud
+#echo "::group::SHP CPU Test"
+#ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L SHP
+#echo "::endgroup::"
 
 echo "::group::MHP GPU Test"
 ONEAPI_DEVICE_SELECTOR=level_zero:* time ctest --test-dir build -L MHP
