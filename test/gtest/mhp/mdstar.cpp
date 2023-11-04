@@ -261,6 +261,25 @@ TEST_F(Mdarray, Enumerate) {
   static_assert(dr::distributed_range<decltype(e)>);
 }
 
+TEST_F(Mdarray, Slabs) {
+  // leading dimension decomp of 3d array creates slabs
+  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+  for (auto slab : dr::mhp::local_mdspans(mdarray)) {
+    for (std::size_t i = 0; i < slab.extent(0); i++) {
+      for (std::size_t j = 0; j < slab.extent(1); j++) {
+        for (std::size_t k = 0; k < slab.extent(2); k++) {
+          slab(i, j, k) = 1;
+        }
+      }
+    }
+  }
+
+  EXPECT_EQ(mdarray.mdspan()(0, 0, 0), 1);
+  EXPECT_EQ(
+      mdarray.mdspan()(extents3d[0] - 1, extents3d[1] - 1, extents3d[2] - 1),
+      1);
+}
+
 using Submdspan = Mdspan;
 
 TEST_F(Submdspan, StaticAssert) {
