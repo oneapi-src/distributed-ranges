@@ -9,24 +9,30 @@
 DevCloud Runners
 ================
 
-We have 2 self-hosted runners on devcloud. We run in tmux so it will
-continue to run after disconnecting. ``ssh`` to DevCloud::
+We have 2 self-hosted runners on devcloud. We run in an emacs daemon
+so it will continue to run after disconnecting. ``ssh`` to DevCloud
+and start an emacs daemon::
 
-  tmux
+  emacs --daemon
+
+Inside an emacs shell::
+
   cd github/runner-1
   ./run.sh
 
-For the second runner, split the window with ``control-b "`` and start
-the runner::
+Rename the shell to ``devcloud-1`` and start another emacs shell::
 
   cd github/runner-2
   ./run.sh
 
-To check on a runner ``ssh`` to DevCloud and do::
+If you disconnect emacs and the runners will continue to run. To check
+on a runner ``ssh`` to DevCloud and do::
 
-  tmux ls
+  emacsclient -nw
 
-To see the sessions. Usually there is just one name ``0``. Attach to
-the session::
+And visit ``devcloud-1`` and ``devcloud-2`` buffers.
 
-  tmux attach -t 0
+``tmux`` is an alternative. I do not use it because devcloud allows 4
+logins via ``ssh``. Using ``tmux`` with 2 runners consumes 3 even
+while it is detached. You may create a situation where you cannot log
+in because ``tmux`` is consuming all the logins.
