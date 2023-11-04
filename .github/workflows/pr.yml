@@ -35,7 +35,6 @@ jobs:
 
   gcc:
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
-    needs: checks
     strategy:
       fail-fast: false
       matrix:
@@ -72,7 +71,6 @@ jobs:
 
   icpx:
     runs-on: devcloud
-    needs: checks
     timeout-minutes: 60
     # MPI device memory does not work
     env:
@@ -90,7 +88,7 @@ jobs:
         path: build/Testing
 
   publish:
-    needs: [gcc, icpx]
+    needs: [checks, gcc, icpx]
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     env:
       SPHINXOPTS: -q -W
