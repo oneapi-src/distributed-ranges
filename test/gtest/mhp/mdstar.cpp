@@ -284,7 +284,7 @@ TEST_F(Mdarray, MdForEach3d) {
   // leading dimension decomp of 3d array creates slabs
   xhp::distributed_mdarray<T, 3> mdarray(extents3d);
   std::vector<T> local(mdarray.size(), 0);
-  // rng::iota(local, 0);
+  rng::iota(local, 0);
 
   auto set = [d1 = extents3d[1], d2 = extents3d[2]](auto index, auto v) {
     auto &[o] = v;
