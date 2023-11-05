@@ -90,12 +90,12 @@ public:
   }
 
   void compute_backward(auto &i_mat, auto &i_slab, auto &o_mat, auto &o_slab) {
-    oneapi::mkl::dft::compute_backward(*fft_1d_plan, o_slab.data_handle())
+    oneapi::mkl::dft::compute_backward(*fft_1d_plan, i_slab.data_handle())
         .wait();
 
     transpose_matrix(i_mat, o_mat);
 
-    oneapi::mkl::dft::compute_backward(*fft_2d_plan, i_slab.data_handle())
+    oneapi::mkl::dft::compute_backward(*fft_2d_plan, o_slab.data_handle())
         .wait();
   }
 };
