@@ -262,6 +262,11 @@ TEST_F(Mdarray, Enumerate) {
 }
 
 TEST_F(Mdarray, Slabs) {
+  // local_mdspan is not accessible for device memory
+  if (options.count("device-memory")) {
+    return;
+  }
+
   // leading dimension decomp of 3d array creates slabs
   xhp::distributed_mdarray<T, 3> mdarray(extents3d);
   for (auto slab : dr::mhp::local_mdspans(mdarray)) {
