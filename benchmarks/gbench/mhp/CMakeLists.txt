@@ -82,6 +82,6 @@ endif()
 
 if(ENABLE_SYCL)
   add_executable(fft3d_mhp fft3d.cpp)
-  target_link_libraries(fft3d_mhp cxxopts DR::mpi)
+  target_link_libraries(fft3d_mhp cxxopts DR::mpi MKL::MKL_DPCPP)
   target_compile_definitions(fft3d_mhp PRIVATE STANDALONE_BENCHMARK)
 endif()
