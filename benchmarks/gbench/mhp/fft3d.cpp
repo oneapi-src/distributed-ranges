@@ -13,9 +13,22 @@ MPI_Comm comm;
 int comm_rank;
 int comm_size;
 
+// Adapted examples/sycl/dft/source/dp_complex_3d.cpp
 void init_matrix(auto &mat) {
-  // Placeholder initialization based on index
-  auto init = [](auto index, auto v) { std::get<0>(v) = index[0] + index[1]; };
+
+  constexpr double TWOPI = 6.2831853071795864769;
+  constexpr int  H1 = -1, H2 = -2, H3 = -3;
+  int N1 = mat.extent(2), N2 = mat.extent(1), N3 = mat.extent(0);
+
+  auto moda = [](int K, int L, int M) { return (double)(((long long)K * L) % M); };
+
+  auto init = [=](auto index, auto v) {
+    auto phase = TWOPI * (moda(static_cast<int>(index[2]), H1, N1) / N1
+                        + moda(static_cast<int>(index[1]), H2, N2) / N2
+                        + moda(static_cast<int>(index[0]), H3, N3) / N3);
+    std::get<0>(v) = {std::cos(phase) / (N3*N2*N1), std::sin(phase) / (N3*N2*N1)};
+  };
+
   dr::mhp::for_each(init, mat);
 }
 
