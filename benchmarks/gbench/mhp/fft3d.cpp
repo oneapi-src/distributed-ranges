@@ -65,20 +65,25 @@ public:
     fft_x_plan->commit(q);
   }
 
+  void transpose_matrix(auto &i_mat, auto &o_mat) {}
+
   void compute_forward(auto &i_mat, auto &i_slab, auto &o_mat, auto &o_slab) {
-    oneapi::mkl::dft::compute_forward(*fft_yz_plan, i_slab.data_handle).wait();
+    oneapi::mkl::dft::compute_forward(*fft_yz_plan, i_slab.data_handle())
+        .wait();
 
     transpose_matrix(i_mat, o_mat);
 
-    oneapi::mkl::dft::compute_forward(*fft_x_plan, o_slab.data_handle).wait();
+    oneapi::mkl::dft::compute_forward(*fft_x_plan, o_slab.data_handle()).wait();
   }
 
   void compute_backward(auto &i_mat, auto &i_slab, auto &o_mat, auto &o_slab) {
-    oneapi::mkl::dft::compute_backward(*fft_yz_plan, i_slab.data_handle).wait();
+    oneapi::mkl::dft::compute_backward(*fft_yz_plan, i_slab.data_handle())
+        .wait();
 
     transpose_matrix(i_mat, o_mat);
 
-    oneapi::mkl::dft::compute_backward(*fft_x_plan, o_slab.data_handle).wait();
+    oneapi::mkl::dft::compute_backward(*fft_x_plan, o_slab.data_handle())
+        .wait();
   }
 };
 
@@ -113,8 +118,8 @@ int do_fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
 
     auto sub_view = dr::mhp::views::zip(i_mat, t_mat) |
                     dr::mhp::views::transform([](auto &&e) {
-                      auto &&[value, ref] = e;
-                      return value - ref;
+                      auto [a, b] = e;
+                      return value_t(a) - value_t(b);
                     });
     auto diff_sum = dr::mhp::reduce(sub_view, value_t{});
     fmt::print("Difference {} {} \n", diff_sum.real(), diff_sum.imag());
