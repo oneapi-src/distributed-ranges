@@ -261,6 +261,46 @@ TEST_F(Mdarray, Enumerate) {
   static_assert(dr::distributed_range<decltype(e)>);
 }
 
+TEST_F(Mdarray, Slabs) {
+  // local_mdspan is not accessible for device memory
+  if (options.count("device-memory")) {
+    return;
+  }
+
+  // leading dimension decomp of 3d array creates slabs
+  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+  for (auto slab : dr::mhp::local_mdspans(mdarray)) {
+    for (std::size_t i = 0; i < slab.extent(0); i++) {
+      for (std::size_t j = 0; j < slab.extent(1); j++) {
+        for (std::size_t k = 0; k < slab.extent(2); k++) {
+          slab(i, j, k) = 1;
+        }
+      }
+    }
+  }
+
+  EXPECT_EQ(mdarray.mdspan()(0, 0, 0), 1);
+  EXPECT_EQ(
+      mdarray.mdspan()(extents3d[0] - 1, extents3d[1] - 1, extents3d[2] - 1),
+      1);
+}
+
+TEST_F(Mdarray, MdForEach3d) {
+  // leading dimension decomp of 3d array creates slabs
+  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+  std::vector<T> local(extents3d[0] * extents3d[1] * extents3d[2], 0);
+  rng::iota(local, 0);
+
+  auto set = [d1 = extents3d[1], d2 = extents3d[2]](auto index, auto v) {
+    auto &[o] = v;
+    o = index[0] * d1 * d2 + index[1] * d2 + index[2];
+  };
+  dr::mhp::for_each(set, mdarray);
+
+  EXPECT_EQ(xhp::views::take(mdarray.view(), local.size()), local)
+      << mdrange_message(mdarray);
+}
+
 using Submdspan = Mdspan;
 
 TEST_F(Submdspan, StaticAssert) {

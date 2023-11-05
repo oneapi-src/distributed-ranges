@@ -142,8 +142,15 @@ void for_each(F op, is_mdspan_view auto &&...drs) {
         auto invoke_index = [=](auto index) {
           // Transform mdspans into references
           auto references = detail::tie_transform(
-              operand_mdspans, [index](auto mdspan) -> decltype(auto) {
-                return mdspan(index[0], index[1]);
+              operand_mdspans, [mdspan0, index](auto mdspan) -> decltype(auto) {
+                static_assert(1 <= mdspan0.rank() && mdspan0.rank() <= 3);
+                if constexpr (mdspan0.rank() == 1) {
+                  return mdspan(index[0]);
+                } else if constexpr (mdspan0.rank() == 2) {
+                  return mdspan(index[0], index[1]);
+                } else if constexpr (mdspan0.rank() == 3) {
+                  return mdspan(index[0], index[1], index[2]);
+                }
               });
           static_assert(
               std::invocable<F, decltype(references)> ||
@@ -160,13 +167,20 @@ void for_each(F op, is_mdspan_view auto &&...drs) {
           }
         };
 
-        // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
-        // ndrange and handles > 32 bits.
-
-        dr::__detail::parallel_for(
-            mhp::sycl_queue(),
-            sycl::range(mdspan0.extent(0), mdspan0.extent(1)), invoke_index)
-            .wait();
+        if constexpr (mdspan0.rank() == 1) {
+          auto range = sycl::range(mdspan0.extent(0));
+          dr::__detail::parallel_for(mhp::sycl_queue(), range, invoke_index)
+              .wait();
+        } else if constexpr (mdspan0.rank() == 2) {
+          auto range = sycl::range(mdspan0.extent(0), mdspan0.extent(1));
+          dr::__detail::parallel_for(mhp::sycl_queue(), range, invoke_index)
+              .wait();
+        } else if constexpr (mdspan0.rank() == 3) {
+          auto range = sycl::range(mdspan0.extent(0), mdspan0.extent(1),
+                                   mdspan0.extent(2));
+          dr::__detail::parallel_for(mhp::sycl_queue(), range, invoke_index)
+              .wait();
+        }
 #else
         assert(false);
 #endif
