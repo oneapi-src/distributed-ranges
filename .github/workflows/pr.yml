@@ -20,7 +20,7 @@ env:
 
 jobs:
   checks:
-    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    runs-on: ['ubuntu-latest','intel-ubuntu-latest']
     steps:
     - uses: actions/checkout@v4
     - name: Ubuntu dependencies
