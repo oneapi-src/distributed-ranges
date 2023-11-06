@@ -12,7 +12,7 @@ cfgv==3.4.0
 charset-normalizer==3.3.1
 distlib==0.3.7
 docutils==0.19
-filelock==3.13.0
+filelock==3.13.1
 identify==2.5.31
 idna==3.4
 imagesize==1.4.1
