@@ -13,9 +13,22 @@ MPI_Comm comm;
 int comm_rank;
 int comm_size;
 
+// Adapted examples/sycl/dft/source/dp_complex_3d.cpp
 void init_matrix(auto &mat) {
-  // Placeholder initialization based on index
-  auto init = [](auto index, auto v) { std::get<0>(v) = index[0] + index[1]; };
+
+  constexpr double TWOPI = 6.2831853071795864769;
+  constexpr int  H1 = -1, H2 = -2, H3 = -3;
+  int N1 = mat.extent(2), N2 = mat.extent(1), N3 = mat.extent(0);
+
+  auto moda = [](int K, int L, int M) { return (double)(((long long)K * L) % M); };
+
+  auto init = [=](auto index, auto v) {
+    auto phase = TWOPI * (moda(static_cast<int>(index[2]), H1, N1) / N1
+                        + moda(static_cast<int>(index[1]), H2, N2) / N2
+                        + moda(static_cast<int>(index[0]), H3, N3) / N3);
+    std::get<0>(v) = {std::cos(phase) / (N3*N2*N1), std::sin(phase) / (N3*N2*N1)};
+  };
+
   dr::mhp::for_each(init, mat);
 }
 
@@ -35,54 +48,54 @@ template <typename T> class distributed_fft {
   using fft_plan_t =
       oneapi::mkl::dft::descriptor<dft_precision<T>::value,
                                    oneapi::mkl::dft::domain::COMPLEX>;
-  fft_plan_t *fft_x_plan;
-  fft_plan_t *fft_yz_plan;
+  fft_plan_t* fft_1d_plan;
+  fft_plan_t* fft_2d_plan;
 
 public:
   explicit distributed_fft(sycl::queue &q, auto &i_slab, auto &o_slab) {
     int i_x = i_slab.extent(0);
     int i_y = i_slab.extent(1);
     int i_z = i_slab.extent(2);
-    fft_yz_plan = new fft_plan_t({i_y, i_z});
-    fft_yz_plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+    fft_2d_plan = new fft_plan_t({i_y, i_z});
+    fft_2d_plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                            i_x);
-    fft_yz_plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,
+    fft_2d_plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,
                            i_y * i_z);
-    fft_yz_plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,
+    fft_2d_plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,
                            i_y * i_z);
-    fft_yz_plan->set_value(oneapi::mkl::dft::config_param::BACKWARD_SCALE,
+    fft_2d_plan->set_value(oneapi::mkl::dft::config_param::BACKWARD_SCALE,
                            (1.0 / (i_x * i_y * i_z)));
-    fft_yz_plan->commit(q);
+    fft_2d_plan->commit(q);
 
     auto o_x = o_slab.extent(0);
     auto o_y = o_slab.extent(1);
     auto o_z = o_slab.extent(2);
-    fft_x_plan = new fft_plan_t(o_x);
-    fft_x_plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
-                          o_y);
-    fft_x_plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, o_z);
-    fft_x_plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, o_z);
-    fft_x_plan->commit(q);
+    fft_1d_plan = new fft_plan_t(o_z);
+    fft_1d_plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+                           o_x * o_y);
+    fft_1d_plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, o_z);
+    fft_1d_plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, o_z);
+    fft_1d_plan->commit(q);
   }
 
   void transpose_matrix(auto &i_mat, auto &o_mat) {}
 
   void compute_forward(auto &i_mat, auto &i_slab, auto &o_mat, auto &o_slab) {
-    oneapi::mkl::dft::compute_forward(*fft_yz_plan, i_slab.data_handle())
+    oneapi::mkl::dft::compute_forward(*fft_2d_plan, i_slab.data_handle())
         .wait();
 
     transpose_matrix(i_mat, o_mat);
 
-    oneapi::mkl::dft::compute_forward(*fft_x_plan, o_slab.data_handle()).wait();
+    oneapi::mkl::dft::compute_forward(*fft_1d_plan, o_slab.data_handle()).wait();
   }
 
   void compute_backward(auto &i_mat, auto &i_slab, auto &o_mat, auto &o_slab) {
-    oneapi::mkl::dft::compute_backward(*fft_yz_plan, i_slab.data_handle())
+    oneapi::mkl::dft::compute_backward(*fft_1d_plan, i_slab.data_handle())
         .wait();
 
     transpose_matrix(i_mat, o_mat);
 
-    oneapi::mkl::dft::compute_backward(*fft_x_plan, o_slab.data_handle())
+    oneapi::mkl::dft::compute_backward(*fft_2d_plan, o_slab.data_handle())
         .wait();
   }
 };
@@ -91,7 +104,7 @@ int do_fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
   sycl::queue q = dr::mhp::select_queue();
   dr::mhp::init(q);
 
-  using real_t = float;
+  using real_t = double;
   using value_t = std::complex<real_t>;
   using mat = dr::mhp::distributed_mdarray<value_t, 3>;
   std::array<std::size_t, 3> i_shape({x, y, z});
