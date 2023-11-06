@@ -100,7 +100,8 @@
 
    #. Methodology
 
-      #. Strong scaling: largest size that fits on 1 GPU, scale GPUs with fixed size
+      #. Strong scaling: largest size that fits on 1 GPU, scale GPUs
+         with fixed size
       #. Weak scaling: largest size that fits on 1 GPU, scale GPUs and size
 
 #. Performance Goal
