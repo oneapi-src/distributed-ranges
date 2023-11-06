@@ -93,15 +93,15 @@
 
    #. Algorithms
 
-     #. Streams
-     #. Black Scholes
-     #. Reduce
-     #. Wave Equation
+      #. Streams
+      #. Black Scholes
+      #. Reduce
+      #. Wave Equation
 
    #. Methodology
 
-      #. Strong scaling: largest size that fits on 1 GPU, scale GPUs
-      #. Weak scaling: largest size that fits on 1 GPU, scale size with GPUs
+      #. Strong scaling: largest size that fits on 1 GPU, scale GPUs with fixed size
+      #. Weak scaling: largest size that fits on 1 GPU, scale GPUs and size
 
 #. Performance Goal
 
