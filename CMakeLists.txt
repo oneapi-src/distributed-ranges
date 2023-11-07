@@ -93,6 +93,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   find_package(MKL REQUIRED)
   find_package(MPI REQUIRED)
   find_package(OpenMP)
+  message("MPI exec set to ${MPIEXEC_EXECUTABLE}")
 
   #
   # Google test
@@ -142,40 +143,47 @@ if(ENABLE_ISHMEM)
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
   link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
-  ExternalProject_Add(
-    level-zero
-    GIT_REPOSITORY https://github.com/oneapi-src/level-zero.git
-    GIT_TAG v1.14.0
-    INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}")
+  # use it if there are no L0 headers installed
+  if(ENABLE_L0)
+    ExternalProject_Add(
+      level-zero
+      GIT_REPOSITORY https://github.com/oneapi-src/level-zero.git
+      GIT_TAG v1.14.0
+      INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
+      CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
 
-  ExternalProject_Add(
-    ofi
-    GIT_REPOSITORY git@github.com:ofiwg/libfabric.git
-    GIT_TAG v1.19.0
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ofisrc
-    DEPENDS level-zero
-    CONFIGURE_COMMAND
-      cd ${CMAKE_CURRENT_BINARY_DIR}/ofisrc && ./autogen.sh && ./configure
-      --prefix=${CMAKE_CURRENT_BINARY_DIR} --enable-debug --enable-psm3=auto
-      --enable-rxm=auto --enable-tcp=auto
-    BUILD_IN_SOURCE ON
-    BUILD_COMMAND make
-    INSTALL_COMMAND make install)
+    set(SOS_L0_PARAM "-DL0_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}")
+    set(SOS_DEPS "level-zero")
+  else()
+    set(SOS_L0_PARAM "")
+    set(SOS_DEPS "")
+  endif()
+
+  # ExternalProject_Add( ofi GIT_REPOSITORY git@github.com:ofiwg/libfabric.git
+  # GIT_TAG v1.19.0 SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ofisrc DEPENDS
+  # level-zero CONFIGURE_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/ofisrc &&
+  # ./autogen.sh && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}
+  # --enable-debug --enable-psm3=auto --enable-cxi=auto --enable-rxm=auto
+  # --enable-tcp=auto BUILD_IN_SOURCE ON BUILD_COMMAND make INSTALL_COMMAND make
+  # install)
+
+  if(NOT DEFINED OFI_DIR)
+    set(OFI_DIR /usr)
+  endif()
 
   ExternalProject_Add(
     sos
     GIT_REPOSITORY git@github.com:Sandia-OpenSHMEM/SOS.git
-    # GIT_TAG v1.5.2
     GIT_TAG main
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/sossrc
-    DEPENDS ofi
+    DEPENDS ${SOS_DEPS}
     CONFIGURE_COMMAND
       cd ${CMAKE_CURRENT_BINARY_DIR}/sossrc && ./autogen.sh && ./configure
-      --prefix=${CMAKE_CURRENT_BINARY_DIR}
-      --with-ofi=${CMAKE_CURRENT_BINARY_DIR} --enable-pmi-simple
-      --disable-fortran --enable-mr-endpoint --enable-ofi-mr=basic
-      --enable-ofi-manual-progress --disable-ofi-inject --enable-ofi-hmem
+      --prefix=${CMAKE_CURRENT_BINARY_DIR} --enable-pmi-simple
+      --with-ofi=${OFI_DIR} --disable-fortran --enable-mr-endpoint
+      --enable-ofi-mr=basic --enable-ofi-manual-progress --disable-ofi-inject
+      --enable-ofi-hmem
     BUILD_IN_SOURCE ON
     BUILD_COMMAND make
     INSTALL_COMMAND make install)
@@ -189,19 +197,17 @@ if(ENABLE_ISHMEM)
     DEPENDS sos
     CMAKE_CACHE_ARGS
       "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
-      "-DL0_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
-      "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}")
+      "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}" ${SOS_L0_PARAM})
 
   add_custom_target(shmem DEPENDS ishmem)
 
   function(add_shmem_test test_name name processes)
     add_test(
       NAME ${test_name}
-      # FIXME, can not use ${MPIEXEC_EXECUTABLE} on Borealis because it gives
-      # two ranks 0 and failure in ISHMEM init
       COMMAND
-        mpiexec ${MPIEXEC_NUMPROC_FLAG} ${processes} ${MPIEXEC_PREFLAGS}
-        ${CMAKE_BINARY_DIR}/bin/ishmrun ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/ishmrun ./${name} ${ARGN}
+        COMMAND_EXPAND_LISTS)
   endfunction()
 
 endif()
