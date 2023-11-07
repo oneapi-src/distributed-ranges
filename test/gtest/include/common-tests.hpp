@@ -17,7 +17,6 @@ struct AOS_Struct {
   int first, second;
 };
 
-#ifndef DRISHMEM
 struct OpsAOS {
 
   using dist_vec_type = xhp::distributed_vector<AOS_Struct>;
@@ -40,7 +39,6 @@ inline std::ostream &operator<<(std::ostream &os, const AOS_Struct &st) {
   os << "[ " << st.first << " " << st.second << " ]";
   return os;
 }
-#endif
 
 template <typename T> struct Ops1 {
   Ops1(std::size_t n) : dist_vec(n), vec(n) {

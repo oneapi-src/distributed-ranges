@@ -128,14 +128,10 @@ public:
   ~distributed_vector() {
     if (!finalized()) {
       fence();
-#ifdef DRISHMEM
-      ishmem_free(data_);
-#else
       active_wins().erase(win_.mpi_win());
       win_.free();
       __detail::allocator<T>().deallocate(data_, data_size_);
       data_ = nullptr;
-#endif
       delete halo_;
     }
   }
@@ -171,12 +167,7 @@ private:
 
     data_size_ = segment_size_ + hb.prev + hb.next;
     if (size_ > 0) {
-
-#ifdef DRISHMEM
-      data_ = static_cast<T *>(ishmem_malloc(data_size_));
-#else
-      data_ = = __detail::allocator<T>().allocate(data_size_);
-#endif
+      data_ = __detail::allocator<T>().allocate(data_size_);
     }
 
     halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
@@ -186,10 +177,9 @@ private:
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i));
     }
-#ifndef DRISHMEM
+
     win_.create(default_comm(), data_, data_size_ * sizeof(T));
     active_wins().insert(win_.mpi_win());
-#endif
     fence();
   }
 
