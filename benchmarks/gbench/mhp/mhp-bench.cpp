@@ -100,9 +100,9 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  std::ofstream *logfile = nullptr;
+  std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
-    logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
+    logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);
@@ -129,10 +129,6 @@ int main(int argc, char *argv[]) {
     benchmark::RunSpecifiedBenchmarks(&null_reporter);
   }
   benchmark::Shutdown();
-
-  if (logfile) {
-    delete logfile;
-  }
 
   dr::mhp::finalize();
   MPI_Finalize();

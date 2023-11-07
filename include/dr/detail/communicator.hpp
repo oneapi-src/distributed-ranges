@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ishmem.h"
 namespace dr {
 
 class communicator {
@@ -32,7 +33,12 @@ public:
 
   MPI_Comm mpi_comm() const { return mpi_comm_; }
 
-  void barrier() const { MPI_Barrier(mpi_comm_); }
+  void barrier() const {
+#ifdef DRISHMEM
+    ishmem_barrier_all();
+#endif
+    MPI_Barrier(mpi_comm_);
+  }
 
   void bcast(void *src, std::size_t count, std::size_t root) const {
     MPI_Bcast(src, count, MPI_BYTE, root, mpi_comm_);

@@ -7,13 +7,6 @@
 
 #include "xhp-tests.hpp"
 
-#ifdef STANDALONE_TEST
-MPI_Comm comm;
-std::size_t comm_rank;
-std::size_t comm_size;
-cxxopts::ParseResult options;
-#endif
-
 #define CHECK_ALLOC(ptr)                                                       \
   if (ptr == nullptr)                                                          \
     fprintf(stderr, "Could not allocate " #ptr "\n");
@@ -106,67 +99,4 @@ int shmem_basic_test() {
   return exit_code;
 }
 
-#ifdef STANDALONE_TEST
-int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-  comm = MPI_COMM_WORLD;
-  {
-    int a;
-    MPI_Comm_rank(comm, &a);
-    comm_rank = a;
-    MPI_Comm_size(comm, &a);
-    comm_size = a;
-  }
-
-  cxxopts::Options options_spec(argv[0], "wave equation");
-  // clang-format off
-  options_spec.add_options()
-    ("n", "Grid size", cxxopts::value<std::size_t>()->default_value("128"))
-    ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
-    ("sycl", "Execute on SYCL device")
-    ("l,log", "enable logging")
-    ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
-    ("device-memory", "Use device memory")
-    ("h,help", "Print help");
-  // clang-format on
-
-  cxxopts::ParseResult options;
-  try {
-    options = options_spec.parse(argc, argv);
-  } catch (const cxxopts::OptionParseException &e) {
-    std::cout << options_spec.help() << "\n";
-    exit(1);
-  }
-
-  std::unique_ptr<std::ofstream> logfile;
-  if (options.count("log")) {
-    logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
-    dr::drlog.set_file(*logfile);
-  }
-
-  if (options.count("sycl")) {
-#ifdef SYCL_LANGUAGE_VERSION
-    sycl::queue q = dr::mhp::select_queue();
-    std::cout << "Run on: "
-              << q.get_device().get_info<sycl::info::device::name>() << "\n";
-    dr::mhp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
-                                                    : sycl::usm::alloc::shared);
-#else
-    std::cout << "Sycl support requires icpx\n";
-    exit(1);
-#endif
-  } else {
-    if (comm_rank == 0) {
-      std::cout << "Run on: CPU\n";
-    }
-    dr::mhp::init();
-  }
-
-  auto error = shmem_basic_test();
-  dr::mhp::finalize();
-  MPI_Finalize();
-  return error;
-}
-#else
 TEST(Shmem, Basic) { shmem_basic_test(); }
-#endif

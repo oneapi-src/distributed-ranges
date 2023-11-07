@@ -75,6 +75,7 @@ inline void initialize_mpi() {
   }
 
 #ifdef DRISHMEM
+  drlog.debug("calling ishmem_init()\n");
   ishmem_init();
 #endif
 }
@@ -89,6 +90,7 @@ inline void finalize_mpi() {
   }
 
 #ifdef DRISHMEM
+  drlog.debug("calling ishmem_finalize()\n");
   ishmem_finalize();
 #endif
 }
@@ -109,6 +111,9 @@ inline auto use_sycl() { return __detail::gcontext()->use_sycl_; }
 
 inline void fence() {
   dr::drlog.debug("fence\n");
+#ifdef DRISHMEM
+  ishmem_barrier_all();
+#endif
   for (auto win : __detail::gcontext()->wins_) {
     MPI_Win_fence(0, win);
   }

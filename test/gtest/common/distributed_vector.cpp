@@ -26,7 +26,24 @@ TYPED_TEST(DistributedVectorAllTypes, StaticAsserts) {
   static_assert(dr::distributed_contiguous_range<decltype(dv)>);
 }
 
-// gtest support
+TYPED_TEST(DistributedVectorAllTypes, getAndPut) {
+  TypeParam dv(10);
+
+  if (comm_rank == 0) {
+    dv[5] = 13;
+  }
+  barrier();
+
+  for (std::size_t idx = 0; idx < 10; ++idx) {
+    auto val = dv[idx];
+    if (idx == 5) {
+      EXPECT_EQ(val, 13);
+    } else {
+      EXPECT_NE(val, 13);
+    }
+  }
+}
+
 TYPED_TEST(DistributedVectorAllTypes, Stream) {
   Ops1<TypeParam> ops(10);
   std::ostringstream os;
@@ -34,7 +51,6 @@ TYPED_TEST(DistributedVectorAllTypes, Stream) {
   EXPECT_EQ(os.str(), "{ 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 }");
 }
 
-// gtest support
 TYPED_TEST(DistributedVectorAllTypes, Equality) {
   Ops1<TypeParam> ops(10);
   iota(ops.dist_vec, 100);
@@ -69,6 +85,7 @@ TEST(DistributedVector, ConstructorFill) {
   EXPECT_EQ(local_vec, dist_vec);
 }
 
+#ifndef DRISHMEM
 TEST(DistributedVector, ConstructorBasicAOS) {
   OpsAOS ops(10);
   EXPECT_EQ(ops.vec, ops.dist_vec);
@@ -81,3 +98,4 @@ TEST(DistributedVector, ConstructorFillAOS) {
 
   EXPECT_EQ(local_vec, dist_vec);
 }
+#endif
