@@ -5,4 +5,5 @@
 #pragma once
 
 #include <experimental/mdspan>
-namespace md = std::experimental;
+#define MDSPAN_NAMESPACE std::experimental
+namespace md = MDSPAN_NAMESPACE;

@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <dr/detail/mdarray_shim.hpp>
+
 #include "xhp-tests.hpp"
 
 #if __GNUC__ == 10 && __GNUC_MINOR__ == 4
@@ -28,8 +30,6 @@ protected:
   std::array<std::size_t, 2> slice_starts = {1, 1};
   std::array<std::size_t, 2> slice_ends = {3, 3};
 };
-
-using Mdarray = Mdspan;
 
 TEST_F(Mdspan, StaticAssert) {
   xhp::distributed_vector<T> dist(n2d, dist2d_1d);
@@ -157,10 +157,22 @@ TEST_F(Mdspan, GridLocalReference) {
   EXPECT_EQ(99, dist[0]);
 }
 
+using Mdarray = Mdspan;
+
 TEST_F(Mdarray, StaticAssert) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   static_assert(rng::forward_range<decltype(mdarray)>);
   static_assert(dr::distributed_range<decltype(mdarray)>);
+}
+
+TEST_F(Mdarray, Basic) {
+  xhp::distributed_mdarray<T, 2> dist(extents2d);
+  xhp::iota(dist, 100);
+
+  md::mdarray<T, dr::__detail::md_extents<2>> local(xdim, ydim);
+  rng::iota(&local(0, 0), &local(0, 0) + local.size(), 100);
+
+  EXPECT_EQ(dist.mdspan(), local);
 }
 
 TEST_F(Mdarray, Iterator) {
