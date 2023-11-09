@@ -36,6 +36,9 @@ concept mdspan_like = requires(Mdspan &mdspan) {
   mdspan.extents();
 };
 
+template <typename Mdarray>
+concept mdarray_like = requires(Mdarray &mdarray) { mdarray.to_mdspan(); };
+
 template <std::size_t Rank> using dr_extents = std::array<std::size_t, Rank>;
 template <std::size_t Rank> using md_extents = md::dextents<std::size_t, Rank>;
 
@@ -163,3 +166,31 @@ struct fmt::formatter<Mdspan, char> : public formatter<string_view> {
     format_to(ctx.out(), "\n");
   }
 };
+
+namespace MDSPAN_NAMESPACE {
+
+template <dr::__detail::mdspan_like M1, dr::__detail::mdspan_like M2>
+bool operator==(const M1 &m1, const M2 &m2) {
+  // See mdspan_foreach for a way to generalize this to all ranks
+  assert(m1.rank() == 2 && m2.rank() == 2);
+  for (std::size_t i = 0; i < m1.extent(0); i++) {
+    for (std::size_t j = 0; j < m1.extent(1); j++) {
+      if (m1(i, j) != m2(i, j)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+template <dr::__detail::mdspan_like M>
+inline std::ostream &operator<<(std::ostream &os, const M &m) {
+  if constexpr (dr::__detail::mdarray_like<M>) {
+    os << fmt::format("\n{}", m.to_mdspan());
+  } else {
+    os << fmt::format("\n{}", m);
+  }
+  return os;
+}
+
+} // namespace MDSPAN_NAMESPACE
