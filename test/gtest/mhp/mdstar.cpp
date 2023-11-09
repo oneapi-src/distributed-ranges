@@ -315,6 +315,21 @@ TEST_F(Mdarray, MdForEach3d) {
       << mdrange_message(mdarray);
 }
 
+TEST_F(Mdarray, Transpose) {
+  xhp::distributed_mdarray<T, 2> md_in(extents2d), md_out(extents2d);
+  xhp::iota(md_in, 100);
+  xhp::iota(md_out, 200);
+
+  md::mdarray<T, 2> local(extents2d);
+  for (std::size_t i = 0; i <  md_in.extent(0); i++) {
+    for (std::size_t j = 0; j <  md_in.extent(1); j++) {
+      local(i, j) = md_in(j, i);
+    }
+  }
+  
+  EXPECT_EQ(md_out, local);
+}
+
 using Submdspan = Mdspan;
 
 TEST_F(Submdspan, StaticAssert) {
