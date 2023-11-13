@@ -75,7 +75,10 @@ jobs:
     # MPI device memory does not work
     env:
       CXX: icpx
-      EXCLUDE: "--exclude=idc-beta-batch-pvc-node-17,idc-beta-batch-pvc-node-18,idc-beta-batch-pvc-node-19"
+      # MPI complains about a ptrace issue when doing MPI_Win_create on device memory
+      I_MPI_OFFLOAD_IPC: 0
+      # and when ptrace is not an issue, these nodes have another problem
+      # EXCLUDE: "--exclude=idc-beta-batch-pvc-node-17,idc-beta-batch-pvc-node-18,idc-beta-batch-pvc-node-19"
     steps:
     - uses: actions/checkout@v4
     - name: Test
