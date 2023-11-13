@@ -178,7 +178,7 @@ private:
       drlog.debug("called ishmem_malloc({}) -> got:{}\n", data_size_,
                   static_cast<void *>(data_));
 #else
-      data_ = = __detail::allocator<T>().allocate(data_size_);
+      data_ = __detail::allocator<T>().allocate(data_size_);
 #endif
     }
 

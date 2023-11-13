@@ -4,7 +4,10 @@
 
 #pragma once
 
+#ifdef DRISHMEM
 #include "ishmem.h"
+#endif
+
 namespace dr {
 
 class communicator {
