@@ -68,19 +68,55 @@ endforeach()
 
 if(ENABLE_ISHMEM)
 
-  foreach(shmem-test-name IN ITEMS mst msts)
-    add_executable(${shmem-test-name} shmem_basic.cpp) # mhp-tests.cpp
-                                                       # distributed_vector.cpp
+  # mst stands for mhp-shmem-test
+  foreach(shmem-test-name IN ITEMS mst-basic mst)
+    add_executable(${shmem-test-name} mhp-tests.cpp)
     target_link_libraries(
       ${shmem-test-name} GTest::gtest_main cxxopts DR::mpi ze_loader # fabric
       pmi_simple sma)
     target_link_libraries(${shmem-test-name}
                           ${CMAKE_BINARY_DIR}/lib/libishmem.a)
     target_compile_definitions(${shmem-test-name} PRIVATE DRISHMEM)
-    add_shmem_test(${shmem-test-name}-1 ${shmem-test-name} 1 --sycl)
-    add_shmem_test(${shmem-test-name}-2 ${shmem-test-name} 2 --sycl)
+    add_shmem_test(${shmem-test-name}-1 ${shmem-test-name} 1 --sycl --log)
+    add_shmem_test(${shmem-test-name}-2 ${shmem-test-name} 2 --sycl --log)
   endforeach()
-  target_compile_definitions(msts PRIVATE STANDALONE_TEST)
+  target_sources(mst-basic PRIVATE shmem_basic.cpp)
+  # cmake-format: off
+  target_sources(
+    mst
+    PRIVATE
+      ../common/all.cpp
+      ../common/copy.cpp
+      ../common/counted.cpp
+      ../common/distributed_vector.cpp
+      ../common/drop.cpp
+      ../common/enumerate.cpp
+      # ../common/exclusive_scan.cpp # segfault
+      ../common/fill.cpp
+      ../common/for_each.cpp
+      # ../common/inclusive_scan.cpp # doesn't end
+      ../common/iota.cpp
+      ../common/iota_view.cpp
+      ../common/reduce.cpp
+      # ../common/sort.cpp  # not compile
+      ../common/subrange.cpp
+      ../common/sycl_utils.cpp
+      ../common/take.cpp
+      ../common/transform.cpp
+      ../common/transform_view.cpp
+      ../common/zip.cpp
+      ../common/zip_local.cpp
+      alignment.cpp
+      communicator.cpp
+      copy.cpp
+      distributed_vector.cpp
+      # halo.cpp # segfault mdstar.cpp # segfault in Mdspan.GridLocalReference
+      # mhpsort.cpp # not compile
+      reduce.cpp
+      stencil.cpp
+    # segments.cpp slide_view.cpp # not compile wave_kernel.cpp # test fails
+  )
+  # cmake-format: on
 
 endif()
 
