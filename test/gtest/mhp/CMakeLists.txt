@@ -70,7 +70,7 @@ if(ENABLE_ISHMEM)
 
   # mst stands for mhp-shmem-test
   foreach(shmem-test-name IN ITEMS mst-basic mst)
-    add_executable(${shmem-test-name} mhp-tests.cpp) # mhp-tests.cpp
+    add_executable(${shmem-test-name} mhp-tests.cpp)
     target_link_libraries(
       ${shmem-test-name} GTest::gtest_main cxxopts DR::mpi ze_loader # fabric
       pmi_simple sma)
