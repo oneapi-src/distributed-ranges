@@ -127,19 +127,8 @@ public:
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
-#ifdef DRISHMEM
-    drlog.debug("calling ishmem_getmem(dst:{}, src:{} (= dv:{} + "
-                "segm_offset:{}), size:{}, peer:{})\n",
-                static_cast<void *>(dst),
-                static_cast<void const *>(this->dv_->data_ + segment_offset),
-                static_cast<void const *>(this->dv_->data_), segment_offset,
-                size * sizeof(*dst), segment_index_);
-    ishmem_getmem(dst, this->dv_->data_ + segment_offset, size * sizeof(*dst),
-                  segment_index_);
-#else
-    dv_->win_.get(dst, size * sizeof(*dst), segment_index_,
-                  segment_offset * sizeof(*dst));
-#endif
+    dv_->backend.getmem(dst, segment_offset * sizeof(value_type),
+                        size * sizeof(value_type), segment_index_);
   }
 
   value_type get() const {
@@ -154,19 +143,8 @@ public:
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
-#ifdef DRISHMEM
-    drlog.debug("calling ishmem_putmem(dst:{} (= dv:{} + segm_offset:{}), "
-                "src:{}, size:{}, peer:{})\n",
-                static_cast<void *>(this->dv_->data_ + segment_offset),
-                static_cast<void *>(this->dv_->data_), segment_offset,
-                static_cast<void const *>(dst), size * sizeof(*dst),
-                segment_index_);
-    ishmem_putmem(this->dv_->data_ + segment_offset, dst, size * sizeof(*dst),
-                  segment_index_);
-#else
-    dv_->win_.put(dst, size * sizeof(*dst), segment_index_,
-                  segment_offset * sizeof(*dst));
-#endif
+    dv_->backend.putmem(dst, segment_offset * sizeof(value_type),
+                        size * sizeof(value_type), segment_index_);
   }
 
   void put(const value_type &value) const { put(&value, 1); }
@@ -180,13 +158,7 @@ public:
 #ifndef SYCL_LANGUAGE_VERSION
     assert(dv_ != nullptr);
 #endif
-    const auto my_process_segment_index =
-#ifdef DRISHMEM
-        ishmem_my_pe();
-    drlog.debug("called ishmem_my_pe() -> {}\n", my_process_segment_index);
-#else
-        dv_->win_.communicator().rank();
-#endif
+    const auto my_process_segment_index = dv_->backend.getrank();
 
     if (my_process_segment_index == segment_index_)
       return dv_->data_ + index_ + dv_->distribution_.halo().prev;

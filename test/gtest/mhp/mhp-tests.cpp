@@ -62,12 +62,13 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  dr_init();
   std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
     logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
   }
+
+  dr_init();
   dr::drlog.debug("Rank: {}\n", comm_rank);
 
   auto res = RUN_ALL_TESTS();

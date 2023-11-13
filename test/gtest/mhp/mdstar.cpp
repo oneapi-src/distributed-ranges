@@ -12,6 +12,7 @@
 
 using T = int;
 
+// TODO: add tests with ISHMEM backend
 class Mdspan : public ::testing::Test {
 protected:
   std::size_t xdim = 9, ydim = 5, zdim = 2;

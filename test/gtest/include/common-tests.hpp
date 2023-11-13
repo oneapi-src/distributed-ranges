@@ -298,9 +298,9 @@ concept streamable = requires(std::ostream &os, T value) {
 namespace dr::mhp {
 
 // gtest relies on ADL to find the printer
-template <typename T>
+template <typename T, typename B>
 std::ostream &operator<<(std::ostream &os,
-                         const xhp::distributed_vector<T> &dist) {
+                         const xhp::distributed_vector<T, B> &dist) {
   os << "{ ";
   bool first = true;
   for (const auto &val : dist) {
@@ -319,8 +319,8 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-template <typename T>
-bool operator==(const xhp::distributed_vector<T> &dist_vec,
+template <typename T, typename B>
+bool operator==(const xhp::distributed_vector<T, B> &dist_vec,
                 const std::vector<T> &local_vec) {
   return is_equal(local_vec, dist_vec);
 }

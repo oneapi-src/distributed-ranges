@@ -9,7 +9,8 @@ template <typename T> class ExclusiveScan : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(ExclusiveScan, AllTypes);
+// segfaults with ISHMEM
+TYPED_TEST_SUITE(ExclusiveScan, AllTypesWithoutIshmem);
 
 TYPED_TEST(ExclusiveScan, whole_range) {
   TypeParam dv_in(5);

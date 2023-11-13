@@ -5,6 +5,7 @@
 #include "xhp-tests.hpp"
 #include <dr/mhp/views/sliding.hpp>
 
+// TODO: add tests with ISHMEM
 using T = double;
 using MDA = dr::mhp::distributed_mdarray<T, 2>;
 const int nx = 3, ny = 3;

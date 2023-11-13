@@ -7,7 +7,7 @@
 
 template <typename T> class Slide : public testing::Test {};
 
-TYPED_TEST_SUITE(Slide, AllTypes);
+TYPED_TEST_SUITE(Slide, AllTypesWithoutIshmem);
 
 TYPED_TEST(Slide, is_compliant) {
   TypeParam dv(10, dr::mhp::distribution().halo(2));

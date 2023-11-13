@@ -10,6 +10,10 @@
 #include <oneapi/dpl/numeric>
 #endif
 
+#ifdef DRISHMEM
+#include <ishmem.h>
+#endif
+
 #include <cassert>
 #include <concepts>
 #include <execution>
