@@ -21,11 +21,11 @@ public:
     a = new xhp::distributed_vector<T>(default_vector_size);
     std::vector<T> local(default_vector_size);
     fill_random(local);
-#ifdef BENCH_SHP
+    // #ifdef BENCH_SHP
     xhp::copy(local.begin(), local.end(), rng::begin(*a));
-#else
-    xhp::copy(local, rng::begin(*a));
-#endif
+    // #else
+    //     xhp::copy(local, rng::begin(*a));
+    // #endif
   }
 
   void TearDown(::benchmark::State &) { delete a; }
