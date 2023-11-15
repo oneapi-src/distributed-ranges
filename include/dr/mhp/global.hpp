@@ -6,7 +6,6 @@
 
 #include <dr/detail/sycl_utils.hpp>
 #include <dr/mhp/sycl_support.hpp>
-#include <unistd.h>
 
 namespace dr::mhp {
 
