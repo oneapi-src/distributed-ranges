@@ -17,7 +17,7 @@ find_package(MPI REQUIRED)
 find_package(MKL REQUIRED)
 find_package(TBB REQUIRED)
 target_link_libraries(dr_mpi INTERFACE MPI::MPI_CXX range-v3 std::mdspan
-                                       TBB::tbb)
+                                       TBB::tbb MKL::MKL)
 
 # gcc 10 uses TBB API that were removed
 target_compile_definitions(dr_mpi INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
@@ -27,7 +27,7 @@ if(ENABLE_FORMAT)
   target_link_libraries(dr_mpi INTERFACE fmt::fmt)
 endif()
 if(ENABLE_SYCL)
-  target_link_libraries(dr_mpi INTERFACE oneDPL)
+  target_link_libraries(dr_mpi INTERFACE oneDPL MKL::MKL_DPCPP)
 endif()
 target_include_directories(dr_mpi INTERFACE . vendor)
 

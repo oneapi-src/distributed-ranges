@@ -164,6 +164,7 @@ TEST_F(Mdarray, StaticAssert) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   static_assert(rng::forward_range<decltype(mdarray)>);
   static_assert(dr::distributed_range<decltype(mdarray)>);
+  static_assert(dr::distributed_mdspan_range<decltype(mdarray)>);
 }
 
 TEST_F(Mdarray, Basic) {
@@ -217,7 +218,6 @@ TEST_F(Mdarray, GridExtents) {
   auto x = 0;
   for (std::size_t i = 0; i < grid.extent(0); i++) {
     x += grid(i, 0).mdspan().extent(0);
-    dr::drlog.debug("x: {}\n", x);
   }
   EXPECT_EQ(mdarray.mdspan().extent(0), x);
 
@@ -316,18 +316,19 @@ TEST_F(Mdarray, MdForEach3d) {
 }
 
 TEST_F(Mdarray, Transpose) {
-  xhp::distributed_mdarray<T, 2> md_in(extents2d), md_out(extents2d);
+  xhp::distributed_mdarray<double, 2> md_in(extents2d), md_out(extents2dt);
   xhp::iota(md_in, 100);
   xhp::iota(md_out, 200);
 
-  md::mdarray<T, 2> local(extents2d);
-  for (std::size_t i = 0; i <  md_in.extent(0); i++) {
-    for (std::size_t j = 0; j <  md_in.extent(1); j++) {
-      local(i, j) = md_in(j, i);
+  md::mdarray<T, dr::__detail::md_extents<2>> local(extents2dt);
+  for (std::size_t i = 0; i < md_out.extent(0); i++) {
+    for (std::size_t j = 0; j < md_out.extent(1); j++) {
+      local(i, j) = md_in.mdspan()(j, i);
     }
   }
-  
-  EXPECT_EQ(md_out, local);
+
+  xhp::transpose(md_in, md_out);
+  EXPECT_EQ(md_out.mdspan(), local);
 }
 
 using Submdspan = Mdspan;

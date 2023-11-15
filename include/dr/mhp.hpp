@@ -72,5 +72,6 @@
 #include <dr/mhp/algorithms/sort.hpp>
 #include <dr/mhp/algorithms/md_for_each.hpp>
 #include <dr/mhp/algorithms/transform.hpp>
+#include <dr/mhp/algorithms/transpose.hpp>
 #include <dr/mhp/containers/distributed_vector.hpp>
 #include <dr/mhp/containers/distributed_mdarray.hpp>

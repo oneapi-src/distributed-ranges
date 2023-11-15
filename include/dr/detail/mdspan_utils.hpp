@@ -93,13 +93,17 @@ void mdspan_foreach(md_extents<Rank> extents, Op op,
 
 // Pack mdspan into contiguous container
 template <mdspan_like Src>
-void mdspan_copy(Src src, std::forward_iterator auto dst, bool transpose = false) {
+void mdspan_copy(Src src, std::forward_iterator auto dst,
+                 bool transpose = false) {
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     if (src.rank() == 2) {
-      oneapi::mkl::blas::row_major::omatcopy(mhp::sycl_queue(),
-                                             transpose ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans,
-                                             src.extent(0), src.extent(1), 1, &src(0, 0), src.stride(0), dst, src.extent(1));
+      oneapi::mkl::blas::row_major::omatcopy(
+          mhp::sycl_queue(),
+          transpose ? oneapi::mkl::transpose::trans
+                    : oneapi::mkl::transpose::nontrans,
+          src.extent(0), src.extent(1), 1, &src(0, 0), src.stride(0), dst,
+          src.extent(1));
     } else {
       assert(false);
     }
@@ -114,14 +118,17 @@ void mdspan_copy(Src src, std::forward_iterator auto dst, bool transpose = false
 }
 
 // unpack contiguous container into mdspan
-void mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst, bool transpose = false) {
+void mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst,
+                 bool transpose = false) {
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     if (dst.rank() == 2) {
-      oneapi::mkl::blas::row_major::omatcopy(mhp::sycl_queue(),
-                                             transpose ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans,
-                                             dst.extent(0), dst.extent(1), 1,
-                                             src, dst.extent(1), &dst(0, 0), dst.stride(0));
+      oneapi::mkl::blas::row_major::omatcopy(
+          mhp::sycl_queue(),
+          transpose ? oneapi::mkl::transpose::trans
+                    : oneapi::mkl::transpose::nontrans,
+          dst.extent(0), dst.extent(1), 1, src, dst.extent(1), &dst(0, 0),
+          dst.stride(0));
     } else {
       assert(false);
     }
@@ -226,3 +233,11 @@ inline std::ostream &operator<<(std::ostream &os, const M &m) {
 }
 
 } // namespace MDSPAN_NAMESPACE
+
+namespace dr {
+
+template <typename R>
+concept distributed_mdspan_range =
+    distributed_range<R> && requires(R &r) { r.mdspan(); };
+
+} // namespace dr
