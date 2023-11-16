@@ -291,6 +291,7 @@ TEST_F(Mdarray, Slabs) {
       }
     }
   }
+  fence();
 
   EXPECT_EQ(mdarray.mdspan()(0, 0, 0), 1);
   EXPECT_EQ(
