@@ -93,17 +93,13 @@ void mdspan_foreach(md_extents<Rank> extents, Op op,
 
 // Pack mdspan into contiguous container
 template <mdspan_like Src>
-void mdspan_copy(Src src, std::forward_iterator auto dst,
-                 bool transpose = false) {
-  assert(!transpose);
+void mdspan_copy(Src src, std::forward_iterator auto dst) {
   auto pack = [src, &dst](auto index) { *dst++ = src(index); };
   mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
 }
 
 // unpack contiguous container into mdspan
-void mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst,
-                 bool transpose = false) {
-  assert(!transpose);
+void mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst) {
   auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
   mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
 }
