@@ -7,7 +7,7 @@
 
 template <typename T> class Slide3 : public testing::Test {};
 
-TYPED_TEST_SUITE(Slide3, AllTypes);
+TYPED_TEST_SUITE(Slide3, AllTypesWithoutIshmem);
 
 TYPED_TEST(Slide3, suite_works_for_3_processes_only) {
   EXPECT_EQ(dr::mhp::default_comm().size(), 3);

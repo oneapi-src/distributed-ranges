@@ -9,7 +9,8 @@ template <typename T> class InclusiveScan : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(InclusiveScan, AllTypes);
+// suite doesn't end with ISHMEM
+TYPED_TEST_SUITE(InclusiveScan, AllTypesWithoutIshmem);
 
 TYPED_TEST(InclusiveScan, whole_range) {
   TypeParam dv_in(6);

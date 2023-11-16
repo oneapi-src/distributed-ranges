@@ -36,7 +36,20 @@ inline void fence() { dr::mhp::fence(); }
 #include "common-tests.hpp"
 
 // minimal testing for quick builds
+#ifdef DRISHMEM
+using AllTypes =
+    ::testing::Types<dr::mhp::distributed_vector<int>,
+                     dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>>;
+using IshmemTypes =
+    ::testing::Types<dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>>;
+
+#else
 using AllTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
+using IshmemTypes = ::testing::Types<dr::mhp::distributed_vector<int>>;
+
+#endif
+using AllTypesWithoutIshmem =
+    ::testing::Types<dr::mhp::distributed_vector<int>>;
 
 namespace dr::mhp {
 

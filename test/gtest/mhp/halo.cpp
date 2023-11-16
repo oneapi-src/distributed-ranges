@@ -6,7 +6,8 @@
 
 template <typename T> class Halo : public testing::Test {};
 
-TYPED_TEST_SUITE(Halo, AllTypes);
+// segfault with ISHMEM
+TYPED_TEST_SUITE(Halo, AllTypesWithoutIshmem);
 
 template <typename DV>
 void local_is_accessible_in_halo_region(const int halo_prev,

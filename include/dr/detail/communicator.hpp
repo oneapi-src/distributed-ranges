@@ -4,10 +4,6 @@
 
 #pragma once
 
-#ifdef DRISHMEM
-#include "ishmem.h"
-#endif
-
 namespace dr {
 
 class communicator {
@@ -196,7 +192,7 @@ public:
   void create(communicator comm, void *data, std::size_t size) {
     local_data_ = data;
     communicator_ = comm;
-    drlog.debug("win create:: size: {}\n", size);
+    DRLOG("win create:: size: {} data:{}", size, data);
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
 
@@ -221,7 +217,7 @@ public:
 
   void get(void *dst, std::size_t size, std::size_t rank,
            std::size_t disp) const {
-    drlog.debug("comm get:: ({}:{}:{})\n", rank, disp, size);
+    DRLOG("MPI comm get:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
     MPI_Rget(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
     MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -233,7 +229,7 @@ public:
 
   void put(const void *src, std::size_t size, std::size_t rank,
            std::size_t disp) const {
-    drlog.debug("comm put:: ({}:{}:{})\n", rank, disp, size);
+    DRLOG("MPI comm put:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
     MPI_Rput(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
     MPI_Wait(&request, MPI_STATUS_IGNORE);

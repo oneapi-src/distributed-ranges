@@ -56,74 +56,27 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  mdstar.cpp
+  ../common/distributed_vector.cpp
   )
 # cmake-format: on
 
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 
 foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
-  target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
-endforeach()
-
-if(ENABLE_ISHMEM)
-
-  # mst stands for mhp-shmem-test
-  foreach(shmem-test-name IN ITEMS mst-basic mst)
-    add_executable(${shmem-test-name} mhp-tests.cpp)
+  if(ENABLE_ISHMEM)
     target_link_libraries(
-      ${shmem-test-name} GTest::gtest_main cxxopts DR::mpi ze_loader # fabric
+      ${test-exec} GTest::gtest_main cxxopts DR::mpi ze_loader # fabric
       pmi_simple sma)
-    target_link_libraries(${shmem-test-name}
-                          ${CMAKE_BINARY_DIR}/lib/libishmem.a)
-    target_compile_definitions(${shmem-test-name} PRIVATE DRISHMEM)
-    add_shmem_test(${shmem-test-name}-1 ${shmem-test-name} 1 --sycl --log)
-    add_shmem_test(${shmem-test-name}-2 ${shmem-test-name} 2 --sycl --log)
-  endforeach()
-  target_sources(mst-basic PRIVATE shmem_basic.cpp)
-  # cmake-format: off
-  target_sources(
-    mst
-    PRIVATE
-      ../common/all.cpp
-      ../common/copy.cpp
-      ../common/counted.cpp
-      ../common/distributed_vector.cpp
-      ../common/drop.cpp
-      ../common/enumerate.cpp
-      # ../common/exclusive_scan.cpp # segfault
-      ../common/fill.cpp
-      ../common/for_each.cpp
-      # ../common/inclusive_scan.cpp # doesn't end
-      ../common/iota.cpp
-      ../common/iota_view.cpp
-      ../common/reduce.cpp
-      # ../common/sort.cpp  # not compile
-      ../common/subrange.cpp
-      ../common/sycl_utils.cpp
-      ../common/take.cpp
-      ../common/transform.cpp
-      ../common/transform_view.cpp
-      ../common/zip.cpp
-      ../common/zip_local.cpp
-      alignment.cpp
-      communicator.cpp
-      copy.cpp
-      distributed_vector.cpp
-      # halo.cpp # segfault mdstar.cpp # segfault in Mdspan.GridLocalReference
-      # mhpsort.cpp # not compile
-      reduce.cpp
-      stencil.cpp
-    # segments.cpp slide_view.cpp # not compile wave_kernel.cpp # test fails
-  )
-  # cmake-format: on
-
-endif()
+    target_link_libraries(${test-exec} ${CMAKE_BINARY_DIR}/lib/libishmem.a)
+  else()
+    target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
+  endif()
+endforeach()
 
 add_mhp_ctest(mhp-quick-test-1 mhp-quick-test 1)
 add_mhp_ctest(mhp-quick-test-2 mhp-quick-test 2)
-add_mhp_ctest(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl)
-add_mhp_ctest(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl)
+add_mhp_ctest(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl --log)
+add_mhp_ctest(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl --log)
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 

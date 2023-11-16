@@ -201,7 +201,7 @@ if(ENABLE_ISHMEM)
 
   add_custom_target(shmem DEPENDS ishmem)
 
-  function(add_shmem_test test_name name processes)
+  function(add_mhp_ctest test_name name processes)
     add_test(
       NAME ${test_name}
       COMMAND
@@ -210,14 +210,18 @@ if(ENABLE_ISHMEM)
         COMMAND_EXPAND_LISTS)
   endfunction()
 
-endif()
+  add_compile_definitions(DRISHMEM)
 
-function(add_mhp_ctest test_name name processes)
-  add_test(NAME ${test_name}
-           COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
-                   ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
-  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL MHP)
-endfunction()
+else()
+
+  function(add_mhp_ctest test_name name processes)
+    add_test(NAME ${test_name}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+                     ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
+    set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL MHP)
+  endfunction()
+
+endif()
 
 function(add_mhp_offload_ctest test_name name processes)
   # intel mpi needs I_MPI_OFFLOAD=1, mpich does not need anything but it is

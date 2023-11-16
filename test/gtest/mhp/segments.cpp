@@ -10,7 +10,7 @@ template <typename T> class Segmented : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(Segmented, AllTypes);
+TYPED_TEST_SUITE(Segmented, AllTypesWithoutIshmem);
 
 TYPED_TEST(Segmented, StaticAssert) {
   Ops1<TypeParam> ops(10);

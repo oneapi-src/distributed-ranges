@@ -22,8 +22,8 @@ public:
   void debug(const nostd::source_location &location,
              fmt::format_string<Args...> format, Args &&...args) {
     if (fout_) {
-      *fout_ << location.file_name() << ":" << location.line() << ": "
-             << fmt::format(format, std::forward<Args>(args)...);
+      *fout_ << fmt::format(format, std::forward<Args>(args)...) << " <"
+             << location.file_name() << ":" << location.line() << ">\n";
       fout_->flush();
     }
   }
@@ -57,5 +57,8 @@ private:
 #endif
 
 inline logger drlog;
+
+#define DRLOG(...)                                                             \
+  dr::drlog.debug(nostd::source_location::current(), __VA_ARGS__)
 
 } // namespace dr

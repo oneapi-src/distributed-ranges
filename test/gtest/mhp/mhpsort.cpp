@@ -4,6 +4,7 @@
 
 #include "xhp-tests.hpp"
 
+// TODO: add sort tests with ISHMEM, currently doesn't compile
 using T = int;
 using DV = xhp::distributed_vector<T>;
 using LV = std::vector<T>;
