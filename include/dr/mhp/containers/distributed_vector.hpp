@@ -49,7 +49,7 @@ public:
     win_.put(src, datalen, segment_index, offset);
   }
 
-  int getrank() { return win_.communicator().rank(); }
+  std::size_t getrank() { return win_.communicator().rank(); }
 };
 
 #ifdef DRISHMEM
@@ -91,8 +91,8 @@ public:
     ishmem_putmem(dst, src, datalen, segment_index);
   }
 
-  int getrank() {
-    int my_process_segment_index = ishmem_my_pe();
+  std::size_t getrank() {
+    auto my_process_segment_index = ishmem_my_pe();
     DRLOG("called ishmem_my_pe() -> {}", my_process_segment_index);
     return my_process_segment_index;
   }
