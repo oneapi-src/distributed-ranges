@@ -4,8 +4,8 @@
 
 FetchContent_Declare(
   dpl
-  GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
-  GIT_TAG oneDPL-2022.3.0-rc1)
+  GIT_REPOSITORY https://github.com/rscohn2/oneDPL.git
+  GIT_TAG dev/compile-error)
 FetchContent_MakeAvailable(dpl)
 
 # mpi:  multi-process
