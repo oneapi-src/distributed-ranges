@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-source /opt/intel/oneapi/setvars.sh
+source scripts/setvars-2023.2.1.sh
 set -e
 hostname
 
