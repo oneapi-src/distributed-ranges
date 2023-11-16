@@ -109,13 +109,16 @@ inline void barrier() { __detail::gcontext()->comm_.barrier(); }
 inline auto use_sycl() { return __detail::gcontext()->use_sycl_; }
 
 inline void fence() {
-  dr::drlog.debug("fence\n");
 #ifdef DRISHMEM
-  ishmem_barrier_all();
+  DRLOG("global fence in ISHMEM");
+  ishmem_fence();
+  DRLOG("global fence in ISHMEM finished");
 #endif
   for (auto win : __detail::gcontext()->wins_) {
+    DRLOG("global fence, for window:{}", win);
     MPI_Win_fence(0, win);
   }
+  DRLOG("global fence finished");
 }
 
 inline void init() {

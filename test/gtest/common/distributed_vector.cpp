@@ -31,12 +31,19 @@ TYPED_TEST(DistributedVectorAllTypes, getAndPut) {
   TypeParam dv(10);
 
   if (comm_rank == 0) {
+    DRLOG("DV constructed, assign sth on root rank");
     dv[5] = 13;
+    DRLOG("13 assigned on root no calling barrier");
+  } else {
+    DRLOG("DV constructed, we are on non-root rank so just call barrier");
   }
-  barrier();
+  dv.fence();
+  DRLOG("barrier called now reading");
 
   for (std::size_t idx = 0; idx < 10; ++idx) {
+    DRLOG("reading idx:{}", idx);
     auto val = dv[idx];
+    DRLOG("read idx:{} finished, got:{}", idx, val);
     if (idx == 5) {
       EXPECT_EQ(val, 13);
     } else {

@@ -206,8 +206,10 @@ if(ENABLE_ISHMEM)
       NAME ${test_name}
       COMMAND
         ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
-        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/ishmrun ./${name} ${ARGN}
-        COMMAND_EXPAND_LISTS)
+        ${MPIEXEC_PREFLAGS} -outfile-pattern "${test_name}.out.%r.log"
+        -errfile-pattern "${test_name}.err.%r.log"
+        ${CMAKE_BINARY_DIR}/bin/ishmrun gdb --ex r -ex bt --ex q --batch --args
+        ./${name} --log --logprefix=${test_name} ${ARGN} COMMAND_EXPAND_LISTS)
   endfunction()
 
   add_compile_definitions(DRISHMEM)

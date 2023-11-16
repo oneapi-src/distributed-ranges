@@ -31,7 +31,9 @@ template <typename T> class SegmentUtils : public testing::Test {
 public:
 };
 
-TYPED_TEST_SUITE(SegmentUtils, AllTypes);
+// traversing on host over local_segment does not work in case of both:
+// device_memory and IshmemBackend (which uses device memory)
+TYPED_TEST_SUITE(SegmentUtils, AllTypesWithoutIshmem);
 
 TYPED_TEST(SegmentUtils, LocalSegment) {
   if (options.count("device-memory")) {
