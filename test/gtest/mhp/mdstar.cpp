@@ -316,6 +316,10 @@ TEST_F(Mdarray, MdForEach3d) {
 }
 
 TEST_F(Mdarray, Transpose) {
+  if (dr::mhp::use_sycl()) {
+    return;
+  }
+
   xhp::distributed_mdarray<double, 2> md_in(extents2d), md_out(extents2dt);
   xhp::iota(md_in, 100);
   xhp::iota(md_out, 200);

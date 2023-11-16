@@ -95,51 +95,17 @@ void mdspan_foreach(md_extents<Rank> extents, Op op,
 template <mdspan_like Src>
 void mdspan_copy(Src src, std::forward_iterator auto dst,
                  bool transpose = false) {
-  if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-    if (src.rank() == 2) {
-      oneapi::mkl::blas::row_major::omatcopy(
-          mhp::sycl_queue(),
-          transpose ? oneapi::mkl::transpose::trans
-                    : oneapi::mkl::transpose::nontrans,
-          src.extent(0), src.extent(1), 1, &src(0, 0), src.stride(0), dst,
-          src.extent(1));
-    } else {
-      assert(false);
-    }
-#else
-    assert(false);
-#endif
-  } else {
-    assert(!transpose);
-    auto pack = [src, &dst](auto index) { *dst++ = src(index); };
-    mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
-  }
+  assert(!transpose);
+  auto pack = [src, &dst](auto index) { *dst++ = src(index); };
+  mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
 }
 
 // unpack contiguous container into mdspan
 void mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst,
                  bool transpose = false) {
-  if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-    if (dst.rank() == 2) {
-      oneapi::mkl::blas::row_major::omatcopy(
-          mhp::sycl_queue(),
-          transpose ? oneapi::mkl::transpose::trans
-                    : oneapi::mkl::transpose::nontrans,
-          dst.extent(0), dst.extent(1), 1, src, dst.extent(1), &dst(0, 0),
-          dst.stride(0));
-    } else {
-      assert(false);
-    }
-#else
-    assert(false);
-#endif
-  } else {
-    assert(!transpose);
-    auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
-    mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
-  }
+  assert(!transpose);
+  auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
+  mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
 }
 
 // copy mdspan to mdspan

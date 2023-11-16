@@ -60,6 +60,8 @@ namespace dr::mhp {
 // transpose: swap first 2 dimensions of a mdspan_view
 void transpose(dr::distributed_mdspan_range auto &&in,
                dr::distributed_mdspan_range auto &&out) {
+  assert(!use_sycl());
+
   // 2d mdspan, with in/out shape for swapping dim 1 & 2
   assert(in.mdspan().rank() == 2 && in.mdspan().rank() == out.mdspan().rank());
   assert(in.mdspan().extent(0) == out.mdspan().extent(1) &&
