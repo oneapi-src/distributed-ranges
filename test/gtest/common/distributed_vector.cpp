@@ -33,11 +33,11 @@ TYPED_TEST(DistributedVectorAllTypes, getAndPut) {
   if (comm_rank == 0) {
     DRLOG("DV constructed, assign sth on root rank");
     dv[5] = 13;
-    DRLOG("13 assigned on root no calling barrier");
+    DRLOG("13 assigned on root, now calling fence");
   } else {
-    DRLOG("DV constructed, we are on non-root rank so just call barrier");
+    DRLOG("DV constructed, we are on non-root rank so just call fence");
   }
-  dv.fence();
+  fence_on(dv);
   DRLOG("barrier called now reading");
 
   for (std::size_t idx = 0; idx < 10; ++idx) {
