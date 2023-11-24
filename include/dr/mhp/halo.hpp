@@ -26,9 +26,8 @@ public:
             const Memory &memory = Memory())
       : comm_(comm), halo_groups_(halo_groups), owned_groups_(owned_groups),
         memory_(memory) {
-    drlog.debug(nostd::source_location::current(),
-                "Halo constructed with {}/{} owned/halo\n",
-                rng::size(owned_groups), rng::size(halo_groups));
+    DRLOG("Halo constructed with {}/{} owned/halo", rng::size(owned_groups),
+          rng::size(halo_groups));
     buffer_size_ = 0;
     std::size_t i = 0;
     std::vector<std::size_t> buffer_index;
@@ -384,8 +383,7 @@ private:
   static std::vector<group_type>
   owned_groups(communicator comm, std::span<T> span, halo_bounds hb) {
     std::vector<group_type> owned;
-    drlog.debug(nostd::source_location::current(),
-                "owned groups {}/{} first/last\n", comm.first(), comm.last());
+    DRLOG("owned groups {}/{} first/last", comm.first(), comm.last());
     if (hb.next > 0 && (hb.periodic || !comm.first())) {
       owned.emplace_back(span.subspan(hb.prev, hb.next), comm.prev(),
                          communicator::tag::halo_reverse);

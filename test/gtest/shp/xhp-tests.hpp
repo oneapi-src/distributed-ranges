@@ -21,6 +21,7 @@ namespace xhp = dr::shp;
 
 inline void barrier() {}
 inline void fence() {}
+inline void fence_on(auto &&) {}
 
 using AllocatorTypes = ::testing::Types<dr::shp::device_allocator<int>>;
 

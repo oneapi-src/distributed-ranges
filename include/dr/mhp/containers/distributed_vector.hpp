@@ -50,6 +50,8 @@ public:
   }
 
   std::size_t getrank() { return win_.communicator().rank(); }
+
+  void fence() { win_.fence(); }
 };
 
 #ifdef DRISHMEM
@@ -95,6 +97,11 @@ public:
     auto my_process_segment_index = ishmem_my_pe();
     DRLOG("called ishmem_my_pe() -> {}", my_process_segment_index);
     return my_process_segment_index;
+  }
+
+  void fence() {
+    // TODO: to have locality use ishmemx_fence_work_group
+    ishmem_fence();
   }
 };
 #endif
@@ -239,6 +246,8 @@ public:
 
   auto segments() const { return rng::views::all(segments_); }
 
+  void fence() { backend.fence(); }
+
 private:
   void init(auto size, auto dist) {
     size_ = size;
@@ -269,7 +278,7 @@ private:
                              std::min(segment_size_, size - i));
     }
 
-    fence(); // TODO: move fence to backend
+    fence();
   }
 
   friend dv_segment_iterator<distributed_vector>;

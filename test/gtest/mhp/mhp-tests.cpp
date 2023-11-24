@@ -46,6 +46,7 @@ int main(int argc, char *argv[]) {
   options_spec.add_options()
     ("drhelp", "Print help")
     ("log", "Enable logging")
+    ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
     ("device-memory", "Use device memory")
     ("sycl", "Execute on SYCL device");
   // clang-format on
@@ -64,7 +65,8 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
-    logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
+    logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
+                                    fmt::format(".{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
   }
 

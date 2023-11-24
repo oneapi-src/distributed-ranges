@@ -71,26 +71,34 @@ foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
   else()
     target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
   endif()
+  set_property(TARGET ${test-exec} PROPERTY RULE_LAUNCH_COMPILE
+                                            "${CMAKE_COMMAND} -E time")
+
 endforeach()
 
-add_mhp_ctest(mhp-quick-test-1 mhp-quick-test 1)
-add_mhp_ctest(mhp-quick-test-2 mhp-quick-test 2)
-add_mhp_ctest(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl --log)
-add_mhp_ctest(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl --log)
+# tests without --sycl flag will fail on IshmemBackend TODO: make them be
+# running somehow if ENABLE_ISHMEM will be default CI config
+if(NOT ENABLE_ISHMEM)
+  add_mhp_ctest(mhp-quick-test-1 mhp-quick-test 1)
+  add_mhp_ctest(mhp-quick-test-2 mhp-quick-test 2)
 
-cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
+  cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
-if(NOT MPI_IMPL STREQUAL "openmpi")
-  # MPI_Win_create fails for communicator with size 1
-  add_mhp_ctest(mhp-tests-1 mhp-tests 1)
+  if(NOT MPI_IMPL STREQUAL "openmpi")
+    # MPI_Win_create fails for communicator with size 1
+    add_mhp_ctest(mhp-tests-1 mhp-tests 1)
+  endif()
+
+  add_mhp_ctest(mhp-tests-2 mhp-tests 2)
+  add_mhp_ctest(mhp-tests-3 mhp-tests 3)
+  add_mhp_ctest(mhp-tests-4 mhp-tests 4)
+  add_mhp_ctest(mhp-tests-3-only mhp-tests-3 3)
 endif()
 
-add_mhp_ctest(mhp-tests-2 mhp-tests 2)
-add_mhp_ctest(mhp-tests-3 mhp-tests 3)
-add_mhp_ctest(mhp-tests-4 mhp-tests 4)
-add_mhp_ctest(mhp-tests-3-only mhp-tests-3 3)
-
 if(ENABLE_SYCL)
+  add_mhp_ctest(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl)
+  add_mhp_ctest(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl)
+
   # Excluding tests that failed in CI with segv. They work with manual runs. I
   # have not investigated the cause.
   add_mhp_offload_ctest(

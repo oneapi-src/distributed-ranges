@@ -32,6 +32,7 @@ concept compliant_view = rng::forward_range<V> && rng::random_access_range<V> &&
 
 inline void barrier() { dr::mhp::barrier(); }
 inline void fence() { dr::mhp::fence(); }
+inline void fence_on(auto &&obj) { obj.fence(); }
 
 #include "common-tests.hpp"
 

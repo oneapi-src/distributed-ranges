@@ -34,9 +34,12 @@ public:
 
   void barrier() const {
 #ifdef DRISHMEM
-    ishmem_barrier_all();
+    DRLOG("calling COMM barrier (by calling fence) in ISHMEM");
+    ishmem_fence();
 #endif
+    DRLOG("calling COMM barrier in MPI");
     MPI_Barrier(mpi_comm_);
+    DRLOG("COMM barrier finished");
   }
 
   void bcast(void *src, std::size_t count, std::size_t root) const {
@@ -232,14 +235,25 @@ public:
     DRLOG("MPI comm put:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
     MPI_Rput(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
+    DRLOG("MPI comm wait:: ({}:{}:{})", rank, disp, size);
     MPI_Wait(&request, MPI_STATUS_IGNORE);
+    DRLOG("MPI comm wait finished:: ({}:{}:{})", rank, disp, size);
   }
 
-  void fence() const { MPI_Win_fence(0, win_); }
+  void fence() const {
+    if (win_ != MPI_WIN_NULL) {
+      DRLOG("MPI comm fence:: win:{}", win_);
+      MPI_Win_fence(0, win_);
+      DRLOG("MPI comm fence finished:: win:{}", win_);
+    } else {
+      DRLOG("MPI comm fence skipped because win is NULL");
+    }
+  }
 
   void flush(std::size_t rank) const {
-    drlog.debug("flush:: rank: {}\n", rank);
+    DRLOG("MPI comm flush:: rank:{} win:{}", rank, win_);
     MPI_Win_flush(rank, win_);
+    DRLOG("MPI comm flush finished:: rank:{} win:{}", rank, win_);
   }
 
   const auto &communicator() const { return communicator_; }
