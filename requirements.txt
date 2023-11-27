@@ -40,4 +40,4 @@ sphinxcontrib-serializinghtml==1.1.9
 sphinxcontrib-spelling==8.0.0
 typing_extensions==4.8.0
 urllib3==2.1.0
-virtualenv==20.24.6
+virtualenv==20.24.7
