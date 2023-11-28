@@ -130,6 +130,11 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
   return dr::shp::__detail::combine_events(events);
 }
 
+template <rng::contiguous_range InputIt, dr::distributed_iterator OutputIt>
+void copy(InputIt first, OutputIt d_first) {
+  copy(rng::begin(first), rng::end(first), d_first);
+}
+
 template <std::forward_iterator InputIt, dr::distributed_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
