@@ -31,6 +31,11 @@ void copy(CI_IN &&first, CI_IN &&last,
   copy(0, rng::subrange(first, last), out);
 }
 
+template <rng::contiguous_range CR_IN>
+void copy(CR_IN &&in, dr::distributed_contiguous_iterator auto out) {
+  copy(0, in, out);
+}
+
 /// Copy distributed to local
 void copy(std::size_t root, dr::distributed_contiguous_range auto &&in,
           std::contiguous_iterator auto out) {

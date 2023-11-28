@@ -22,9 +22,9 @@ public:
     std::vector<T> local(default_vector_size);
     fill_random(local);
     // #ifdef BENCH_SHP
-    xhp::copy(local.begin(), local.end(), rng::begin(*a));
+    // xhp::copy(local.begin(), local.end(), rng::begin(*a));
     // #else
-    //     xhp::copy(local, rng::begin(*a));
+    xhp::copy(local, rng::begin(*a));
     // #endif
   }
 
