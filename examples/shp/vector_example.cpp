@@ -4,8 +4,6 @@
 
 #include <dr/shp.hpp>
 
-template <dr::distributed_iterator Iter> void iter(Iter) {}
-
 int main(int argc, char **argv) {
   printf("Creating NUMA devices...\n");
   auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
@@ -50,6 +48,12 @@ int main(int argc, char **argv) {
   dr::shp::copy(v.begin(), v.end(), local_vec.begin());
 
   dr::shp::print_range(local_vec, "local vec after copy");
+
+  v.resize(200);
+  dr::shp::print_range(v, "resized to 200");
+
+  v.resize(50);
+  dr::shp::print_range(v, "resized to 50");
 
   return 0;
 }
