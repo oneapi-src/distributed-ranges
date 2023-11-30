@@ -22,6 +22,11 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/global.hpp>
 
+// #ifdef SYCL_LANGUAGE_VERSION
+// template <typename valT> using LV = typename std::vector<valT,
+// decltype(alloc)>; #else template <typename valT> using LV = typename
+// std::vector<valT>; #endif
+
 namespace dr::mhp {
 
 namespace __detail {
@@ -48,10 +53,10 @@ void local_sort(R &r, Compare &&comp) {
 }
 
 template <typename valT, typename Compare, typename Seg>
-void __splitters(Seg &lsegment, Compare &&comp,
-                 std::vector<std::size_t> &vec_split_i,
-                 std::vector<std::size_t> &vec_split_s,
-                 std::vector<std::size_t> &vec_rsizes) {
+void splitters(Seg &lsegment, Compare &&comp,
+               std::vector<std::size_t> &vec_split_i,
+               std::vector<std::size_t> &vec_split_s,
+               std::vector<std::size_t> &vec_rsizes) {
 
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
@@ -74,15 +79,9 @@ void __splitters(Seg &lsegment, Compare &&comp,
 
   rng::sort(rng::begin(vec_gmedians), rng::end(vec_gmedians), comp);
 
-  /* find splitting values - medians of dividers */
-
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
     vec_split_v[_i] = vec_gmedians[(_i + 1) * (_comm_size + 1) - 1];
   }
-
-  /* calculate splitting indices (start of buffers) and sizes of buffers to
-   * send
-   */
 
   std::size_t segidx = 0, vidx = 1;
 
@@ -103,11 +102,11 @@ void __splitters(Seg &lsegment, Compare &&comp,
 }
 
 template <typename valT, typename Compare, typename Seg>
-const std::size_t __send_recv_data(Seg &lsegment, Compare &&comp,
-                                   std::vector<std::size_t> &vec_rsizes,
-                                   std::vector<std::size_t> &vec_rindices,
-                                   std::vector<std::size_t> &vec_recv_elems,
-                                   std::size_t &_total_elems) {
+const std::size_t send_recv_data(Seg &lsegment, Compare &&comp,
+                                 std::vector<std::size_t> &vec_rsizes,
+                                 std::vector<std::size_t> &vec_rindices,
+                                 std::vector<std::size_t> &vec_recv_elems,
+                                 std::size_t &_total_elems) {
 
   std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
                       vec_rindices.begin(), 0);
@@ -128,77 +127,19 @@ const std::size_t __send_recv_data(Seg &lsegment, Compare &&comp,
   return _recv_elems;
 }
 
-template <dr::distributed_range R, typename Compare>
-void dist_sort(R &r, Compare &&comp) {
+template <typename valT, typename Alloc>
+void shift_data(Alloc alloc, const std::size_t _total_elems,
+                const std::vector<std::size_t> &vec_recv_elems,
+                const int shift_left, const int shift_right,
+                std::vector<int> &vec_shift, auto &vec_recvdata, auto &vec_left,
+                auto &vec_right) {
 
-  using valT = typename R::value_type;
-
+  // const std::size_t _comm_size = default_comm().size(); // dr-style ignore
   const std::size_t _comm_rank = default_comm().rank();
-  const std::size_t _comm_size = default_comm().size(); // dr-style ignore
-
-  auto &&lsegment = local_segment(r);
-
-#ifdef SYCL_LANGUAGE_VERSION
-  auto policy = dpl_policy();
-  sycl::usm_allocator<valT, sycl::usm::alloc::host> alloc(policy.queue());
-#endif
-
-  /* sort local segment */
-  __detail::local_sort(lsegment, comp);
-
-  std::vector<std::size_t> vec_split_i(_comm_size, 0);
-  std::vector<std::size_t> vec_split_s(_comm_size, 0);
-  std::vector<std::size_t> vec_rsizes(_comm_size, 0);
-
-  __detail::__splitters<valT>(lsegment, comp, vec_split_i, vec_split_s,
-                              vec_rsizes);
-
-  /* send data size to each node */
-
-  std::vector<std::size_t> vec_rindices(_comm_size, 0);
-  std::vector<std::size_t> vec_recv_elems(_comm_size);
-  std::size_t _total_elems = 0;
-
-  const std::size_t _recv_elems = __detail::__send_recv_data<valT>(
-      lsegment, comp, vec_rsizes, vec_rindices, vec_recv_elems, _total_elems);
-
-#ifdef SYCL_LANGUAGE_VERSION
-  std::vector<valT, decltype(alloc)> vec_recvdata(_recv_elems, alloc);
-#else
-  std::vector<valT> vec_recvdata(_recv_elems);
-#endif
-
-  default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
-                           vec_rsizes, vec_rindices);
-
-  /* vec recvdata is partially sorted, implementation of merge on GPU is
-   * desirable */
-  __detail::local_sort(vec_recvdata, comp);
-
-  std::vector<int> vec_shift(_comm_size - 1);
-
-  const auto desired_elems_num = (_total_elems + _comm_size - 1) / _comm_size;
-
-  vec_shift[0] = desired_elems_num - vec_recv_elems[0];
-  for (std::size_t _i = 1; _i < _comm_size - 1; _i++) {
-    vec_shift[_i] = vec_shift[_i - 1] + desired_elems_num - vec_recv_elems[_i];
-  }
-
-  const int shift_left = _comm_rank == 0 ? 0 : -vec_shift[_comm_rank - 1];
-  const int shift_right =
-      _comm_rank == _comm_size - 1 ? 0 : vec_shift[_comm_rank];
 
   MPI_Request req_l, req_r;
   MPI_Status stat_l, stat_r;
   const communicator::tag t = communicator::tag::halo_index;
-
-#ifdef SYCL_LANGUAGE_VERSION
-  std::vector<valT, decltype(alloc)> vec_left(std::max(shift_left, 0), alloc);
-  std::vector<valT, decltype(alloc)> vec_right(std::max(shift_right, 0), alloc);
-#else
-  std::vector<valT> vec_left(std::max(shift_left, 0));
-  std::vector<valT> vec_right(std::max(shift_right, 0));
-#endif
 
   if (static_cast<int>(rng::size(vec_recvdata)) < -shift_left) {
     // Too little data in recv buffer to shift left - first get from right, then
@@ -245,7 +186,12 @@ void dist_sort(R &r, Compare &&comp) {
     if (shift_right != 0)
       MPI_Wait(&req_r, &stat_r);
   }
+}
 
+template <typename valT>
+void copy_results(auto &lsegment, const int shift_left, const int shift_right,
+                  std::vector<valT> &vec_recvdata, std::vector<valT> &vec_left,
+                  std::vector<valT> &vec_right) {
   const std::size_t invalidate_left = std::max(-shift_left, 0);
   const std::size_t invalidate_right = std::max(-shift_right, 0);
 
@@ -265,7 +211,6 @@ void dist_sort(R &r, Compare &&comp) {
                               lsegment.data() + size_l + size_d, size_r);
     e_d = sycl_queue().copy(vec_recvdata.data() + invalidate_left,
                             lsegment.data() + size_l, size_d);
-
     if (size_l > 0)
       e_l.wait();
     if (size_r > 0)
@@ -285,7 +230,87 @@ void dist_sort(R &r, Compare &&comp) {
     std::memcpy(lsegment.data() + size_l, vec_recvdata.data() + invalidate_left,
                 size_d * sizeof(valT));
   }
+}
 
+template <dr::distributed_range R, typename Compare>
+void dist_sort(R &r, Compare &&comp) {
+
+  using valT = typename R::value_type;
+
+  const std::size_t _comm_rank = default_comm().rank();
+  const std::size_t _comm_size = default_comm().size(); // dr-style ignore
+
+#ifdef SYCL_LANGUAGE_VERSION
+  auto policy = dpl_policy();
+  sycl::usm_allocator<valT, sycl::usm::alloc::host> alloc(policy.queue());
+#endif
+
+  auto &&lsegment = local_segment(r);
+
+  std::vector<std::size_t> vec_split_i(_comm_size, 0);
+  std::vector<std::size_t> vec_split_s(_comm_size, 0);
+  std::vector<std::size_t> vec_rsizes(_comm_size, 0);
+  std::vector<std::size_t> vec_rindices(_comm_size, 0);
+  std::vector<std::size_t> vec_recv_elems(_comm_size, 0);
+  std::size_t _total_elems = 0;
+
+  __detail::local_sort(lsegment, comp);
+
+  /* find splitting values - limits of areas to send to other processes */
+  __detail::splitters<valT>(lsegment, comp, vec_split_i, vec_split_s,
+                            vec_rsizes);
+
+  /* prepare data to send and receive */
+  const std::size_t _recv_elems = __detail::send_recv_data<valT>(
+      lsegment, comp, vec_rsizes, vec_rindices, vec_recv_elems, _total_elems);
+
+  /* buffer for received data */
+#ifdef SYCL_LANGUAGE_VERSION
+  std::vector<valT, decltype(alloc)> vec_recvdata(_recv_elems, alloc);
+#else
+  std::vector<valT> vec_recvdata(_recv_elems);
+#endif
+
+  /* send data not belonging and receive data belonging to local  processes
+   */
+  default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
+                           vec_rsizes, vec_rindices);
+
+  /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
+   * desirable */
+  __detail::local_sort(vec_recvdata, comp);
+
+  /* prepare data for shift to neighboring processes */
+  std::vector<int> vec_shift(_comm_size - 1);
+
+  const auto desired_elems_num = (_total_elems + _comm_size - 1) / _comm_size;
+
+  vec_shift[0] = desired_elems_num - vec_recv_elems[0];
+  for (std::size_t _i = 1; _i < _comm_size - 1; _i++) {
+    vec_shift[_i] = vec_shift[_i - 1] + desired_elems_num - vec_recv_elems[_i];
+  }
+
+  const int shift_left = _comm_rank == 0 ? 0 : -vec_shift[_comm_rank - 1];
+  const int shift_right =
+      _comm_rank == _comm_size - 1 ? 0 : vec_shift[_comm_rank];
+
+#ifdef SYCL_LANGUAGE_VERSION
+  std::vector<valT, decltype(alloc)> vec_left(std::max(shift_left, 0), alloc);
+  std::vector<valT, decltype(alloc)> vec_right(std::max(shift_right, 0), alloc);
+#else
+  std::vector<valT> vec_left(std::max(shift_left, 0));
+  std::vector<valT> vec_right(std::max(shift_right, 0));
+#endif
+
+  /* shift data if necessary, to have exactly the number of elements equal to
+   * lsegment size */
+  __detail::shift_data<valT>(alloc, _total_elems, vec_recv_elems, shift_left,
+                             shift_right, vec_shift, vec_recvdata, vec_left,
+                             vec_right);
+
+  /* copy results to distributed vector's local segment */
+  __detail::copy_results(lsegment, shift_left, shift_right, vec_recvdata,
+                         vec_left, vec_right);
 } // __detail::dist_sort
 
 } // namespace __detail
