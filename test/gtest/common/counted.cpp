@@ -83,11 +83,14 @@ TYPED_TEST(Counted, countedOfOneElementHasOneSegmentAndSameRank) {
 }
 
 TYPED_TEST(Counted, countedOfFirstSegementHasOneSegmentAndSameRank) {
-  TypeParam dv(10, 77);
+  TypeParam dv(123456, 77);
 
   const auto first_seg_size = dr::ranges::segments(dv)[0].size();
+  std::size_t bias = 2;
+  // test assumes there are not too many ranks
+  assert(dr::ranges::segments(dv)[0].size() > bias);
   auto counted_view_result =
-      xhp::views::counted(dv.begin() + 2, first_seg_size - 2);
+      xhp::views::counted(dv.begin() + bias, first_seg_size - bias);
   auto counted_view_segments = dr::ranges::segments(counted_view_result);
   EXPECT_EQ(rng::size(counted_view_segments), 1);
   EXPECT_EQ(dr::ranges::rank(counted_view_segments[0]),
@@ -98,8 +101,11 @@ TYPED_TEST(Counted, countedOfAllButOneSizeHasAllSegmentsWithSameRanks) {
   TypeParam dv(EVENLY_DIVIDABLE_SIZE, 77);
 
   auto dv_segments = dr::ranges::segments(dv);
+  std::size_t bias = 1;
+  // test assumes there are not too many ranks
+  assert(dv_segments[0].size() > bias);
   auto counted_view_result =
-      xhp::views::counted(dv.begin() + 1, EVENLY_DIVIDABLE_SIZE - 1);
+      xhp::views::counted(dv.begin() + bias, EVENLY_DIVIDABLE_SIZE - bias);
   auto counted_view_segments = dr::ranges::segments(counted_view_result);
 
   EXPECT_EQ(rng::size(dv_segments), rng::size(counted_view_segments));
