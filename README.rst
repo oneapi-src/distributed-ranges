@@ -6,11 +6,8 @@
  Distributed Ranges
 ====================
 
-.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml/badge.svg
-   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/pr.yml
-
-.. image:: https://github.com/oneapi-src/distributed-ranges/actions/workflows/devcloud.yml/badge.svg
-   :target: https://github.com/oneapi-src/distributed-ranges/actions/workflows/devcloud.yml
+.. image:: https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges/actions/workflows/pr.yml/badge.svg
+   :target: https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges/actions/workflows/pr.yml
 
 Productivity library for distributed and partitioned memory based on
 C++ Ranges.

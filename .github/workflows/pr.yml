@@ -13,44 +13,38 @@ on:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
-  IMPI: impi@2021.10.0
-  MKL:  mkl@2023.2.0
-  TBB:  tbb@2021.10.0
-  ICX:  icx@2023.2.0
 
 jobs:
   checks:
-    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    runs-on: dds-base
     steps:
     - uses: actions/checkout@v4
-    - name: Ubuntu dependencies
-      run: .github/workflows/setup-docs-ubuntu.sh
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
         cache: 'pip'
-    - run: pip install -r requirements.txt
-    - name: Checks
-      uses: pre-commit/action@v3.0.0
+    - name: Install python dependencies
+      run: pip install -r requirements.txt
+    - name: Run checkers
+      run: |
+           pre-commit run --all
 
-  gcc:
-    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+  unit_tests:
+    runs-on: dds-base
     strategy:
+      # test everything, even if one fails
       fail-fast: false
       matrix:
         include:
         - cxx: g++-12
+        - cxx: g++-11
+        - cxx: g++-10
+        - cxx: icpx
     name: ${{ matrix.cxx }}
     env:
       CXX: ${{ matrix.cxx }}
     steps:
     - uses: actions/checkout@v4
-    - uses: rscohn2/setup-oneapi@v0
-      with:
-        components: |
-          ${{ env.IMPI }}
-          ${{ env.MKL }}
-          ${{ env.TBB }}
     - name: Generate
       run: |
         source /opt/intel/oneapi/setvars.sh
@@ -58,41 +52,26 @@ jobs:
     - name: Build
       run: |
         source /opt/intel/oneapi/setvars.sh
-        make -C build -j 2
-    - name: Test
+        make -C build -j
+    - name: MHP unit tests
       run: |
         source /opt/intel/oneapi/setvars.sh
-        ctest --test-dir build
+        ctest --test-dir build -L MHP
+    - name: SHP unit tests
+      # Does not work on CPU
+      if: false
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        ctest --test-dir build -L SHP
     - uses: actions/upload-artifact@v3
       if: always()
       with:
         name: log-gcc-${{ env.CXX }}
         path: build/Testing
 
-  icpx:
-    runs-on: devcloud
-    timeout-minutes: 60
-    # MPI device memory does not work
-    env:
-      CXX: icpx
-      # MPI complains about a ptrace issue when doing MPI_Win_create on device memory
-      I_MPI_OFFLOAD_IPC: 0
-      # and when ptrace is not an issue, these nodes have another problem
-      # EXCLUDE: "--exclude=idc-beta-batch-pvc-node-17,idc-beta-batch-pvc-node-18,idc-beta-batch-pvc-node-19"
-    steps:
-    - uses: actions/checkout@v4
-    - name: Test
-      run: srun ${EXCLUDE} -p pvc-shared scripts/devcloud-test.sh
-    - name: Upload build logs
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: log-icpx
-        path: build/Testing
-
   publish:
-    needs: [checks, gcc, icpx]
-    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    needs: [checks, unit_tests]
+    runs-on: dds-base
     env:
       SPHINXOPTS: -q -W
     if: ${{ github.ref == 'refs/heads/main' }}

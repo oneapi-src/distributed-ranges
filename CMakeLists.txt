@@ -44,6 +44,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_link_options(--gcc-toolchain=${GCC_TOOLCHAIN})
   endif()
 
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    set(ENABLE_SYCL on)
+  endif()
+
   if(ENABLE_SYCL)
     add_compile_options(-fsycl)
     add_link_options(-fsycl)
@@ -261,7 +265,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-error=stringop-overflow=)
   endif()
 
-  # This must be appear after -Wall
+  # This must appear after -Wall
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     # Most code get warnings with -ffast-math
     add_compile_options(-Wno-tautological-constant-compare)

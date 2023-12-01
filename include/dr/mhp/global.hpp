@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <unistd.h>
+
 #include <dr/detail/sycl_utils.hpp>
 #include <dr/mhp/sycl_support.hpp>
 
