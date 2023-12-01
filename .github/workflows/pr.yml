@@ -77,8 +77,6 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
     - uses: actions/checkout@v4
-    - name: Ubuntu dependencies
-      run: .github/workflows/setup-docs-ubuntu.sh
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'

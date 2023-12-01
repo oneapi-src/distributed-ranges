@@ -146,5 +146,5 @@ See also
 .. _`Spec Editing`: doc/spec/README.rst
 .. _`Fuzz Testing`: test/fuzz/README.rst
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
-.. _`latest spec`: https://oneapi-src.github.io/distributed-ranges/spec
-.. _`latest doxygen`: https://oneapi-src.github.io/distributed-ranges/doxygen
+.. _`latest spec`: https://cautious-dollop-yopgy9g.pages.github.io/spec
+.. _`latest doxygen`: https://cautious-dollop-yopgy9g.pages.github.io/doxygen
