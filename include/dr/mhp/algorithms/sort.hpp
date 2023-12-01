@@ -22,11 +22,6 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/global.hpp>
 
-// #ifdef SYCL_LANGUAGE_VERSION
-// template <typename valT> using LV = typename std::vector<valT,
-// decltype(alloc)>; #else template <typename valT> using LV = typename
-// std::vector<valT>; #endif
-
 namespace dr::mhp {
 
 namespace __detail {
@@ -52,11 +47,11 @@ void local_sort(R &r, Compare &&comp) {
   }
 }
 
+/* elements of dist_sort */
 template <typename valT, typename Compare, typename Seg>
 void splitters(Seg &lsegment, Compare &&comp,
                std::vector<std::size_t> &vec_split_i,
-               std::vector<std::size_t> &vec_split_s,
-               std::vector<std::size_t> &vec_rsizes) {
+               std::vector<std::size_t> &vec_split_s) {
 
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
@@ -97,44 +92,12 @@ void splitters(Seg &lsegment, Compare &&comp,
   }
   assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
   vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
-
-  default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 }
 
-template <typename valT, typename Compare, typename Seg>
-const std::size_t send_recv_data(Seg &lsegment, Compare &&comp,
-                                 std::vector<std::size_t> &vec_rsizes,
-                                 std::vector<std::size_t> &vec_rindices,
-                                 std::vector<std::size_t> &vec_recv_elems,
-                                 std::size_t &_total_elems) {
+template <typename valT>
+void shift_data(const int shift_left, const int shift_right, auto &vec_recvdata,
+                auto &vec_left, auto &vec_right) {
 
-  std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
-                      vec_rindices.begin(), 0);
-
-  const std::size_t _recv_elems = vec_rindices.back() + vec_rsizes.back();
-
-  /* send and receive data belonging to each node, then redistribute
-   * data to achieve size of data equal to size of local segment */
-
-  MPI_Request req_recvelems;
-
-  default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
-
-  MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
-
-  _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
-
-  return _recv_elems;
-}
-
-template <typename valT, typename Alloc>
-void shift_data(Alloc alloc, const std::size_t _total_elems,
-                const std::vector<std::size_t> &vec_recv_elems,
-                const int shift_left, const int shift_right,
-                std::vector<int> &vec_shift, auto &vec_recvdata, auto &vec_left,
-                auto &vec_right) {
-
-  // const std::size_t _comm_size = default_comm().size(); // dr-style ignore
   const std::size_t _comm_rank = default_comm().rank();
 
   MPI_Request req_l, req_r;
@@ -190,8 +153,7 @@ void shift_data(Alloc alloc, const std::size_t _total_elems,
 
 template <typename valT>
 void copy_results(auto &lsegment, const int shift_left, const int shift_right,
-                  std::vector<valT> &vec_recvdata, std::vector<valT> &vec_left,
-                  std::vector<valT> &vec_right) {
+                  auto &vec_recvdata, auto &vec_left, auto &vec_right) {
   const std::size_t invalidate_left = std::max(-shift_left, 0);
   const std::size_t invalidate_right = std::max(-shift_right, 0);
 
@@ -257,12 +219,22 @@ void dist_sort(R &r, Compare &&comp) {
   __detail::local_sort(lsegment, comp);
 
   /* find splitting values - limits of areas to send to other processes */
-  __detail::splitters<valT>(lsegment, comp, vec_split_i, vec_split_s,
-                            vec_rsizes);
+  __detail::splitters<valT>(lsegment, comp, vec_split_i, vec_split_s);
+
+  default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 
   /* prepare data to send and receive */
-  const std::size_t _recv_elems = __detail::send_recv_data<valT>(
-      lsegment, comp, vec_rsizes, vec_rindices, vec_recv_elems, _total_elems);
+  std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
+                      vec_rindices.begin(), 0);
+
+  const std::size_t _recv_elems = vec_rindices.back() + vec_rsizes.back();
+
+  /* send and receive data belonging to each node, then redistribute
+   * data to achieve size of data equal to size of local segment */
+
+  MPI_Request req_recvelems;
+
+  default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
 
   /* buffer for received data */
 #ifdef SYCL_LANGUAGE_VERSION
@@ -279,6 +251,10 @@ void dist_sort(R &r, Compare &&comp) {
   /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
    * desirable */
   __detail::local_sort(vec_recvdata, comp);
+
+  MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
+
+  _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
 
   /* prepare data for shift to neighboring processes */
   std::vector<int> vec_shift(_comm_size - 1);
@@ -304,13 +280,12 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* shift data if necessary, to have exactly the number of elements equal to
    * lsegment size */
-  __detail::shift_data<valT>(alloc, _total_elems, vec_recv_elems, shift_left,
-                             shift_right, vec_shift, vec_recvdata, vec_left,
+  __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
                              vec_right);
 
   /* copy results to distributed vector's local segment */
-  __detail::copy_results(lsegment, shift_left, shift_right, vec_recvdata,
-                         vec_left, vec_right);
+  __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
+                               vec_left, vec_right);
 } // __detail::dist_sort
 
 } // namespace __detail
