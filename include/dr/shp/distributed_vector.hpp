@@ -198,6 +198,15 @@ public:
                  : begin();
   }
 
+  void resize(size_type count, const value_type &value) {
+    distributed_vector<T, Allocator> other(count, value);
+    std::size_t copy_size = std::min(other.size(), size());
+    dr::shp::copy(begin(), begin() + copy_size, other.begin());
+    *this = std::move(other);
+  }
+
+  void resize(size_type count) { resize(count, value_type{}); }
+
 private:
   std::vector<segment_type> segments_;
   std::size_t capacity_ = 0;

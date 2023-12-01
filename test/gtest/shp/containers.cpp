@@ -84,6 +84,27 @@ TYPED_TEST(DistributedVectorTest, Iterator) {
   EXPECT_TRUE(std::equal(v_a.begin(), v_a.end(), dv_a.begin()));
 }
 
+TYPED_TEST(DistributedVectorTest, Resize) {
+  std::size_t size = 100;
+  typename TestFixture::DistVec dv(size);
+  dr::shp::iota(dv.begin(), dv.end(), 20);
+
+  typename TestFixture::LocalVec v(size);
+  std::iota(v.begin(), v.end(), 20);
+
+  dv.resize(size * 2);
+  v.resize(size * 2);
+  EXPECT_EQ(dv, v);
+
+  dv.resize(size);
+  v.resize(size);
+  EXPECT_EQ(dv, v);
+
+  dv.resize(size * 2, 12);
+  v.resize(size * 2, 12);
+  EXPECT_EQ(dv, v);
+}
+
 template <typename AllocT> class DeviceVectorTest : public testing::Test {
 public:
   using DeviceVec = dr::shp::device_vector<typename AllocT::value_type, AllocT>;
