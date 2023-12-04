@@ -21,6 +21,7 @@ protected:
   std::array<std::size_t, 2> extents2d = {xdim, ydim};
   std::array<std::size_t, 2> extents2dt = {ydim, xdim};
   std::array<std::size_t, 3> extents3d = {xdim, ydim, zdim};
+  std::array<std::size_t, 3> extents3dt = {zdim, xdim, ydim};
 
   // 2d data with 1d decomposition
   dr::mhp::distribution dist2d_1d = dr::mhp::distribution().granularity(ydim);
@@ -164,6 +165,7 @@ TEST_F(Mdarray, StaticAssert) {
   xhp::distributed_mdarray<T, 2> mdarray(extents2d);
   static_assert(rng::forward_range<decltype(mdarray)>);
   static_assert(dr::distributed_range<decltype(mdarray)>);
+  static_assert(dr::distributed_mdspan_range<decltype(mdarray)>);
 }
 
 TEST_F(Mdarray, Basic) {
@@ -217,7 +219,6 @@ TEST_F(Mdarray, GridExtents) {
   auto x = 0;
   for (std::size_t i = 0; i < grid.extent(0); i++) {
     x += grid(i, 0).mdspan().extent(0);
-    dr::drlog.debug("x: {}\n", x);
   }
   EXPECT_EQ(mdarray.mdspan().extent(0), x);
 
@@ -314,6 +315,50 @@ TEST_F(Mdarray, MdForEach3d) {
   EXPECT_EQ(xhp::views::take(mdarray.view(), local.size()), local)
       << mdrange_message(mdarray);
 }
+
+TEST_F(Mdarray, Transpose2D) {
+  if (dr::mhp::use_sycl()) {
+    return;
+  }
+
+  xhp::distributed_mdarray<double, 2> md_in(extents2d), md_out(extents2dt);
+  xhp::iota(md_in, 100);
+  xhp::iota(md_out, 200);
+
+  md::mdarray<T, dr::__detail::md_extents<2>> local(extents2dt);
+  for (std::size_t i = 0; i < md_out.extent(0); i++) {
+    for (std::size_t j = 0; j < md_out.extent(1); j++) {
+      local(i, j) = md_in.mdspan()(j, i);
+    }
+  }
+
+  xhp::transpose(md_in, md_out);
+  EXPECT_EQ(md_out.mdspan(), local);
+}
+
+#if 0
+TEST_F(Mdarray, Transpose3D) {
+  if (dr::mhp::use_sycl()) {
+    return;
+  }
+
+  xhp::distributed_mdarray<double, 3> md_in(extents3d), md_out(extents3dt);
+  xhp::iota(md_in, 100);
+  xhp::iota(md_out, 200);
+
+  md::mdarray<T, dr::__detail::md_extents<3>> local(extents3dt);
+  for (std::size_t i = 0; i < md_out.extent(0); i++) {
+    for (std::size_t j = 0; j < md_out.extent(1); j++) {
+      for (std::size_t k = 0; k < md_out.extent(2); k++) {
+        local(i, j, k) = md_in.mdspan()(j, k, i);
+      }
+    }
+  }
+
+  xhp::transpose(md_in, md_out);
+  EXPECT_EQ(md_out.mdspan(), local);
+}
+#endif
 
 using Submdspan = Mdspan;
 

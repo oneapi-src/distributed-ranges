@@ -31,11 +31,17 @@ public:
   md_segment() {}
   md_segment(index_type origin, BaseSegment segment, index_type tile_shape)
       : base_(segment), origin_(origin),
-        mdspan_(local_tile(segment, tile_shape)) {}
+        mdspan_(local_tile(segment, tile_shape)) {
+    dr::drlog.debug(dr::logger::mdspan_view,
+                    "md_segment\n  origin: {}\n  tile shape: {}\n", origin,
+                    tile_shape);
+  }
 
   // view_interface uses below to define everything else
   auto begin() const { return base_.begin(); }
   auto end() const { return base_.end(); }
+
+  auto reserved() const { return base_.reserved(); }
 
   auto halo() const { return dr::mhp::halo(base_); }
 
@@ -107,13 +113,16 @@ private:
       std::size_t segment_index = std::get<0>(v);
       std::size_t end = (segment_index + 1) * tile_shape[0];
       if (end > full_shape[0]) {
-        clipped[0] -= end - full_shape[0];
+        clipped[0] -= std::min(end - full_shape[0], clipped[0]);
       }
       return __detail::md_segment(
           segment_index_to_global_origin(segment_index, full_shape, tile_shape),
           std::get<1>(v), clipped);
     };
 
+    dr::drlog.debug(dr::logger::mdspan_view,
+                    "mdspan_view\n  full shape: {}\n  tile shape: {}\n",
+                    full_shape, tile_shape);
     // use bounded_enumerate so we get a std::ranges::common_range
     return dr::__detail::bounded_enumerate(dr::ranges::segments(base)) |
            rng::views::transform(make_md);

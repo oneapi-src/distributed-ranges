@@ -56,7 +56,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  ../common/distributed_vector.cpp
+  mdstar.cpp
   )
 # cmake-format: on
 

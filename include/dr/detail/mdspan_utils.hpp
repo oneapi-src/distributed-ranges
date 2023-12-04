@@ -92,15 +92,18 @@ void mdspan_foreach(md_extents<Rank> extents, Op op,
 }
 
 // Pack mdspan into contiguous container
-void mdspan_copy(mdspan_like auto src, std::forward_iterator auto dst) {
+template <mdspan_like Src>
+auto mdspan_copy(Src src, std::forward_iterator auto dst) {
   auto pack = [src, &dst](auto index) { *dst++ = src(index); };
   mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
+  return dst;
 }
 
 // unpack contiguous container into mdspan
-void mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst) {
+auto mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst) {
   auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
   mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
+  return src;
 }
 
 // copy mdspan to mdspan
@@ -171,15 +174,36 @@ namespace MDSPAN_NAMESPACE {
 
 template <dr::__detail::mdspan_like M1, dr::__detail::mdspan_like M2>
 bool operator==(const M1 &m1, const M2 &m2) {
+  static_assert(M1::rank() == M2::rank());
   // See mdspan_foreach for a way to generalize this to all ranks
-  assert(m1.rank() == 2 && m2.rank() == 2);
-  for (std::size_t i = 0; i < m1.extent(0); i++) {
-    for (std::size_t j = 0; j < m1.extent(1); j++) {
-      if (m1(i, j) != m2(i, j)) {
+  if constexpr (M1::rank() == 1) {
+    for (std::size_t i = 0; i < m1.extent(0); i++) {
+      if (m1(i) != m2(i)) {
         return false;
       }
     }
+  } else if constexpr (M1::rank() == 2) {
+    for (std::size_t i = 0; i < m1.extent(0); i++) {
+      for (std::size_t j = 0; j < m1.extent(1); j++) {
+        if (m1(i, j) != m2(i, j)) {
+          return false;
+        }
+      }
+    }
+  } else if constexpr (M1::rank() == 3) {
+    for (std::size_t i = 0; i < m1.extent(0); i++) {
+      for (std::size_t j = 0; j < m1.extent(1); j++) {
+        for (std::size_t k = 0; k < m1.extent(2); k++) {
+          if (m1(i, j, k) != m2(i, j, k)) {
+            return false;
+          }
+        }
+      }
+    }
+  } else {
+    assert(false);
   }
+
   return true;
 }
 
@@ -194,3 +218,11 @@ inline std::ostream &operator<<(std::ostream &os, const M &m) {
 }
 
 } // namespace MDSPAN_NAMESPACE
+
+namespace dr {
+
+template <typename R>
+concept distributed_mdspan_range =
+    distributed_range<R> && requires(R &r) { r.mdspan(); };
+
+} // namespace dr

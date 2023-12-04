@@ -218,10 +218,12 @@ private:
 public:
   using difference_type = std::ptrdiff_t;
   dv_segment() = default;
-  dv_segment(DV *dv, std::size_t segment_index, std::size_t size) {
+  dv_segment(DV *dv, std::size_t segment_index, std::size_t size,
+             std::size_t reserved) {
     dv_ = dv;
     segment_index_ = segment_index;
     size_ = size;
+    reserved_ = reserved;
     assert(dv_ != nullptr);
   }
 
@@ -232,6 +234,7 @@ public:
 
   auto begin() const { return iterator(dv_, segment_index_, 0); }
   auto end() const { return begin() + size(); }
+  auto reserved() const { return reserved_; }
 
   auto operator[](difference_type n) const { return *(begin() + n); }
 
@@ -241,6 +244,7 @@ private:
   DV *dv_ = nullptr;
   std::size_t segment_index_;
   std::size_t size_;
+  std::size_t reserved_;
 }; // dv_segment
 
 //

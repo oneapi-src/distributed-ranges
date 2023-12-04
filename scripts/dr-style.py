@@ -105,10 +105,6 @@ include_rules = [
         "use namespace __detail {",
     ),
     (
-        r"(?<!comm)\.size\(\)",
-        "use rng::size()",
-    ),
-    (
         r"\.empty\(\)",
         "use rng::empty()",
     ),

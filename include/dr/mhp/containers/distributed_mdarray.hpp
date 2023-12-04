@@ -12,6 +12,7 @@ namespace dr::mhp {
 template <typename T, std::size_t Rank> class distributed_mdarray {
 public:
   using shape_type = dr::__detail::dr_extents<Rank>;
+  static constexpr auto rank() { return Rank; }
 
   distributed_mdarray(dr::__detail::dr_extents<Rank> shape,
                       distribution dist = distribution())

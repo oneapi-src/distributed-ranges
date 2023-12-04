@@ -9,18 +9,15 @@
 #include <vendor/source_location/source_location.hpp>
 
 #include <dr/detail/format_shim.hpp>
+#include <dr/detail/ranges_shim.hpp>
 
 namespace dr {
 
 class logger {
 public:
-  enum filters { base, for_each, last };
+  enum filters { base, for_each, transpose, mdspan_view, last };
 
-  logger() {
-    for (auto &e : enabled_) {
-      e = true;
-    }
-  }
+  logger() { rng::fill(enabled_, true); }
 
   void set_file(std::ofstream &fout) { fout_ = &fout; }
 
@@ -30,9 +27,7 @@ public:
     }
 
     // Disable everything
-    for (auto &e : enabled_) {
-      e = false;
-    }
+    rng::fill(enabled_, false);
 
     // Enabled selected filters
     for (const auto &name : names) {
@@ -93,7 +88,8 @@ private:
   std::ofstream *fout_ = nullptr;
   bool filtered_ = false;
   std::array<bool, filters::last> enabled_;
-  std::array<std::string, filters::last> filter_names_ = {"base", "for_each"};
+  std::array<std::string, filters::last> filter_names_ = {
+      "base", "for_each", "transpose", "mdspan_view"};
 };
 
 inline logger drlog;
