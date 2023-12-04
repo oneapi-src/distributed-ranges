@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
     ("drhelp", "Print help")
     ("log", "Enable logging")
     ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
+    ("log-filter", "Filter the log", cxxopts::value<std::vector<std::string>>())
     ("device-memory", "Use device memory")
     ("sycl", "Execute on SYCL device");
   // clang-format on
@@ -68,6 +69,9 @@ int main(int argc, char *argv[]) {
     logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
                                     fmt::format(".{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
+    if (options.count("log-filter")) {
+      dr::drlog.filter(options["log-filter"].as<std::vector<std::string>>());
+    }
   }
 
   dr_init();

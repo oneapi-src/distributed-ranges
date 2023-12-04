@@ -20,7 +20,7 @@ namespace dr::mhp {
 
 /// Collective for_each on distributed range
 void for_each(dr::distributed_range auto &&dr, auto op) {
-  dr::drlog.debug("for_each: parallel execution\n");
+  dr::drlog.debug(dr::logger::for_each, "for_each: parallel execution\n");
   if (rng::empty(dr)) {
     return;
   }

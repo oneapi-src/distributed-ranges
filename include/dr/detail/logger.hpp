@@ -12,49 +12,89 @@
 
 namespace dr {
 
-#if DR_FORMAT
-
 class logger {
 public:
+  enum filters { base, for_each, last };
+
+  logger() {
+    for (auto &e : enabled_) {
+      e = true;
+    }
+  }
+
   void set_file(std::ofstream &fout) { fout_ = &fout; }
+
+  void filter(const std::vector<std::string> &names) {
+    if (names.size() == 0) {
+      return;
+    }
+
+    // Disable everything
+    for (auto &e : enabled_) {
+      e = false;
+    }
+
+    // Enabled selected filters
+    for (const auto &name : names) {
+      std::size_t index = filters::last;
+      for (std::size_t i = 0; i < filter_names_.size(); i++) {
+        if (name == filter_names_[i]) {
+          index = i;
+        }
+      }
+      if (index == filters::last) {
+        std::cerr << "Ignoring unrecognized filter: " << name << "\n";
+      } else {
+        enabled_[index] = true;
+      }
+    }
+  }
+
+#ifdef DR_FORMAT
 
   template <typename... Args>
   void debug(const nostd::source_location &location,
              fmt::format_string<Args...> format, Args &&...args) {
-    if (fout_) {
+    if (fout_ && enabled_[filters::base]) {
       *fout_ << fmt::format(format, std::forward<Args>(args)...) << " <"
              << location.file_name() << ":" << location.line() << ">\n";
       fout_->flush();
     }
   }
+
   template <typename... Args>
   void debug(fmt::format_string<Args...> format, Args &&...args) {
-    if (fout_) {
+    debug(filters::base, format, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  void debug(filters filter, fmt::format_string<Args...> format,
+             Args &&...args) {
+    if (fout_ && enabled_[filter]) {
       *fout_ << fmt::format(format, std::forward<Args>(args)...);
       fout_->flush();
     }
   }
 
-private:
-  std::ofstream *fout_ = nullptr;
-};
-
 #else
-
-class logger {
-public:
-  void set_file(std::ofstream &fout) { fout_ = &fout; }
 
   template <typename... Args>
   void debug(const nostd::source_location &location, std::string format,
              Args &&...args) {}
+
   template <typename... Args> void debug(std::string format, Args &&...args) {}
+
+  template <typename... Args>
+  void debug(filters filter, std::string format, Args &&...args) {}
+
+#endif
 
 private:
   std::ofstream *fout_ = nullptr;
+  bool filtered_ = false;
+  std::array<bool, filters::last> enabled_;
+  std::array<std::string, filters::last> filter_names_ = {"base", "for_each"};
 };
-
-#endif
 
 inline logger drlog;
 
