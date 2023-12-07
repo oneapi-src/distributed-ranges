@@ -113,11 +113,12 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       auto local_in = dr::ranges::__detail::local(global_in);
       rng::range_value_t<R> back;
       if constexpr (is_exclusive) {
-        // TODO: both sycl_get are executed sequetially, add method similar to
-        // sycl_get to read two (N) values in parallel
-        back = use_sycl ? binary_op(sycl_get(local_out.back()),
-                                    sycl_get(local_in.back()))
-                        : binary_op(local_out.back(), local_in.back());
+        if (use_sycl) {
+          auto ret = sycl_get(local_out.back(), local_in.back());
+          back = binary_op(ret.first, ret.second);
+        } else {
+          back = binary_op(local_out.back(), local_in.back());
+        }
       } else {
         back = use_sycl ? sycl_get(local_out.back()) : local_out.back();
       }

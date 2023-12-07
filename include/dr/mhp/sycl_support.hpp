@@ -20,6 +20,15 @@ template <typename T> T sycl_get(T &v) {
   return temp;
 }
 
+template <typename T> auto sycl_get(T &v1, T &v2) {
+  std::pair<T, T> temp;
+  auto ev1 = sycl_queue().memcpy(&temp.first, &v1, sizeof(v1));
+  auto ev2 = sycl_queue().memcpy(&temp.second, &v2, sizeof(v2));
+  ev1.wait();
+  ev2.wait();
+  return temp;
+}
+
 template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
   sycl_queue().memcpy(dst, begin, (end - begin) * sizeof(T)).wait();
 }
@@ -63,6 +72,12 @@ namespace dr::mhp::__detail {
 template <typename T> T sycl_get(T &v) {
   assert(false);
   return v;
+}
+
+// define here to avoid ifdefs where it is called
+template <typename T> auto sycl_get(T &v1, T &v2) {
+  assert(false);
+  return std::pair<T, T>{v1, v2};
 }
 
 template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
