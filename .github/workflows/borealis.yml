@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: "Borealis"
+
+on:
+  workflow_dispatch:
+  # 8am UTC is 12am PST, 1am PDT
+  schedule:
+    - cron: '0 8 * * *'
+
+jobs:
+  borealis:
+    runs-on: borealis
+    # It can finish in 30 minutes, but sometimes
+    # borealis is slow and their are long pauses
+    timeout-minutes: 480
+    name: "Borealis Benchmarking"
+    env:
+      CXX: icpx
+      CTEST_OUTPUT_ON_FAILURE: 1
+    steps:
+    - uses: actions/checkout@v4
+    # Install python dependencies on login node because it needs an
+    # internet connection
+    - name: Install benchmark framework
+      run: |
+        /usr/bin/python3.10 -m venv venv
+        source venv/bin/activate
+        pip install src-python/drbench
+    # Build Cmake files on login node because it needs an
+    # internet connection to fetch dependencies
+    - name: Setup CMake
+      run: MKL_DIR=${MKLROOT}/lib/cmake/mkl TBB_DIR=${TBBROOT}/lib/cmake/tbb cmake -B build -DENABLE_SYCL=on .
+    - name: Single node
+      run: |
+        # These nodes worked in the past x1002c6s5b0n0+x1002c6s6b0n0
+        qsub -N "DR-bmk" -Wblock=true -l walltime=02:00:00 -j oe -o build/qsub-output-1.txt scripts/borealis-benchmark.sh ; sleep 10 ; cat build/*-1.txt
+    - name: Upload benchmark results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: log-borealis-bench
+        path: |
+          build/*.txt
+          build/benchmarks/gbench/*.json
+          build/benchmarks/gbench/*.png
+          build/benchmarks/gbench/*.csv
+
+  publish:
+    needs: [borealis]
+    runs-on: dds-base
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Download benchmark results
+      uses: actions/download-artifact@v3
+      with:
+        name: log-borealis-bench
+        path: bench/borealis
+    - name: Checkout gh-pages
+      uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: gh-pages
+    - name: Publish to github pages
+      run: |
+        touch gh-pages/.nojekyll
+        mkdir -p gh-pages/bench
+        rm -rf gh-pages/bench/borealis
+        cp -r bench/borealis gh-pages/bench
+        cd gh-pages
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .
+        # Ignore errors because no updates returns an error status.
+        git commit --reset-author --amend -m "Update from github actions"
+        git push --force origin gh-pages
