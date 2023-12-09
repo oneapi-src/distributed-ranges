@@ -4,11 +4,12 @@
 
 # procedure of adding a new python package to our repo
 # 1. edit base-requirements.txt
-# 2. run scripts/regenerate-requitements-txt.sh
+# 2. run scripts/regenerate-requirements-txt.sh
 # 3. review changes made in requirements.txt and if ok, commit changes
 
 # Testing
 pre-commit
+reuse
 
 # Documentation
 breathe
