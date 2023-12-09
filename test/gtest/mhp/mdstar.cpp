@@ -21,7 +21,7 @@ protected:
   std::array<std::size_t, 2> extents2d = {xdim, ydim};
   std::array<std::size_t, 2> extents2dt = {ydim, xdim};
   std::array<std::size_t, 3> extents3d = {xdim, ydim, zdim};
-  std::array<std::size_t, 3> extents3dt = {zdim, xdim, ydim};
+  std::array<std::size_t, 3> extents3dt = {ydim, zdim, xdim};
 
   // 2d data with 1d decomposition
   dr::mhp::distribution dist2d_1d = dr::mhp::distribution().granularity(ydim);
@@ -597,7 +597,7 @@ TEST_F(MdspanUtil, Copy) {
   EXPECT_EQ(a, b);
 }
 
-TEST_F(MdspanUtil, Transpose) {
+TEST_F(MdspanUtil, Transpose2D) {
   std::vector<T> a(xdim * ydim);
   std::vector<T> b(xdim * ydim);
   std::vector<T> c(xdim * ydim);
@@ -607,21 +607,54 @@ TEST_F(MdspanUtil, Transpose) {
   md::mdspan mda(a.data(), extents2d);
   md::mdspan mdc(c.data(), extents2dt);
 
+  md::mdarray<T, dr::__detail::md_extents<2>> ref(extents2dt);
+  std::vector<T> ref_packed(xdim * ydim);
+  T *rp = ref_packed.data();
+  for (std::size_t i = 0; i < ref.extent(0); i++) {
+    for (std::size_t j = 0; j < ref.extent(1); j++) {
+      ref(i, j) = mda(j, i);
+      *rp++ = ref(i, j);
+    }
+  }
+
   // Transpose view
   dr::__detail::mdtranspose<decltype(mda), 1, 0> mdat(mda);
-  auto tv_message = fmt::format("mda:\n{}mdat:\n{}", mda, mdat);
-  EXPECT_EQ(mda(3, 1), mdat(1, 3)) << tv_message;
-  EXPECT_EQ(mda(3, 1), mdat(std::array<std::size_t, 2>({1, 3}))) << tv_message;
+  EXPECT_EQ(ref, mdat);
 
   // Transpose pack
   dr::__detail::mdspan_copy(mdat, b.begin());
-  EXPECT_EQ(a[3 * ydim + 1], b[1 * xdim + 3])
-      << fmt::format("mdat:\n{}b:\n{}", mdat, b);
+  EXPECT_EQ(ref_packed, b);
 
   // Transpose copy
   dr::__detail::mdspan_copy(mdat, mdc);
-  EXPECT_EQ(mdat(3, 1), mdc(3, 1))
-      << fmt::format("mdat:\n{}mdc:\n{}", mdat, mdc);
+  EXPECT_EQ(mdat, mdc);
+}
+
+TEST_F(MdspanUtil, Transpose3D) {
+  md::mdarray<T, dr::__detail::md_extents<3>> md(extents3d),
+      mdt_ref(extents3dt);
+  T *base = &md(0, 0, 0);
+  rng::iota(rng::subrange(base, base + md.size()), 100);
+
+  std::vector<T> ref_packed(md.size()), packed(md.size());
+  ;
+  T *rp = ref_packed.data();
+  for (std::size_t i = 0; i < mdt_ref.extent(0); i++) {
+    for (std::size_t j = 0; j < mdt_ref.extent(1); j++) {
+      for (std::size_t k = 0; k < mdt_ref.extent(2); k++) {
+        mdt_ref(i, j, k) = md(k, i, j);
+        *rp++ = mdt_ref(i, j, k);
+      }
+    }
+  }
+
+  // Transpose view
+  dr::__detail::mdtranspose<decltype(md), 2, 0, 1> mdt(md);
+  EXPECT_EQ(mdt_ref.to_mdspan(), mdt);
+
+  // Transpose pack
+  dr::__detail::mdspan_copy(mdt, packed.begin());
+  EXPECT_EQ(ref_packed, packed);
 }
 
 #endif // Skip for gcc 10.4

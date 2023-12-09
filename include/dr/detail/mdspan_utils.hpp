@@ -8,6 +8,18 @@
 
 namespace dr::__detail {
 
+template <std::size_t Rank> auto dims(md::dextents<std::size_t, Rank> extents) {
+  if constexpr (Rank == 1) {
+    return std::tuple(extents.extent(0));
+  } else if constexpr (Rank == 2) {
+    return std::tuple(extents.extent(0), extents.extent(1));
+  } else if constexpr (Rank == 3) {
+    return std::tuple(extents.extent(0), extents.extent(1), extents.extent(2));
+  } else {
+    assert(false);
+  }
+}
+
 template <typename Index> auto shape_to_strides(const Index &shape) {
   const std::size_t rank = rng::size(shape);
   Index strides;
@@ -115,12 +127,15 @@ void mdspan_copy(mdspan_like auto src, mdspan_like auto dst) {
 
 // For operator(), rearrange indices according to template arguments.
 //
-// For mdtranspose<mdspan2d, 1, 0> a(b);
+// For mdtranspose<mdspan3d, 2, 0, 1> a(b);
 //
-// a(3, 4) will do b(4, 3)
+// a(1, 2, 3) references b(3, 1, 2)
 //
 template <typename Mdspan, std::size_t... Is>
 class mdtranspose : public Mdspan {
+private:
+  static constexpr std::size_t rank_ = Mdspan::rank();
+
 public:
   // Inherit constructors from base class
   mdtranspose(Mdspan &mdspan) : Mdspan(mdspan) {}
@@ -131,12 +146,19 @@ public:
     std::tuple index(indexes...);
     return Mdspan::operator()(std::get<Is>(index)...);
   }
-  auto &operator()(std::array<std::size_t, Mdspan::rank()> index) const {
+  auto &operator()(std::array<std::size_t, rank_> index) const {
     return Mdspan::operator()(index[Is]...);
   }
 
   auto extents() const {
-    return md_extents<Mdspan::rank()>(Mdspan::extent(Is)...);
+    // To get the extents, we must invert the index mapping
+    std::array<std::size_t, rank_> from_transposed({Is...});
+    std::array<std::size_t, rank_> extents_t;
+    for (std::size_t i = 0; i < rank_; i++) {
+      extents_t[from_transposed[i]] = Mdspan::extent(i);
+    }
+
+    return md_extents<rank_>(extents_t);
   }
   auto extent(std::size_t d) const { return extents().extent(d); }
 };
@@ -174,7 +196,13 @@ namespace MDSPAN_NAMESPACE {
 
 template <dr::__detail::mdspan_like M1, dr::__detail::mdspan_like M2>
 bool operator==(const M1 &m1, const M2 &m2) {
-  static_assert(M1::rank() == M2::rank());
+  constexpr std::size_t rank1 = M1::rank(), rank2 = M2::rank();
+  static_assert(rank1 == rank2);
+  if (dr::__detail::dims<rank1>(m1.extents()) !=
+      dr::__detail::dims<rank1>(m2.extents())) {
+    return false;
+  }
+
   // See mdspan_foreach for a way to generalize this to all ranks
   if constexpr (M1::rank() == 1) {
     for (std::size_t i = 0; i < m1.extent(0); i++) {
