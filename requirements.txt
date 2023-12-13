@@ -4,7 +4,7 @@
 
 accessible-pygments==0.0.4
 alabaster==0.7.13
-Babel==2.13.1
+Babel==2.14.0
 beautifulsoup4==4.12.2
 binaryornot==0.4.4
 boolean.py==4.0
