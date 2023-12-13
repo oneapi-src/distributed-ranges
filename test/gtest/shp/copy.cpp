@@ -43,6 +43,24 @@ TYPED_TEST(CopyTest, local2dist_sync) {
   EXPECT_EQ(*ret_it, 9);
 }
 
+TYPED_TEST(CopyTest, dist2local_range_sync) {
+  const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5};
+  typename TestFixture::LocalVec local_vec = {0, 0, 0, 0, 0, 9};
+  auto ret_it = dr::shp::copy(dist_vec, rng::begin(local_vec));
+  EXPECT_TRUE(
+      equal(local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5, 9}));
+  EXPECT_EQ(*ret_it, 9);
+}
+
+TYPED_TEST(CopyTest, local2dist_range_sync) {
+  const typename TestFixture::LocalVec local_vec = {1, 2, 3, 4, 5};
+  typename TestFixture::DistVec dist_vec = {0, 0, 0, 0, 0, 9};
+  auto ret_it = dr::shp::copy(local_vec, rng::begin(dist_vec));
+  EXPECT_TRUE(
+      equal(dist_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5, 9}));
+  EXPECT_EQ(*ret_it, 9);
+}
+
 TYPED_TEST(CopyTest, dist2local_async_can_interleave) {
   const typename TestFixture::DistVec dist_vec = {1, 2, 3, 4, 5};
   typename TestFixture::LocalVec local_vec = {0, 0, 0, 0, 0, 0, 0, 0};
