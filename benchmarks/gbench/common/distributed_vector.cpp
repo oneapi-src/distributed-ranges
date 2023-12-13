@@ -27,7 +27,7 @@ static void Fill_DR(benchmark::State &state) {
 
 DR_BENCHMARK(Fill_DR);
 
-static void Fill_Serial(benchmark::State &state) {
+void Fill_Serial(benchmark::State &state) {
   T init = 0;
   std::vector<T> a(default_vector_size, init);
   Stats stats(state, 0, sizeof(T) * a.size());
@@ -39,7 +39,10 @@ static void Fill_Serial(benchmark::State &state) {
   }
 }
 
+// temporarily disabled (sycl mhp) - issue DRA-24
+#ifdef BENCH_SHP
 DR_BENCHMARK(Fill_Serial);
+#endif
 
 #ifdef SYCL_LANGUAGE_VERSION
 
