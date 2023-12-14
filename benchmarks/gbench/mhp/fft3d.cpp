@@ -17,22 +17,27 @@ int comm_size;
 void init_matrix(auto &mat) {
 
   constexpr double TWOPI = 6.2831853071795864769;
-  constexpr int  H1 = -1, H2 = -2, H3 = -3;
+  constexpr int H1 = -1, H2 = -2, H3 = -3;
   int N1 = mat.extent(2), N2 = mat.extent(1), N3 = mat.extent(0);
 
-  auto moda = [](int K, int L, int M) { return (double)(((long long)K * L) % M); };
+  auto moda = [](int K, int L, int M) {
+    return (double)(((long long)K * L) % M);
+  };
 
   auto init = [=](auto index, auto v) {
-    auto phase = TWOPI * (moda(static_cast<int>(index[2]), H1, N1) / N1
-                        + moda(static_cast<int>(index[1]), H2, N2) / N2
-                        + moda(static_cast<int>(index[0]), H3, N3) / N3);
-    std::get<0>(v) = {std::cos(phase) / (N3*N2*N1), std::sin(phase) / (N3*N2*N1)};
+    auto phase = TWOPI * (moda(static_cast<int>(index[2]), H1, N1) / N1 +
+                          moda(static_cast<int>(index[1]), H2, N2) / N2 +
+                          moda(static_cast<int>(index[0]), H3, N3) / N3);
+    std::get<0>(v) = {std::cos(phase) / (N3 * N2 * N1),
+                      std::sin(phase) / (N3 * N2 * N1)};
   };
 
   dr::mhp::for_each(init, mat);
 }
 
-template <typename T> void transpose_matrix(auto &i_mat, auto &o_mat) {}
+template <typename T> void transpose_matrix(auto &i_mat, auto &o_mat) {
+  dr::mhp::transpose(i_mat, o_mat);
+}
 
 template <typename T> struct dft_precision {
   static const oneapi::mkl::dft::precision value =
@@ -48,8 +53,8 @@ template <typename T> class distributed_fft {
   using fft_plan_t =
       oneapi::mkl::dft::descriptor<dft_precision<T>::value,
                                    oneapi::mkl::dft::domain::COMPLEX>;
-  fft_plan_t* fft_1d_plan;
-  fft_plan_t* fft_2d_plan;
+  fft_plan_t *fft_1d_plan;
+  fft_plan_t *fft_2d_plan;
 
 public:
   explicit distributed_fft(sycl::queue &q, auto &i_slab, auto &o_slab) {
@@ -86,7 +91,8 @@ public:
 
     transpose_matrix(i_mat, o_mat);
 
-    oneapi::mkl::dft::compute_forward(*fft_1d_plan, o_slab.data_handle()).wait();
+    oneapi::mkl::dft::compute_forward(*fft_1d_plan, o_slab.data_handle())
+        .wait();
   }
 
   void compute_backward(auto &i_mat, auto &i_slab, auto &o_mat, auto &o_slab) {
@@ -135,6 +141,7 @@ int do_fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
                       return value_t(a) - value_t(b);
                     });
     auto diff_sum = dr::mhp::reduce(sub_view, value_t{});
+    fmt::print("i_mat:\n{}o_mat:\n{}", i_mat, o_mat);
     fmt::print("Difference {} {} \n", diff_sum.real(), diff_sum.imag());
   }
 
