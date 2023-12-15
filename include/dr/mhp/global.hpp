@@ -222,13 +222,21 @@ public:
     if (sz == 0) {
       return nullptr;
     }
-#ifdef SYCL_LANGUAGE_VERSION
-    if (mhp::use_sycl()) {
-      return sycl::malloc<T>(sz, sycl_queue(), sycl_mem_kind());
-    }
-#endif
 
-    return std_allocator_.allocate(sz);
+    T *mem = nullptr;
+
+    if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+      mem = sycl::malloc<T>(sz, sycl_queue(), sycl_mem_kind());
+#else
+      assert(false);
+#endif
+    } else {
+      mem = std_allocator_.allocate(sz);
+    }
+
+    assert(mem != nullptr);
+    return mem;
   }
 
   void deallocate(T *ptr, std::size_t sz) {
