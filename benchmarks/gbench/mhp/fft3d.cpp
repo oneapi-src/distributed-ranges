@@ -7,6 +7,26 @@
 #include "mpi.h"
 #include "oneapi/mkl/dfti.hpp"
 
+namespace std {
+
+template <typename Base>
+inline std::ostream &operator<<(std::ostream &os, const std::complex<Base> &c) {
+  os << fmt::format("\n{} + {}i", c.real(), c.imag());
+  return os;
+}
+
+} // namespace std
+
+template <typename Base>
+struct fmt::formatter<std::complex<Base>, char>
+    : public formatter<string_view> {
+  template <typename FmtContext>
+  auto format(std::complex<Base> c, FmtContext &ctx) const {
+    format_to(ctx.out(), "{:6f}+{:6f}i", c.real(), c.imag());
+    return ctx.out();
+  }
+};
+
 #include "dr/mhp.hpp"
 
 MPI_Comm comm;
@@ -106,12 +126,27 @@ public:
   }
 };
 
+using real_t = double;
+using value_t = std::complex<real_t>;
+
+void print_mat(const auto &mat) {
+  auto m = mat.mdspan();
+
+  for (std::size_t i = 0; i < m.extent(0); i++) {
+    for (std::size_t j = 0; j < m.extent(1); j++) {
+      for (std::size_t k = 0; k < m.extent(2); k++) {
+        fmt::print("{} ", value_t(m(i, j, k)));
+      }
+      fmt::print("\n");
+    }
+    fmt::print("\n");
+  }
+}
+
 int do_fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
   sycl::queue q = dr::mhp::select_queue();
   dr::mhp::init(q);
 
-  using real_t = double;
-  using value_t = std::complex<real_t>;
   using mat = dr::mhp::distributed_mdarray<value_t, 3>;
   std::array<std::size_t, 3> i_shape({x, y, z});
   std::array<std::size_t, 3> o_shape({y, z, x});
@@ -132,6 +167,8 @@ int do_fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
 
   if (nreps == 0) { // debug
     mat t_mat(i_shape);
+    init_matrix(t_mat);
+
     fft3d.compute_forward(i_mat, i_slab, o_mat, o_slab);
     fft3d.compute_backward(o_mat, o_slab, i_mat, i_slab);
 
@@ -141,7 +178,10 @@ int do_fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
                       return value_t(a) - value_t(b);
                     });
     auto diff_sum = dr::mhp::reduce(sub_view, value_t{});
-    fmt::print("i_mat:\n{}o_mat:\n{}", i_mat, o_mat);
+    fmt::print("i_mat:\n");
+    print_mat(i_mat);
+    fmt::print("t_mat:\n");
+    print_mat(t_mat);
     fmt::print("Difference {} {} \n", diff_sum.real(), diff_sum.imag());
   }
 
