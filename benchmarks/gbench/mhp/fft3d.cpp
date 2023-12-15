@@ -7,25 +7,7 @@
 #include "mpi.h"
 #include "oneapi/mkl/dfti.hpp"
 
-namespace std {
-
-template <typename Base>
-inline std::ostream &operator<<(std::ostream &os, const std::complex<Base> &c) {
-  os << fmt::format("\n{} + {}i", c.real(), c.imag());
-  return os;
-}
-
-} // namespace std
-
-template <typename Base>
-struct fmt::formatter<std::complex<Base>, char>
-    : public formatter<string_view> {
-  template <typename FmtContext>
-  auto format(std::complex<Base> c, FmtContext &ctx) const {
-    format_to(ctx.out(), "{:6f}+{:6f}i", c.real(), c.imag());
-    return ctx.out();
-  }
-};
+bool verbose = false;
 
 #include "dr/mhp.hpp"
 
@@ -129,9 +111,20 @@ public:
 using real_t = double;
 using value_t = std::complex<real_t>;
 
-void print_mat(const auto &mat) {
-  auto m = mat.mdspan();
+template <typename Base>
+struct fmt::formatter<std::complex<Base>, char>
+    : public formatter<string_view> {
+  template <typename FmtContext>
+  auto format(std::complex<Base> c, FmtContext &ctx) const {
+    format_to(ctx.out(), "{}+{}i", c.real(), c.imag());
+    return ctx.out();
+  }
+};
 
+void print_matrix(auto title, const auto &mat) {
+  fmt::print("{}:\n", title);
+
+  auto m = mat.mdspan();
   for (std::size_t i = 0; i < m.extent(0); i++) {
     for (std::size_t j = 0; j < m.extent(1); j++) {
       for (std::size_t k = 0; k < m.extent(2); k++) {
@@ -178,11 +171,11 @@ int do_fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
                       return value_t(a) - value_t(b);
                     });
     auto diff_sum = dr::mhp::reduce(sub_view, value_t{});
-    fmt::print("i_mat:\n");
-    print_mat(i_mat);
-    fmt::print("t_mat:\n");
-    print_mat(t_mat);
-    fmt::print("Difference {} {} \n", diff_sum.real(), diff_sum.imag());
+    if (verbose) {
+      print_matrix("i_mat", i_mat);
+      print_matrix("t_mat", t_mat);
+    }
+    fmt::print("Difference {}\n", diff_sum);
   }
 
   for (int iter = 0; iter < nreps; ++iter) {
@@ -203,8 +196,10 @@ int main(int argc, char *argv[]) {
   cxxopts::Options options_spec(argv[0], "fft3d");
   // clang-format off
   options_spec.add_options()
-    ("n", "Number of repetitions", cxxopts::value<std::size_t>()->default_value("1"))
-    ("l,log", "enable logging")
+    ("n", "problem size", cxxopts::value<std::size_t>()->default_value("8"))
+    ("r,repetitions", "Number of repetitions", cxxopts::value<std::size_t>()->default_value("0"))
+    ("log", "enable logging")
+    ("verbose", "verbose output")
     ("h,help", "Print help");
   // clang-format on
 
@@ -222,10 +217,15 @@ int main(int argc, char *argv[]) {
     dr::drlog.set_file(*logfile);
   }
 
+  if (options.count("verbose")) {
+    verbose = true;
+  }
+
+  // 512^3 up to 3072
   std::size_t x = 8;
   std::size_t y = 8;
   std::size_t z = 8;
-  std::size_t nreps = options["n"].as<std::size_t>();
+  std::size_t nreps = options["repetitions"].as<std::size_t>();
 
   do_fft(nreps, x, y, z);
 
