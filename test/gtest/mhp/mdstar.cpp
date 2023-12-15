@@ -336,7 +336,6 @@ TEST_F(Mdarray, Transpose2D) {
   EXPECT_EQ(md_out.mdspan(), local);
 }
 
-#if 0
 TEST_F(Mdarray, Transpose3D) {
   if (dr::mhp::use_sycl()) {
     return;
@@ -350,15 +349,14 @@ TEST_F(Mdarray, Transpose3D) {
   for (std::size_t i = 0; i < md_out.extent(0); i++) {
     for (std::size_t j = 0; j < md_out.extent(1); j++) {
       for (std::size_t k = 0; k < md_out.extent(2); k++) {
-        local(i, j, k) = md_in.mdspan()(j, k, i);
+        local(i, j, k) = md_in.mdspan()(k, i, j);
       }
     }
   }
 
   xhp::transpose(md_in, md_out);
-  EXPECT_EQ(md_out.mdspan(), local);
+  EXPECT_EQ(local, md_out.mdspan()) << fmt::format("md_in\n{}", md_in.mdspan());
 }
-#endif
 
 using Submdspan = Mdspan;
 

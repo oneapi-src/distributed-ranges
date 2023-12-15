@@ -8,6 +8,44 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/containers/distributed_mdarray.hpp>
 
+namespace dr::mhp::__detail {
+
+template <typename T> class tmp_buffer {
+public:
+  tmp_buffer(std::size_t size, auto &&candidate) {
+    // Try to use the candidate for storage
+    data_ = candidate.mdspan().data_handle();
+    size_ = size;
+    allocated_data_ = nullptr;
+
+    // Allocate a temporary buffer if it is too small
+    if (size_ > candidate.reserved()) {
+      dr::drlog.debug(
+          dr::logger::transpose,
+          "Allocating a temporary buffer requested size {} candidate size {}\n",
+          size, candidate.reserved());
+      allocated_data_ = __detail::allocator<T>().allocate(size_);
+      data_ = allocated_data_;
+    }
+  }
+
+  T *data() { return data_; }
+
+  ~tmp_buffer() {
+    // release temporary storage
+    if (allocated_data_) {
+      __detail::allocator<T>().deallocate(allocated_data_, size_);
+      allocated_data_ = nullptr;
+    }
+  }
+
+private:
+  T *data_;
+  T *allocated_data_ = nullptr;
+  std::size_t size_;
+};
+}; // namespace dr::mhp::__detail
+
 namespace dr::mhp {
 
 // Transpose mdspan_view. The src is used for temporary storage and is
@@ -28,14 +66,17 @@ void transpose(MR1 &&src, MR2 &&dst) {
     assert(src.grid().extent(i) == 1);
   }
 
+  auto sm = src.mdspan();
+  auto dm = dst.mdspan();
+
   if constexpr (rank1 == 2) {
     // 2d mdspan
 
     // swap dimensions of the src to create the dst
-    assert(src.mdspan().extent(0) == dst.mdspan().extent(1) &&
-           src.mdspan().extent(1) == dst.mdspan().extent(0));
+    assert(sm.extent(0) == dm.extent(1) && sm.extent(1) == dm.extent(0));
 
-    auto src_tile = src.grid()(default_comm().rank(), 0).mdspan();
+    auto src_tile = src.grid()(default_comm().rank(), 0);
+    auto dst_tile = dst.grid()(default_comm().rank(), 0);
 
     // Divide src tile into sub-tiles by taking vertical slices, each
     // sub-tile is sent to a different rank. The sub-tile is transposed
@@ -45,8 +86,6 @@ void transpose(MR1 &&src, MR2 &&dst) {
     // The alltoall assumes all the ranks have equal size data. The
     // last rank may hold less data, but the actual storage size is
     // uniform.
-    std::size_t dst_size = dst.grid()(0, 0).reserved();
-    std::size_t src_size = src.grid()(0, 0).reserved();
     std::size_t sub_tile_size = src.grid()(0, 0).mdspan().extent(0) *
                                 dst.grid()(0, 0).mdspan().extent(0);
     std::size_t sub_tiles_size = sub_tile_size * default_comm().size();
@@ -54,29 +93,19 @@ void transpose(MR1 &&src, MR2 &&dst) {
                     src.grid()(0, 0).mdspan().extent(0),
                     dst.grid()(0, 0).mdspan().extent(0), sub_tile_size);
 
-    // The sub-tiles must be contiguous before sending. Use the dst as
-    // temporary storage.
-    T *tmp_send_buffer = nullptr;
-    T *send_buffer =
-        dst.grid()(default_comm().rank(), 0).mdspan().data_handle();
-    if (dst_size < sub_tiles_size) {
-      dr::drlog.debug(
-          dr::logger::transpose,
-          "Allocating a temporary send buffer dst_size {} sub_tiles_size {}\n",
-          dst_size, sub_tiles_size);
-      tmp_send_buffer = __detail::allocator<T>().allocate(sub_tiles_size);
-      send_buffer = tmp_send_buffer;
-    }
-    T *buffer = send_buffer;
+    // create a send buffer. try to reuse destination for storage
+    __detail::tmp_buffer<T> send_buffer(sub_tiles_size, dst_tile);
+    T *buffer = send_buffer.data();
 
-    index_type start({0, 0}), end({src_tile.extent(0), 0});
+    index_type start({0, 0}), end({src_tile.mdspan().extent(0), 0});
     for (std::size_t i = 0; i < dst.grid().extent(0); i++) {
       auto num_cols = dst.grid()(i, 0).mdspan().extent(0);
 
       end[1] = start[1] + num_cols;
       dr::drlog.debug(dr::logger::transpose, "Packing start: {}, end: {}\n",
                       start, end);
-      auto sub_tile = dr::__detail::make_submdspan(src_tile, start, end);
+      auto sub_tile =
+          dr::__detail::make_submdspan(src_tile.mdspan(), start, end);
       dr::__detail::mdtranspose<decltype(sub_tile), 1, 0> sub_tile_t(sub_tile);
       dr::__detail::mdspan_copy(sub_tile_t, buffer);
       buffer += sub_tile_size;
@@ -84,44 +113,91 @@ void transpose(MR1 &&src, MR2 &&dst) {
     }
 
     // We have packed the src into the send_buffer and no longer need
-    // it. Reuse its space to receive from the other ranks.
-    T *tmp_receive_buffer = nullptr;
-    T *receive_buffer =
-        src.grid()(default_comm().rank(), 0).mdspan().data_handle();
-    if (src_size < sub_tiles_size) {
-      dr::drlog.debug(dr::logger::transpose,
-                      "Allocating a temporary receive buffer src_size {} "
-                      "sub_tiles_size {}\n",
-                      src_size, sub_tiles_size);
-      tmp_receive_buffer = __detail::allocator<T>().allocate(sub_tiles_size);
-      receive_buffer = tmp_receive_buffer;
-    }
-    buffer = receive_buffer;
-    default_comm().alltoall(send_buffer, receive_buffer, sub_tile_size);
-    auto dst_tile = dst.grid()(default_comm().rank(), 0).mdspan();
+    // it. Try to reuse its space for the receive buffer
+    __detail::tmp_buffer<T> receive_buffer(sub_tiles_size, src_tile);
+    buffer = receive_buffer.data();
+    default_comm().alltoall(send_buffer.data(), receive_buffer.data(),
+                            sub_tile_size);
 
     start = {0, 0};
-    end = {dst_tile.extent(0), 0};
+    end = {dst_tile.mdspan().extent(0), 0};
     for (std::size_t i = 0; i < src.grid().extent(0); i++) {
       auto num_cols = src.grid()(i, 0).mdspan().extent(0);
 
       end[1] = start[1] + num_cols;
       dr::drlog.debug(dr::logger::transpose, "Unpacking start: {}, end: {}\n",
                       start, end);
-      auto sub_tile = dr::__detail::make_submdspan(dst_tile, start, end);
+      auto sub_tile =
+          dr::__detail::make_submdspan(dst_tile.mdspan(), start, end);
       dr::__detail::mdspan_copy(buffer, sub_tile);
       buffer += sub_tile_size;
       start[1] += num_cols;
     }
-    if (tmp_send_buffer) {
-      __detail::allocator<T>().deallocate(tmp_send_buffer, sub_tiles_size);
-      tmp_send_buffer = nullptr;
-    }
-    if (tmp_receive_buffer) {
-      __detail::allocator<T>().deallocate(tmp_receive_buffer, sub_tiles_size);
-      tmp_receive_buffer = nullptr;
+  } else if constexpr (rank1 == 3) {
+    // 3d mdspan
+    // The transpose is needed to make the first dimension contiguous.
+    //
+    // i, j, k to j, k, i
+    dr::drlog.debug(dr::logger::transpose,
+                    "transpose src: [{}, {}, {}]  dst: [{}, {}, {}]\n",
+                    sm.extent(0), sm.extent(1), sm.extent(2), dm.extent(0),
+                    dm.extent(1), dm.extent(2));
+
+    assert(sm.extent(0) == dm.extent(2) && sm.extent(1) == dm.extent(0) &&
+           sm.extent(2) == dm.extent(1));
+
+    auto origin_dst_tile = dst.grid()(0, 0, 0).mdspan();
+    auto origin_src_tile = src.grid()(0, 0, 0).mdspan();
+    std::size_t sub_tile_size = origin_src_tile.extent(0) *
+                                origin_dst_tile.extent(0) *
+                                origin_src_tile.extent(1);
+    std::size_t sub_tiles_size = sub_tile_size * default_comm().size();
+
+    // create a send buffer. try to reuse destination for storage
+    __detail::tmp_buffer<T> send_buffer(sub_tiles_size, dst.grid()(0, 0, 0));
+
+    auto src_tile = src.grid()(default_comm().rank(), 0, 0);
+    auto dst_tile = dst.grid()(default_comm().rank(), 0, 0);
+    T *buffer = send_buffer.data();
+
+    index_type start({0, 0, 0}),
+        end({src_tile.mdspan().extent(0), 0, src_tile.mdspan().extent(2)});
+    for (std::size_t i = 0; i < dst.grid().extent(0); i++) {
+      auto num_cols = dst.grid()(i, 0, 0).mdspan().extent(0);
+
+      end[1] = start[1] + num_cols;
+      dr::drlog.debug(dr::logger::transpose, "Packing start: {}, end: {}\n",
+                      start, end);
+      auto sub_tile =
+          dr::__detail::make_submdspan(src_tile.mdspan(), start, end);
+      dr::__detail::mdtranspose<decltype(sub_tile), 2, 0, 1> sub_tile_t(
+          sub_tile);
+      dr::drlog.debug(dr::logger::transpose, "subtile_t\n{}\n", sub_tile_t);
+
+      dr::__detail::mdspan_copy(sub_tile_t, buffer);
+      buffer += sub_tile_size;
+      start[1] += num_cols;
     }
 
+    __detail::tmp_buffer<T> receive_buffer(sub_tiles_size, src_tile);
+    buffer = receive_buffer.data();
+    default_comm().alltoall(send_buffer.data(), receive_buffer.data(),
+                            sub_tile_size);
+
+    start = {0, 0, 0};
+    end = {dst_tile.mdspan().extent(0), dst_tile.mdspan().extent(1), 0};
+    for (std::size_t i = 0; i < src.grid().extent(0); i++) {
+      auto num_cols = src.grid()(i, 0, 0).mdspan().extent(0);
+
+      end[2] = start[2] + num_cols;
+      dr::drlog.debug(dr::logger::transpose, "Unpacking start: {}, end: {}\n",
+                      start, end);
+      auto sub_tile =
+          dr::__detail::make_submdspan(dst_tile.mdspan(), start, end);
+      dr::__detail::mdspan_copy(buffer, sub_tile);
+      buffer += sub_tile_size;
+      start[2] += num_cols;
+    }
   } else {
     assert(false);
   }
