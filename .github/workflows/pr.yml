@@ -63,7 +63,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         ctest --test-dir build -L SHP
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: log-gcc-${{ env.CXX }}
