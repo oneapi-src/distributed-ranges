@@ -106,16 +106,70 @@ void mdspan_foreach(md_extents<Rank> extents, Op op,
 // Pack mdspan into contiguous container
 template <mdspan_like Src>
 auto mdspan_copy(Src src, std::forward_iterator auto dst) {
-  auto pack = [src, &dst](auto index) { *dst++ = src(index); };
-  mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
-  return dst;
+  constexpr std::size_t rank = std::remove_cvref_t<Src>::rank();
+  if (rank >= 2 && rank <= 3 && mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    constexpr std::size_t rank = std::remove_cvref_t<Src>::rank();
+    if constexpr (rank == 2) {
+      dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(), sycl::range(src.extent(0), src.extent(1)),
+          [src, dst](auto idx) {
+            dst[idx[0] * src.extent(1) + idx[1]] = src(idx);
+          })
+          .wait();
+    } else if constexpr (rank == 3) {
+      dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(),
+          sycl::range(src.extent(0), src.extent(1), src.extent(2)),
+          [src, dst](auto idx) {
+            dst[idx[0] * src.extent(1) * src.extent(2) +
+                idx[1] * src.extent(2) + idx[2]] = src(idx);
+          })
+          .wait();
+    } else {
+      assert(false);
+    }
+#endif
+    return dst + src.size();
+  } else {
+    auto pack = [src, &dst](auto index) { *dst++ = src(index); };
+    mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
+    return dst;
+  }
 }
 
 // unpack contiguous container into mdspan
-auto mdspan_copy(std::forward_iterator auto src, mdspan_like auto dst) {
-  auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
-  mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
-  return src;
+template <mdspan_like Dst>
+auto mdspan_copy(std::forward_iterator auto src, Dst dst) {
+  constexpr std::size_t rank = std::remove_cvref_t<Dst>::rank();
+  if (rank >= 2 && rank <= 3 && mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    if constexpr (rank == 2) {
+      dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(), sycl::range(dst.extent(0), dst.extent(1)),
+          [src, dst](auto idx) {
+            dst(idx) = src[idx[0] * dst.extent(1) + idx[1]];
+          })
+          .wait();
+    } else if constexpr (rank == 3) {
+      dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(),
+          sycl::range(dst.extent(0), dst.extent(1), dst.extent(2)),
+          [src, dst](auto idx) {
+            dst(idx) = src[idx[0] * dst.extent(1) * dst.extent(2) +
+                           idx[1] * dst.extent(2) + idx[2]];
+          })
+          .wait();
+    } else {
+      assert(false);
+    }
+#endif
+    return src + dst.size();
+  } else {
+    auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
+    mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
+    return src;
+  }
 }
 
 // copy mdspan to mdspan

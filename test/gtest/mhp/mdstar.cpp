@@ -317,10 +317,6 @@ TEST_F(Mdarray, MdForEach3d) {
 }
 
 TEST_F(Mdarray, Transpose2D) {
-  if (dr::mhp::use_sycl()) {
-    return;
-  }
-
   xhp::distributed_mdarray<double, 2> md_in(extents2d), md_out(extents2dt);
   xhp::iota(md_in, 100);
   xhp::iota(md_out, 200);
@@ -337,10 +333,6 @@ TEST_F(Mdarray, Transpose2D) {
 }
 
 TEST_F(Mdarray, Transpose3D) {
-  if (dr::mhp::use_sycl()) {
-    return;
-  }
-
   xhp::distributed_mdarray<double, 3> md_in(extents3d), md_out(extents3dt);
   xhp::iota(md_in, 100);
   xhp::iota(md_out, 200);
@@ -635,7 +627,7 @@ TEST_F(MdspanUtil, Transpose3D) {
   rng::iota(rng::subrange(base, base + md.size()), 100);
 
   std::vector<T> ref_packed(md.size()), packed(md.size());
-  ;
+
   T *rp = ref_packed.data();
   for (std::size_t i = 0; i < mdt_ref.extent(0); i++) {
     for (std::size_t j = 0; j < mdt_ref.extent(1); j++) {
@@ -647,7 +639,8 @@ TEST_F(MdspanUtil, Transpose3D) {
   }
 
   // Transpose view
-  dr::__detail::mdtranspose<decltype(md), 2, 0, 1> mdt(md);
+  auto mdspan = md.to_mdspan();
+  dr::__detail::mdtranspose<decltype(mdspan), 2, 0, 1> mdt(mdspan);
   EXPECT_EQ(mdt_ref.to_mdspan(), mdt);
 
   // Transpose pack
