@@ -39,7 +39,7 @@ jobs:
         qsub -N "DR-bmk" -Wblock=true -l walltime=02:00:00 -j oe -o build/qsub-output-1.txt scripts/borealis-benchmark.sh ; sleep 10 ; cat build/*-1.txt
     - name: Upload benchmark results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: log-borealis-bench
         path: |
