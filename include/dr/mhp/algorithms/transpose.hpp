@@ -27,6 +27,7 @@ public:
       allocated_data_ = __detail::allocator<T>().allocate(size_);
       data_ = allocated_data_;
     }
+    assert(data_ != nullptr);
   }
 
   T *data() { return data_; }
@@ -53,7 +54,6 @@ namespace dr::mhp {
 template <dr::distributed_mdspan_range MR1, dr::distributed_mdspan_range MR2>
 void transpose(MR1 &&src, MR2 &&dst) {
   using T = rng::range_value_t<MR1>;
-  assert(!use_sycl());
 
   constexpr std::size_t rank1 = std::remove_cvref_t<MR1>::rank();
   constexpr std::size_t rank2 = std::remove_cvref_t<MR2>::rank();
@@ -153,11 +153,12 @@ void transpose(MR1 &&src, MR2 &&dst) {
                                 origin_src_tile.extent(1);
     std::size_t sub_tiles_size = sub_tile_size * default_comm().size();
 
-    // create a send buffer. try to reuse destination for storage
-    __detail::tmp_buffer<T> send_buffer(sub_tiles_size, dst.grid()(0, 0, 0));
-
     auto src_tile = src.grid()(default_comm().rank(), 0, 0);
     auto dst_tile = dst.grid()(default_comm().rank(), 0, 0);
+
+    // create a send buffer. try to reuse destination for storage
+    __detail::tmp_buffer<T> send_buffer(sub_tiles_size, dst_tile);
+
     T *buffer = send_buffer.data();
 
     index_type start({0, 0, 0}),
