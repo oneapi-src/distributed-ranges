@@ -16,7 +16,7 @@ env:
 
 jobs:
   checks:
-    runs-on: dds-base
+    runs-on: tpi-ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -30,7 +30,7 @@ jobs:
            pre-commit run --all
 
   unit_tests:
-    runs-on: dds-base
+    runs-on: tpi-ubuntu-latest
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -71,7 +71,7 @@ jobs:
 
   publish:
     needs: [checks, unit_tests]
-    runs-on: dds-base
+    runs-on: tpi-ubuntu-latest
     env:
       SPHINXOPTS: -q -W
     if: ${{ github.ref == 'refs/heads/main' }}
