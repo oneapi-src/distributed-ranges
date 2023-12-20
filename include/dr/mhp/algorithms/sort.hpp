@@ -85,7 +85,6 @@ void splitters(Seg &lsegment, Compare &&comp,
   std::size_t segidx = 0, vidx = 1;
 
   while (vidx < _comm_size && segidx < rng::size(lsegment)) {
-    assert(segidx < rng::size(lsegment));
     if (comp(vec_split_v[vidx - 1], *(lsegment.begin() + segidx))) {
       vec_split_i[vidx] = segidx;
       vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
@@ -212,7 +211,7 @@ void dist_sort(R &r, Compare &&comp) {
 
 #ifdef SYCL_LANGUAGE_VERSION
   auto policy = dpl_policy();
-  sycl::usm_allocator<valT, sycl::usm::alloc::host> alloc(policy.queue());
+  sycl::usm_allocator<valT, sycl::usm::alloc::shared> alloc(policy.queue());
 #endif
 
   auto &&lsegment = local_segment(r);
@@ -241,7 +240,6 @@ void dist_sort(R &r, Compare &&comp) {
    * data to achieve size of data equal to size of local segment */
 
   MPI_Request req_recvelems;
-
   default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
 
   /* buffer for received data */
@@ -308,6 +306,7 @@ void sort(R &r, Compare &&comp = Compare()) {
 
   if (_comm_size == 1) {
     drlog.debug("mhp::sort() - single node\n");
+
     auto &&lsegment = local_segment(r);
     __detail::local_sort(lsegment, comp);
 
@@ -316,6 +315,7 @@ void sort(R &r, Compare &&comp = Compare()) {
      * 0-size local segments. It is also small enough to prefer sequential sort
      */
     drlog.debug("mhp::sort() - local sort\n");
+
     std::vector<valT> vec_recvdata(rng::size(r));
     dr::mhp::copy(0, r, rng::begin(vec_recvdata));
 
