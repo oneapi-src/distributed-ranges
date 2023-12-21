@@ -66,7 +66,7 @@ public:
 
   void gather(const void *src, void *dst, std::size_t count,
               std::size_t root) const {
-    MPI_Gather(src, count, MPI_BYTE, dst, count, MPI_BYTE, root, mpi_comm_);
+    MPI_Gather_c(src, count, MPI_BYTE, dst, count, MPI_BYTE, root, mpi_comm_);
   }
 
   template <typename T>
@@ -78,8 +78,8 @@ public:
   template <typename T>
   void all_gather(const T *src, T *dst, std::size_t count) const {
     // Gather size elements from each rank
-    MPI_Allgather(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
-                  MPI_BYTE, mpi_comm_);
+    MPI_Allgather_c(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
+                    MPI_BYTE, mpi_comm_);
   }
 
   template <typename T>
@@ -98,8 +98,8 @@ public:
   void i_all_gather(const T *src, T *dst, std::size_t count,
                     MPI_Request *req) const {
     // Gather size elements from each rank
-    MPI_Iallgather(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
-                   MPI_BYTE, mpi_comm_, req);
+    MPI_Iallgather_c(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
+                     MPI_BYTE, mpi_comm_, req);
   }
 
   template <typename T>
@@ -117,8 +117,8 @@ public:
   template <typename T>
   void isend(const T *data, std::size_t count, std::size_t dst_rank, tag t,
              MPI_Request *request) const {
-    MPI_Isend(data, count * sizeof(T), MPI_BYTE, dst_rank, int(t), mpi_comm_,
-              request);
+    MPI_Isend_c(data, count * sizeof(T), MPI_BYTE, dst_rank, int(t), mpi_comm_,
+                request);
   }
 
   template <rng::contiguous_range R>
@@ -130,8 +130,8 @@ public:
   template <typename T>
   void irecv(T *data, std::size_t size, std::size_t src_rank, tag t,
              MPI_Request *request) const {
-    MPI_Irecv(data, size * sizeof(T), MPI_BYTE, src_rank, int(t), mpi_comm_,
-              request);
+    MPI_Irecv_c(data, size * sizeof(T), MPI_BYTE, src_rank, int(t), mpi_comm_,
+                request);
   }
 
   template <rng::contiguous_range R>
