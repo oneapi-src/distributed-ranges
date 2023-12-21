@@ -216,9 +216,9 @@ int main(int argc, char *argv[]) {
   }
 
   // 512^3 up to 3072
-  std::size_t x = 8;
-  std::size_t y = 8;
-  std::size_t z = 8;
+  std::size_t x = options["n"].as<std::size_t>();
+  std::size_t y = x;
+  std::size_t z = x;
   std::size_t nreps = options["repetitions"].as<std::size_t>();
 
   dr::mhp::init(dr::mhp::select_queue());
@@ -232,9 +232,12 @@ int main(int argc, char *argv[]) {
 #else
 
 static void FFT3D_DR(benchmark::State &state) {
-  std::size_t x = 8;
-  std::size_t y = 8;
-  std::size_t z = 8;
+  std::size_t x = 512;
+  std::size_t y = 512;
+  std::size_t z = 512;
+  if (check_results) {
+    x = y = z = 8;
+  }
 
   distributed_fft<double> fft3d(x, y, z);
 

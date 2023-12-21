@@ -142,8 +142,8 @@ public:
   template <rng::contiguous_range R>
   void alltoall(const R &sendr, R &recvr, std::size_t count) {
     using T = typename R::value_type;
-    MPI_Alltoall(rng::data(sendr), count * sizeof(T), MPI_BYTE,
-                 rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
+    MPI_Alltoall_c(rng::data(sendr), count * sizeof(T), MPI_BYTE,
+                   rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
   }
 
   template <typename T>
@@ -151,8 +151,8 @@ public:
     dr::drlog.debug("bytes: {}\nsend: {}\nreceive: {}\n", count * sizeof(T),
                     fmt::ptr(send), fmt::ptr(receive));
 
-    MPI_Alltoall(send, count * sizeof(T), MPI_BYTE, receive, count * sizeof(T),
-                 MPI_BYTE, mpi_comm_);
+    MPI_Alltoall_c(send, count * sizeof(T), MPI_BYTE, receive,
+                   count * sizeof(T), MPI_BYTE, mpi_comm_);
   }
 
   template <rng::contiguous_range SendR, rng::contiguous_range RecvR>

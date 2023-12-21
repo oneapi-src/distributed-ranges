@@ -35,13 +35,15 @@ target_link_libraries(mhp-bench benchmark::benchmark cxxopts DR::mpi)
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
 
-# cmake-format: off
-add_executable(mhp-quick-bench mhp-bench.cpp
-  mdspan.cpp
-  )
-# cmake-format: on
+add_executable(mhp-quick-bench mhp-bench.cpp)
 target_compile_definitions(mhp-quick-bench PRIVATE BENCH_MHP)
 target_link_libraries(mhp-quick-bench benchmark::benchmark cxxopts DR::mpi)
+
+if(ENABLE_SYCL)
+  target_sources(mhp-quick-bench PRIVATE fft3d.cpp)
+  target_link_libraries(mhp-quick-bench benchmark::benchmark cxxopts DR::mpi
+                        MKL::MKL_DPCPP)
+endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
@@ -78,9 +80,7 @@ target_compile_definitions(shallow_water PRIVATE STANDALONE_BENCHMARK)
 if(ENABLE_SYCL)
   add_mhp_ctest(shallow_water-sycl shallow_water 2 --sycl)
   add_mhp_ctest(shallow_water_fused-sycl shallow_water 2 --sycl -f)
-endif()
 
-if(ENABLE_SYCL)
   add_executable(fft3d_mhp fft3d.cpp)
   target_link_libraries(fft3d_mhp cxxopts DR::mpi MKL::MKL_DPCPP)
   target_compile_definitions(fft3d_mhp PRIVATE STANDALONE_BENCHMARK)
