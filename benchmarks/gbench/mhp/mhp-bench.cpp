@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
     ("columns", "Number of columns", cxxopts::value<std::size_t>()->default_value("10000"))
     ("drhelp", "Print help")
     ("log", "Enable logging")
+    ("log-filter", "Filter the log", cxxopts::value<std::vector<std::string>>())
 #ifdef SYCL_LANGUAGE_VERSION
     ("sycl", "Execute on SYCL device")
     ("different-devices", "ensure no multiple ranks on one device")
@@ -104,6 +105,9 @@ int main(int argc, char *argv[]) {
   if (options.count("log")) {
     logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
+    if (options.count("log-filter")) {
+      dr::drlog.filter(options["log-filter"].as<std::vector<std::string>>());
+    }
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);
 

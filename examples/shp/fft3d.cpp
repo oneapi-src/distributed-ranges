@@ -207,6 +207,9 @@ public:
 
 int main(int argc, char **argv) {
   auto devices = dr::shp::get_numa_devices(sycl::default_selector_v);
+  for (auto device : devices) {
+    fmt::print("Device: {}\n", device.get_info<sycl::info::device::name>());
+  }
   dr::shp::init(devices);
 
   std::size_t nprocs = dr::shp::nprocs();
@@ -231,22 +234,25 @@ int main(int argc, char **argv) {
   fmt::print("Dims {}^3 -> {}^3, Transfer size {} GB \n", m_in, m,
              sizeof(value_t) * m * n * 1e-9);
 
-  fmt::print("Allocating...\n");
+  fmt::print("Constructing matrices...\n");
   dr::shp::block_cyclic row_blocks({dr::shp::tile::div, dr::shp::tile::div},
                                    {dr::shp::nprocs(), 1});
   dr::shp::distributed_dense_matrix<value_t> i_mat({m, n}, row_blocks);
   dr::shp::distributed_dense_matrix<value_t> o_mat({n, m}, row_blocks);
 
+  fmt::print("Constructing fft...\n");
   fft::distributed_fft<real_t> fft3d(m, nprocs);
 
   fmt::print("Initializing...\n");
   fft::init_matrix_3d(i_mat, m);
 
   if (nreps == 0) { // debug
+    fmt::print("Testing\n");
     dr::shp::distributed_dense_matrix<value_t> t_mat({m, n}, row_blocks);
     fft3d.compute_forward(i_mat, o_mat);
     fft3d.compute_backward(o_mat, t_mat);
 
+    fmt::print("Checking results\n");
     auto sub_view =
         dr::shp::views::zip(values_view(i_mat), values_view(t_mat)) |
         dr::shp::views::transform([](auto &&e) {
@@ -257,10 +263,15 @@ int main(int argc, char **argv) {
     fmt::print("Difference {} {} \n", diff_sum.real(), diff_sum.imag());
   }
 
+  fmt::print("Timing {} steps\n", nreps);
+  auto begin = std::chrono::high_resolution_clock::now();
   for (int iter = 0; iter < nreps; ++iter) {
     fft3d.compute_forward(i_mat, o_mat);
     fft3d.compute_backward(o_mat, i_mat);
   }
+  auto end = std::chrono::high_resolution_clock::now();
+  double duration = std::chrono::duration<double>(end - begin).count();
+  fmt::print("Elapsed time: {}\nStep time: {}\n", duration, duration / nreps);
 
   return 0;
 }
