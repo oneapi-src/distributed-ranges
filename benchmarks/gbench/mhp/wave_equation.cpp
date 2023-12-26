@@ -391,6 +391,13 @@ int run(
   Array dudt({nx + 1, ny}, dist);
   Array dvdt({nx + 1, ny + 1}, dist);
 
+  dr::mhp::fill(dedt, 0);
+  dr::mhp::fill(dudt, 0);
+  dr::mhp::fill(dvdt, 0);
+  dr::mhp::halo(dedt).exchange_begin();
+  dr::mhp::halo(dudt).exchange_begin();
+  dr::mhp::halo(dvdt).exchange_begin();
+
   auto init_op = [xmin, ymin, grid](auto index, auto v) {
     auto &[o] = v;
 
