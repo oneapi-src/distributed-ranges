@@ -56,13 +56,13 @@ jobs:
     - name: MHP unit tests
       run: |
         source /opt/intel/oneapi/setvars.sh
-        ctest --test-dir build -L MHP
+        ctest --test-dir build -L MHP -j 4
     - name: SHP unit tests
       # Does not work on CPU
       if: false
       run: |
         source /opt/intel/oneapi/setvars.sh
-        ctest --test-dir build -L SHP
+        ctest --test-dir build -L SHP -j 4
     - uses: actions/upload-artifact@v4
       if: always()
       with:
