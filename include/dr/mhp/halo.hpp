@@ -9,6 +9,13 @@
 
 namespace dr::mhp {
 
+enum class halo_tag {
+  invalid,
+  forward,
+  reverse,
+  index,
+};
+
 template <typename Group> class halo_impl {
   using T = typename Group::element_type;
   using Memory = typename Group::memory_type;
@@ -253,7 +260,7 @@ private:
   std::size_t rank_;
   std::size_t indices_size_;
   std::size_t *indices_;
-  communicator::tag tag_ = communicator::tag::halo_index;
+  halo_tag tag_ = halo_tag::index;
 };
 
 template <typename T, typename Memory>
@@ -297,7 +304,7 @@ public:
   bool receive = false;
   bool buffered = false;
 
-  span_group(std::span<T> data, std::size_t rank, communicator::tag tag)
+  span_group(std::span<T> data, std::size_t rank, halo_tag tag)
       : data_(data), rank_(rank), tag_(tag) {
 #ifdef SYCL_LANGUAGE_VERSION
     if (use_sycl() && sycl_mem_kind() == sycl::usm::alloc::shared) {
@@ -346,8 +353,7 @@ private:
   Memory memory_;
   std::span<T> data_;
   std::size_t rank_;
-  communicator::tag tag_ = communicator::tag::invalid;
-  ;
+  halo_tag tag_ = halo_tag::invalid;
 };
 
 struct halo_bounds {
@@ -386,12 +392,12 @@ private:
     DRLOG("owned groups {}/{} first/last", comm.first(), comm.last());
     if (hb.next > 0 && (hb.periodic || !comm.first())) {
       owned.emplace_back(span.subspan(hb.prev, hb.next), comm.prev(),
-                         communicator::tag::halo_reverse);
+                         halo_tag::reverse);
     }
     if (hb.prev > 0 && (hb.periodic || !comm.last())) {
       owned.emplace_back(
           span.subspan(rng::size(span) - (hb.prev + hb.next), hb.prev),
-          comm.next(), communicator::tag::halo_forward);
+          comm.next(), halo_tag::forward);
     }
     return owned;
   }
@@ -400,12 +406,10 @@ private:
   halo_groups(communicator comm, std::span<T> span, halo_bounds hb) {
     std::vector<group_type> halo;
     if (hb.prev > 0 && (hb.periodic || !comm.first())) {
-      halo.emplace_back(span.first(hb.prev), comm.prev(),
-                        communicator::tag::halo_forward);
+      halo.emplace_back(span.first(hb.prev), comm.prev(), halo_tag::forward);
     }
     if (hb.next > 0 && (hb.periodic || !comm.last())) {
-      halo.emplace_back(span.last(hb.next), comm.next(),
-                        communicator::tag::halo_reverse);
+      halo.emplace_back(span.last(hb.next), comm.next(), halo_tag::reverse);
     }
     return halo;
   }

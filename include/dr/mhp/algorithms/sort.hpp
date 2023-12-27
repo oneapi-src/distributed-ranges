@@ -107,7 +107,6 @@ void shift_data(const int shift_left, const int shift_right,
 
   MPI_Request req_l, req_r;
   MPI_Status stat_l, stat_r;
-  const communicator::tag t = communicator::tag::halo_index;
 
   if (static_cast<int>(rng::size(vec_recvdata)) < -shift_left) {
     // Too little data in recv buffer to shift left - first get from right, then
@@ -120,7 +119,7 @@ void shift_data(const int shift_left, const int shift_right,
     // Too little data in buffer to shift right - first get from left, then send
     // right
     assert(shift_left > 0);
-    default_comm().irecv(vec_left, _comm_rank - 1, t, &req_l);
+    default_comm().irecv(vec_left, _comm_rank - 1, &req_l);
     MPI_Wait(&req_l, &stat_l);
 
     vec_left.insert(vec_left.end(), vec_recvdata.begin(), vec_recvdata.end());
@@ -129,24 +128,24 @@ void shift_data(const int shift_left, const int shift_right,
 
     default_comm().isend((valT *)(vec_recvdata.data()) +
                              rng::size(vec_recvdata) + shift_right,
-                         -shift_right, _comm_rank + 1, t, &req_r);
+                         -shift_right, _comm_rank + 1, &req_r);
     MPI_Wait(&req_r, &stat_r);
   } else {
     // enough data in recv buffer
 
     if (shift_left < 0) {
-      default_comm().isend(vec_recvdata.data(), -shift_left, _comm_rank - 1, t,
+      default_comm().isend(vec_recvdata.data(), -shift_left, _comm_rank - 1,
                            &req_l);
     } else if (shift_left > 0) {
-      default_comm().irecv(vec_left, _comm_rank - 1, t, &req_l);
+      default_comm().irecv(vec_left, _comm_rank - 1, &req_l);
     }
 
     if (shift_right > 0) {
-      default_comm().irecv(vec_right, _comm_rank + 1, t, &req_r);
+      default_comm().irecv(vec_right, _comm_rank + 1, &req_r);
     } else if (shift_right < 0) {
       default_comm().isend((valT *)(vec_recvdata.data()) +
                                rng::size(vec_recvdata) + shift_right,
-                           -shift_right, _comm_rank + 1, t, &req_r);
+                           -shift_right, _comm_rank + 1, &req_r);
     }
 
     if (shift_left != 0)

@@ -8,13 +8,6 @@ namespace dr {
 
 class communicator {
 public:
-  enum class tag {
-    invalid,
-    halo_forward,
-    halo_reverse,
-    halo_index,
-  };
-
   communicator(MPI_Comm comm = MPI_COMM_WORLD) : mpi_comm_(comm) {
     int rank, size;
     MPI_Comm_rank(comm, &rank);
@@ -114,29 +107,60 @@ public:
                 root, mpi_comm_);
   }
 
+  // pointer with explicit tag
   template <typename T>
-  void isend(const T *data, std::size_t count, std::size_t dst_rank, tag t,
+  void isend(const T *data, std::size_t count, std::size_t dst_rank, auto tag,
              MPI_Request *request) const {
-    MPI_Isend_c(data, count * sizeof(T), MPI_BYTE, dst_rank, int(t), mpi_comm_,
+    MPI_Isend_c(data, count * sizeof(T), MPI_BYTE, dst_rank, int(tag),
+                mpi_comm_, request);
+  }
+
+  // pointer, no tag
+  template <typename T>
+  void isend(const T *data, std::size_t count, std::size_t dst_rank,
+             MPI_Request *request) const {
+    isend(data, count, dst_rank, 0, request);
+  }
+
+  // range and tag
+  template <rng::contiguous_range R>
+  void isend(const R &data, std::size_t dst_rank, auto tag,
+             MPI_Request *request) const {
+    isend(rng::data(data), rng::size(data), dst_rank, tag, request);
+  }
+
+  // range, no tag
+  template <rng::contiguous_range R>
+  void isend(const R &data, std::size_t dst_rank, MPI_Request *request) const {
+    isend(data, dst_rank, 0, request);
+  }
+
+  // pointer and tag
+  template <typename T>
+  void irecv(T *data, std::size_t size, std::size_t src_rank, auto tag,
+             MPI_Request *request) const {
+    MPI_Irecv_c(data, size * sizeof(T), MPI_BYTE, src_rank, int(tag), mpi_comm_,
                 request);
   }
 
-  template <rng::contiguous_range R>
-  void isend(const R &data, std::size_t dst_rank, tag t,
-             MPI_Request *request) const {
-    isend(rng::data(data), rng::size(data), dst_rank, t, request);
-  }
-
+  // pointer, no tag
   template <typename T>
-  void irecv(T *data, std::size_t size, std::size_t src_rank, tag t,
+  void irecv(T *data, std::size_t size, std::size_t src_rank,
              MPI_Request *request) const {
-    MPI_Irecv_c(data, size * sizeof(T), MPI_BYTE, src_rank, int(t), mpi_comm_,
-                request);
+    irecv(data, size, src_rank, 0, request);
   }
 
+  // range and tag
   template <rng::contiguous_range R>
-  void irecv(R &data, std::size_t src_rank, tag t, MPI_Request *request) const {
-    irecv(rng::data(data), rng::size(data), src_rank, t, request);
+  void irecv(R &data, std::size_t src_rank, int tag,
+             MPI_Request *request) const {
+    irecv(rng::data(data), rng::size(data), src_rank, tag, request);
+  }
+
+  // range, no tag
+  template <rng::contiguous_range R>
+  void irecv(R &data, std::size_t src_rank, MPI_Request *request) const {
+    irecv(data, src_rank, 0, request);
   }
 
   template <rng::contiguous_range R>
