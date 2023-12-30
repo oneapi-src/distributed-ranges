@@ -145,6 +145,7 @@ int main(int argc, char **argv) {
     ("help", "Print help")
     ("i", "Number of iterations", cxxopts::value<std::size_t>()->default_value("10"))
     ("log", "Enable logging")
+    ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
     ("n", "Size of array", cxxopts::value<std::size_t>()->default_value("1000000"))
     ("sycl", "Execute on sycl device");
   // clang-format on
@@ -162,9 +163,10 @@ int main(int argc, char **argv) {
     exit(0);
   }
 
-  std::ofstream *logfile = nullptr;
+  std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
-    logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
+    logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
+                                    fmt::format(".{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);

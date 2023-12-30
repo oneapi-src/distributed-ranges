@@ -194,6 +194,7 @@ int main(int argc, char *argv[]) {
     ("n", "problem size", cxxopts::value<std::size_t>()->default_value("8"))
     ("r,repetitions", "Number of repetitions", cxxopts::value<std::size_t>()->default_value("0"))
     ("log", "enable logging")
+    ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
     ("verbose", "verbose output")
     ("h,help", "Print help");
   // clang-format on
@@ -208,7 +209,8 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
-    logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
+    logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
+                                    fmt::format(".{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
   }
 

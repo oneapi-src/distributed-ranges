@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
   // clang-format off
   options_spec.add_options()
     ("log", "Enable logging")
+    ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
     ("rows", "Number of rows", cxxopts::value<std::size_t>()->default_value("10"))
     ("steps", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
     ("help", "Print help");
@@ -131,9 +132,11 @@ int main(int argc, char *argv[]) {
 
   rows = options["rows"].as<std::size_t>();
   steps = options["steps"].as<std::size_t>();
-  std::ofstream *logfile = nullptr;
+
+  std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
-    logfile = new std::ofstream(fmt::format("dr.{}.log", comm_rank));
+    logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
+                                    fmt::format(".{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
   }
   dr::drlog.debug("Rank: {}\n", comm_rank);

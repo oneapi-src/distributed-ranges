@@ -11,7 +11,7 @@ project(
 include(FetchContent)
 
 option(ENABLE_ISHMEM OFF)
-
+option(DR_USE_MPI_LOG_FILES OFF)
 # Project wide defaults, not needed when another project uses the library
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
@@ -142,10 +142,97 @@ FetchContent_Declare(
   GIT_TAG mdspan-0.6.0)
 FetchContent_MakeAvailable(mdspan)
 
+add_custom_target(mhp-all-tests)
+
+function(add_mhp_ctest)
+  set(options OFFLOAD GDB SYCL DRLOGS)
+  set(oneValueArgs NAME TEST_NAME NPROC)
+  set(multiValueArgs TARGS) # Test ARGumentS
+
+  cmake_parse_arguments(AMC "${options}" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
+
+  if(NOT DEFINED AMC_NAME)
+    message(FATAL_ERROR "missing binary NAME")
+  endif()
+
+  set(nproc 1)
+  if(DEFINED AMC_NPROC)
+    set(nproc ${AMC_NPROC})
+  endif()
+
+  if(AMC_OFFLOAD)
+    set(extra_mpiflags "-genv;I_MPI_OFFLOAD=1")
+  endif()
+
+  if(ENABLE_ISHMEM)
+    set(wrapper_script ${CMAKE_BINARY_DIR}/bin/ishmrun)
+    # TODO: set somehow FI_PROVIDER=${OFI_PROVIDER}
+  endif()
+
+  if(AMC_SYCL)
+    set(sycl_param "--sycl")
+  endif()
+
+  if(AMC_GDB)
+    set(wrapper_script
+        ${wrapper_script} gdb-oneapi -return-child-result --ex r -ex bt --ex q
+        --batch --args)
+  endif()
+
+  if(AMC_DRLOGS)
+    set(drlogs_param --log --logprefix=${AMC_TEST_NAME})
+  endif()
+
+  # build a test name unless provided by user
+  if(NOT DEFINED AMC_TEST_NAME)
+    set(AMC_TEST_NAME "${AMC_NAME}")
+    if(AMC_SYCL)
+      set(AMC_TEST_NAME "${AMC_TEST_NAME}-sycl")
+    endif()
+    if(AMC_OFFLOAD)
+      set(AMC_TEST_NAME "${AMC_TEST_NAME}-offload")
+    endif()
+    if(AMC_GDB)
+      set(AMC_TEST_NAME "${AMC_TEST_NAME}-gdb")
+    endif()
+    if(DEFINED AMC_NPROC) # add nproc to name only if not used default
+      set(AMC_TEST_NAME "${AMC_TEST_NAME}-${nproc}")
+    endif()
+  endif()
+
+  if(DR_USE_MPI_LOG_FILES)
+    set(extra_mpiflags
+        ${extra_mpiflags} -outfile-pattern "${test_name}.%r.out.log"
+        -errfile-pattern "${test_name}.%r.err.log")
+  endif()
+
+  add_test(
+    NAME ${AMC_TEST_NAME}
+    COMMAND
+      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${nproc}
+      ${MPIEXEC_PREFLAGS} ${extra_mpiflags} ${wrapper_script} ./${AMC_NAME}
+      ${drlogs_param} ${sycl_param} ${AMC_TARGS} COMMAND_EXPAND_LISTS)
+
+  set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
+  add_dependencies(mhp-all-tests ${AMC_NAME})
+endfunction()
+
 if(ENABLE_ISHMEM)
+
+  set(OFI_PROVIDER
+      "NONE"
+      CACHE STRING "ofi prov: cxi verbs psm3")
+  set_property(CACHE OFI_PROVIDER PROPERTY STRINGS cxi verbs psm3)
 
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
   link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+
+  if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(ENABLE_DEBUG_PARAM "--enable-debug")
+  else()
+    set(ENABLE_DEBUG_PARAM "")
+  endif()
 
   # use it if there are no L0 headers installed
   if(ENABLE_L0)
@@ -164,16 +251,34 @@ if(ENABLE_ISHMEM)
     set(SOS_DEPS "")
   endif()
 
-  # ExternalProject_Add( ofi GIT_REPOSITORY git@github.com:ofiwg/libfabric.git
-  # GIT_TAG v1.19.0 SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ofisrc DEPENDS
-  # level-zero CONFIGURE_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/ofisrc &&
-  # ./autogen.sh && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}
-  # --enable-debug --enable-psm3=auto --enable-cxi=auto --enable-rxm=auto
-  # --enable-tcp=auto BUILD_IN_SOURCE ON BUILD_COMMAND make INSTALL_COMMAND make
-  # install)
+  if(ENABLE_OFI)
+    ExternalProject_Add(
+      ofi
+      GIT_REPOSITORY git@github.com:ofiwg/libfabric.git
+      GIT_TAG v1.18.0
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ofisrc
+      DEPENDS ${SOS_DEPS}
+      CONFIGURE_COMMAND
+        cd ${CMAKE_CURRENT_BINARY_DIR}/ofisrc && ./autogen.sh && ./configure
+        --prefix=${CMAKE_CURRENT_BINARY_DIR} ${ENABLE_DEBUG_PARAM} --enable-only
+        --enable-${OFI_PROVIDER}=yes --with-dlopen=no
+      BUILD_IN_SOURCE ON
+      BUILD_COMMAND make
+      INSTALL_COMMAND make install)
+    set(OFI_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    set(SOS_DEPS ${SOS_DEPS} "ofi")
+  endif()
 
   if(NOT DEFINED OFI_DIR)
     set(OFI_DIR /usr)
+  endif()
+
+  if(OFI_PROVIDER STREQUAL "cxi")
+    set(SOS_OFI_PARAMS --enable-ofi-manual-progress --enable-mr-endpoint)
+  elseif(OFI_PROVIDER STREQUAL "verbs" OR OFI_PROVIDER STREQUAL "psm3")
+    set(SOS_OFI_PARAMS --enable-hard-polling)
+  else()
+    message(FATAL_ERROR "not supported OFI_PROVIDER:${OFI_PROVIDER}")
   endif()
 
   ExternalProject_Add(
@@ -184,10 +289,10 @@ if(ENABLE_ISHMEM)
     DEPENDS ${SOS_DEPS}
     CONFIGURE_COMMAND
       cd ${CMAKE_CURRENT_BINARY_DIR}/sossrc && ./autogen.sh && ./configure
-      --prefix=${CMAKE_CURRENT_BINARY_DIR} --enable-pmi-simple
-      --with-ofi=${OFI_DIR} --disable-fortran --enable-mr-endpoint
-      --enable-ofi-mr=basic --enable-ofi-manual-progress --disable-ofi-inject
-      --enable-ofi-hmem
+      --prefix=${CMAKE_CURRENT_BINARY_DIR} ${ENABLE_DEBUG_PARAM}
+      --enable-pmi-simple --with-ofi=${OFI_DIR} --disable-fortran
+      --enable-ofi-mr=basic --disable-ofi-inject --enable-ofi-hmem
+      --disable-bounce-buffers ${SOS_OFI_PARAMS}
     BUILD_IN_SOURCE ON
     BUILD_COMMAND make
     INSTALL_COMMAND make install)
@@ -199,47 +304,27 @@ if(ENABLE_ISHMEM)
     GIT_TAG main
     INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS sos
+    CMAKE_ARGS -DCMAKE_BUILD_TYPE=STRING:${CMAKE_BUILD_TYPE}
     CMAKE_CACHE_ARGS
       "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
       "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}" ${SOS_L0_PARAM})
 
   add_custom_target(shmem DEPENDS ishmem)
 
-  function(add_mhp_ctest test_name name processes)
-    add_test(
-      NAME ${test_name}
-      COMMAND
-        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
-        ${MPIEXEC_PREFLAGS} -outfile-pattern "${test_name}.out.%r.log"
-        -errfile-pattern "${test_name}.err.%r.log"
-        ${CMAKE_BINARY_DIR}/bin/ishmrun gdb --ex r -ex bt --ex q --batch --args
-        ./${name} --log --logprefix=${test_name} ${ARGN} COMMAND_EXPAND_LISTS)
+  function(target_link_ishmem exec_name)
+    target_link_libraries(${exec_name} ze_loader pmi_simple sma)
+    target_link_libraries(${exec_name} ${CMAKE_BINARY_DIR}/lib/libishmem.a)
   endfunction()
 
   add_compile_definitions(DRISHMEM)
 
 else()
 
-  function(add_mhp_ctest test_name name processes)
-    add_test(NAME ${test_name}
-             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
-                     ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
-    set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL MHP)
+  function(target_link_ishmem exec_name)
+
   endfunction()
 
 endif()
-
-function(add_mhp_offload_ctest test_name name processes)
-  # intel mpi needs I_MPI_OFFLOAD=1, mpich does not need anything but it is
-  # harmless so pass it anyway
-  add_test(
-    NAME ${test_name}
-    COMMAND
-      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${processes}
-      ${MPIEXEC_PREFLAGS} -genv I_MPI_OFFLOAD=1 ./${name} ${ARGN}
-      COMMAND_EXPAND_LISTS)
-  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL MHP)
-endfunction()
 
 function(add_shp_ctest test_name name)
   add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})

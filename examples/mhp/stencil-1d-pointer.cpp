@@ -71,6 +71,8 @@ int main(int argc, char *argv[]) {
   options_spec.add_options()
     ("n", "Size of array", cxxopts::value<std::size_t>()->default_value("10"))
     ("s", "Number of time steps", cxxopts::value<std::size_t>()->default_value("5"))
+    ("l,log", "enable logging")
+    ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
     ("help", "Print help");
   // clang-format on
 
@@ -88,6 +90,16 @@ int main(int argc, char *argv[]) {
   }
 
   MPI_Init(&argc, &argv);
+
+  std::unique_ptr<std::ofstream> logfile;
+  if (options.count("log")) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
+                                    fmt::format(".{}.log", rank)));
+    dr::drlog.set_file(*logfile);
+  }
+
   dr::mhp::init();
 
   auto error =

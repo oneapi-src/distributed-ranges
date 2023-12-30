@@ -1234,6 +1234,8 @@ int main(int argc, char *argv[]) {
     ("sycl", "Execute on SYCL device")
     ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
     ("device-memory", "Use device memory")
+    ("log", "Enable logging")
+    ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
     ("h,help", "Print help");
   // clang-format on
 
@@ -1243,6 +1245,13 @@ int main(int argc, char *argv[]) {
   } catch (const cxxopts::OptionParseException &e) {
     std::cout << options_spec.help() << "\n";
     exit(1);
+  }
+
+  std::unique_ptr<std::ofstream> logfile;
+  if (options.count("log")) {
+    logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
+                                    fmt::format(".{}.log", comm_rank)));
+    dr::drlog.set_file(*logfile);
   }
 
   if (options.count("sycl")) {

@@ -15,6 +15,17 @@ std::size_t ranks = 0;
 cxxopts::ParseResult options;
 
 int main(int argc, char *argv[]) {
+
+  bool dry_run = false;
+  for (int i = 0; i < argc; ++i) {
+    auto param = std::string(argv[i]);
+    // do not initialize if only lists tests
+    if (param.starts_with("--benchmark_list_tests") &&
+        !param.starts_with("--benchmark_list_tests=false")) {
+      dry_run = true;
+    }
+  }
+
   benchmark::Initialize(&argc, argv);
 
   cxxopts::Options options_spec(argv[0], "DR SHP tests");
@@ -52,19 +63,21 @@ int main(int argc, char *argv[]) {
     ranks = available_devices.size();
   }
 
-  if (options["weak-scaling"].as<bool>())
+  if (weak_scaling)
     default_vector_size = default_vector_size * ranks;
 
   add_configuration(0, options);
 
-  std::vector<sycl::device> devices;
-  for (std::size_t i = 0; i < ranks; i++) {
-    devices.push_back(available_devices[i % available_devices.size()]);
-    benchmark::AddCustomContext("device_info" + std::to_string(i),
-                                device_info(devices.back()));
-  }
+  if (!dry_run) {
+    std::vector<sycl::device> devices;
+    for (std::size_t i = 0; i < ranks; i++) {
+      devices.push_back(available_devices[i % available_devices.size()]);
+      benchmark::AddCustomContext("device_info" + std::to_string(i),
+                                  device_info(devices.back()));
+    }
 
-  dr::shp::init(devices);
+    dr::shp::init(devices);
+  }
 
   benchmark::RunSpecifiedBenchmarks();
 

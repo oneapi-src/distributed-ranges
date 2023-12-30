@@ -86,7 +86,6 @@ public:
 
 private:
   std::ofstream *fout_ = nullptr;
-  bool filtered_ = false;
   std::array<bool, filters::last> enabled_;
   std::array<std::string, filters::last> filter_names_ = {
       "base", "for_each", "transpose", "mdspan_view"};

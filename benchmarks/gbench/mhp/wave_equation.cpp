@@ -619,6 +619,7 @@ int main(int argc, char *argv[]) {
     ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
     ("sycl", "Execute on SYCL device")
     ("l,log", "enable logging")
+    ("logprefix", "appended .RANK.log", cxxopts::value<std::string>()->default_value("dr"))
     ("f,fused-kernel", "Use fused kernels.", cxxopts::value<bool>()->default_value("false"))
     ("device-memory", "Use device memory")
     ("h,help", "Print help");
@@ -634,7 +635,8 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
-    logfile.reset(new std::ofstream(fmt::format("dr.{}.log", comm_rank)));
+    logfile.reset(new std::ofstream(options["logprefix"].as<std::string>() +
+                                    fmt::format(".{}.log", comm_rank)));
     dr::drlog.set_file(*logfile);
   }
 

@@ -67,7 +67,9 @@ jobs:
       if: always()
       with:
         name: log-gcc-${{ env.CXX }}
-        path: build/Testing
+        path: |
+          build/Testing
+          build/test/gtest/mhp/*.log
 
   publish:
     needs: [checks, unit_tests]

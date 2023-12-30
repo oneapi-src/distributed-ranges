@@ -63,56 +63,52 @@ add_executable(mhp-quick-test
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 
 foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
-  if(ENABLE_ISHMEM)
-    target_link_libraries(
-      ${test-exec} GTest::gtest_main cxxopts DR::mpi ze_loader # fabric
-      pmi_simple sma)
-    target_link_libraries(${test-exec} ${CMAKE_BINARY_DIR}/lib/libishmem.a)
-  else()
-    target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
-  endif()
+  target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
+  target_link_ishmem(${test-exec})
   set_property(TARGET ${test-exec} PROPERTY RULE_LAUNCH_COMPILE
                                             "${CMAKE_COMMAND} -E time")
-
 endforeach()
 
 # tests without --sycl flag will fail on IshmemBackend TODO: make them be
 # running somehow if ENABLE_ISHMEM will be default CI config
 if(NOT ENABLE_ISHMEM)
-  add_mhp_ctest(mhp-quick-test-1 mhp-quick-test 1)
-  add_mhp_ctest(mhp-quick-test-2 mhp-quick-test 2)
+  add_mhp_ctest(NAME mhp-quick-test NPROC 1)
+  add_mhp_ctest(NAME mhp-quick-test NPROC 2)
 
   cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mhp_ctest(mhp-tests-1 mhp-tests 1)
+    add_mhp_ctest(NAME mhp-tests NPROC 1)
   endif()
-
-  add_mhp_ctest(mhp-tests-2 mhp-tests 2)
-  add_mhp_ctest(mhp-tests-3 mhp-tests 3)
-  add_mhp_ctest(mhp-tests-4 mhp-tests 4)
-  add_mhp_ctest(mhp-tests-3-only mhp-tests-3 3)
+  foreach(nproc RANGE 2 4)
+    add_mhp_ctest(NAME mhp-tests NPROC ${nproc})
+  endforeach()
+  add_mhp_ctest(TEST_NAME mhp-tests-3-only NAME mhp-tests-3 NPROC 3)
 endif()
 
 if(ENABLE_SYCL)
-  add_mhp_ctest(mhp-sycl-quick-test-1 mhp-quick-test 1 --sycl)
-  add_mhp_ctest(mhp-sycl-quick-test-2 mhp-quick-test 2 --sycl)
+  add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
+  add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
 
   # Excluding tests that failed in CI with segv. They work with manual runs. I
   # have not investigated the cause.
-  add_mhp_offload_ctest(
-    mhp-sycl-device-tests-2 mhp-tests 2 --sycl --device-memory
-    --gtest_filter=-Exclusive*:Slide*:Sort*:ComplexSlide*)
+  add_mhp_ctest(
+    TEST_NAME mhp-sycl-device-tests-2 NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS
+    --device-memory --gtest_filter=-Exclusive*:Slide*:Sort*:ComplexSlide*)
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mhp_ctest(mhp-sycl-tests-1 mhp-tests 1 --sycl --gtest_filter=-*Slide*)
+    add_mhp_ctest(
+      NAME mhp-tests NPROC 1 SYCL TARGS --gtest_filter=-*Slide*)
   endif()
   # TODO: fix sycl Slide issues, see
   # https://github.com/oneapi-src/distributed-ranges/issues/322
-  add_mhp_ctest(mhp-sycl-tests-2 mhp-tests 2 --sycl --gtest_filter=-*Slide*)
-  add_mhp_ctest(mhp-sycl-tests-3 mhp-tests 3 --sycl --gtest_filter=-*Slide*)
-  add_mhp_ctest(mhp-sycl-tests-4 mhp-tests 4 --sycl --gtest_filter=-*Slide*)
-  add_mhp_ctest(mhp-sycl-tests-3-only mhp-tests-3 3 --sycl
-                --gtest_filter=-*Slide*)
+
+  foreach(nproc RANGE 2 4)
+    add_mhp_ctest(
+      NAME mhp-tests NPROC ${nproc} SYCL TARGS --gtest_filter=-*Slide*)
+  endforeach()
+  add_mhp_ctest(
+    TEST_NAME mhp-tests-sycl-3-only NAME mhp-tests-3 NPROC 3 SYCL TARGS
+    --gtest_filter=-*Slide*)
 endif()
