@@ -70,9 +70,42 @@ jobs:
         path: |
           build/Testing
           build/test/gtest/mhp/*.log
+          build/benchmarks/gbench/mhp/*.log
+          build/examples/mhp/*.log
+
+  pvc_unit_tests:
+    runs-on: pvc
+    strategy:
+      # test everything, even if one fails
+      fail-fast: false
+      matrix:
+        include:
+          - config: Debug
+          - config: Release
+    name: pvc-impi-icpx-${{ matrix.config }}
+    env:
+      CXX: icpx
+      FI_PROVIDER: tcp
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate
+        run: cmake -B build -DENABLE_SYCL=on -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DDR_USE_MPI_LOG_FILES=on
+      - name: Build MHP tests
+        run: cmake --build build --target mhp-all-tests -- -j
+      - name: MHP unit tests
+        run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -L MHP -j 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-pvc-impi-icpx-${{ matrix.config }}
+          path: |
+            build/Testing
+            build/test/gtest/mhp/*.log
+            build/benchmarks/gbench/mhp/*.log
+            build/examples/mhp/*.log
 
   publish:
-    needs: [checks, unit_tests]
+    needs: [checks, unit_tests, pvc_unit_tests]
     runs-on: tpi-ubuntu-latest
     env:
       SPHINXOPTS: -q -W

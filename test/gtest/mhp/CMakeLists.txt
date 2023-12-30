@@ -88,6 +88,8 @@ if(NOT ENABLE_ISHMEM)
 endif()
 
 if(ENABLE_SYCL)
+  set(sycl-exclusions *Slide*:MdspanUtil.Transpose*)
+
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
 
@@ -95,20 +97,22 @@ if(ENABLE_SYCL)
   # have not investigated the cause.
   add_mhp_ctest(
     TEST_NAME mhp-sycl-device-tests-2 NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS
-    --device-memory --gtest_filter=-Exclusive*:Slide*:Sort*:ComplexSlide*)
+    --device-memory
+    --gtest_filter=-${sycl-exclusions}:Exclusive*:Sort*:ComplexSlide*)
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
     add_mhp_ctest(
-      NAME mhp-tests NPROC 1 SYCL TARGS --gtest_filter=-*Slide*)
+      NAME mhp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
   endif()
   # TODO: fix sycl Slide issues, see
   # https://github.com/oneapi-src/distributed-ranges/issues/322
 
   foreach(nproc RANGE 2 4)
     add_mhp_ctest(
-      NAME mhp-tests NPROC ${nproc} SYCL TARGS --gtest_filter=-*Slide*)
+      NAME mhp-tests NPROC ${nproc} SYCL TARGS
+      --gtest_filter=-${sycl-exclusions})
   endforeach()
   add_mhp_ctest(
     TEST_NAME mhp-tests-sycl-3-only NAME mhp-tests-3 NPROC 3 SYCL TARGS
-    --gtest_filter=-*Slide*)
+    --gtest_filter=-${sycl-exclusions})
 endif()

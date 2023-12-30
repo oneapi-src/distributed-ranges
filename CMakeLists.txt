@@ -180,10 +180,6 @@ function(add_mhp_ctest)
         --batch --args)
   endif()
 
-  if(AMC_DRLOGS)
-    set(drlogs_param --log --logprefix=${AMC_TEST_NAME})
-  endif()
-
   # build a test name unless provided by user
   if(NOT DEFINED AMC_TEST_NAME)
     set(AMC_TEST_NAME "${AMC_NAME}")
@@ -201,10 +197,14 @@ function(add_mhp_ctest)
     endif()
   endif()
 
+  if(AMC_DRLOGS)
+    set(drlogs_param --log --logprefix=${AMC_TEST_NAME})
+  endif()
+
   if(DR_USE_MPI_LOG_FILES)
     set(extra_mpiflags
-        ${extra_mpiflags} -outfile-pattern "${test_name}.%r.out.log"
-        -errfile-pattern "${test_name}.%r.err.log")
+        ${extra_mpiflags} -outfile-pattern "${AMC_TEST_NAME}.%r.out.log"
+        -errfile-pattern "${AMC_TEST_NAME}.%r.err.log")
   endif()
 
   add_test(

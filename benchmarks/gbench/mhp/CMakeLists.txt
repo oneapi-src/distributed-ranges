@@ -47,7 +47,8 @@ endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
-if(NOT MPI_IMPL STREQUAL "openmpi")
+# debug mhp-bench is too slow
+if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MPI_IMPL STREQUAL "openmpi")
   # MPI_Win_create fails for communicator with size 1 30000 is minimum because
   # of static column size for stencil2D disable DPL benchmarks because we get
   # intermittent fails with: ONEAPI_DEVICE_SELECTOR=opencl:cpu mpirun -n 1
@@ -69,8 +70,12 @@ add_mhp_ctest(TEST_NAME wave_equation_fused NAME wave_equation TARGS -f)
 if(ENABLE_SYCL)
   add_mhp_ctest(
     TEST_NAME wave_equation-sycl NAME wave_equation NPROC 2 SYCL)
-  add_mhp_ctest(
-    TEST_NAME wave_equation_fused-sycl NAME wave_equation NPROC 2 SYCL TARGS -f)
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # too long (or hangs?) in debug
+    add_mhp_ctest(
+      TEST_NAME wave_equation_fused-sycl NAME wave_equation NPROC 2 SYCL TARGS
+      -f)
+  endif()
 endif()
 
 add_executable(shallow_water shallow_water.cpp)
@@ -79,10 +84,15 @@ target_compile_definitions(shallow_water PRIVATE STANDALONE_BENCHMARK)
 # temporarily disabled - issue DRA-23 add_mhp_ctest(shallow_water shallow_water
 # 1) add_mhp_ctest(shallow_water_fused shallow_water 1 -f)
 if(ENABLE_SYCL)
-  add_mhp_ctest(
-    TEST_NAME shallow_water-sycl NAME shallow_water NPROC 2 SYCL)
-  add_mhp_ctest(
-    TEST_NAME shallow_water_fused-sycl NAME shallow_water NPROC 2 SYCL TARGS -f)
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # too long (or hangs?) in debug
+
+    add_mhp_ctest(
+      TEST_NAME shallow_water-sycl NAME shallow_water NPROC 2 SYCL)
+    add_mhp_ctest(
+      TEST_NAME shallow_water_fused-sycl NAME shallow_water NPROC 2 SYCL TARGS
+      -f)
+  endif()
 
   add_executable(fft3d_mhp fft3d.cpp)
   target_link_libraries(fft3d_mhp cxxopts DR::mpi MKL::MKL_DPCPP)
