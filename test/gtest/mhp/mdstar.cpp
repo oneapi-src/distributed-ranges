@@ -588,9 +588,16 @@ TEST_F(MdspanUtil, Copy) {
 }
 
 TEST_F(MdspanUtil, Transpose2D) {
-  std::vector<T> a(xdim * ydim);
-  std::vector<T> b(xdim * ydim);
-  std::vector<T> c(xdim * ydim);
+  std::size_t size = xdim * ydim;
+#ifdef SYCL_LANGUAGE_VERSION
+  using vec_alloc = sycl::usm_allocator<T, sycl::usm::alloc::shared>;
+  sycl::queue q;
+  vec_alloc my_alloc(q);
+  std::vector<T, vec_alloc> a(size, my_alloc), b(size, my_alloc),
+      c(size, my_alloc), ref_packed(size, my_alloc);
+#else
+  std::vector<T> a(size), b(size), c(size), ref_packed(size);
+#endif
   rng::iota(a, 100);
   rng::iota(b, 200);
   rng::iota(c, 300);
@@ -598,7 +605,6 @@ TEST_F(MdspanUtil, Transpose2D) {
   md::mdspan mdc(c.data(), extents2dt);
 
   md::mdarray<T, dr::__detail::md_extents<2>> ref(extents2dt);
-  std::vector<T> ref_packed(xdim * ydim);
   T *rp = ref_packed.data();
   for (std::size_t i = 0; i < ref.extent(0); i++) {
     for (std::size_t j = 0; j < ref.extent(1); j++) {
@@ -621,12 +627,27 @@ TEST_F(MdspanUtil, Transpose2D) {
 }
 
 TEST_F(MdspanUtil, Transpose3D) {
-  md::mdarray<T, dr::__detail::md_extents<3>> md(extents3d),
-      mdt_ref(extents3dt);
+
+  std::size_t size = xdim * ydim * zdim;
+
+#ifdef SYCL_LANGUAGE_VERSION
+  using vec_alloc = sycl::usm_allocator<T, sycl::usm::alloc::shared>;
+  sycl::queue q;
+  vec_alloc my_alloc(q);
+  std::vector<T, vec_alloc> ref_packed(size, my_alloc), packed(size, my_alloc),
+      md_data(size, my_alloc), mdt_data(size, my_alloc);
+
+  md::mdspan<T, dr::__detail::md_extents<3>> md(md_data.data(), extents3d),
+      mdt_ref(mdt_data.data(), extents3dt);
+
+#else
+  std::vector<T> ref_packed(size), packed(size), md_data(size), mdt_data(size);
+  md::mdspan<T, dr::__detail::md_extents<3>> md(md_data.data(), extents3d),
+      mdt_ref(mdt_data.data(), extents3dt);
+#endif
+
   T *base = &md(0, 0, 0);
   rng::iota(rng::subrange(base, base + md.size()), 100);
-
-  std::vector<T> ref_packed(md.size()), packed(md.size());
 
   T *rp = ref_packed.data();
   for (std::size_t i = 0; i < mdt_ref.extent(0); i++) {
@@ -639,9 +660,8 @@ TEST_F(MdspanUtil, Transpose3D) {
   }
 
   // Transpose view
-  auto mdspan = md.to_mdspan();
-  dr::__detail::mdtranspose<decltype(mdspan), 2, 0, 1> mdt(mdspan);
-  EXPECT_EQ(mdt_ref.to_mdspan(), mdt);
+  dr::__detail::mdtranspose<decltype(md), 2, 0, 1> mdt(md);
+  EXPECT_EQ(mdt_ref, mdt) << fmt::format("md:\n{}", md);
 
   // Transpose pack
   dr::__detail::mdspan_copy(mdt, packed.begin());

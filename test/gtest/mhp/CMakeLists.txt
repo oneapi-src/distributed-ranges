@@ -56,7 +56,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  ../common/sort.cpp
+  mdstar.cpp
   )
 # cmake-format: on
 
@@ -88,7 +88,7 @@ if(NOT ENABLE_ISHMEM)
 endif()
 
 if(ENABLE_SYCL)
-  set(sycl-exclusions *Slide*:MdspanUtil.Transpose*)
+  set(sycl-exclusions *Slide*)
 
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)

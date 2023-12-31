@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Generate
-        run: cmake -B build -DENABLE_SYCL=on -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DDR_USE_MPI_LOG_FILES=on
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DDR_USE_MPI_LOG_FILES=on
       - name: Build MHP tests
         run: cmake --build build --target mhp-all-tests -- -j
       - name: MHP unit tests
