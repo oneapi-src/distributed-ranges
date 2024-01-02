@@ -40,7 +40,7 @@ foreach(mhp-bench-exec IN ITEMS mhp-bench mhp-quick-bench)
 endforeach()
 
 if(ENABLE_SYCL)
-  target_sources(mhp-quick-bench PRIVATE fft3d.cpp)
+  target_sources(mhp-quick-bench PRIVATE transpose.cpp)
   target_link_libraries(mhp-quick-bench benchmark::benchmark cxxopts DR::mpi
                         MKL::MKL_DPCPP)
 endif()
