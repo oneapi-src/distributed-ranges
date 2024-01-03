@@ -83,7 +83,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - config: Debug
+          # Disabled because it gets a timeout 1/2 the time
+          #- config: Debug
           - config: Release
     name: pvc-impi-icpx-${{ matrix.config }}
     env:

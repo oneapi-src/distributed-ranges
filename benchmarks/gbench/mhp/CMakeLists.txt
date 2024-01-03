@@ -70,12 +70,8 @@ add_mhp_ctest(TEST_NAME wave_equation_fused NAME wave_equation TARGS -f)
 if(ENABLE_SYCL)
   add_mhp_ctest(
     TEST_NAME wave_equation-sycl NAME wave_equation NPROC 2 SYCL)
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    # too long (or hangs?) in debug
-    add_mhp_ctest(
-      TEST_NAME wave_equation_fused-sycl NAME wave_equation NPROC 2 SYCL TARGS
-      -f)
-  endif()
+  add_mhp_ctest(
+    TEST_NAME wave_equation_fused-sycl NAME wave_equation NPROC 2 SYCL TARGS -f)
 endif()
 
 add_executable(shallow_water shallow_water.cpp)
