@@ -108,8 +108,40 @@ jobs:
             build/benchmarks/gbench/mhp/*.log
             build/examples/mhp/*.log
 
+  ishmem_unit_tests:
+    runs-on: pvc
+    strategy:
+      # test everything, even if one fails
+      fail-fast: false
+      matrix:
+        include:
+          - config: Debug
+          - config: Release
+    name: ishmem-impi-icpx-${{ matrix.config }}
+    env:
+      CXX: icpx
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3 -DDR_USE_MPI_LOG_FILES=on
+      - name: Build ISHMEM
+        run: cmake --build build --target shmem -- -j
+      - name: Build MHP tests
+        run: cmake --build build --target mhp-tests mhp-tests-3 -- -j
+      - name: MHP unit tests
+        run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R mhp-tests-sycl-3 -j 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-ishmem-impi-icpx-${{ matrix.config }}
+          path: |
+            build/Testing
+            build/test/gtest/mhp/*.log
+            build/benchmarks/gbench/mhp/*.log
+            build/examples/mhp/*.log
+
   publish:
-    needs: [checks, unit_tests, pvc_unit_tests]
+    needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
     runs-on: tpi-ubuntu-latest
     permissions:
       contents: write

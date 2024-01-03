@@ -88,7 +88,14 @@ if(NOT ENABLE_ISHMEM)
 endif()
 
 if(ENABLE_SYCL)
-  set(sycl-exclusions *Slide*)
+  set(sycl-exclusions *Slide*:)
+
+  if(ENABLE_ISHMEM)
+    # TODO: build exclusions from list of strings
+    set(sycl-exclusions
+        ${sycl-exclusions}DistributedVector.Constructor*:ExclusiveScan*:InclusiveScan*:IotaView*:Sort*:Zip.FeedingTransform*:Zip.CopyConstructor*:Alignment*:MhpTests.DistributedVector*:Halo*:Mdspan*:Mdarray*:Submdspan*:MdForeach*:MdStencilForeach*:Stencil*:Segment*:WaveKernel*:
+    )
+  endif()
 
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
@@ -98,7 +105,7 @@ if(ENABLE_SYCL)
   add_mhp_ctest(
     TEST_NAME mhp-sycl-device-tests-2 NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS
     --device-memory
-    --gtest_filter=-${sycl-exclusions}:Exclusive*:Sort*:ComplexSlide*)
+    --gtest_filter=-${sycl-exclusions}Exclusive*:Sort*:ComplexSlide*)
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
     add_mhp_ctest(

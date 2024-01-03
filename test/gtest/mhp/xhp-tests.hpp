@@ -38,9 +38,10 @@ inline void fence_on(auto &&obj) { obj.fence(); }
 
 // minimal testing for quick builds
 #ifdef DRISHMEM
+// FIXME: add dr::mhp::distributed_vector<int> to AllTypes once IMPI-4728 is
+// fixed
 using AllTypes =
-    ::testing::Types<dr::mhp::distributed_vector<int>,
-                     dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>>;
+    ::testing::Types<dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>>;
 using IshmemTypes =
     ::testing::Types<dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>>;
 

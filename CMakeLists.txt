@@ -24,7 +24,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(ExternalProject)
 
   option(DISABLED_TESTS "Run disabled tests" OFF)
-  option(ENABLE_SYCL "Build sycl shp examples" OFF)
+  option(ENABLE_SYCL "Build with sycl support" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
