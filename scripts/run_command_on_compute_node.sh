@@ -26,4 +26,4 @@ mkdir -p $(dirname $LOGFILE)
 
 shift 1
 
-"$@" 2>&1 > $LOGFILE
+"$@" 2>&1 | tee $LOGFILE
