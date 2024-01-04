@@ -39,10 +39,7 @@ void Fill_Serial(benchmark::State &state) {
   }
 }
 
-// temporarily disabled (sycl mhp) - issue DRA-24
-#ifdef BENCH_SHP
 DR_BENCHMARK(Fill_Serial);
-#endif
 
 #ifdef SYCL_LANGUAGE_VERSION
 
