@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 name: "PR Tests"
+permissions: read-all
 
 on:
   push:
@@ -11,8 +12,6 @@ on:
 
   pull_request:
 
-permissions:
-  contents: read
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1

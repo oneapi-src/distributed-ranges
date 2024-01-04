@@ -3,15 +3,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 name: "Borealis"
+permissions: read-all
 
 on:
   workflow_dispatch:
   # 8am UTC is 12am PST, 1am PDT
   schedule:
     - cron: '0 8 * * *'
-
-permissions:
-  contents: read
 
 jobs:
   borealis:
