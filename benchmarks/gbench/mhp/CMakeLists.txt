@@ -21,6 +21,10 @@ add_executable(
   mpi.cpp)
 # cmake-format: on
 
+if(ENABLE_SYCL)
+  target_sources(mhp-bench PRIVATE fft3d.cpp)
+endif()
+
 if(NOT ENABLE_CUDA)
   # does not compile in CUDA because: black_scholes.cpp uses std::log
   # shallow_water, wave_equation uses uses exp
@@ -37,12 +41,13 @@ foreach(mhp-bench-exec IN ITEMS mhp-bench mhp-quick-bench)
   target_compile_definitions(${mhp-bench-exec} PRIVATE BENCH_MHP)
   target_link_libraries(${mhp-bench-exec} benchmark::benchmark cxxopts DR::mpi)
   target_link_ishmem(${mhp-bench-exec})
+  if(ENABLE_SYCL)
+    target_link_libraries(${mhp-bench-exec} MKL::MKL_DPCPP)
+  endif()
 endforeach()
 
 if(ENABLE_SYCL)
-  target_sources(mhp-quick-bench PRIVATE transpose.cpp)
-  target_link_libraries(mhp-quick-bench benchmark::benchmark cxxopts DR::mpi
-                        MKL::MKL_DPCPP)
+  target_sources(mhp-quick-bench PRIVATE fft3d.cpp)
 endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
@@ -54,7 +59,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MPI_IMPL STREQUAL "openmpi")
   # intermittent fails with: ONEAPI_DEVICE_SELECTOR=opencl:cpu mpirun -n 1
   # ./mhp-bench --vector-size 30000 --rows 100 --columns 100 --check
   add_mhp_ctest(
-    NAME mhp-bench TARGS --vector-size 30000 --rows 100 --columns 100 --check)
+    NAME mhp-bench TARGS --vector-size 30000 --rows 100 --columns 100 --check
+    --benchmark_filter=-FFT3D.*)
   if(ENABLE_SYCL)
     add_mhp_ctest(
       NAME mhp-bench SYCL TARGS --vector-size 30000 --rows 100 --columns 100
