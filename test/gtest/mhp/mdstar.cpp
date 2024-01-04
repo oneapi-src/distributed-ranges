@@ -556,23 +556,81 @@ TEST_F(MdStencilForeach, 3ops) {
 
 using MdspanUtil = Mdspan;
 
-TEST_F(MdspanUtil, Pack) {
-  std::vector<T> a(xdim * ydim);
-  std::vector<T> b(xdim * ydim);
-  rng::iota(a, 100);
-  rng::iota(b, 100);
+template <typename T> struct shadow {
+  shadow(std::vector<T> &h) {
+    host_ptr = h.data();
+    size = h.size();
+    device_ptr = alloc.allocate(size);
+    copy_in();
+  }
 
-  dr::__detail::mdspan_copy(md::mdspan(a.data(), extents2d), b.begin());
+  void copy_in() {
+    if (dr::mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+      dr::mhp::sycl_queue().copy(host_ptr, device_ptr, size).wait();
+#else
+      assert(false);
+#endif
+    } else {
+      rng::copy(host_ptr, host_ptr + size, device_ptr);
+    }
+  }
+
+  void flush() {
+    if (dr::mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+      dr::mhp::sycl_queue().copy(device_ptr, host_ptr, size).wait();
+#else
+      assert(false);
+#endif
+    } else {
+      std::copy(device_ptr, device_ptr + size, host_ptr);
+    }
+  }
+
+  ~shadow() {
+    alloc.deallocate(device_ptr, size);
+    device_ptr = nullptr;
+  }
+
+  dr::mhp::__detail::allocator<T> alloc;
+  T *device_ptr = nullptr, *host_ptr = nullptr;
+  std::size_t size = 0;
+};
+
+TEST_F(MdspanUtil, Pack) {
+  std::vector<T> a(n2d);
+  std::vector<T> b(n2d);
+  rng::iota(a, 100);
+  rng::iota(b, 200);
+
+  shadow a_shadow(a);
+  shadow b_shadow(b);
+
+  dr::__detail::mdspan_copy(md::mdspan(a_shadow.device_ptr, extents2d),
+                            b_shadow.device_ptr);
+
+  a_shadow.flush();
+  b_shadow.flush();
+
   EXPECT_EQ(a, b);
 }
 
 TEST_F(MdspanUtil, UnPack) {
-  std::vector<T> a(xdim * ydim);
-  std::vector<T> b(xdim * ydim);
+  std::vector<T> a(n2d);
+  std::vector<T> b(n2d);
   rng::iota(a, 100);
-  rng::iota(b, 100);
+  rng::iota(b, 200);
 
-  dr::__detail::mdspan_copy(a.begin(), md::mdspan(b.data(), extents2d));
+  shadow a_shadow(a);
+  shadow b_shadow(b);
+
+  dr::__detail::mdspan_copy(a_shadow.device_ptr,
+                            md::mdspan(b_shadow.device_ptr, extents2d));
+
+  a_shadow.flush();
+  b_shadow.flush();
+
   EXPECT_EQ(a, b);
 }
 
@@ -580,23 +638,28 @@ TEST_F(MdspanUtil, Copy) {
   std::vector<T> a(xdim * ydim);
   std::vector<T> b(xdim * ydim);
   rng::iota(a, 100);
-  rng::iota(b, 100);
+  rng::iota(b, 200);
 
-  dr::__detail::mdspan_copy(md::mdspan(a.data(), extents2d),
-                            md::mdspan(b.data(), extents2d));
+  shadow a_shadow(a);
+  shadow b_shadow(b);
+
+  dr::__detail::mdspan_copy(md::mdspan(a_shadow.device_ptr, extents2d),
+                            md::mdspan(b_shadow.device_ptr, extents2d));
+  a_shadow.flush();
+  b_shadow.flush();
+
   EXPECT_EQ(a, b);
 }
 
 TEST_F(MdspanUtil, Transpose2D) {
-  std::size_t size = xdim * ydim;
 #ifdef SYCL_LANGUAGE_VERSION
   using vec_alloc = sycl::usm_allocator<T, sycl::usm::alloc::shared>;
   sycl::queue q;
   vec_alloc my_alloc(q);
-  std::vector<T, vec_alloc> a(size, my_alloc), b(size, my_alloc),
-      c(size, my_alloc), ref_packed(size, my_alloc);
+  std::vector<T, vec_alloc> a(n2d, my_alloc), b(n2d, my_alloc),
+      c(n2d, my_alloc), ref_packed(n2d, my_alloc);
 #else
-  std::vector<T> a(size), b(size), c(size), ref_packed(size);
+  std::vector<T> a(n2d), b(n2d), c(n2d), ref_packed(n2d);
 #endif
   rng::iota(a, 100);
   rng::iota(b, 200);
@@ -627,21 +690,18 @@ TEST_F(MdspanUtil, Transpose2D) {
 }
 
 TEST_F(MdspanUtil, Transpose3D) {
-
-  std::size_t size = xdim * ydim * zdim;
-
 #ifdef SYCL_LANGUAGE_VERSION
   using vec_alloc = sycl::usm_allocator<T, sycl::usm::alloc::shared>;
   sycl::queue q;
   vec_alloc my_alloc(q);
-  std::vector<T, vec_alloc> ref_packed(size, my_alloc), packed(size, my_alloc),
-      md_data(size, my_alloc), mdt_data(size, my_alloc);
+  std::vector<T, vec_alloc> ref_packed(n3d, my_alloc), packed(n3d, my_alloc),
+      md_data(n3d, my_alloc), mdt_data(n3d, my_alloc);
 
   md::mdspan<T, dr::__detail::md_extents<3>> md(md_data.data(), extents3d),
       mdt_ref(mdt_data.data(), extents3dt);
 
 #else
-  std::vector<T> ref_packed(size), packed(size), md_data(size), mdt_data(size);
+  std::vector<T> ref_packed(n3d), packed(n3d), md_data(n3d), mdt_data(n3d);
   md::mdspan<T, dr::__detail::md_extents<3>> md(md_data.data(), extents3d),
       mdt_ref(mdt_data.data(), extents3dt);
 #endif

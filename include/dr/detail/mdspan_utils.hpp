@@ -175,8 +175,31 @@ auto mdspan_copy(std::forward_iterator auto src, Dst dst) {
 // copy mdspan to mdspan
 void mdspan_copy(mdspan_like auto src, mdspan_like auto dst) {
   assert(src.extents() == dst.extents());
-  auto copy = [src, dst](auto index) { dst(index) = src(index); };
-  mdspan_foreach<src.rank(), decltype(copy)>(src.extents(), copy);
+
+  constexpr std::size_t rank = std::remove_cvref_t<decltype(src)>::rank();
+  if (rank >= 2 && rank <= 3 && mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    dr::drlog.debug("mdspan_copy using sycl\n");
+    if constexpr (rank == 2) {
+      dr::__detail::parallel_for(dr::mhp::sycl_queue(),
+                                 sycl::range(dst.extent(0), dst.extent(1)),
+                                 [src, dst](auto idx) { dst(idx) = src(idx); })
+          .wait();
+    } else if constexpr (rank == 3) {
+      dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(),
+          sycl::range(dst.extent(0), dst.extent(1), dst.extent(2)),
+          [src, dst](auto idx) { dst(idx) = src(idx); })
+          .wait();
+    } else {
+      assert(false);
+    }
+#endif
+  } else {
+
+    auto copy = [src, dst](auto index) { dst(index) = src(index); };
+    mdspan_foreach<src.rank(), decltype(copy)>(src.extents(), copy);
+  }
 }
 
 // For operator(), rearrange indices according to template arguments.
