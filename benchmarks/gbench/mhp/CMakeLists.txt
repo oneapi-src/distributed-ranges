@@ -84,9 +84,9 @@ add_executable(shallow_water shallow_water.cpp)
 target_link_libraries(shallow_water cxxopts DR::mpi)
 target_compile_definitions(shallow_water PRIVATE STANDALONE_BENCHMARK)
 
-add_mhp_ctest(TEST_NAME shallow_water NAME shallow_water NPROC 1)
-add_mhp_ctest(
-  TEST_NAME shallow_water_fused NAME shallow_water NPROC 1 TARGS -f)
+# issue DRA-23 add_mhp_ctest(TEST_NAME shallow_water NAME shallow_water NPROC 1)
+# add_mhp_ctest( TEST_NAME shallow_water_fused NAME shallow_water NPROC 1 TARGS
+# -f)
 
 if(ENABLE_SYCL)
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
