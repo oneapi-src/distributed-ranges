@@ -323,6 +323,16 @@ def suite(
             weak_scaling,
         )
 
+    # Run sequence 1, 2, 4, 8, 12 based on total ranks
+    def run_rank_sparse(base, ranks, filters, targets, weak_scaling=False):
+        run_rank_list(
+            base,
+            filter(lambda r: r <= ranks, [1, 2, 4, 8, 12]),
+            filters,
+            targets,
+            weak_scaling,
+        )
+
     # Run a range of nodes
     def run_node_range(base, ranks_per_node, filters, targets):
         options = base
@@ -344,12 +354,12 @@ def suite(
         #
         if gpus > 0:
             # if benchmark does not need p2p run xhp on all gpus
-            run_rank_range(
+            run_rank_sparse(
                 base, gpus, dr_nop2p, ["shp_sycl_gpu", "mhp_sycl_gpu"]
             )
             # if benchmark needs p2p run on mhp on all gpus
-            run_rank_range(base, gpus, mhp_filters + dr_p2p, ["mhp_sycl_gpu"])
-            run_rank_range(
+            run_rank_sparse(base, gpus, mhp_filters + dr_p2p, ["mhp_sycl_gpu"])
+            run_rank_sparse(
                 base,
                 gpus,
                 mhp_filters + dr_p2p,
@@ -358,16 +368,16 @@ def suite(
             )
             # Run reference benchmarkson 1 device, use shp_sycl_gpu to
             # get sycl env vars
-            run_rank_range(base, 1, reference_filters, ["shp_sycl_gpu"])
-            run_rank_range(base, 1, mhp_reference_filters, ["mhp_sycl_gpu"])
-            run_rank_range(base, 1, shp_reference_filters, ["shp_sycl_gpu"])
+            run_rank_sparse(base, 1, reference_filters, ["shp_sycl_gpu"])
+            run_rank_sparse(base, 1, mhp_reference_filters, ["mhp_sycl_gpu"])
+            run_rank_sparse(base, 1, shp_reference_filters, ["shp_sycl_gpu"])
         if p2p_gpus > 0:
             # if benchmark needs p2p run on shp on 1 gpu
-            run_rank_range(
+            run_rank_sparse(
                 base, p2p_gpus, shp_filters + dr_p2p, ["shp_sycl_gpu"]
             )
         if p2p_gpus > 1:
-            run_rank_range(
+            run_rank_sparse(
                 base,
                 p2p_gpus,
                 shp_filters + dr_p2p,
@@ -432,7 +442,7 @@ def suite(
 
     # benchmark filters
     dr_nop2p = [
-        "^Stream_",
+        "^Stream_Triad",
         "^BlackScholes_DR",
     ]
     dr_p2p = [
