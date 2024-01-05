@@ -165,18 +165,17 @@ public:
 
   template <rng::contiguous_range R>
   void alltoall(const R &sendr, R &recvr, std::size_t count) {
-    using T = typename R::value_type;
-    MPI_Alltoall_c(rng::data(sendr), count * sizeof(T), MPI_BYTE,
-                   rng::data(recvr), count * sizeof(T), MPI_BYTE, mpi_comm_);
+    alltoall(rng::data(sendr), rng::data(recvr), count);
   }
 
   template <typename T>
   void alltoall(const T *send, T *receive, std::size_t count) {
-    dr::drlog.debug("bytes: {}\nsend: {}\nreceive: {}\n", count * sizeof(T),
-                    fmt::ptr(send), fmt::ptr(receive));
+    std::size_t bytes = count * sizeof(T);
 
-    MPI_Alltoall_c(send, count * sizeof(T), MPI_BYTE, receive,
-                   count * sizeof(T), MPI_BYTE, mpi_comm_);
+    timer time;
+    MPI_Alltoall_c(send, bytes, MPI_BYTE, receive, bytes, MPI_BYTE, mpi_comm_);
+    dr::drlog.debug(dr::logger::mpi, "alltoall bytes: {} elapsed: {}\n", bytes,
+                    time.elapsed());
   }
 
   template <rng::contiguous_range SendR, rng::contiguous_range RecvR>

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <fstream>
 
 #include <vendor/source_location/source_location.hpp>
@@ -13,9 +14,22 @@
 
 namespace dr {
 
+class timer {
+public:
+  timer() : begin_(std::chrono::high_resolution_clock::now()) {}
+
+  auto elapsed() {
+    auto end = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration<double>(end - begin_).count();
+  }
+
+private:
+  std::chrono::time_point<std::chrono::high_resolution_clock> begin_;
+};
+
 class logger {
 public:
-  enum filters { base, for_each, transpose, mdspan_view, last };
+  enum filters { base, for_each, transpose, mdspan_view, mpi, last };
 
   logger() { rng::fill(enabled_, true); }
 
@@ -88,7 +102,7 @@ private:
   std::ofstream *fout_ = nullptr;
   std::array<bool, filters::last> enabled_;
   std::array<std::string, filters::last> filter_names_ = {
-      "base", "for_each", "transpose", "mdspan_view"};
+      "base", "for_each", "transpose", "mdspan_view", "mpi"};
 };
 
 inline logger drlog;

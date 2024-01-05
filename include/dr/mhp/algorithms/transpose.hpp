@@ -180,7 +180,6 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
           dr::__detail::make_submdspan(src_tile.mdspan(), start, end);
       dr::__detail::mdtranspose<decltype(sub_tile), 2, 0, 1> sub_tile_t(
           sub_tile);
-      dr::drlog.debug(dr::logger::transpose, "subtile_t\n{}\n", sub_tile_t);
 
       dr::__detail::mdspan_copy(sub_tile_t, buffer);
       buffer += sub_tile_size;
