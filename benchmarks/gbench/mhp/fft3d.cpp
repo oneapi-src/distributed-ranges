@@ -21,7 +21,8 @@ int comm_size;
 
 #endif
 
-using value_t = std::complex<double>;
+using real_t = float;
+using value_t = std::complex<real_t>;
 
 bool verbose = false;
 
@@ -36,22 +37,22 @@ struct fmt::formatter<std::complex<Base>, char>
 };
 
 // Adapted examples/sycl/dft/source/dp_complex_3d.cpp
-void init_matrix(auto &mat) {
+template <typename T>
+void init_matrix(dr::mhp::distributed_mdarray<std::complex<T>, 3> &mat) {
 
-  constexpr double TWOPI = 6.2831853071795864769;
+  constexpr T TWOPI = 6.2831853071795864769;
   constexpr int H1 = -1, H2 = -2, H3 = -3;
   int N1 = mat.extent(2), N2 = mat.extent(1), N3 = mat.extent(0);
 
-  auto moda = [](int K, int L, int M) {
-    return (double)(((long long)K * L) % M);
-  };
+  auto moda = [](int K, int L, int M) { return (T)(((long long)K * L) % M); };
+
+  const T norm = T(1) / (N3 * N2 * N1);
 
   auto init = [=](auto index, auto v) {
     auto phase = TWOPI * (moda(static_cast<int>(index[2]), H1, N1) / N1 +
                           moda(static_cast<int>(index[1]), H2, N2) / N2 +
                           moda(static_cast<int>(index[0]), H3, N3) / N3);
-    std::get<0>(v) = {std::cos(phase) / (N3 * N2 * N1),
-                      std::sin(phase) / (N3 * N2 * N1)};
+    std::get<0>(v) = {std::cos(phase) * norm, std::sin(phase) * norm};
   };
 
   dr::mhp::for_each(init, mat);
@@ -67,6 +68,23 @@ template <> struct dft_precision<double> {
       oneapi::mkl::dft::precision::DOUBLE;
 };
 
+void show_plan(const std::string &title, auto *plan) {
+  MKL_LONG transforms, fwd_distance, bwd_distance;
+  real_t forward_scale, backward_scale;
+  plan->get_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+                  &transforms);
+  plan->get_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, &fwd_distance);
+  plan->get_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, &bwd_distance);
+  plan->get_value(oneapi::mkl::dft::config_param::FORWARD_SCALE,
+                  &forward_scale);
+  plan->get_value(oneapi::mkl::dft::config_param::BACKWARD_SCALE,
+                  &backward_scale);
+  fmt::print("{}:\n  number of transforms: {}\n  fwd distance: {}\n  bwd "
+             "distance: {}\n  forward scale: {}\n  backward scale: {}\n",
+             title, transforms, fwd_distance, bwd_distance, forward_scale,
+             backward_scale);
+}
+
 template <typename T> class distributed_fft {
 public:
   explicit distributed_fft(std::size_t x, std::size_t y, std::size_t z)
@@ -75,9 +93,8 @@ public:
     i_slab_ = *(dr::mhp::local_mdspans(i_mat_).begin());
     o_slab_ = *(dr::mhp::local_mdspans(o_mat_).begin());
 
-    int i_x = i_slab_.extent(0);
-    int i_y = i_slab_.extent(1);
-    int i_z = i_slab_.extent(2);
+    std::int64_t i_x = i_slab_.extent(0), i_y = i_slab_.extent(1),
+                 i_z = i_slab_.extent(2);
     fft_2d_plan_ = new fft_plan_t({i_y, i_z});
     fft_2d_plan_->set_value(
         oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, i_x);
@@ -86,8 +103,9 @@ public:
     fft_2d_plan_->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,
                             i_y * i_z);
     fft_2d_plan_->set_value(oneapi::mkl::dft::config_param::BACKWARD_SCALE,
-                            (1.0 / (i_x * i_y * i_z)));
+                            (1.0 / (x * i_y * i_z)));
     fft_2d_plan_->commit(q);
+    // show_plan("yz", fft_2d_plan_);
 
     auto o_x = o_slab_.extent(0);
     auto o_y = o_slab_.extent(1);
@@ -98,6 +116,7 @@ public:
     fft_1d_plan_->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, o_z);
     fft_1d_plan_->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, o_z);
     fft_1d_plan_->commit(q);
+    // show_plan("x", fft_1d_plan_);
 
     init_matrix(i_mat_);
   }
@@ -171,7 +190,7 @@ private:
 #ifdef STANDALONE_BENCHMARK
 
 void fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
-  distributed_fft<double> fft3d(x, y, z);
+  distributed_fft<real_t> fft3d(x, y, z);
 
   if (nreps == 0) {
     fft3d.check();
@@ -245,7 +264,7 @@ static void FFT3D_DR(benchmark::State &state) {
     x = y = z = 8;
   }
 
-  distributed_fft<double> fft3d(x, y, z);
+  distributed_fft<real_t> fft3d(x, y, z);
 
   for (auto _ : state) {
     fft3d.compute();

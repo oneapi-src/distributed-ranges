@@ -130,6 +130,7 @@ public:
       desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, m * m);
       desc->set_value(oneapi::mkl::dft::config_param::BACKWARD_SCALE,
                       (1.0 / (m * m * m)));
+      // show_plan("yz", desc);
       desc->commit(q);
       fft_yz_plans.emplace_back(desc);
 
@@ -138,6 +139,7 @@ public:
                       (m * m) / nprocs);
       desc->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, m);
       desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, m);
+      // show_plan("x", desc);
       desc->commit(q);
       fft_x_plans.emplace_back(desc);
     }
@@ -200,6 +202,25 @@ public:
       events.push_back(e);
     }
     sycl::event::wait(events);
+  }
+
+  void show_plan(const std::string &title, auto *plan) {
+    MKL_LONG transforms, fwd_distance, bwd_distance;
+    float forward_scale, backward_scale;
+    plan->get_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+                    &transforms);
+    plan->get_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,
+                    &fwd_distance);
+    plan->get_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,
+                    &bwd_distance);
+    plan->get_value(oneapi::mkl::dft::config_param::FORWARD_SCALE,
+                    &forward_scale);
+    plan->get_value(oneapi::mkl::dft::config_param::BACKWARD_SCALE,
+                    &backward_scale);
+    fmt::print("{}:\n  number of transforms: {}\n  fwd distance: {}\n  bwd "
+               "distance: {}\n  forward scale: {}\n  backward scale: {}\n",
+               title, transforms, fwd_distance, bwd_distance, forward_scale,
+               backward_scale);
   }
 };
 
