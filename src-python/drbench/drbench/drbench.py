@@ -27,6 +27,7 @@ class SuiteConfig:
         self.ranks_per_node = None
         self.target = None
         self.vec_size = None
+        self.device_memory = False
 
 
 option_prefix = click.option(
@@ -123,6 +124,7 @@ def do_run(options):
             options.weak_scaling,
             options.different_devices,
             options.ranks_per_node,
+            options.device_memory,
         )
     )
     for t in options.target:
@@ -176,6 +178,7 @@ def do_run(options):
     default=["Stream_"],
     help="A filter used for a benchmark",
 )
+@click.option("--device-memory", is_flag=True, help="Use device memory")
 @option_mhp_bench
 @option_shp_bench
 @option_dry_run
@@ -192,6 +195,7 @@ def run(
     ranks_per_node,
     reps,
     filter,
+    device_memory,
     mhp_bench,
     shp_bench,
     dry_run,
@@ -212,6 +216,7 @@ def run(
             "--node-range requires --ranks-per-node"
         )
 
+    options.device_memory = device_memory
     options.prefix = prefix
     options.target = target
     options.vec_size = vec_size
@@ -294,12 +299,20 @@ def suite(
     different_devices,
 ):
     # Run a list of ranks
-    def run_rank_list(base, ranks, filter, targets, weak_scaling_filter=[]):
+    def run_rank_list(
+        base,
+        ranks,
+        filter,
+        targets,
+        weak_scaling_filter=[],
+        device_memory=False,
+    ):
         options = base
         options.ranks = ranks
         options.filter = filter
         options.target = targets
         options.weak_scaling = False
+        options.device_memory = device_memory
         do_run(options)
 
         weak = list(set(filter) & set(weak_scaling_filter))
@@ -319,13 +332,21 @@ def suite(
         )
 
     # Run sequence 1, 2, 4, 8, 12 based on total ranks
-    def run_rank_sparse(base, ranks, filters, targets, weak_scaling_filter=[]):
+    def run_rank_sparse(
+        base,
+        ranks,
+        filters,
+        targets,
+        weak_scaling_filter=[],
+        device_memory=False,
+    ):
         run_rank_list(
             base,
             list(filter(lambda r: r <= ranks, [1, 2, 4, 8, 12])),
             filters,
             targets,
-            weak_scaling_filter,
+            weak_scaling_filter=weak_scaling_filter,
+            device_memory=device_memory,
         )
 
     # Run a range of nodes
@@ -359,9 +380,17 @@ def suite(
             run_rank_sparse(
                 base,
                 gpus,
+                device_memory_filter,
+                ["mhp_sycl_gpu"],
+                device_memory=True,
+            )
+            run_rank_sparse(
+                base,
+                gpus,
                 xhp_filter + shp_filter,
                 ["shp_sycl_gpu"],
                 weak_scaling_filter,
+                device_memory=True,
             )
 
             # reference
@@ -447,6 +476,7 @@ def suite(
         "Gemm_Reference",
     ]
     mhp_filter = ["Stencil2D_DR", "WaveEquation_DR"]
+    device_memory_filter = ["WaveEquation_DR"]
     shp_filter = [".*Sort_DR", "Gemm_DR"]
     # reference benchmarks that do not use shp or mhp
     sycl_reference_filter = [

@@ -15,6 +15,7 @@ std::size_t num_rows;
 std::size_t num_columns;
 bool check_results;
 bool weak_scaling;
+bool device_memory;
 
 cxxopts::ParseResult options;
 
@@ -33,8 +34,8 @@ void dr_init() {
   if (options.count("sycl")) {
     sycl::queue q = dr::mhp::select_queue(options.count("different-devices"));
     benchmark::AddCustomContext("device_info", device_info(q.get_device()));
-    dr::mhp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
-                                                    : sycl::usm::alloc::shared);
+    dr::mhp::init(q, device_memory ? sycl::usm::alloc::device
+                                   : sycl::usm::alloc::shared);
     return;
   }
 #endif
@@ -125,6 +126,7 @@ int main(int argc, char *argv[]) {
   num_columns = options["columns"].as<std::size_t>();
   check_results = options.count("check");
   weak_scaling = options["weak-scaling"].as<bool>();
+  device_memory = options["device-memory"].as<bool>();
 
   if (weak_scaling)
     default_vector_size = default_vector_size * ranks;

@@ -30,6 +30,7 @@ extern std::size_t ranks;
 extern std::size_t default_vector_size;
 extern std::size_t default_repetitions;
 extern bool weak_scaling;
+extern bool device_memory;
 
 #define DR_BENCHMARK(x) DR_BENCHMARK_BASE(x)->MinWarmUpTime(.1)->MinTime(.1)
 
@@ -173,6 +174,7 @@ inline void add_configuration(int rank, const cxxopts::ParseResult &options) {
   benchmark::AddCustomContext("rank", std::to_string(rank));
   benchmark::AddCustomContext("ranks", std::to_string(ranks));
   benchmark::AddCustomContext("weak-scaling", std::to_string(weak_scaling));
+  benchmark::AddCustomContext("device-memory", std::to_string(device_memory));
   if (options.count("context")) {
     for (std::string context :
          options["context"].as<std::vector<std::string>>()) {

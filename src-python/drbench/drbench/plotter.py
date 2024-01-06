@@ -54,6 +54,7 @@ class Plotter:
                 runtime = ctx["runtime"]
                 device = ctx["device"]
                 weak_scaling = ctx["weak-scaling"] == "1"
+                device_memory = ctx["device-memory"] == "1"
             except KeyError:
                 click.fail(f"could not parse context of {fname}")
             benches = fdata["benchmarks"]
@@ -85,6 +86,7 @@ class Plotter:
                         "Target": btarget,
                         "Ranks": ranks,
                         "Scaling": "weak" if weak_scaling else "strong",
+                        "Device Memory": device_memory,
                         Plotter.tbs_title: bw / 1e12,
                         Plotter.gbs_title: bw / 1e9,
                         "model": model,
@@ -310,26 +312,35 @@ class Plotter:
         lines = []
         for scaling in ["weak", "strong"]:
             for target in targets:
-                p = db.loc[
-                    (db["bench_name"] == benchmark_name)
-                    & (db["Target"] == target)
-                    & (db["Scaling"] == scaling)
-                ]
-                if p.shape[0] == 0:
-                    click.echo(
-                        f"  no data for {benchmark_name} {target} {scaling}"
-                    )
-                    continue
+                for device_memory in [True, False]:
+                    p = db.loc[
+                        (db["bench_name"] == benchmark_name)
+                        & (db["Target"] == target)
+                        & (db["Scaling"] == scaling)
+                        & (db["Device Memory"] == device_memory)
+                    ]
+                    if p.shape[0] == 0:
+                        click.echo(
+                            f"  no data for {benchmark_name} {target}"
+                            f"{scaling} device_memory:{device_memory}"
+                        )
+                        continue
 
-                total_time = p["rtime"].values / (
-                    1 if scaling == "strong" else p["Ranks"].values
-                )
-                label = target
-                if scaling == "weak":
-                    label += " weak scaling"
-                lines.append(
-                    [p[x_title].values, reference_rtime / total_time, label]
-                )
+                    total_time = p["rtime"].values / (
+                        1 if scaling == "strong" else p["Ranks"].values
+                    )
+                    label = target
+                    if scaling == "weak":
+                        label += " weak scaling"
+                    if device_memory:
+                        label += " device memory"
+                    lines.append(
+                        [
+                            p[x_title].values,
+                            reference_rtime / total_time,
+                            label,
+                        ]
+                    )
 
         self.__plot(
             benchmark,

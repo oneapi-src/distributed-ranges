@@ -13,9 +13,19 @@ from drbench.common import Device, Model, Runtime
 AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
-    (
-        "prefix benchmark_filter reps dry_run mhp_bench shp_bench "
-        "weak_scaling different_devices ranks_per_node"
+    " ".join(
+        [
+            "prefix",
+            "benchmark_filter",
+            "reps",
+            "dry_run",
+            "mhp_bench",
+            "shp_bench",
+            "weak_scaling",
+            "different_devices",
+            "ranks_per_node",
+            "device_memory",
+        ]
     ),
 )
 
@@ -54,6 +64,7 @@ class Runner:
                 "I_MPI_PIN_ORDER=compact "
                 "I_MPI_PIN_CELL=unit"
             )
+        env = env + " I_MPI_OFFLOAD=1"
 
         mpirun_params = []
         mpirun_params.append(f"-n {str(ranks)}")
@@ -105,6 +116,9 @@ class Runner:
 
         if self.analysis_config.weak_scaling:
             params.append("--weak-scaling")
+
+        if self.analysis_config.device_memory:
+            params.append("--device-memory")
 
         if analysis_case.target.model == Model.SHP:
             self.__run_shp_analysis(

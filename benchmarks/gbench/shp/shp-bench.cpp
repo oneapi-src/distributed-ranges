@@ -7,6 +7,8 @@
 std::size_t default_vector_size;
 std::size_t default_repetitions;
 bool weak_scaling;
+// shp always uses device memory, but it is optional for mhp
+bool device_memory = true;
 
 std::size_t comm_rank = 0;
 std::size_t comm_size = 1;
@@ -37,6 +39,7 @@ int main(int argc, char *argv[]) {
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
+    ("device-memory", "Ignored because shp always uses device memory")
     ("weak-scaling", "Scale the vector size by the number of ranks", cxxopts::value<bool>()->default_value("false"))
     ;
   // clang-format on
