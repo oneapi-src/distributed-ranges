@@ -25,16 +25,15 @@ class Runner:
         self.analysis_config = analysis_config
 
     def __execute(self, command: str):
-        logging.info(f"running command: {command}")
+        logging.info(f"execute\n  {command}")
         usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         if not self.analysis_config.dry_run:
             subprocess.run(command, shell=True, check=True)
         usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
         logging.info(
-            f"command execution time, "
-            f"user:{usage_end.ru_utime - usage_start.ru_utime:.2f}, "
-            f"system:{usage_end.ru_stime - usage_start.ru_stime:.2f}, "
-            f"command: {command}"
+            f"  command execution time:"
+            f" user:{usage_end.ru_utime - usage_start.ru_utime:.2f}, "
+            f" system:{usage_end.ru_stime - usage_start.ru_stime:.2f}"
         )
 
     def __run_mhp_analysis(self, params, ranks, ranks_per_node, target):

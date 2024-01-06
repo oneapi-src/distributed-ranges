@@ -78,8 +78,9 @@ option_different_devices = click.option(
 def cli():
     logging.basicConfig(
         stream=sys.stdout,
-        format="%(levelname)s %(asctime)s %(message)s"
-        " [%(filename)s:%(lineno)d]",
+        format=(
+            "%(levelname)s %(asctime)s" "[%(filename)s:%(lineno)d] %(message)s"
+        ),
         datefmt="%Y-%m-%d_%H:%M:%S",
         level=logging.INFO,
     )
@@ -111,10 +112,6 @@ def choice_to_target(c):
 
 
 def do_run(options):
-    logging.info(
-        f"running analysis over targets*sizes*ranks: "
-        f"{options.target} * {options.vec_size} * {options.ranks}"
-    )
     r = runner.Runner(
         runner.AnalysisConfig(
             options.prefix,
@@ -271,13 +268,6 @@ def run(
     help="Number of GPUs per node",
 )
 @click.option(
-    "--no-p2p",
-    "p2p",
-    is_flag=True,
-    default=True,
-    help="Do not run benchmarks that require p2p",
-)
-@click.option(
     "--sockets",
     type=int,
     default=0,
@@ -298,20 +288,25 @@ def suite(
     reps,
     nodes,
     gpus,
-    p2p,
     sockets,
     cores_per_socket,
     weak_scaling,
     different_devices,
 ):
     # Run a list of ranks
-    def run_rank_list(base, ranks, filters, targets, weak_scaling=False):
+    def run_rank_list(base, ranks, filter, targets, weak_scaling_filter=[]):
         options = base
         options.ranks = ranks
-        options.filter = filters
+        options.filter = filter
         options.target = targets
-        options.weak_scaling = weak_scaling
+        options.weak_scaling = False
         do_run(options)
+
+        weak = list(set(filter) & set(weak_scaling_filter))
+        if len(weak) > 0:
+            options.filter = weak
+            options.weak_scaling = True
+            do_run(options)
 
     # Run a range of ranks on a single node
     def run_rank_range(base, ranks, filters, targets, weak_scaling=False):
@@ -324,13 +319,13 @@ def suite(
         )
 
     # Run sequence 1, 2, 4, 8, 12 based on total ranks
-    def run_rank_sparse(base, ranks, filters, targets, weak_scaling=False):
+    def run_rank_sparse(base, ranks, filters, targets, weak_scaling_filter=[]):
         run_rank_list(
             base,
-            filter(lambda r: r <= ranks, [1, 2, 4, 8, 12]),
+            list(filter(lambda r: r <= ranks, [1, 2, 4, 8, 12])),
             filters,
             targets,
-            weak_scaling,
+            weak_scaling_filter,
         )
 
     # Run a range of nodes
@@ -353,36 +348,29 @@ def suite(
         # GPU devices
         #
         if gpus > 0:
-            # if benchmark does not need p2p run xhp on all gpus
-            run_rank_sparse(
-                base, gpus, dr_nop2p, ["shp_sycl_gpu", "mhp_sycl_gpu"]
-            )
-            # if benchmark needs p2p run on mhp on all gpus
-            run_rank_sparse(base, gpus, mhp_filters + dr_p2p, ["mhp_sycl_gpu"])
+            # benchmarks
             run_rank_sparse(
                 base,
                 gpus,
-                mhp_filters + dr_p2p,
+                xhp_filter + mhp_filter,
                 ["mhp_sycl_gpu"],
-                weak_scaling=True,
+                weak_scaling_filter,
             )
-            # Run reference benchmarkson 1 device, use shp_sycl_gpu to
-            # get sycl env vars
-            run_rank_sparse(base, 1, reference_filters, ["shp_sycl_gpu"])
-            run_rank_sparse(base, 1, mhp_reference_filters, ["mhp_sycl_gpu"])
-            run_rank_sparse(base, 1, shp_reference_filters, ["shp_sycl_gpu"])
-        if p2p_gpus > 0:
-            # if benchmark needs p2p run on shp on 1 gpu
-            run_rank_sparse(
-                base, p2p_gpus, shp_filters + dr_p2p, ["shp_sycl_gpu"]
-            )
-        if p2p_gpus > 1:
             run_rank_sparse(
                 base,
-                p2p_gpus,
-                shp_filters + dr_p2p,
+                gpus,
+                xhp_filter + shp_filter,
                 ["shp_sycl_gpu"],
-                weak_scaling=True,
+                weak_scaling_filter,
+            )
+
+            # reference
+            run_rank_sparse(base, 1, mhp_reference_filter, ["mhp_sycl_gpu"])
+            run_rank_sparse(
+                base,
+                1,
+                sycl_reference_filter + shp_reference_filter,
+                ["shp_sycl_gpu"],
             )
 
         #
@@ -393,19 +381,19 @@ def suite(
             run_rank_range(
                 base,
                 sockets,
-                dr_filters,
-                ["mhp_sycl_cpu", "shp_sycl_cpu"],
+                xhp_filter + mhp_filter,
+                ["mhp_sycl_cpu"],
             )
             run_rank_range(
                 base,
                 sockets,
-                mhp_filters,
-                ["mhp_sycl_cpu"],
+                xhp_filter + shp_filter,
+                ["shp_sycl_cpu"],
             )
             # Run reference benchmarks on 1 device, use shp_sycl_cpu to
             # get sycl env vars
-            run_rank_range(base, 1, reference_filters, ["shp_sycl_cpu"])
-            run_rank_range(base, 1, mhp_reference_filters, ["mhp_sycl_cpu"])
+            run_rank_range(base, 1, sycl_reference_filter, ["shp_sycl_cpu"])
+            run_rank_range(base, 1, mhp_reference_filter, ["mhp_sycl_cpu"])
             # 1 and 2 sockets for direct cpu
             run_rank_list(
                 base,
@@ -416,7 +404,7 @@ def suite(
                         cores_per_socket,
                     )
                 ),
-                mhp_filters + dr_filters,
+                mhp_filter + xhp_filter,
                 ["mhp_direct_cpu"],
             )
 
@@ -425,47 +413,52 @@ def suite(
         # GPU devices
         #
         if gpus > 0:
-            # if benchmark does not need p2p run xhp on all gpus
-            run_node_range(base, gpus, dr_filters, ["mhp_sycl_gpu"])
+            run_node_range(
+                base, gpus, xhp_filter + mhp_filter, ["mhp_sycl_gpu"]
+            )
 
         #
         # CPU devices
         #
         if sockets > 0:
-            run_node_range(base, sockets, dr_filters, ["mhp_sycl_cpu"])
+            run_node_range(base, sockets, xhp_filter, ["mhp_sycl_cpu"])
             run_node_range(
                 base,
                 sockets * cores_per_socket,
-                dr_filters,
+                xhp_filter,
                 ["mhp_direct_cpu"],
             )
 
     # benchmark filters
-    dr_nop2p = [
-        "^Stream_Triad",
-        "^BlackScholes_DR",
+    xhp_filter = [
+        "BlackScholes_DR",
+        "DotProduct_DR",
+        # does not work
+        # "Exclusive_Scan_DR"
+        "Inclusive_Scan_DR",
+        "Reduce_DR",
+        "Stream_Triad",
     ]
-    dr_p2p = [
-        "^DotProduct_DR",
-        "^Inclusive_Scan_DR",
-        "^Reduce_DR",
+    weak_scaling_filter = [
+        "Inclusive_Scan_DR",
+        "Reduce_DR",
+        ".*Sort_DR",
+        "WaveEquation_DR",
+        "Gemm_Reference",
     ]
-    dr_filters = dr_nop2p + dr_p2p
-    # ExclusiveScan benchmarks removed
-    # fail in SHP: https://github.com/oneapi-src/distributed-ranges/issues/593
-    # slow in MHP: https://github.com/oneapi-src/distributed-ranges/issues/588
-    mhp_filters = ["Stencil2D_DR", "WaveEquation_DR"]
-    shp_filters = [".*Sort_DR", "Gemm_DR"]
-    reference_filters = [
+    mhp_filter = ["Stencil2D_DR", "WaveEquation_DR"]
+    shp_filter = [".*Sort_DR", "Gemm_DR"]
+    # reference benchmarks that do not use shp or mhp
+    sycl_reference_filter = [
         "BlackScholes_Reference",
         "DotProduct_Reference",
         "Inclusive_Scan_Reference",
         "Reduce_Reference",
     ]
-    mhp_reference_filters = [
+    mhp_reference_filter = [
         "Stencil2D_Reference",
     ]
-    shp_reference_filters = [
+    shp_reference_filter = [
         ".*Sort_Reference",
         "Gemm_Reference",
     ]
@@ -490,12 +483,6 @@ def suite(
         f"starting suite, weak_scaling:{weak_scaling}, "
         f"different_devices:{different_devices}"
     )
-
-    # if the platform does not support p2p, limit gpus to 1
-    if p2p:
-        p2p_gpus = gpus
-    else:
-        p2p_gpus = min(gpus, 1)
 
     if clean and not dry_run:
         do_clean(prefix)
