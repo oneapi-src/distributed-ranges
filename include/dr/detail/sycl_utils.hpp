@@ -132,6 +132,19 @@ sycl::event parallel_for(sycl::queue &q, sycl::range<3> global, Fn &&fn) {
   return parallel_for_nd(q, global, fn);
 }
 
+using event = sycl::event;
+
+} // namespace dr::__detail
+
+#else
+
+namespace dr::__detail {
+
+class event {
+public:
+  void wait() {}
+};
+
 } // namespace dr::__detail
 
 #endif // SYCL_LANGUAGE_VERSION

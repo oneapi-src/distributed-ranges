@@ -65,7 +65,7 @@ void transpose2D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
     auto sm = src_tile.mdspan();
     auto dm = dst_tile.mdspan();
     dr::__detail::mdtranspose<decltype(sm), 1, 0> src_tile_t(sm);
-    dr::__detail::mdspan_copy(src_tile_t, dm);
+    dr::__detail::mdspan_copy(src_tile_t, dm).wait();
 
   } else {
     // Divide src tile into sub-tiles by taking vertical slices, each
@@ -87,6 +87,7 @@ void transpose2D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
     __detail::tmp_buffer<T> send_buffer(sub_tiles_size, dst_tile);
     T *buffer = send_buffer.data();
 
+    std::vector<dr::__detail::event> pack_events;
     index_type start({0, 0}), end({src_tile.mdspan().extent(0), 0});
     for (std::size_t i = 0; i < dst.grid().extent(0); i++) {
       auto num_cols = dst.grid()(i, 0).mdspan().extent(0);
@@ -97,10 +98,11 @@ void transpose2D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
       auto sub_tile =
           dr::__detail::make_submdspan(src_tile.mdspan(), start, end);
       dr::__detail::mdtranspose<decltype(sub_tile), 1, 0> sub_tile_t(sub_tile);
-      dr::__detail::mdspan_copy(sub_tile_t, buffer);
+      pack_events.push_back(dr::__detail::mdspan_copy(sub_tile_t, buffer));
       buffer += sub_tile_size;
       start[1] += num_cols;
     }
+    rng::for_each(pack_events, [](auto e) { e.wait(); });
 
     // We have packed the src into the send_buffer and no longer need
     // it. Try to reuse its space for the receive buffer
@@ -108,6 +110,7 @@ void transpose2D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
     buffer = receive_buffer.data();
     comm.alltoall(send_buffer.data(), receive_buffer.data(), sub_tile_size);
 
+    std::vector<dr::__detail::event> unpack_events;
     start = {0, 0};
     end = {dst_tile.mdspan().extent(0), 0};
     for (std::size_t i = 0; i < src.grid().extent(0); i++) {
@@ -118,10 +121,11 @@ void transpose2D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
                       start, end);
       auto sub_tile =
           dr::__detail::make_submdspan(dst_tile.mdspan(), start, end);
-      dr::__detail::mdspan_copy(buffer, sub_tile);
+      unpack_events.push_back(dr::__detail::mdspan_copy(buffer, sub_tile));
       buffer += sub_tile_size;
       start[1] += num_cols;
     }
+    rng::for_each(unpack_events, [](auto e) { e.wait(); });
   }
 }
 
@@ -159,7 +163,7 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
     auto sm = src_tile.mdspan();
     auto dm = dst_tile.mdspan();
     dr::__detail::mdtranspose<decltype(sm), 2, 0, 1> src_tile_t(sm);
-    dr::__detail::mdspan_copy(src_tile_t, dm);
+    dr::__detail::mdspan_copy(src_tile_t, dm).wait();
 
   } else {
 
@@ -168,6 +172,7 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
 
     T *buffer = send_buffer.data();
 
+    std::vector<dr::__detail::event> pack_events;
     index_type start({0, 0, 0}),
         end({src_tile.mdspan().extent(0), 0, src_tile.mdspan().extent(2)});
     for (std::size_t i = 0; i < dst.grid().extent(0); i++) {
@@ -181,15 +186,18 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
       dr::__detail::mdtranspose<decltype(sub_tile), 2, 0, 1> sub_tile_t(
           sub_tile);
 
-      dr::__detail::mdspan_copy(sub_tile_t, buffer);
+      pack_events.push_back(dr::__detail::mdspan_copy(sub_tile_t, buffer));
       buffer += sub_tile_size;
       start[1] += num_cols;
     }
+
+    rng::for_each(pack_events, [](auto e) { e.wait(); });
 
     __detail::tmp_buffer<T> receive_buffer(sub_tiles_size, src_tile);
     buffer = receive_buffer.data();
     comm.alltoall(send_buffer.data(), receive_buffer.data(), sub_tile_size);
 
+    std::vector<dr::__detail::event> unpack_events;
     start = {0, 0, 0};
     end = {dst_tile.mdspan().extent(0), dst_tile.mdspan().extent(1), 0};
     for (std::size_t i = 0; i < src.grid().extent(0); i++) {
@@ -200,10 +208,11 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
                       start, end);
       auto sub_tile =
           dr::__detail::make_submdspan(dst_tile.mdspan(), start, end);
-      dr::__detail::mdspan_copy(buffer, sub_tile);
+      unpack_events.push_back(dr::__detail::mdspan_copy(buffer, sub_tile));
       buffer += sub_tile_size;
       start[2] += num_cols;
     }
+    rng::for_each(unpack_events, [](auto e) { e.wait(); });
   }
 }
 

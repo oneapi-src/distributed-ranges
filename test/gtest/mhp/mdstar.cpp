@@ -608,7 +608,8 @@ TEST_F(MdspanUtil, Pack) {
   shadow b_shadow(b);
 
   dr::__detail::mdspan_copy(md::mdspan(a_shadow.device_ptr, extents2d),
-                            b_shadow.device_ptr);
+                            b_shadow.device_ptr)
+      .wait();
 
   a_shadow.flush();
   b_shadow.flush();
@@ -626,7 +627,8 @@ TEST_F(MdspanUtil, UnPack) {
   shadow b_shadow(b);
 
   dr::__detail::mdspan_copy(a_shadow.device_ptr,
-                            md::mdspan(b_shadow.device_ptr, extents2d));
+                            md::mdspan(b_shadow.device_ptr, extents2d))
+      .wait();
 
   a_shadow.flush();
   b_shadow.flush();
@@ -644,7 +646,8 @@ TEST_F(MdspanUtil, Copy) {
   shadow b_shadow(b);
 
   dr::__detail::mdspan_copy(md::mdspan(a_shadow.device_ptr, extents2d),
-                            md::mdspan(b_shadow.device_ptr, extents2d));
+                            md::mdspan(b_shadow.device_ptr, extents2d))
+      .wait();
   a_shadow.flush();
   b_shadow.flush();
 
@@ -681,11 +684,11 @@ TEST_F(MdspanUtil, Transpose2D) {
   EXPECT_EQ(ref, mdat);
 
   // Transpose pack
-  dr::__detail::mdspan_copy(mdat, b.begin());
+  dr::__detail::mdspan_copy(mdat, b.begin()).wait();
   EXPECT_EQ(ref_packed, b);
 
   // Transpose copy
-  dr::__detail::mdspan_copy(mdat, mdc);
+  dr::__detail::mdspan_copy(mdat, mdc).wait();
   EXPECT_EQ(mdat, mdc);
 }
 
@@ -724,7 +727,7 @@ TEST_F(MdspanUtil, Transpose3D) {
   EXPECT_EQ(mdt_ref, mdt) << fmt::format("md:\n{}", md);
 
   // Transpose pack
-  dr::__detail::mdspan_copy(mdt, packed.begin());
+  dr::__detail::mdspan_copy(mdt, packed.begin()).wait();
   EXPECT_EQ(ref_packed, packed);
 }
 

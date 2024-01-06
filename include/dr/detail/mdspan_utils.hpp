@@ -106,74 +106,76 @@ void mdspan_foreach(md_extents<Rank> extents, Op op,
 // Pack mdspan into contiguous container
 template <mdspan_like Src>
 auto mdspan_copy(Src src, std::forward_iterator auto dst) {
+  __detail::event event;
+
   constexpr std::size_t rank = std::remove_cvref_t<Src>::rank();
   if (rank >= 2 && rank <= 3 && mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     constexpr std::size_t rank = std::remove_cvref_t<Src>::rank();
     if constexpr (rank == 2) {
-      dr::__detail::parallel_for(
+      event = dr::__detail::parallel_for(
           dr::mhp::sycl_queue(), sycl::range(src.extent(0), src.extent(1)),
           [src, dst](auto idx) {
             dst[idx[0] * src.extent(1) + idx[1]] = src(idx);
-          })
-          .wait();
+          });
     } else if constexpr (rank == 3) {
-      dr::__detail::parallel_for(
+      event = dr::__detail::parallel_for(
           dr::mhp::sycl_queue(),
           sycl::range(src.extent(0), src.extent(1), src.extent(2)),
           [src, dst](auto idx) {
             dst[idx[0] * src.extent(1) * src.extent(2) +
                 idx[1] * src.extent(2) + idx[2]] = src(idx);
-          })
-          .wait();
+          });
     } else {
       assert(false);
     }
 #endif
-    return dst + src.size();
   } else {
     auto pack = [src, &dst](auto index) { *dst++ = src(index); };
     mdspan_foreach<src.rank(), decltype(pack)>(src.extents(), pack);
-    return dst;
   }
+
+  return event;
 }
 
 // unpack contiguous container into mdspan
 template <mdspan_like Dst>
 auto mdspan_copy(std::forward_iterator auto src, Dst dst) {
+  __detail::event event;
+
   constexpr std::size_t rank = std::remove_cvref_t<Dst>::rank();
   if (rank >= 2 && rank <= 3 && mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     if constexpr (rank == 2) {
-      dr::__detail::parallel_for(
+      event = dr::__detail::parallel_for(
           dr::mhp::sycl_queue(), sycl::range(dst.extent(0), dst.extent(1)),
           [src, dst](auto idx) {
             dst(idx) = src[idx[0] * dst.extent(1) + idx[1]];
-          })
-          .wait();
+          });
     } else if constexpr (rank == 3) {
-      dr::__detail::parallel_for(
+      event = dr::__detail::parallel_for(
           dr::mhp::sycl_queue(),
           sycl::range(dst.extent(0), dst.extent(1), dst.extent(2)),
           [src, dst](auto idx) {
             dst(idx) = src[idx[0] * dst.extent(1) * dst.extent(2) +
                            idx[1] * dst.extent(2) + idx[2]];
-          })
-          .wait();
+          });
     } else {
       assert(false);
     }
 #endif
-    return src + dst.size();
   } else {
     auto unpack = [&src, dst](auto index) { dst(index) = *src++; };
     mdspan_foreach<dst.rank(), decltype(unpack)>(dst.extents(), unpack);
-    return src;
   }
+
+  return event;
 }
 
 // copy mdspan to mdspan
-void mdspan_copy(mdspan_like auto src, mdspan_like auto dst) {
+auto mdspan_copy(mdspan_like auto src, mdspan_like auto dst) {
+  __detail::event event;
+
   assert(src.extents() == dst.extents());
 
   constexpr std::size_t rank = std::remove_cvref_t<decltype(src)>::rank();
@@ -181,16 +183,14 @@ void mdspan_copy(mdspan_like auto src, mdspan_like auto dst) {
 #ifdef SYCL_LANGUAGE_VERSION
     dr::drlog.debug("mdspan_copy using sycl\n");
     if constexpr (rank == 2) {
-      dr::__detail::parallel_for(dr::mhp::sycl_queue(),
-                                 sycl::range(dst.extent(0), dst.extent(1)),
-                                 [src, dst](auto idx) { dst(idx) = src(idx); })
-          .wait();
+      event = dr::__detail::parallel_for(
+          dr::mhp::sycl_queue(), sycl::range(dst.extent(0), dst.extent(1)),
+          [src, dst](auto idx) { dst(idx) = src(idx); });
     } else if constexpr (rank == 3) {
-      dr::__detail::parallel_for(
+      event = dr::__detail::parallel_for(
           dr::mhp::sycl_queue(),
           sycl::range(dst.extent(0), dst.extent(1), dst.extent(2)),
-          [src, dst](auto idx) { dst(idx) = src(idx); })
-          .wait();
+          [src, dst](auto idx) { dst(idx) = src(idx); });
     } else {
       assert(false);
     }
@@ -200,6 +200,8 @@ void mdspan_copy(mdspan_like auto src, mdspan_like auto dst) {
     auto copy = [src, dst](auto index) { dst(index) = src(index); };
     mdspan_foreach<src.rank(), decltype(copy)>(src.extents(), copy);
   }
+
+  return event;
 }
 
 // For operator(), rearrange indices according to template arguments.
