@@ -475,7 +475,7 @@ def suite(
         "WaveEquation_DR",
         "Gemm_Reference",
     ]
-    mhp_filter = ["FFT3D_DR", "Stencil2D_DR", "WaveEquation_DR"]
+    mhp_filter = ["Stencil2D_DR", "WaveEquation_DR"]
     device_memory_filter = ["FFT3D_DR", "WaveEquation_DR"]
     shp_filter = [".*Sort_DR", "Gemm_DR"]
     # reference benchmarks that do not use shp or mhp
@@ -486,7 +486,6 @@ def suite(
         "Reduce_Reference",
     ]
     mhp_reference_filter = [
-        "FFT3D_Reference",
         "Stencil2D_Reference",
     ]
     shp_reference_filter = [
