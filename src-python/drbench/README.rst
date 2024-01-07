@@ -12,20 +12,23 @@ Testing
 =======
 
 Use ``--dry-run`` to show all the commands it will run and visually
-inspect.  Devcloud runner dry run::
+inspect. Run on 4 GPUs and on CPU with 2 sockets and 56 cores per
+socket. Run 1-4 GPUs and 1-2 sockets::
 
-  dr-bench suite --no-p2p --gpus 4 --sockets 2 --cores-per-socket 56 --dry-run
-
-Aurora runner dry run, run 1-12 gpus::
-
-  dr-bench suite --gpus 12 --dry-run
+  dr-bench suite --gpus 4 --sockets 2 --cores-per-socket 56 --dry-run
 
 Run 1-4 nodes, using 12 gpus::
 
   dr-bench suite --nodes 4 --gpus 12 --dry-run
 
 To test the plotter, use a set of json files that is published as an
-artifact in CI. Select a run from the `Devcloud runs`_. Artifacts are
-listed at the bottom, download and unzip the file.
+artifact in CI. You can also run manually to generate the data::
 
-.. _`Devcloud runs`: https://github.com/oneapi-src/distributed-ranges/actions/workflows/devcloud.yml
+  # speedup plots need a reference
+  dr-bench run --target mhp_sycl_gpu --ranks 1 -f BlackScholes_Reference --mhp-bench ./mhp-quick-bench --device-memory
+  # run 1-4 GPUs
+  dr-bench run --target mhp_sycl_gpu --rank-range 4 -f BlackScholes_DR --mhp-bench ./mhp-quick-bench --device-memory
+
+Make all the plots that have data::
+
+  dr-bench plot

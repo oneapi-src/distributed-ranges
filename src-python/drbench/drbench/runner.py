@@ -55,8 +55,12 @@ class Runner:
                 env = "ONEAPI_DEVICE_SELECTOR=opencl:cpu"
             else:
                 env = (
-                    "ONEAPI_DEVICE_SELECTOR="
-                    "'level_zero:gpu;ext_oneapi_cuda:gpu'"
+                    f"ONEAPI_DEVICE_SELECTOR="
+                    f"'level_zero:gpu;ext_oneapi_cuda:gpu'"
+                    # GPU aware MPI
+                    f" I_MPI_OFFLOAD=1"
+                    # tile i assigned to rank i
+                    f" I_MPI_OFFLOAD_CELL_LIST=0-{ranks-1}"
                 )
         else:
             env = (
@@ -64,7 +68,6 @@ class Runner:
                 "I_MPI_PIN_ORDER=compact "
                 "I_MPI_PIN_CELL=unit"
             )
-        env = env + " I_MPI_OFFLOAD=1"
 
         mpirun_params = []
         mpirun_params.append(f"-n {str(ranks)}")

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import datetime
 import glob
 import json
 import re
@@ -186,7 +187,9 @@ class Plotter:
         plt.ylabel(y_title, fontsize=12)
         plt.rcParams.update({"font.size": 12})
 
-        plt.legend(loc="best")
+        plt.legend(loc="best", fontsize=10)
+
+        plt.figtext(0.01, 0.01, datetime.datetime.now().strftime("%x %X"))
 
         plt.tight_layout()
         plt.savefig(f"{file_name}.png")
@@ -373,6 +376,14 @@ class Plotter:
                 "Stencil2D",
             ]:
                 self.__speedup_plot(bench, device)
-            self.__speedup_plot(
-                "WaveEquation", device, reference_name="WaveEquation_DR"
-            )
+            # Use the DR version as the reference
+            for bench in [
+                # Talk to Jeongnim. Can MKL fft do 3d without
+                # separate transpose?
+                "FFT3D",
+                # Talk to Tuomas.
+                "WaveEquation",
+            ]:
+                self.__speedup_plot(
+                    bench, device, reference_name=f"{bench}_DR"
+                )
