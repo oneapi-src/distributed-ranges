@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 accessible-pygments==0.0.4
-alabaster==0.7.13
+alabaster==0.7.15
 Babel==2.14.0
 beautifulsoup4==4.12.2
 binaryornot==0.4.4
