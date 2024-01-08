@@ -11,7 +11,6 @@ project(
 include(FetchContent)
 
 option(ENABLE_ISHMEM OFF)
-option(DR_USE_MPI_LOG_FILES OFF)
 # Project wide defaults, not needed when another project uses the library
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
@@ -201,7 +200,12 @@ function(add_mhp_ctest)
     set(drlogs_param --log --logprefix=${AMC_TEST_NAME})
   endif()
 
-  if(DR_USE_MPI_LOG_FILES)
+  execute_process(
+    COMMAND bash -c
+            "${MPIEXEC_EXECUTABLE} --help 2>&1 | grep -q outfile-pattern"
+    RESULT_VARIABLE DR_MPI_LACKS_FILEPATTERN_PARAM)
+
+  if(NOT DR_MPI_LACKS_FILEPATTERN_PARAM)
     set(extra_mpiflags
         ${extra_mpiflags} -outfile-pattern "${AMC_TEST_NAME}.%r.out.log"
         -errfile-pattern "${AMC_TEST_NAME}.%r.err.log")

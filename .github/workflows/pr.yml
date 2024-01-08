@@ -92,7 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DDR_USE_MPI_LOG_FILES=on
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
       - name: Build MHP tests
         run: cmake --build build --target mhp-all-tests -- -j
       - name: MHP unit tests
@@ -122,7 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3 -DDR_USE_MPI_LOG_FILES=on
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3
       - name: Build ISHMEM
         run: cmake --build build --target shmem -- -j
       - name: Build MHP tests
