@@ -330,9 +330,12 @@ else()
 
 endif()
 
+add_custom_target(shp-all-tests)
+
 function(add_shp_ctest test_name name)
   add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
   set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SHP)
+  add_dependencies(shp-all-tests ${name})
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})

@@ -26,4 +26,5 @@ mkdir -p $(dirname $LOGFILE)
 
 shift 1
 
+set -o pipefail
 "$@" 2>&1 | tee $LOGFILE

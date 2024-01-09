@@ -14,7 +14,6 @@ endfunction()
 
 add_shp_example(fft3d 8)
 add_shp_example(vector_example)
-add_shp_example(test_range)
 add_shp_example(dot_product)
 add_shp_example(sort)
 add_shp_example_no_test(sort_benchmark)
@@ -32,5 +31,6 @@ add_shp_example_no_test(gemm_example) # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example_no_test(gemm_benchmark) # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example(sparse_test)
 add_shp_example_no_test(take_example) # PI_ERROR_DEVICE_NOT_FOUND
+add_shp_example_no_test(test_range) # due to DRA-81
 add_shp_example_no_test(zip_example) # PI_ERROR_DEVICE_NOT_FOUND
 add_shp_example_no_test(black_scholes_benchmark) # PI_ERROR_DEVICE_NOT_FOUND

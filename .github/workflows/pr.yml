@@ -97,6 +97,10 @@ jobs:
         run: cmake --build build --target mhp-all-tests -- -j
       - name: MHP unit tests
         run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -L MHP -j 4
+      - name: Build SHP tests
+        run: cmake --build build --target shp-all-tests -- -j
+      - name: SHP unit tests
+        run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/shptests.outerr.txt ctest --test-dir build -L SHP -j 4
       - uses: actions/upload-artifact@v4
         if: always()
         with:
