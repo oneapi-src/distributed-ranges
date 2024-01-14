@@ -52,6 +52,8 @@ inline auto device_info(sycl::device device) {
 }
 #endif
 
+extern bool check_results;
+
 #ifdef BENCH_MHP
 #ifdef SYCL_LANGUAGE_VERSION
 
@@ -101,7 +103,6 @@ namespace xhp = dr::mhp;
 extern std::size_t stencil_steps;
 extern std::size_t num_rows;
 extern std::size_t num_columns;
-extern bool check_results;
 
 #endif
 

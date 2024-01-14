@@ -12,7 +12,6 @@ function(add_shp_example example_name)
   add_shp_ctest(${example_name} ${example_name} ${ARGN})
 endfunction()
 
-add_shp_example(fft3d 8)
 add_shp_example(vector_example)
 add_shp_example(dot_product)
 add_shp_example(sort)

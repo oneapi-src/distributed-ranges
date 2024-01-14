@@ -7,6 +7,8 @@
 std::size_t default_vector_size;
 std::size_t default_repetitions;
 bool weak_scaling;
+bool check_results;
+
 // shp always uses device memory, but it is optional for mhp
 bool device_memory = true;
 
@@ -34,6 +36,7 @@ int main(int argc, char *argv[]) {
 
   // clang-format off
   options_spec.add_options()
+    ("check", "Check results")
     ("d, num-devices", "number of sycl devices, 0 uses all available devices", cxxopts::value<std::size_t>()->default_value("0"))
     ("drhelp", "Print help")
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
@@ -56,6 +59,7 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
+  check_results = options.count("check");
   default_vector_size = options["vector-size"].as<std::size_t>();
   default_repetitions = options["reps"].as<std::size_t>();
   ranks = options["num-devices"].as<std::size_t>();

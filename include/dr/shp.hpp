@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <dr/detail/logger.hpp>
 #include <dr/shp/algorithms/algorithms.hpp>
 #include <dr/shp/containers/distributed_dense_matrix.hpp>
 #include <dr/shp/containers/sparse_matrix.hpp>

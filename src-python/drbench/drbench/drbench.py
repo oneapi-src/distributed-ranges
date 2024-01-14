@@ -477,7 +477,7 @@ def suite(
     ]
     mhp_filter = ["Stencil2D_DR", "WaveEquation_DR"]
     device_memory_filter = ["FFT3D_DR", "WaveEquation_DR"]
-    shp_filter = [".*Sort_DR", "Gemm_DR"]
+    shp_filter = ["FFT3D_DR", ".*Sort_DR", "Gemm_DR"]
     # reference benchmarks that do not use shp or mhp
     sycl_reference_filter = [
         "BlackScholes_Reference",
