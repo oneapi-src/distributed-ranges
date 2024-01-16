@@ -7,7 +7,6 @@
 template <typename T> class Communicator3 : public testing::Test {};
 
 using T = int;
-using DV = dr::mhp::distributed_vector<T>;
 
 TYPED_TEST_SUITE(Communicator3, AllTypes);
 

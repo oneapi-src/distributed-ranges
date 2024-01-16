@@ -56,7 +56,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  mdstar.cpp
+  ../common/inclusive_scan.cpp
   )
 # cmake-format: on
 
@@ -88,24 +88,23 @@ if(NOT ENABLE_ISHMEM)
 endif()
 
 if(ENABLE_SYCL)
-  set(sycl-exclusions *Slide*:)
+  # DRA-83: Slide isn't complete
+  set(sycl-exclusions *Slide*:ComplexSlide*:)
 
   if(ENABLE_ISHMEM)
-    # TODO: build exclusions from list of strings
-    set(sycl-exclusions
-        ${sycl-exclusions}DistributedVector.Constructor*:ExclusiveScan*:InclusiveScan*:IotaView*:Sort*:Zip.FeedingTransform*:Zip.CopyConstructor*:Alignment*:MhpTests.DistributedVector*:Halo*:Mdspan*:Mdarray*:Submdspan*:MdForeach*:MdStencilForeach*:Stencil*:Segment*:WaveKernel*:
-    )
+    # DRA-84 some Halo3 cases don't work on IshmemBackend (work on MPI)
+    set(sycl-exclusions ${sycl-exclusions}Halo3/*:)
   endif()
 
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
 
-  # Excluding tests that failed in CI with segv. They work with manual runs. I
-  # have not investigated the cause.
+  # DRA-17 for fixing sort, DRA-18 for fixing ExclScan
+  set(sycl-offload-exclusions ${sycl-exclusions}Exclusive*:Sort*)
+
   add_mhp_ctest(
-    TEST_NAME mhp-sycl-device-tests-2 NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS
-    --device-memory
-    --gtest_filter=-${sycl-exclusions}Exclusive*:Sort*:ComplexSlide*)
+    NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS --device-memory
+    --gtest_filter=-${sycl-offload-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
     add_mhp_ctest(

@@ -142,8 +142,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(mdspan)
 
 add_custom_target(mhp-all-tests)
+add_custom_target(shp-all-tests)
+add_custom_target(all-tests DEPENDS mhp-all-tests shp-all-tests)
 
-function(add_mhp_ctest)
+function(add_mhp_ctest_impl)
   set(options OFFLOAD GDB SYCL DRLOGS)
   set(oneValueArgs NAME TEST_NAME NPROC)
   set(multiValueArgs TARGS) # Test ARGumentS
@@ -160,23 +162,17 @@ function(add_mhp_ctest)
     set(nproc ${AMC_NPROC})
   endif()
 
-  if(AMC_OFFLOAD)
-    set(extra_mpiflags "-genv;I_MPI_OFFLOAD=1")
+  if(AMC_OFFLOAD OR ENABLE_ISHMEM)
+    set(extra_mpiflags "-genv;I_MPI_OFFLOAD;1")
   endif()
 
   if(ENABLE_ISHMEM)
     set(wrapper_script ${CMAKE_BINARY_DIR}/bin/ishmrun)
-    # TODO: set somehow FI_PROVIDER=${OFI_PROVIDER}
+    # set(extra_mpiflags "${extra_mpiflags};-genv;FI_PROVIDER;${OFI_PROVIDER}")
   endif()
 
   if(AMC_SYCL)
     set(sycl_param "--sycl")
-  endif()
-
-  if(AMC_GDB)
-    set(wrapper_script
-        ${wrapper_script} gdb-oneapi -return-child-result --ex r -ex bt --ex q
-        --batch --args)
   endif()
 
   # build a test name unless provided by user
@@ -188,12 +184,17 @@ function(add_mhp_ctest)
     if(AMC_OFFLOAD)
       set(AMC_TEST_NAME "${AMC_TEST_NAME}-offload")
     endif()
-    if(AMC_GDB)
-      set(AMC_TEST_NAME "${AMC_TEST_NAME}-gdb")
-    endif()
     if(DEFINED AMC_NPROC) # add nproc to name only if not used default
       set(AMC_TEST_NAME "${AMC_TEST_NAME}-${nproc}")
     endif()
+  endif()
+
+  if(AMC_GDB)
+    set(wrapper_script
+        ${wrapper_script} gdb-oneapi -return-child-result --ex r -ex bt --ex q
+        --batch --args)
+    set(AMC_TEST_NAME "${AMC_TEST_NAME}-gdb")
+    set(extra_mpiflags "${extra_mpiflags};-genv;ZET_ENABLE_PROGRAM_DEBUGGING;1")
   endif()
 
   if(AMC_DRLOGS)
@@ -218,8 +219,15 @@ function(add_mhp_ctest)
       ${MPIEXEC_PREFLAGS} ${extra_mpiflags} ${wrapper_script} ./${AMC_NAME}
       ${drlogs_param} ${sycl_param} ${AMC_TARGS} COMMAND_EXPAND_LISTS)
 
-  set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
+  if(NOT AMC_GDB)
+    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
+  endif()
   add_dependencies(mhp-all-tests ${AMC_NAME})
+endfunction()
+
+function(add_mhp_ctest)
+  add_mhp_ctest_impl(${ARGN})
+  add_mhp_ctest_impl(${ARGN} GDB)
 endfunction()
 
 if(ENABLE_ISHMEM)
@@ -243,7 +251,7 @@ if(ENABLE_ISHMEM)
     ExternalProject_Add(
       level-zero
       GIT_REPOSITORY https://github.com/oneapi-src/level-zero.git
-      GIT_TAG v1.14.0
+      GIT_TAG v1.15.1
       INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
       CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
     )
@@ -264,8 +272,8 @@ if(ENABLE_ISHMEM)
       DEPENDS ${SOS_DEPS}
       CONFIGURE_COMMAND
         cd ${CMAKE_CURRENT_BINARY_DIR}/ofisrc && ./autogen.sh && ./configure
-        --prefix=${CMAKE_CURRENT_BINARY_DIR} ${ENABLE_DEBUG_PARAM} --enable-only
-        --enable-${OFI_PROVIDER}=yes --with-dlopen=no
+        --prefix=${CMAKE_CURRENT_BINARY_DIR} ${ENABLE_DEBUG_PARAM}
+        --with-ze=${CMAKE_CURRENT_BINARY_DIR} --with-dlopen=no
       BUILD_IN_SOURCE ON
       BUILD_COMMAND make
       INSTALL_COMMAND make install)
@@ -329,8 +337,6 @@ else()
   endfunction()
 
 endif()
-
-add_custom_target(shp-all-tests)
 
 function(add_shp_ctest test_name name)
   add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
