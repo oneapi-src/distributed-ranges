@@ -64,8 +64,7 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
                                device_policy>) {
     using future_t = decltype(oneapi::dpl::experimental::reduce_async(
         __detail::dpl_policy(0), dr::ranges::segments(r)[0].begin(),
-        dr::ranges::segments(r)[0].end(), init,
-        std::forward<BinaryOp>(binary_op)));
+        dr::ranges::segments(r)[0].end(), init, binary_op));
 
     std::vector<future_t> futures;
 
@@ -76,20 +75,20 @@ T reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op) {
       if (dist <= 0) {
         continue;
       } else if (dist == 1) {
-        init = std::forward<BinaryOp>(binary_op)(init, *rng::begin(segment));
+        init = binary_op(init, *rng::begin(segment));
         continue;
       }
 
       auto future = reduce_no_init_async<T>(local_policy, rng::begin(segment),
-                                            rng::end(segment),
-                                            std::forward<BinaryOp>(binary_op));
+                                            rng::end(segment), binary_op);
 
       futures.push_back(std::move(future));
     }
 
-    for (auto &&future : futures) {
-      init = std::forward<BinaryOp>(binary_op)(init, future.get());
+    for (auto &&f : futures) {
+      init = binary_op(init, f.get());
     }
+
     return init;
   } else {
     assert(false);

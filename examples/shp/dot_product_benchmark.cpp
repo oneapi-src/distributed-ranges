@@ -60,7 +60,8 @@ int main(int argc, char **argv) {
 
   std::size_t n = std::atoll(argv[2]);
 
-  auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
+  // auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
+  auto devices_ = dr::shp::get_devices(sycl::default_selector_v);
 
   // std::size_t n_devices = devices_.size();
 
@@ -85,47 +86,52 @@ int main(int argc, char **argv) {
 
   auto v_serial = dot_product_sequential(x_local, y_local);
 
-  dr::shp::distributed_vector<T> x(n, 1);
-  dr::shp::distributed_vector<T> y(n, 1);
-
   std::size_t n_iterations = 10;
+  T sum = 0;
 
   std::vector<double> durations;
   durations.reserve(n_iterations);
 
-  // Execute on all devices with SHP:
-  T sum = 0;
-  for (std::size_t i = 0; i < n_iterations; i++) {
-    auto begin = std::chrono::high_resolution_clock::now();
-    auto v = dot_product_distributed(x, y);
-    auto end = std::chrono::high_resolution_clock::now();
-    double duration = std::chrono::duration<double>(end - begin).count();
-    durations.push_back(duration);
-    if (v != v_serial) {
-      fmt::print("{} != {}\n", v, v_serial);
+  {
+    fmt::print("Initializing distributed vector...\n");
+    dr::shp::distributed_vector<T> x(n, 1);
+    dr::shp::distributed_vector<T> y(n, 1);
+
+    // Execute on all devices with SHP:
+    fmt::print("Execute with SHP...\n");
+    for (std::size_t i = 0; i < n_iterations; i++) {
+      auto begin = std::chrono::high_resolution_clock::now();
+      auto v = dot_product_distributed(x, y);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+      durations.push_back(duration);
+      if (v != v_serial) {
+        fmt::print("{} != {}\n", v, v_serial);
+      }
+      // assert(v == v_serial);
+      sum += v;
     }
-    // assert(v == v_serial);
-    sum += v;
+
+    fmt::print("SHP executing on {} devices:\n", devices.size());
+    fmt::print("Durations: {}\n",
+               durations |
+                   rng::views::transform([](auto &&x) { return x * 1000; }));
+
+    std::sort(durations.begin(), durations.end());
+
+    double median_duration = durations[durations.size() / 2];
+
+    fmt::print("Median duration: {} ms\n", median_duration * 1000);
+
+    fmt::print("Result: {}\n", sum);
   }
-
-  fmt::print("SHP executing on {} devices:\n", devices.size());
-  fmt::print("Durations: {}\n", durations | rng::views::transform([](auto &&x) {
-                                  return x * 1000;
-                                }));
-
-  std::sort(durations.begin(), durations.end());
-
-  double median_duration = durations[durations.size() / 2];
-
-  fmt::print("Median duration: {} ms\n", median_duration * 1000);
-
-  fmt::print("Result: {}\n", sum);
 
   // Execute on one device:
   durations.clear();
-  durations.reserve(n_iterations);
 
   sycl::queue q(dr::shp::context(), dr::shp::devices()[0]);
+  sycl::queue q_i(dr::shp::context(), dr::shp::devices()[0],
+                  {sycl::property::queue::in_order()});
 
   T *x_d = sycl::malloc_device<T>(n, q);
   T *y_d = sycl::malloc_device<T>(n, q);
@@ -157,11 +163,13 @@ int main(int argc, char **argv) {
 
   std::sort(durations.begin(), durations.end());
 
-  median_duration = durations[durations.size() / 2];
+  double median_duration = durations[durations.size() / 2];
 
   fmt::print("Median duration: {} ms\n", median_duration * 1000);
 
   fmt::print("Result: {}\n", sum);
+
+  durations.clear();
 
 #ifdef USE_MKL
 
@@ -170,7 +178,7 @@ int main(int argc, char **argv) {
 
   for (std::size_t i = 0; i < n_iterations; i++) {
     auto begin = std::chrono::high_resolution_clock::now();
-    oneapi::mkl::blas::row_major::dot(q, n, x_d, 1, y_d, 1, d_result);
+    oneapi::mkl::blas::row_major::dot(q, n, x_d, 1, y_d, 1, d_result).wait();
     T v;
     q.memcpy(&v, d_result, sizeof(T)).wait();
     auto end = std::chrono::high_resolution_clock::now();

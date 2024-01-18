@@ -217,7 +217,8 @@ int main(int argc, char **argv) {
 
   std::size_t n = std::atoll(argv[2]);
 
-  auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
+  // auto devices_ = dr::shp::get_numa_devices(sycl::default_selector_v);
+  auto devices_ = dr::shp::get_devices(sycl::default_selector_v);
 
   // std::size_t n_devices = devices_.size();
 
@@ -239,53 +240,55 @@ int main(int argc, char **argv) {
 
   auto &&[s0, x, t, vcall, vput] = InitData<T>(n);
 
-  shp::distributed_vector<T> d_s0(n);
-  shp::distributed_vector<T> d_x(n);
-
-  shp::distributed_vector<T> d_t(n);
-  shp::distributed_vector<T> d_vcall(n);
-  shp::distributed_vector<T> d_vput(n);
-
-  shp::copy(s0.begin(), s0.end(), d_s0.begin());
-  shp::copy(x.begin(), x.end(), d_x.begin());
-  shp::copy(t.begin(), t.end(), d_t.begin());
-  shp::copy(vcall.begin(), vcall.end(), d_vcall.begin());
-  shp::copy(vput.begin(), vput.end(), d_vput.begin());
-
-  black_scholes_distributed(r, sig, d_s0, d_x, d_t, d_vcall, d_vput);
-
-  black_scholes_functional(r, sig, s0, x, t, vcall, vput);
-
   std::size_t n_iterations = 10;
-
-  std::vector<double> durations;
-
   T sum = 0;
 
-  fmt::print("Executing distributed...\n");
-  for (std::size_t i = 0; i < n_iterations; i++) {
-    auto begin = std::chrono::high_resolution_clock::now();
+  std::vector<double> durations;
+  durations.reserve(n_iterations);
+
+  {
+    shp::distributed_vector<T> d_s0(n);
+    shp::distributed_vector<T> d_x(n);
+
+    shp::distributed_vector<T> d_t(n);
+    shp::distributed_vector<T> d_vcall(n);
+    shp::distributed_vector<T> d_vput(n);
+
+    shp::copy(s0.begin(), s0.end(), d_s0.begin());
+    shp::copy(x.begin(), x.end(), d_x.begin());
+    shp::copy(t.begin(), t.end(), d_t.begin());
+    shp::copy(vcall.begin(), vcall.end(), d_vcall.begin());
+    shp::copy(vput.begin(), vput.end(), d_vput.begin());
+
     black_scholes_distributed(r, sig, d_s0, d_x, d_t, d_vcall, d_vput);
-    auto end = std::chrono::high_resolution_clock::now();
-    double duration = std::chrono::duration<double>(end - begin).count();
 
-    sum += shp::reduce(d_vcall);
-    sum += shp::reduce(d_vput);
-    durations.push_back(duration);
+    black_scholes_functional(r, sig, s0, x, t, vcall, vput);
+
+    fmt::print("Executing distributed...\n");
+    for (std::size_t i = 0; i < n_iterations; i++) {
+      auto begin = std::chrono::high_resolution_clock::now();
+      black_scholes_distributed(r, sig, d_s0, d_x, d_t, d_vcall, d_vput);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+
+      sum += shp::reduce(d_vcall);
+      sum += shp::reduce(d_vput);
+      durations.push_back(duration);
+    }
+
+    fmt::print("Sum: {}\n", sum);
+
+    fmt::print("Durations: {}\n", durations);
+
+    std::sort(durations.begin(), durations.end());
+
+    double median_duration = durations[durations.size() / 2];
+
+    std::cout << "Distributed Black-Scholes: " << median_duration * 1000
+              << " ms" << std::endl;
+
+    durations.clear();
   }
-
-  fmt::print("Sum: {}\n", sum);
-
-  fmt::print("Durations: {}\n", durations);
-
-  std::sort(durations.begin(), durations.end());
-
-  double median_duration = durations[durations.size() / 2];
-
-  std::cout << "Distributed Black-Scholes: " << median_duration * 1000 << " ms"
-            << std::endl;
-
-  durations.clear();
 
   if (n < 1 * 1000 * 1000 * 1000) {
     fmt::print("Executing serial Black-Scholes...\n");
@@ -308,7 +311,7 @@ int main(int argc, char **argv) {
 
     std::sort(durations.begin(), durations.end());
 
-    median_duration = durations[durations.size() / 2];
+    double median_duration = durations[durations.size() / 2];
 
     std::cout << "Single-threaded Black-Scholes: " << median_duration * 1000
               << " ms" << std::endl;
@@ -360,7 +363,7 @@ int main(int argc, char **argv) {
 
     std::sort(durations.begin(), durations.end());
 
-    median_duration = durations[durations.size() / 2];
+    double median_duration = durations[durations.size() / 2];
 
     std::cout << "oneDPL Black-Scholes: " << median_duration * 1000 << " ms"
               << std::endl;
