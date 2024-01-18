@@ -129,8 +129,9 @@ void transpose2D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
   }
 }
 
-template <dr::distributed_mdspan_range MR1, dr::distributed_mdspan_range MR2>
-void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
+template <dr::distributed_mdspan_range MR1, dr::distributed_mdspan_range MR2,
+          std::size_t... Is>
+void transpose3D_slab(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
   auto comm = default_comm();
 
   using T = rng::range_value_t<MR1>;
@@ -138,21 +139,31 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
   using index_type = dr::__detail::dr_extents<3>;
   // 3d mdspan
   // The transpose is needed to make the first dimension contiguous.
-  //
-  // i, j, k to j, k, i
   dr::drlog.debug(dr::logger::transpose,
                   "transpose src: [{}, {}, {}]  dst: [{}, {}, {}]\n",
                   sm.extent(0), sm.extent(1), sm.extent(2), dm.extent(0),
                   dm.extent(1), dm.extent(2));
 
-  assert(sm.extent(0) == dm.extent(2) && sm.extent(1) == dm.extent(0) &&
-         sm.extent(2) == dm.extent(1));
+  constexpr std::array<std::size_t, 3> from_transposed{Is...};
+
+  assert(sm.extent(0) == dm.extent(from_transposed[0]) &&
+         sm.extent(1) == dm.extent(from_transposed[1]) &&
+         sm.extent(2) == dm.extent(from_transposed[2]));
+
+  // i,j,k -> j,k,i : {2,0,1}
+  std::size_t mask_p = 1, mask_u = 2;
+  if (from_transposed[0] == 1) {
+    // i,j,k -> k,i,j : {1,2,0}
+    mask_p = 2;
+    mask_u = 1;
+  }
 
   auto origin_dst_tile = dst.grid()(0, 0, 0).mdspan();
   auto origin_src_tile = src.grid()(0, 0, 0).mdspan();
   std::size_t sub_tile_size = origin_src_tile.extent(0) *
                               origin_dst_tile.extent(0) *
-                              origin_src_tile.extent(1);
+                              origin_dst_tile.extent(mask_p);
+
   std::size_t sub_tiles_size = sub_tile_size * comm.size();
 
   auto src_tile = src.grid()(comm.rank(), 0, 0);
@@ -162,9 +173,8 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
     dr::drlog.debug(dr::logger::transpose, "direct transpose on single rank\n");
     auto sm = src_tile.mdspan();
     auto dm = dst_tile.mdspan();
-    dr::__detail::mdtranspose<decltype(sm), 2, 0, 1> src_tile_t(sm);
+    dr::__detail::mdtranspose<decltype(sm), Is...> src_tile_t(sm);
     dr::__detail::mdspan_copy(src_tile_t, dm).wait();
-
   } else {
 
     // create a send buffer. try to reuse destination for storage
@@ -174,21 +184,22 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
 
     std::vector<dr::__detail::event> pack_events;
     index_type start({0, 0, 0}),
-        end({src_tile.mdspan().extent(0), 0, src_tile.mdspan().extent(2)});
+        end({src_tile.mdspan().extent(0), src_tile.mdspan().extent(1),
+             src_tile.mdspan().extent(2)});
+
     for (std::size_t i = 0; i < dst.grid().extent(0); i++) {
       auto num_cols = dst.grid()(i, 0, 0).mdspan().extent(0);
+      end[mask_p] = start[mask_p] + num_cols;
 
-      end[1] = start[1] + num_cols;
       dr::drlog.debug(dr::logger::transpose, "Packing start: {}, end: {}\n",
                       start, end);
       auto sub_tile =
           dr::__detail::make_submdspan(src_tile.mdspan(), start, end);
-      dr::__detail::mdtranspose<decltype(sub_tile), 2, 0, 1> sub_tile_t(
-          sub_tile);
+      dr::__detail::mdtranspose<decltype(sub_tile), Is...> sub_tile_t(sub_tile);
 
       pack_events.push_back(dr::__detail::mdspan_copy(sub_tile_t, buffer));
       buffer += sub_tile_size;
-      start[1] += num_cols;
+      start[mask_p] += num_cols;
     }
 
     rng::for_each(pack_events, [](auto e) { e.wait(); });
@@ -199,18 +210,19 @@ void transpose3D(MR1 &&src, MR2 &&dst, auto sm, auto dm) {
 
     std::vector<dr::__detail::event> unpack_events;
     start = {0, 0, 0};
-    end = {dst_tile.mdspan().extent(0), dst_tile.mdspan().extent(1), 0};
+    end = {dst_tile.mdspan().extent(0), dst_tile.mdspan().extent(1),
+           dst_tile.mdspan().extent(2)};
     for (std::size_t i = 0; i < src.grid().extent(0); i++) {
       auto num_cols = src.grid()(i, 0, 0).mdspan().extent(0);
 
-      end[2] = start[2] + num_cols;
+      end[mask_u] = start[mask_u] + num_cols;
       dr::drlog.debug(dr::logger::transpose, "Unpacking start: {}, end: {}\n",
                       start, end);
       auto sub_tile =
           dr::__detail::make_submdspan(dst_tile.mdspan(), start, end);
       unpack_events.push_back(dr::__detail::mdspan_copy(buffer, sub_tile));
       buffer += sub_tile_size;
-      start[2] += num_cols;
+      start[mask_u] += num_cols;
     }
     rng::for_each(unpack_events, [](auto e) { e.wait(); });
   }
@@ -223,7 +235,7 @@ namespace dr::mhp {
 // Transpose mdspan_view. The src is used for temporary storage and is
 // undefined after the transpose completes.
 template <dr::distributed_mdspan_range MR1, dr::distributed_mdspan_range MR2>
-void transpose(MR1 &&src, MR2 &&dst) {
+void transpose(MR1 &&src, MR2 &&dst, bool forward = true) {
   constexpr std::size_t rank1 = std::remove_cvref_t<MR1>::rank();
   constexpr std::size_t rank2 = std::remove_cvref_t<MR2>::rank();
   static_assert(rank1 == rank2);
@@ -239,7 +251,11 @@ void transpose(MR1 &&src, MR2 &&dst) {
   if constexpr (rank1 == 2) {
     __detail::transpose2D(src, dst, sm, dm);
   } else if constexpr (rank1 == 3) {
-    __detail::transpose3D(src, dst, sm, dm);
+    if (forward) {
+      __detail::transpose3D_slab<MR1, MR2, 2, 0, 1>(src, dst, sm, dm);
+    } else {
+      __detail::transpose3D_slab<MR1, MR2, 1, 2, 0>(src, dst, sm, dm);
+    }
   } else {
     assert(false);
   }

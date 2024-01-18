@@ -146,14 +146,14 @@ public:
   void compute() {
     oneapi::mkl::dft::compute_forward(*fft_2d_plan_, i_slab_.data_handle())
         .wait();
-    dr::mhp::transpose(i_mat_, o_mat_);
+    dr::mhp::transpose(i_mat_, o_mat_, true);
 
     oneapi::mkl::dft::compute_forward(*fft_1d_plan_, o_slab_.data_handle())
         .wait();
 
     oneapi::mkl::dft::compute_backward(*fft_1d_plan_, o_slab_.data_handle())
         .wait();
-    dr::mhp::transpose(o_mat_, i_mat_);
+    dr::mhp::transpose(o_mat_, i_mat_, false);
     oneapi::mkl::dft::compute_backward(*fft_2d_plan_, i_slab_.data_handle())
         .wait();
   }
