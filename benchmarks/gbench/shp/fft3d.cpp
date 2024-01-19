@@ -6,6 +6,8 @@
 #include "oneapi/mkl/dfti.hpp"
 #include <dr/shp.hpp>
 #include <fmt/core.h>
+#include <latch>
+#include <thread>
 
 #ifndef STANDALONE_BENCHMARK
 
@@ -106,6 +108,13 @@ void transpose_matrix(dr::shp::distributed_dense_matrix<T> &i_mat,
   sycl::event::wait(events);
 }
 
+sycl::event mkl_dft(auto aplan_, auto data_, bool forward) {
+  if (forward) {
+    return oneapi::mkl::dft::compute_forward(*aplan_, data_);
+  }
+  return oneapi::mkl::dft::compute_backward(*aplan_, data_);
+}
+
 template <typename T> struct dft_precision {
   static const oneapi::mkl::dft::precision value =
       oneapi::mkl::dft::precision::SINGLE;
@@ -124,8 +133,80 @@ template <typename T> class distributed_fft {
   using fft_plan_t =
       oneapi::mkl::dft::descriptor<dft_precision<T>::value,
                                    oneapi::mkl::dft::domain::COMPLEX>;
-  std::vector<fft_plan_t *> fft_yz_plans;
-  std::vector<fft_plan_t *> fft_x_plans;
+
+  std::vector<fft_plan_t *> fft_plans;
+
+  void fft_threads(dr::shp::distributed_dense_matrix<std::complex<T>> &i_mat,
+                   dr::shp::distributed_dense_matrix<std::complex<T>> &o_mat,
+                   bool forward) {
+    int ntiles = i_mat.segments().size();
+    std::size_t mask_p = 0, mask_u = 1;
+    if (!forward)
+      std::swap(mask_p, mask_u);
+
+    std::vector<std::jthread> threads;
+    std::latch fft_phase_done(ntiles);
+
+    for (int i = 0; i < ntiles; ++i) {
+      threads.emplace_back([i, ntiles, forward,
+                            plan_0 = fft_plans[2 * i + mask_p],
+                            plan_1 = fft_plans[2 * i + mask_u], &fft_phase_done,
+                            &i_mat, &o_mat] {
+        auto &&atile = i_mat.tile({i, 0});
+        mkl_dft(plan_0, dr::shp::__detail::local(atile).data(), forward).wait();
+
+        fft_phase_done.arrive_and_wait();
+
+        int lda = i_mat.shape()[1];
+        int ldb = o_mat.shape()[1];
+        int m_local = i_mat.shape()[0] / ntiles;
+        int n_local = o_mat.shape()[0] / ntiles;
+
+        std::vector<sycl::event> events;
+        for (int j_ = 0; j_ < ntiles; j_++) {
+          int j = (j_ + i) % ntiles;
+          auto &&recv_tile = o_mat.tile({j, 0});
+          auto e = transpose_tile(m_local, n_local, atile.data() + j * n_local,
+                                  lda, recv_tile.data() + i * m_local, ldb);
+          events.push_back(e);
+        }
+        sycl::event::wait(events);
+
+        auto &&btile = o_mat.tile({i, 0});
+        mkl_dft(plan_1, dr::shp::__detail::local(btile).data(), forward).wait();
+      });
+    }
+  }
+
+  void fft_serial(dr::shp::distributed_dense_matrix<std::complex<T>> &i_mat,
+                  dr::shp::distributed_dense_matrix<std::complex<T>> &o_mat,
+                  bool forward) {
+
+    std::size_t mask_p = 0, mask_u = 1;
+    if (!forward)
+      std::swap(mask_p, mask_u);
+
+    std::vector<sycl::event> events;
+    int nprocs = i_mat.segments().size();
+    for (int i = 0; i < nprocs; i++) {
+      auto &&atile = i_mat.tile({i, 0});
+      auto e = oneapi::mkl::dft::compute_forward(
+          *fft_plans[2 * i + mask_p], dr::shp::__detail::local(atile).data());
+      events.push_back(e);
+    }
+    sycl::event::wait(events);
+    events.clear();
+
+    transpose_matrix(i_mat, o_mat);
+
+    for (int i = 0; i < nprocs; i++) {
+      auto &&atile = o_mat.tile({i, 0});
+      auto e = oneapi::mkl::dft::compute_forward(
+          *fft_plans[2 * i + mask_u], dr::shp::__detail::local(atile).data());
+      events.push_back(e);
+    }
+    sycl::event::wait(events);
+  }
 
 public:
   explicit distributed_fft(std::int64_t m_in)
@@ -134,8 +215,7 @@ public:
                     {dr::shp::nprocs(), 1}),
         in_({m_, n_}, row_blocks_), out_({n_, m_}, row_blocks_) {
     auto nprocs = dr::shp::nprocs();
-    fft_yz_plans.reserve(nprocs);
-    fft_x_plans.reserve(nprocs);
+    fft_plans.reserve(2 * nprocs);
 
     int m_local = m_ / nprocs;
     for (int i = 0; i < nprocs; i++) {
@@ -149,7 +229,7 @@ public:
                       (1.0 / (m_ * m_ * m_)));
       // show_plan("yz", desc);
       desc->commit(q);
-      fft_yz_plans.emplace_back(desc);
+      fft_plans.emplace_back(desc);
 
       desc = new fft_plan_t(m_);
       desc->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
@@ -158,7 +238,7 @@ public:
       desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, m_);
       // show_plan("x", desc);
       desc->commit(q);
-      fft_x_plans.emplace_back(desc);
+      fft_plans.emplace_back(desc);
     }
 
     fmt::print("Initializing...\n");
@@ -166,74 +246,24 @@ public:
   }
 
   ~distributed_fft() {
-    int i = fft_yz_plans.size() - 1;
+    int i = fft_plans.size() - 1;
     while (i >= 0) {
-      delete fft_x_plans[i];
-      delete fft_yz_plans[i];
+      delete fft_plans[i];
       --i;
     }
   }
 
-  void
-  compute_forward(dr::shp::distributed_dense_matrix<std::complex<T>> &i_mat,
-                  dr::shp::distributed_dense_matrix<std::complex<T>> &o_mat) {
-    std::vector<sycl::event> events;
-    int nprocs = i_mat.segments().size();
-    for (int i = 0; i < nprocs; i++) {
-      auto &&atile = i_mat.tile({i, 0});
-      auto e = oneapi::mkl::dft::compute_forward(
-          *fft_yz_plans[i], dr::shp::__detail::local(atile).data());
-      events.push_back(e);
-    }
-    sycl::event::wait(events);
-    events.clear();
-
-    transpose_matrix(i_mat, o_mat);
-
-    for (int i = 0; i < nprocs; i++) {
-      auto &&atile = o_mat.tile({i, 0});
-      auto e = oneapi::mkl::dft::compute_forward(
-          *fft_x_plans[i], dr::shp::__detail::local(atile).data());
-      events.push_back(e);
-    }
-    sycl::event::wait(events);
-  }
-
-  void
-  compute_backward(dr::shp::distributed_dense_matrix<std::complex<T>> &i_mat,
-                   dr::shp::distributed_dense_matrix<std::complex<T>> &o_mat) {
-    std::vector<sycl::event> events;
-    int nprocs = i_mat.segments().size();
-    for (int i = 0; i < nprocs; i++) {
-      auto &&atile = i_mat.tile({i, 0});
-      auto e = oneapi::mkl::dft::compute_backward(
-          *fft_x_plans[i], dr::shp::__detail::local(atile).data());
-      events.push_back(e);
-    }
-    sycl::event::wait(events);
-    events.clear();
-
-    transpose_matrix(i_mat, o_mat);
-
-    for (int i = 0; i < nprocs; i++) {
-      auto &&atile = o_mat.tile({i, 0});
-      auto e = oneapi::mkl::dft::compute_backward(
-          *fft_yz_plans[i], dr::shp::__detail::local(atile).data());
-      events.push_back(e);
-    }
-    sycl::event::wait(events);
-  }
-
   void compute() {
-    compute_forward(in_, out_);
-    compute_backward(out_, in_);
+    fft_threads(in_, out_, true);
+    fft_threads(out_, in_, false);
   }
 
   void check() {
     fmt::print("Testing\n");
     dr::shp::distributed_dense_matrix<value_t> t_mat({m_, n_}, row_blocks_);
-    compute_forward(in_, out_);
-    compute_backward(out_, t_mat);
+
+    fft_threads(in_, out_, true);
+    fft_threads(out_, t_mat, false);
 
     fmt::print("Checking results\n");
     auto sub_view = dr::shp::views::zip(values_view(in_), values_view(t_mat)) |
@@ -247,7 +277,7 @@ public:
 
   void show_plan(const std::string &title, auto *plan) {
     MKL_LONG transforms, fwd_distance, bwd_distance;
-    float forward_scale, backward_scale;
+    real_t forward_scale, backward_scale;
     plan->get_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                     &transforms);
     plan->get_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,
