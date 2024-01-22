@@ -48,23 +48,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Generate
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        cmake -B build
+      run: cmake -B build
     - name: Build
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        make -C build -j
+      run: make -C build -j
     - name: MHP unit tests
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        ctest --test-dir build -L MHP -j 4
+      run: ctest --test-dir build -L MHP -j 4
     - name: SHP unit tests
       # Does not work on CPU
       if: false
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        ctest --test-dir build -L SHP -j 4
+      run: ctest --test-dir build -L SHP -j 4
     - uses: actions/upload-artifact@v4
       if: always()
       with:
