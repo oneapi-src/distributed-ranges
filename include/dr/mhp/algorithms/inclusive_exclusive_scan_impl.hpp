@@ -37,16 +37,16 @@ void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
   auto in_begin_direct = detail::direct_iterator(in.begin());
   auto in_end_direct = detail::direct_iterator(in.end());
   auto out_begin_direct = detail::direct_iterator(out.begin());
-
   if (seg_index != 0) {
-    init = *in_begin_direct;
-    in_begin_direct++;
-    out_begin_direct++;
+    --in_end_direct;
+    ++out_begin_direct;
+    std::inclusive_scan(policy, in_begin_direct, in_end_direct,
+                        out_begin_direct, binary_op);
+  } else {
+    assert(init.has_value());
+    std::exclusive_scan(policy, in_begin_direct, in_end_direct,
+                        out_begin_direct, init.value(), binary_op);
   }
-  assert(init.has_value());
-
-  std::exclusive_scan(policy, in_begin_direct, in_end_direct, out_begin_direct,
-                      init.value(), binary_op);
 }
 
 template <bool is_exclusive, dr::distributed_contiguous_range R,
@@ -149,20 +149,21 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         auto local_in = dr::ranges::__detail::local(global_in);
         auto local_out = rng::views::take(
             dr::ranges::__detail::local(global_out), rng::size(local_in));
-        auto local_out_adj = [](auto local_out, auto offset) {
+        auto local_out_adj = [use_sycl](auto local_out, auto offset) {
+          bool _use_sycl = use_sycl;
           if constexpr (is_exclusive) {
-            // FIXME: this may probably not work with device allocator, add a
-            // test and check it, see:
-            // https://github.com/oneapi-src/distributed-ranges/issues/589
             auto local_out_begin_direct =
                 detail::direct_iterator(local_out.begin());
-            *local_out_begin_direct = offset;
+            if (_use_sycl) {
+              sycl_copy(&offset, &(*local_out_begin_direct));
+            } else {
+              *local_out_begin_direct = offset;
+            }
             return local_out | rng::views::drop(1);
           } else {
             return local_out;
           }
         }(local_out, offset);
-        // dr::drlog.debug("rebase before: {}\n", local_out_adj);
         if (use_sycl) {
 #ifdef SYCL_LANGUAGE_VERSION
           auto wrap_rebase = [rebase, base = rng::begin(local_out_adj)](
@@ -181,7 +182,6 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
         // dr::drlog.debug("rebase after: {}\n", local_out_adj);
       }
     }
-
     seg_index++;
   }
 
