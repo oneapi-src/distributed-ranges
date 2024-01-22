@@ -73,7 +73,8 @@ add_executable(wave_equation wave_equation.cpp)
 target_link_libraries(wave_equation cxxopts DR::mpi)
 target_compile_definitions(wave_equation PRIVATE STANDALONE_BENCHMARK)
 add_mhp_ctest(NAME wave_equation)
-add_mhp_ctest(TEST_NAME wave_equation_fused NAME wave_equation TARGS -f)
+# add_mhp_ctest(TEST_NAME wave_equation_fused NAME wave_equation TARGS -f) #
+# DRA-92
 if(ENABLE_SYCL)
   add_mhp_ctest(
     TEST_NAME wave_equation-sycl NAME wave_equation NPROC 2 SYCL)

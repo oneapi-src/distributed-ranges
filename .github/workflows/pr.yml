@@ -31,17 +31,17 @@ jobs:
       run: pre-commit run --all
 
   unit_tests:
-    runs-on: pvc
     strategy:
       # test everything, even if one fails
       fail-fast: false
       matrix:
         include:
-        - cxx: icpx
-        # - cxx: g++-10
-        - cxx: g++-11
-        - cxx: g++-12
+        - { cxx: icpx, machine: pvc }
+        - { cxx: g++-10, machine: ubuntu-latest }
+        - { cxx: g++-11, machine: pvc }
+        - { cxx: g++-12, machine: ubuntu-latest }
     name: ${{ matrix.cxx }}
+    runs-on: ${{ matrix.machine }}
     env:
       CXX: ${{ matrix.cxx }}
     steps:
@@ -132,7 +132,7 @@ jobs:
 
   publish:
     needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
-    runs-on: intel-ubuntu-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
