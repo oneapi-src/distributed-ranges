@@ -18,7 +18,7 @@ env:
 
 jobs:
   checks:
-    runs-on: tpi-ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -32,7 +32,7 @@ jobs:
            pre-commit run --all
 
   unit_tests:
-    runs-on: tpi-ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -141,7 +141,7 @@ jobs:
 
   publish:
     needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
-    runs-on: tpi-ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     permissions:
       contents: write
     env:
