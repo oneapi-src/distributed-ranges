@@ -18,7 +18,7 @@ env:
 
 jobs:
   checks:
-    runs-on: pvc
+    runs-on: intel-ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -28,8 +28,7 @@ jobs:
     - name: Install python dependencies
       run: pip install -r requirements.txt
     - name: Run checkers
-      run: |
-           pre-commit run --all
+      run: pre-commit run --all
 
   unit_tests:
     runs-on: pvc
@@ -133,7 +132,7 @@ jobs:
 
   publish:
     needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
-    runs-on: pvc
+    runs-on: intel-ubuntu-latest
     permissions:
       contents: write
     env:
