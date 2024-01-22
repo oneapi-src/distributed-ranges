@@ -87,3 +87,11 @@ template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
 } // namespace dr::mhp::__detail
 
 #endif // SYCL_LANGUAGE_VERSION
+
+namespace dr::mhp::__detail {
+
+template <typename T> void sycl_copy(T *src, T *dst, std::size_t size = 1) {
+  sycl_copy(src, src + size, dst);
+}
+
+} // namespace dr::mhp::__detail
