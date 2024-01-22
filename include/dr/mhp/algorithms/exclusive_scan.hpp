@@ -13,13 +13,15 @@ template <dr::distributed_contiguous_range R,
 auto exclusive_scan(R &&r, O &&o, T init, BinaryOp &&binary_op) {
   return __detail::inclusive_exclusive_scan_impl_<true>(
       std::forward<R>(r), rng::begin(std::forward<O>(o)),
-      std::forward<BinaryOp>(binary_op), std::optional(init));
+      std::forward<BinaryOp>(binary_op),
+      std::optional<rng::range_value_t<R>>(init));
 }
 
 template <dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O, typename T>
 auto exclusive_scan(R &&r, O &&o, T init) {
-  return dr::mhp::exclusive_scan(std::forward<R>(r), std::forward<O>(o), init,
+  return dr::mhp::exclusive_scan(std::forward<R>(r), std::forward<O>(o),
+                                 static_cast<rng::range_value_t<R>>(init),
                                  std::plus<rng::range_value_t<R>>());
 }
 

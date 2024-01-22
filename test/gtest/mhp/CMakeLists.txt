@@ -100,7 +100,7 @@ if(ENABLE_SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
 
   # DRA-17 for fixing sort, DRA-18 for fixing ExclScan
-  set(sycl-offload-exclusions ${sycl-exclusions}Exclusive*:Sort*)
+  set(sycl-offload-exclusions ${sycl-exclusions}:Sort*)
 
   add_mhp_ctest(
     NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS --device-memory
