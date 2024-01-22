@@ -18,7 +18,7 @@ env:
 
 jobs:
   checks:
-    runs-on: cpu
+    runs-on: pvc
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -32,7 +32,7 @@ jobs:
            pre-commit run --all
 
   unit_tests:
-    runs-on: cpu
+    runs-on: pvc
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -133,7 +133,7 @@ jobs:
 
   publish:
     needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
-    runs-on: cpu
+    runs-on: pvc
     permissions:
       contents: write
     env:
