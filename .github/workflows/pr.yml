@@ -40,9 +40,7 @@ jobs:
       matrix:
         include:
         - cxx: icpx
-        # - cxx: g++-10
         - cxx: g++-11
-        # - cxx: g++-12
     name: ${{ matrix.cxx }}
     env:
       CXX: ${{ matrix.cxx }}
