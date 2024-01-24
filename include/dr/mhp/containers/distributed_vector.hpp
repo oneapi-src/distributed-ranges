@@ -211,14 +211,16 @@ public:
   distributed_vector(distributed_vector &&) { assert(false); }
 
   /// Constructor
-  distributed_vector(std::size_t size = 0, distribution dist = distribution()) {
-    init(size, dist);
+  distributed_vector(std::size_t size = 0, distribution dist = distribution(),
+                     std::size_t seg_size = 0) {
+    init(size, dist, seg_size);
   }
 
-  /// Constructor
+  /// Constructor - new
   distributed_vector(std::size_t size, value_type fill_value,
-                     distribution dist = distribution()) {
-    init(size, dist);
+                     distribution dist = distribution(),
+                     std::size_t seg_size = 0) {
+    init(size, dist, seg_size);
     mhp::fill(*this, fill_value);
   }
 
@@ -249,7 +251,7 @@ public:
   void fence() { backend.fence(); }
 
 private:
-  void init(auto size, auto dist) {
+  void init(auto size, auto dist, auto seg_size) {
     size_ = size;
     distribution_ = dist;
 
@@ -261,8 +263,16 @@ private:
     assert(size % gran == 0 && "size must be a multiple of the granularity");
     assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
     assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
-    segment_size_ = gran * std::max({(size / gran + comm_size - 1) / comm_size,
-                                     hb.prev / gran, hb.next / gran});
+    // XXX seg size multpl of granularity
+    if (seg_size > 0) {
+      assert(seg_size % gran == 0 &&
+             "size must be a multiple of the granularity");
+      segment_size_ = seg_size;
+    } else {
+      segment_size_ =
+          gran * std::max({(size / gran + comm_size - 1) / comm_size,
+                           hb.prev / gran, hb.next / gran});
+    }
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
