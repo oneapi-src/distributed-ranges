@@ -142,7 +142,7 @@ template <typename valT, typename Compare, typename Seg>
 void splitters(Seg &lsegment, Compare &&comp,
                std::vector<std::size_t> &vec_split_i,
                std::vector<std::size_t> &vec_split_s) {
-
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
   assert(rng::size(vec_split_i) == _comm_size);
@@ -158,12 +158,14 @@ void splitters(Seg &lsegment, Compare &&comp,
    * each segment into equal parts */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
     for (std::size_t _i = 0; _i < rng::size(vec_lmedians) - 1; _i++) {
       assert(_i * _step_m < rng::size(lsegment));
       sycl_copy<valT>(&lsegment[_i * _step_m], &vec_lmedians[_i]);
     }
     sycl_copy<valT>(&lsegment[rng::size(lsegment) - 1],
                     &vec_lmedians[rng::size(vec_lmedians) - 1]);
+                    fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 #else
     assert(false);
 #endif
@@ -180,27 +182,11 @@ void splitters(Seg &lsegment, Compare &&comp,
 
   fmt::print("{}:{} problem start\n", default_comm().rank(), __LINE__);
 
-#ifdef SYCL_LANGUAGE_VERSION
-  
-#else
-  
-#endif
-
-//   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
-//     assert((_i + 1) * (_comm_size + 1) - 1 < rng::size(vec_gmedians));
-// #ifdef SYCL_LANGUAGE_VERSION
-//     sycl_copy(&vec_gmedians[(_i + 1) * (_comm_size + 1) - 1], vec_split_v.data() + _i);
-// #else
-//     vec_split_v[_i] = vec_gmedians[(_i + 1) * (_comm_size + 1) - 1];
-// #endif
-//   }
-
-  
   auto begin = std::chrono::high_resolution_clock::now();
   auto end = std::chrono::high_resolution_clock::now();
 
-  /* TODO: copy and loop below takes most of time of the whole sort
-   * procedure; move it to the SYCL kernel */
+  /* TODO: the loop below takes most of time of the whole sort
+   * procedure; is optimisation possible? */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     fmt::print("{}:{} sycl start\n", default_comm().rank(), __LINE__);
@@ -216,20 +202,17 @@ void splitters(Seg &lsegment, Compare &&comp,
     }
 
     sycl_copy<std::size_t>(vec_split_i.data(), dbuf_i.data(),
-                            vec_split_i.size());
+                           vec_split_i.size());
     sycl_copy<std::size_t>(vec_split_s.data(), dbuf_s.data(),
-                            vec_split_s.size());
+                           vec_split_s.size());
 
     sycl::buffer<std::size_t> buf_i(dbuf_i.data(), sycl::range{dbuf_i.size()});
     sycl::buffer<std::size_t> buf_s(dbuf_s.data(), sycl::range{dbuf_s.size()});
     sycl::buffer<valT> buf_v(dbuf_v.data(), sycl::range(rng::size(dbuf_v)));
     sycl::buffer<valT> buf_lsegment(lsegment);
 
-    // end = std::chrono::high_resolution_clock::now();
-    // fmt::print("{}: splitters 0 duration {} ms\n", default_comm().rank(),
-    //            std::chrono::duration<float>(end - begin).count() * 1000);
     begin = std::chrono::high_resolution_clock::now();
-
+    fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
     sycl_queue()
         .submit([&](sycl::handler &h) {
           sycl::accessor acc_i{buf_i, h, sycl::read_write};
@@ -239,8 +222,8 @@ void splitters(Seg &lsegment, Compare &&comp,
 
           auto ls_size = rng::size(lsegment);
           h.single_task([=]() {
-            sycl::opencl::cl_ulong vidx0 = 0, vidx1 = 1;
-            sycl::opencl::cl_ulong segidx = 0;
+            sycl::opencl::cl_ulong vidx0 = 0, vidx1 = 1, segidx = 0;
+
             while (vidx1 < _comm_size && segidx < ls_size) {
               if (comp(acc_v[vidx1 - 1], acc_ls[segidx])) {
                 acc_i[vidx1] = segidx;
@@ -258,7 +241,7 @@ void splitters(Seg &lsegment, Compare &&comp,
 
     end = std::chrono::high_resolution_clock::now();
     fmt::print("{}: splitters 2 duration {} ms\n", default_comm().rank(),
-                std::chrono::duration<float>(end - begin).count() * 1000);
+               std::chrono::duration<float>(end - begin).count() * 1000);
     begin = std::chrono::high_resolution_clock::now();
 
     sycl::host_accessor res_i{buf_i}, res_s{buf_s};
@@ -273,27 +256,45 @@ void splitters(Seg &lsegment, Compare &&comp,
 #else
     assert(false);
 #endif
-    }
-    else {
-      std::vector<valT> vec_split_v(_comm_size - 1);
-      for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
-        assert((_i + 1) * (_comm_size + 1) - 1 < rng::size(vec_gmedians));
-        vec_split_v[_i] = vec_gmedians[(_i + 1) * (_comm_size + 1) - 1];
-      }
+  } else {
+    fmt::print("{}:{} NO SYCL splitters\n", default_comm().rank(),__LINE__);
 
-      std::size_t segidx = 0, vidx = 1;
-      while (vidx < _comm_size && segidx < rng::size(lsegment)) {
-        if (comp(vec_split_v.data()[vidx - 1], lsegment[segidx])) {
-          vec_split_i[vidx] = segidx;
-          vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
-          vidx++;
-        } else {
-          segidx++;
-        }
-      }
-      assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
-      vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
+    std::vector<valT> vec_split_v(_comm_size - 1);
+    for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
+      assert((_i + 1) * (_comm_size + 1) - 1 < rng::size(vec_gmedians));
+      vec_split_v[_i] = vec_gmedians[(_i + 1) * (_comm_size + 1) - 1];
     }
+
+    /*
+    std::size_t segidx = 0, vidx = 1;
+    while (vidx < _comm_size && segidx < rng::size(lsegment)) {
+       if (comp(vec_split_v.data()[vidx - 1], lsegment[segidx])) {
+         vec_split_i[vidx] = segidx;
+         vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
+         vidx++;
+       } else {
+         segidx++;
+       }
+     }
+     */
+    std::size_t vidx = 1;
+    for (std::size_t sidx = 0; sidx < rng::size(lsegment); sidx++) {
+      while (comp(vec_split_v[vidx - 1], lsegment[sidx])) {
+        vec_split_i[vidx] = sidx;
+        vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
+        vidx++;
+        if (vidx == _comm_size)
+          break;
+      }
+      if (vidx == _comm_size)
+        break;
+    }
+    assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
+    vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
+  }
+
+  fmt::print("{}:{} after split s {} i {}\n", default_comm().rank(),
+              __LINE__, vec_split_s, vec_split_i);
 
   end = std::chrono::high_resolution_clock::now();
   fmt::print("{}: splitters 3 duration {} ms\n", default_comm().rank(),
@@ -444,7 +445,9 @@ void dist_sort(R &r, Compare &&comp) {
   __detail::local_sort(lsegment, comp);
 
   /* find splitting values - limits of areas to send to other processes */
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   __detail::splitters<valT>(lsegment, comp, vec_split_i, vec_split_s);
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 
   /* prepare data to send and receive */
@@ -456,8 +459,10 @@ void dist_sort(R &r, Compare &&comp) {
    * data to achieve size of data equal to size of local segment */
 
   MPI_Request req_recvelems;
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
 
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   /* buffer for received data */
   buffer<valT> vec_recvdata(_recv_elems);
 
@@ -465,20 +470,20 @@ void dist_sort(R &r, Compare &&comp) {
    */
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
                            vec_rsizes, vec_rindices);
-
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
    * desirable */
   __detail::local_sort(vec_recvdata, comp);
 
   MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
-
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
 
   /* prepare data for shift to neighboring processes */
   std::vector<int> vec_shift(_comm_size - 1);
 
   const auto desired_elems_num = (_total_elems + _comm_size - 1) / _comm_size;
-
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   vec_shift[0] = desired_elems_num - vec_recv_elems[0];
   for (std::size_t _i = 1; _i < _comm_size - 1; _i++) {
     vec_shift[_i] = vec_shift[_i - 1] + desired_elems_num - vec_recv_elems[_i];
@@ -493,17 +498,17 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* shift data if necessary, to have exactly the number of elements equal to
    * lsegment size */
-  // fmt::print("{}:{} before shift\n", default_comm().rank(), __LINE__);
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 
   __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
                              vec_right);
 
   /* copy results to distributed vector's local segment */
-  // fmt::print("{}:{} before copy\n", default_comm().rank(), __LINE__);
+  fmt::print("{}:{} before copy\n", default_comm().rank()fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 
   __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
                                vec_left, vec_right);
-
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 } // __detail::dist_sort
 
 } // namespace __detail
@@ -548,10 +553,3 @@ void sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
 }
 
 } // namespace dr::mhp
-
-template <typename T>
-struct sycl::is_device_copyable<dr::mhp::__detail::buffer<T>> : sycl::is_device_copyable<T> {};
-
-template <>
-struct sycl::is_device_copyable<std::vector<std::size_t>>
-    : sycl::is_device_copyable<std::size_t> {};
