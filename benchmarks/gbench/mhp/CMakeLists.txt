@@ -36,7 +36,7 @@ endif()
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
 add_executable(mhp-quick-bench mhp-bench.cpp
-                               ../common/inclusive_exclusive_scan.cpp)
+                               ../common/sort.cpp)
 
 foreach(mhp-bench-exec IN ITEMS mhp-bench mhp-quick-bench)
   target_compile_definitions(${mhp-bench-exec} PRIVATE BENCH_MHP)
@@ -47,9 +47,9 @@ foreach(mhp-bench-exec IN ITEMS mhp-bench mhp-quick-bench)
   endif()
 endforeach()
 
-if(ENABLE_SYCL)
-  target_sources(mhp-quick-bench PRIVATE fft3d.cpp)
-endif()
+# if(ENABLE_SYCL)
+#  target_sources(mhp-quick-bench PRIVATE fft3d.cpp)
+# endif()
 
 cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 

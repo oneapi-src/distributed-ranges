@@ -94,4 +94,9 @@ template <typename T> void sycl_copy(T *src, T *dst, std::size_t size = 1) {
   sycl_copy(src, src + size, dst);
 }
 
+template <typename T> void sycl_copy(const T *src, const T *dst, std::size_t size = 1) {
+  sycl_copy(src, src + size, dst);
+}
+
+
 } // namespace dr::mhp::__detail
