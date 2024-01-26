@@ -124,9 +124,11 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       auto policy = dpl_policy();
       auto &&local_segment = dr::ranges::__detail::local(r);
       DRLOG("GPU dpl::sort(), size {}\n", rng::size(r));
+      fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
       oneapi::dpl::sort(
           policy, dr::__detail::direct_iterator(rng::begin(local_segment)),
           dr::__detail::direct_iterator(rng::end(local_segment)), comp);
+      fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 #else
       assert(false);
 #endif
@@ -135,6 +137,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       rng::sort(rng::begin(r), rng::end(r), comp);
     }
   }
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 }
 
 /* elements of dist_sort */
@@ -474,7 +477,7 @@ void dist_sort(R &r, Compare &&comp) {
   /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
    * desirable */
   __detail::local_sort(vec_recvdata, comp);
-
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
   fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
   _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
@@ -504,7 +507,7 @@ void dist_sort(R &r, Compare &&comp) {
                              vec_right);
 
   /* copy results to distributed vector's local segment */
-  fmt::print("{}:{} before copy\n", default_comm().rank()fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
+  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 
   __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
                                vec_left, vec_right);
