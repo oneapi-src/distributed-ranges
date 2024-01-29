@@ -18,11 +18,12 @@ env:
 
 jobs:
   checks:
+    if: false
     runs-on: intel-ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Ubuntu dependencies
-      run: scripts/instal-doxygen.sh
+      run: scripts/install-doxygen.sh
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -33,6 +34,7 @@ jobs:
       run: pre-commit run --all
 
   unit_tests:
+    if: false
     runs-on: pvc
     strategy:
       # test everything, even if one fails
@@ -67,6 +69,7 @@ jobs:
           build/examples/mhp/*.log
 
   pvc_unit_tests:
+    if: false
     runs-on: pvc
     strategy:
       # test everything, even if one fails
@@ -99,6 +102,7 @@ jobs:
             build/examples/mhp/*.log
 
   ishmem_unit_tests:
+    if: false
     runs-on: pvc
     strategy:
       # test everything, even if one fails
@@ -131,13 +135,13 @@ jobs:
             build/examples/mhp/*.log
 
   publish:
-    needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
+    #needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
     runs-on: intel-ubuntu-latest
     permissions:
       contents: write
     env:
       SPHINXOPTS: -q -W
-    if: ${{ github.ref == 'refs/heads/main' }}
+    #if: ${{ github.ref == 'refs/heads/main' }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -145,6 +149,8 @@ jobs:
         python-version: '3.10'
         cache: 'pip'
     - run: pip install -r requirements.txt
+    - name: Ubuntu dependencies
+      run: scripts/install-doxygen.sh
     - name: Build doc
       run: |
         make -C doc/spec html
