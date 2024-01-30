@@ -50,6 +50,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-2-results
       COMMAND dr-bench clean --prefix aurora-2
+      # speedup reference relative to 1 gpu
+      COMMAND dr-bench suite --prefix aurora-2 --gpus 1
+      # measurements
       COMMAND dr-bench suite --prefix aurora-2 --nodes 2 --gpus 12
       COMMAND dr-bench plot --prefix aurora-2
       DEPENDS xhp-bench)
