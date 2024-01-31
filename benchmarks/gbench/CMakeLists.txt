@@ -34,7 +34,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT devcloud-bench-results
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --no-p2p --gpus 4 --sockets 2 --cores-per-socket 56
+      COMMAND dr-bench suite --gpus 4 --sockets 2 --cores-per-socket 56
       COMMAND dr-bench plot
       DEPENDS xhp-bench)
 
