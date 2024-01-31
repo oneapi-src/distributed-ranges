@@ -59,13 +59,6 @@ option_clean = click.option(
     "-c", "--clean", is_flag=True, help="Delete all json files with the prefix"
 )
 
-option_weak_scaling = click.option(
-    "--weak-scaling",
-    is_flag=True,
-    default=False,
-    help="Scales the vector size by the number of ranks",
-)
-
 option_different_devices = click.option(
     "--different-devices",
     is_flag=True,
@@ -183,7 +176,12 @@ def do_run(options):
 @option_shp_bench
 @option_dry_run
 @option_clean
-@option_weak_scaling
+@click.option(
+    "--weak-scaling",
+    is_flag=True,
+    default=False,
+    help="Scales the vector size by the number of ranks",
+)
 @option_different_devices
 def run(
     prefix,
@@ -247,7 +245,6 @@ def run(
 @option_shp_bench
 @option_dry_run
 @option_clean
-@option_weak_scaling
 @option_different_devices
 @click.option(
     "--vec-size",
@@ -322,13 +319,12 @@ def suite(
             do_run(options)
 
     # Run a range of ranks on a single node
-    def run_rank_range(base, ranks, filters, targets, weak_scaling=False):
+    def run_rank_range(base, ranks, filters, targets):
         run_rank_list(
             base,
             list(range(1, ranks + 1)),
             filters,
             targets,
-            weak_scaling,
         )
 
     # Run sequence 1, 2, 4, 8, 12 based on total ranks
@@ -506,13 +502,9 @@ def suite(
     base.dry_run = dry_run
     base.vec_size = [vec_size]
     base.reps = reps
-    base.weak_scaling = weak_scaling
     base.different_devices = different_devices
 
-    logging.info(
-        f"starting suite, weak_scaling:{weak_scaling}, "
-        f"different_devices:{different_devices}"
-    )
+    logging.info(f"different_devices:{different_devices}")
 
     if clean and not dry_run:
         do_clean(prefix)
