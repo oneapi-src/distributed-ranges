@@ -259,15 +259,16 @@ def run(
     help="Number of repetitions",
 )
 @click.option(
-    "--nodes",
-    type=int,
-    help="Number of nodes",
-)
-@click.option(
     "--gpus",
     type=int,
     default=0,
     help="Number of GPUs per node",
+)
+@click.option(
+    "--gpus-per-node",
+    type=int,
+    default=12,
+    help="Number of gpus per node",
 )
 @click.option(
     "--sockets",
@@ -288,8 +289,8 @@ def suite(
     clean,
     vec_size,
     reps,
-    nodes,
     gpus,
+    gpus_per_node,
     sockets,
     cores_per_socket,
     weak_scaling,
@@ -338,29 +339,14 @@ def suite(
     ):
         run_rank_list(
             base,
-            list(filter(lambda r: r <= ranks, [1, 2, 4, 8, 12])),
+            list(filter(lambda r: r <= ranks, [1, 2, 4, 8, 12, 24, 48, 96])),
             filters,
             targets,
             weak_scaling_filter=weak_scaling_filter,
             device_memory=device_memory,
         )
 
-    # Run a range of nodes
-    def run_node_range(base, ranks_per_node, filters, targets):
-        options = base
-        options.ranks_per_node = ranks_per_node
-        run_rank_list(
-            options,
-            list(
-                range(
-                    ranks_per_node, ranks_per_node * nodes + 1, ranks_per_node
-                )
-            ),
-            filters,
-            targets,
-        )
-
-    def single_node(base):
+    def run_configurations(base):
         #
         # GPU devices
         #
@@ -382,7 +368,16 @@ def suite(
             )
             run_rank_sparse(
                 base,
-                gpus,
+                min(gpus_per_node, gpus),
+                xhp_filter + shp_filter,
+                ["shp_sycl_gpu"],
+                weak_scaling_filter,
+                device_memory=True,
+            )
+
+            run_rank_sparse(
+                base,
+                min(gpus_per_node, gpus),
                 xhp_filter + shp_filter,
                 ["shp_sycl_gpu"],
                 weak_scaling_filter,
@@ -430,27 +425,6 @@ def suite(
                     )
                 ),
                 mhp_filter + xhp_filter,
-                ["mhp_direct_cpu"],
-            )
-
-    def multi_node(base):
-        #
-        # GPU devices
-        #
-        if gpus > 0:
-            run_node_range(
-                base, gpus, xhp_filter + mhp_filter, ["mhp_sycl_gpu"]
-            )
-
-        #
-        # CPU devices
-        #
-        if sockets > 0:
-            run_node_range(base, sockets, xhp_filter, ["mhp_sycl_cpu"])
-            run_node_range(
-                base,
-                sockets * cores_per_socket,
-                xhp_filter,
                 ["mhp_direct_cpu"],
             )
 
@@ -509,10 +483,7 @@ def suite(
     if clean and not dry_run:
         do_clean(prefix)
 
-    if nodes:
-        multi_node(base)
-    else:
-        single_node(base)
+    run_configurations(base)
 
 
 if __name__ == "__main__":
