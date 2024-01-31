@@ -61,6 +61,8 @@ class Runner:
                     f" I_MPI_OFFLOAD=1"
                     # tile i assigned to rank i
                     f" I_MPI_OFFLOAD_CELL_LIST=0-{ranks-1}"
+                    # do not use the SLURM/PBS resource manager to launch jobs
+                    f" I_MPI_HYDRA_BOOTSTRAP=ssh"
                 )
         else:
             env = (
