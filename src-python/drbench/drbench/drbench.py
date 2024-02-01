@@ -245,7 +245,6 @@ def run(
 @option_shp_bench
 @option_dry_run
 @option_clean
-@option_different_devices
 @click.option(
     "--vec-size",
     type=int,
@@ -281,6 +280,7 @@ def run(
     type=int,
     help="Number of cores per CPU socket",
 )
+@option_different_devices
 def suite(
     prefix,
     mhp_bench,
@@ -293,7 +293,6 @@ def suite(
     gpus_per_node,
     sockets,
     cores_per_socket,
-    weak_scaling,
     different_devices,
 ):
     # Run a list of ranks
