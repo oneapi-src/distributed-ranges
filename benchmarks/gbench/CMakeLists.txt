@@ -34,7 +34,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-results
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --gpus 12 --gpus-per-node 12
+      COMMAND dr-bench suite --gpus 12
       COMMAND dr-bench plot
       DEPENDS xhp-bench)
 
@@ -42,7 +42,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_command(
       OUTPUT aurora-bench-results-2
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --gpus 24 --gpus-per-node 12
+      COMMAND dr-bench suite --gpus 12 -d
+      COMMAND dr-bench suite --min-gpus 13 --gpus 24 -mhp-only -d
       COMMAND dr-bench plot
       DEPENDS xhp-bench)
 
