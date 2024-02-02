@@ -23,7 +23,6 @@ AnalysisConfig = namedtuple(
             "shp_bench",
             "weak_scaling",
             "different_devices",
-            "ranks_per_node",
             "device_memory",
         ]
     ),
@@ -46,7 +45,7 @@ class Runner:
             f" system:{usage_end.ru_stime - usage_start.ru_stime:.2f}"
         )
 
-    def __run_mhp_analysis(self, params, ranks, ranks_per_node, target):
+    def __run_mhp_analysis(self, params, ranks, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
             if self.analysis_config.different_devices:
@@ -55,14 +54,14 @@ class Runner:
                 env = "ONEAPI_DEVICE_SELECTOR=opencl:cpu"
             else:
                 env = (
-                    f"ONEAPI_DEVICE_SELECTOR="
-                    f"'level_zero:gpu;ext_oneapi_cuda:gpu'"
+                    "ONEAPI_DEVICE_SELECTOR="
+                    "'level_zero:gpu;ext_oneapi_cuda:gpu'"
                     # GPU aware MPI
-                    f" I_MPI_OFFLOAD=1"
+                    " I_MPI_OFFLOAD=1"
                     # tile i assigned to rank i
-                    f" I_MPI_OFFLOAD_CELL_LIST=0-{ranks-1}"
+                    " I_MPI_OFFLOAD_CELL_LIST=0-11"
                     # do not use the SLURM/PBS resource manager to launch jobs
-                    f" I_MPI_HYDRA_BOOTSTRAP=ssh"
+                    " I_MPI_HYDRA_BOOTSTRAP=ssh"
                 )
         else:
             env = (
@@ -73,16 +72,12 @@ class Runner:
 
         mpirun_params = []
         mpirun_params.append(f"-n {str(ranks)}")
-        if ranks_per_node:
-            mpirun_params.append(f"-ppn {str(ranks_per_node)}")
         self.__execute(
-            env
-            + " mpirun "
-            + " ".join(mpirun_params)
-            + " "
-            + self.analysis_config.mhp_bench
-            + " "
-            + " ".join(params)
+            (
+                # ppn 12 is aurora specific
+                f"{env} mpiexec -n {ranks} -ppn 12 "
+                f"{self.analysis_config.mhp_bench} {' '.join(params)}"
+            )
         )
 
     def __run_shp_analysis(self, params, ranks, target):
@@ -133,6 +128,5 @@ class Runner:
             self.__run_mhp_analysis(
                 params,
                 analysis_case.ranks,
-                self.analysis_config.ranks_per_node,
                 analysis_case.target,
             )

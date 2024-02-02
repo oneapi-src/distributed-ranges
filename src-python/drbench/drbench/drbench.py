@@ -24,7 +24,6 @@ class SuiteConfig:
         self.weak_scaling = False
         self.different_devices = False
         self.ranks = 1
-        self.ranks_per_node = None
         self.target = None
         self.vec_size = None
         self.device_memory = False
@@ -116,7 +115,6 @@ def do_run(options):
             options.shp_bench,
             options.weak_scaling,
             options.different_devices,
-            options.ranks_per_node,
             options.device_memory,
         )
     )
@@ -156,12 +154,6 @@ def do_run(options):
     type=int,
     help="Run with 1 ... N ranks",
 )
-@click.option(
-    "--node-range",
-    type=int,
-    help="Run with 1 ... N nodes",
-)
-@click.option("--ranks-per-node", type=int, help="Ranks per node")
 @click.option("--reps", default=50, type=int, help="Number of reps")
 @click.option(
     "-f",
@@ -189,8 +181,6 @@ def run(
     vec_size,
     ranks,
     rank_range,
-    node_range,
-    ranks_per_node,
     reps,
     filter,
     device_memory,
@@ -209,25 +199,13 @@ def run(
     if clean and not dry_run:
         do_clean(prefix)
 
-    if node_range and not ranks_per_node:
-        click.get_current_context().fail(
-            "--node-range requires --ranks-per-node"
-        )
-
     options.device_memory = device_memory
     options.prefix = prefix
     options.target = target
     options.vec_size = vec_size
-    options.ranks_per_node = ranks_per_node
     options.ranks = ranks
     if rank_range:
         options.ranks = list(range(1, rank_range + 1))
-    if node_range:
-        options.ranks = list(
-            range(
-                ranks_per_node, node_range * ranks_per_node + 1, ranks_per_node
-            )
-        )
     options.reps = reps
     options.filter = filter
     options.mhp_bench = mhp_bench
