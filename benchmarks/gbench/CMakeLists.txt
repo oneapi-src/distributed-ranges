@@ -33,7 +33,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_custom_target(aurora-bench-1 DEPENDS aurora-bench-results)
     add_custom_command(
       OUTPUT aurora-bench-results
-      COMMAND echo ::endgroup::
+      # github actions log annotation
+      COMMAND echo "::endgroup::"
       COMMAND dr-bench clean
       COMMAND dr-bench suite --gpus 12
       COMMAND dr-bench plot
