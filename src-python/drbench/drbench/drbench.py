@@ -82,8 +82,11 @@ def cli():
 @cli.command()
 @option_prefix
 def plot(prefix):
+    # github log annotation
+    click.echo("::group::dr-bench plot")
     p = plotter.Plotter(prefix)
     p.create_plots()
+    click.echo("::endgoup::")
 
 
 def do_clean(prefix):
@@ -94,7 +97,10 @@ def do_clean(prefix):
 @cli.command()
 @option_prefix
 def clean(prefix):
+    # github log annotation
+    click.echo("::group::dr-bench clean")
     do_clean(prefix)
+    click.echo("::endgroup::")
 
 
 Choice = click.Choice(common.targets.keys())
@@ -121,9 +127,11 @@ def do_run(options):
     for t in options.target:
         for s in options.vec_size:
             for n in options.ranks:
+                click.echo(f"::group::dr-bench run ranks: {n} target: {t}")
                 r.run_one_analysis(
                     runner.AnalysisCase(choice_to_target(t), s, n)
                 )
+                click.echo("::endgoup::")
 
 
 @cli.command()
