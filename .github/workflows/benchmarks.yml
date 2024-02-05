@@ -10,7 +10,7 @@ on:
   # 6am UTC is 10pm PST, 11pm PDT
   schedule:
     - cron: '0 6 * * *'
-    
+
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
 
