@@ -28,7 +28,10 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
       - name: Install python dependencies
-        run: pip install src-python/drbench/drbench
+        run: |
+          /usr/bin/python3 -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
+          source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
+          pip install src-python/drbench/drbench
       - name: Generate
         run: cmake -B build
       - name: Build
@@ -36,6 +39,7 @@ jobs:
       - name: Run
         run: |
           source /opt/intel/oneapi/2024.0.1/setvars.sh
+          source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
           srun --nodes=4 --ntasks-per-node=2 make -C build/benchmarks/gbench jfcst-bench-results
       - uses: actions/upload-artifact@v4
         if: always()
