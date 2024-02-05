@@ -32,7 +32,7 @@ jobs:
           /usr/bin/python3 -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
           source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
           pip install src-python/drbench
-          srun --nodes=2 --ntasks-per-node=2 make -C build/benchmarks/gbench jfcst-bench-results
+          srun --nodes=2 --ntasks-per-node=2 make -C build/benchmarks/gbench jfcst-bench
       - uses: actions/upload-artifact@v4
         if: always()
         with:
