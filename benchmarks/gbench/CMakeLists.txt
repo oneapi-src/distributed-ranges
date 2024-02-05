@@ -46,7 +46,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       # github actions log annotation
       COMMAND echo "::endgroup::"
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --gpus 12
+      COMMAND dr-bench suite --gpus 12 --ppn 12
       COMMAND dr-bench plot
       DEPENDS xhp-bench)
 
@@ -56,8 +56,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       # github actions log annotation
       COMMAND echo "::endgroup::"
       COMMAND dr-bench clean
-      COMMAND dr-bench suite --min-gpus 13 --gpus 24 --mhp-only
-      COMMAND dr-bench suite --gpus 12
+      COMMAND dr-bench suite --min-gpus 13 --gpus 24 --ppn 12 --mhp-only
+      COMMAND dr-bench suite --gpus 12 --ppn 12
       COMMAND dr-bench plot
       DEPENDS xhp-bench)
 
@@ -66,7 +66,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       OUTPUT aurora-bench-results-plus-2
       # github actions log annotation
       COMMAND echo "::endgroup::"
-      COMMAND dr-bench suite --min-gpus 13 --gpus 24 --mhp-only
+      COMMAND dr-bench suite --min-gpus 13 --gpus 24 --ppn 12 --mhp-only
       COMMAND dr-bench plot
       DEPENDS xhp-bench)
 
