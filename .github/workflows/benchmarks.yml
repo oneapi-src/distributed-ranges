@@ -23,18 +23,32 @@ jobs:
       FI_PROVIDER: tcp
     steps:
       - uses: actions/checkout@v4
+      - name: Check
+        run: |
+          /usr/bin/python3 -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
+          source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
+          pip install src-python/drbench
+          which dr-bench
+          srun which dr-bench
+          printenv PATH
+          srun printenv PATH
+          srun hostname
       - name: Generate
+        if: false
         run: cmake -B build
       - name: Build
+        if: false
         run: cmake --build build --target xhp-bench -- -j
       - name: Run
+        if: false
         run: |
           /usr/bin/python3 -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
           source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
           pip install src-python/drbench
           srun --nodes=2 --ntasks-per-node=2 make -C build/benchmarks/gbench jfcst-bench
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: false
+        #if: always()
         with:
           name: benchmarks
           path: |
