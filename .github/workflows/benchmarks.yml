@@ -23,23 +23,16 @@ jobs:
       FI_PROVIDER: tcp
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      - name: Install python dependencies
-        run: |
-          /usr/bin/python3 -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
-          source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
-          pip install src-python/drbench/drbench
       - name: Generate
         run: cmake -B build
       - name: Build
         run: cmake --build build --target xhp-bench -- -j
       - name: Run
         run: |
-          source /opt/intel/oneapi/2024.0.1/setvars.sh
+          /usr/bin/python3 -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
           source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
+          pip install src-python/drbench/drbench
+          source /opt/intel/oneapi/2024.0.1/setvars.sh
           srun --nodes=4 --ntasks-per-node=2 make -C build/benchmarks/gbench jfcst-bench-results
       - uses: actions/upload-artifact@v4
         if: always()
