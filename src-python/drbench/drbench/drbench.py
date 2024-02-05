@@ -36,6 +36,13 @@ option_prefix = click.option(
     help="Prefix for files",
 )
 
+option_ppn = click.option(
+    "--ppn",
+    type=int,
+    default=2,
+    help="Number of processes per node",
+)
+
 option_mhp_bench = click.option(
     "--mhp-bench",
     default="mhp/mhp-bench",
@@ -129,7 +136,7 @@ def do_run(options):
             for n in options.ranks:
                 click.echo(f"::group::dr-bench run ranks: {n} target: {t}")
                 r.run_one_analysis(
-                    runner.AnalysisCase(choice_to_target(t), s, n)
+                    runner.AnalysisCase(choice_to_target(t), s, n, options.ppn)
                 )
                 click.echo("::endgoup::")
 
@@ -255,6 +262,7 @@ def run(
     default=0,
     help="End of range of GPUs",
 )
+@option_ppn
 @option_different_devices
 @click.option(
     "--mhp-only",
@@ -272,6 +280,7 @@ def suite(
     reps,
     min_gpus,
     gpus,
+    ppn,
     different_devices,
     mhp_only,
 ):
@@ -286,6 +295,7 @@ def suite(
     ):
         options = base
         options.ranks = ranks
+        options.ppn = ppn
         options.filter = filter
         options.target = targets
         options.weak_scaling = False

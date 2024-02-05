@@ -10,7 +10,7 @@ from collections import namedtuple
 
 from drbench.common import Device, Model, Runtime
 
-AnalysisCase = namedtuple("AnalysisCase", "target size ranks")
+AnalysisCase = namedtuple("AnalysisCase", "target size ranks ppn")
 AnalysisConfig = namedtuple(
     "AnalysisConfig",
     " ".join(
@@ -45,7 +45,7 @@ class Runner:
             f" system:{usage_end.ru_stime - usage_start.ru_stime:.2f}"
         )
 
-    def __run_mhp_analysis(self, params, ranks, target):
+    def __run_mhp_analysis(self, params, ranks, ppn, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
             if self.analysis_config.different_devices:
@@ -70,13 +70,11 @@ class Runner:
                 "I_MPI_PIN_CELL=unit"
             )
 
-        mpirun_params = []
-        mpirun_params.append(f"-n {str(ranks)}")
         self.__execute(
             (
-                # ppn 12 is aurora specific
-                f"{env} mpiexec -n {ranks} -ppn 12 "
-                f"{self.analysis_config.mhp_bench} {' '.join(params)}"
+                # mpiexec bypasses SLURM/PBS configuration
+                f"{env} mpiexec -n {ranks} -ppn {ppn}"
+                f" {self.analysis_config.mhp_bench} {' '.join(params)}"
             )
         )
 
@@ -128,5 +126,6 @@ class Runner:
             self.__run_mhp_analysis(
                 params,
                 analysis_case.ranks,
+                analysis_case.ppn,
                 analysis_case.target,
             )

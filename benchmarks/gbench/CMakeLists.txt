@@ -30,6 +30,16 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     add_custom_target(xhp-bench DEPENDS mhp-bench shp-bench)
 
+    add_custom_target(jfcst-bench DEPENDS jfcst-bench-results)
+    add_custom_command(
+      OUTPUT jfcst-bench-results
+      # github actions log annotation
+      COMMAND echo "::endgroup::"
+      COMMAND dr-bench clean
+      COMMAND dr-bench suite --gpus 4 --ppn 2
+      COMMAND dr-bench plot
+      DEPENDS xhp-bench)
+
     add_custom_target(aurora-bench-1 DEPENDS aurora-bench-results)
     add_custom_command(
       OUTPUT aurora-bench-results
