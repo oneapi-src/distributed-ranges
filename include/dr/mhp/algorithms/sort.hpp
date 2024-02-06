@@ -179,8 +179,8 @@ void splitters(Seg &lsegment, Compare &&comp,
   default_comm().all_gather(vec_lmedians, vec_gmedians);
   rng::sort(rng::begin(vec_gmedians), rng::end(vec_gmedians), comp);
 
-  auto begin = std::chrono::high_resolution_clock::now();
-  auto end = std::chrono::high_resolution_clock::now();
+  // auto begin = std::chrono::high_resolution_clock::now();
+  // auto end = std::chrono::high_resolution_clock::now();
 
   /* TODO: the loop below takes most of time of the whole sort
    * procedure; is optimisation possible? */
@@ -206,7 +206,6 @@ void splitters(Seg &lsegment, Compare &&comp,
     sycl::buffer<valT> buf_v(dbuf_v.data(), sycl::range(rng::size(dbuf_v)));
     sycl::buffer<valT> buf_lsegment(lsegment);
 
-    begin = std::chrono::high_resolution_clock::now();
     sycl_queue()
         .submit([&](sycl::handler &h) {
           sycl::accessor acc_i{buf_i, h, sycl::read_write};
@@ -233,9 +232,9 @@ void splitters(Seg &lsegment, Compare &&comp,
         })
         .wait();
 
-    end = std::chrono::high_resolution_clock::now();
-    fmt::print("{}: splitters loop duration {} ms\n", default_comm().rank(),
-               std::chrono::duration<float>(end - begin).count() * 1000);
+    // end = std::chrono::high_resolution_clock::now();
+    // fmt::print("{}: splitters loop duration {} ms\n", default_comm().rank(),
+    //            std::chrono::duration<float>(end - begin).count() * 1000);
 
     sycl::host_accessor res_i{buf_i}, res_s{buf_s};
 
