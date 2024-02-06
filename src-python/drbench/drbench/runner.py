@@ -51,19 +51,21 @@ class Runner:
             if self.analysis_config.different_devices:
                 params.append("--different-devices")
             if target.device == Device.CPU:
+                # Force CPU, even if GPU is present
                 env = "ONEAPI_DEVICE_SELECTOR=opencl:cpu"
             else:
                 env = (
+                    # Fail if GPU is not found
                     "ONEAPI_DEVICE_SELECTOR="
                     "'level_zero:gpu;ext_oneapi_cuda:gpu'"
                     # GPU aware MPI
                     " I_MPI_OFFLOAD=1"
                     # tile i assigned to rank i
-                    " I_MPI_OFFLOAD_CELL_LIST=0-11"
-                    # do not use the SLURM/PBS resource manager to launch jobs
-                    " I_MPI_HYDRA_BOOTSTRAP=ssh"
+                    " I_MPI_OFFLOAD_CELL_LIST=0-{ppn-1}"
+                    # TODO, bind rank to same NUMA domain as GPU
                 )
         else:
+            # Pin ranks to cores
             env = (
                 "I_MPI_PIN_DOMAIN=core "
                 "I_MPI_PIN_ORDER=compact "
@@ -72,7 +74,7 @@ class Runner:
 
         self.__execute(
             (
-                # mpiexec bypasses SLURM/PBS configuration
+                # with mpirun, PBS overrides process pinning
                 f"{env} mpiexec -n {ranks} -ppn {ppn}"
                 f" {self.analysis_config.mhp_bench} {' '.join(params)}"
             )
@@ -88,8 +90,11 @@ class Runner:
             )
         env += " KMP_AFFINITY=compact"
         params.append(f"--num-devices {ranks}")
+        sparams = " ".join(params)
+        # Use mpiexec to launch the process on the compute node,
+        # otherwise shp does not use MPI
         self.__execute(
-            f'{env} {self.analysis_config.shp_bench} {" ".join(params)}'
+            f"{env} mpiexec {self.analysis_config.shp_bench} {sparams}"
         )
 
     def run_one_analysis(self, analysis_case: AnalysisCase):
