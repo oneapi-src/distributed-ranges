@@ -13,6 +13,7 @@ add_executable(
   ../common/inclusive_exclusive_scan.cpp
   ../common/sort.cpp
   ../common/stream.cpp
+  streammhp.cpp
   rooted.cpp
   stencil_1d.cpp
   stencil_2d.cpp
