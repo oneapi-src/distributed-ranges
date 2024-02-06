@@ -396,9 +396,10 @@ void dist_sort(R &r, Compare &&comp) {
   /* send and receive data belonging to each node, then redistribute
    * data to achieve size of data equal to size of local segment */
 
-  MPI_Request req_recvelems;
-  fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
-  default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
+  // MPI_Request req_recvelems;
+  // fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
+  // default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
+  default_comm().all_gather(_recv_elems, vec_recv_elems);
 
   /* buffer for received data */
   buffer<valT> vec_recvdata(_recv_elems);
@@ -416,7 +417,7 @@ void dist_sort(R &r, Compare &&comp) {
   __detail::local_sort(vec_recvdata, comp);
   fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 
-  MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
+  // MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
 
   fmt::print("{}:{}\n", default_comm().rank(), __LINE__);
 
