@@ -30,7 +30,7 @@ jobs:
       - name: Run
         run: |
           rm -rf ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
-          /usr/bin/python3.11 -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
+          /home/rscohn1/miniforge3/bin/python -m venv ${RUNNER_TOOL_CACHE}/distributed-ranges/venv
           source ${RUNNER_TOOL_CACHE}/distributed-ranges/venv/bin/activate
           pip install src-python/drbench
           srun --nodes=2 --ntasks-per-node=2 make -C build/benchmarks/gbench jfcst-bench
