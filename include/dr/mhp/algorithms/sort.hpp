@@ -476,7 +476,7 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* shift data if necessary, to have exactly the number of elements equal to
    * lsegment size */
-    __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
+  __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
                              vec_right);
 
   /* copy results to distributed vector's local segment */
