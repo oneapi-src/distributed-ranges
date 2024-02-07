@@ -463,12 +463,13 @@ def suite(
         "BlackScholes_DR",
         "DotProduct_DR",
         # does not work
-        # "Exclusive_Scan_DR"
+        "Exclusive_Scan_DR"
         "Inclusive_Scan_DR",
         "Reduce_DR",
         "Stream_Triad",
     ]
     weak_scaling_filter = [
+        "Exclusive_Scan_DR",
         "Inclusive_Scan_DR",
         "Reduce_DR",
         ".*Sort_DR",
