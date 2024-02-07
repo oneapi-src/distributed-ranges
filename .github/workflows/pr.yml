@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Ubuntu dependencies
-      run: scripts/instal-doxygen.sh
+      run: scripts/install-doxygen.sh
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -145,6 +145,8 @@ jobs:
         python-version: '3.10'
         cache: 'pip'
     - run: pip install -r requirements.txt
+    - name: Ubuntu dependencies
+      run: scripts/install-doxygen.sh
     - name: Build doc
       run: |
         make -C doc/spec html
