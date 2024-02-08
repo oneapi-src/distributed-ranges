@@ -77,7 +77,8 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
       } else {
         std::inclusive_scan(detail::direct_iterator(vec_in.begin()),
                             detail::direct_iterator(vec_in.end()),
-                            detail::direct_iterator(vec_out.begin()), binary_op);
+                            detail::direct_iterator(vec_out.begin()),
+                            binary_op);
       }
     }
     mhp::copy(0, vec_out, d_first);
