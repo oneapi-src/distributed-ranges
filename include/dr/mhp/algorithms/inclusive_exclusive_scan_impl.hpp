@@ -65,22 +65,22 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   if (rng::size(r) <= 2 * comm.size()) {
     std::vector<value_type> vec_in(rng::size(r));
     std::vector<value_type> vec_out(rng::size(r));
-    mhp::copy(r, vec_in.begin());
+    mhp::copy(0, r, vec_in.begin());
 
-    assert(rng::size(out) > 1);
-
-    if constexpr (is_exclusive) {
-      assert(init.has_value());
-      std::exclusive_scan(detail::direct_iterator(vec_in.begin()),
-                          detail::direct_iterator(vec_in.end()),
-                          detail::direct_iterator(vec_out.begin()),
-                          init.value(), binary_op);
-    } else {
-      std::inclusive_scan(detail::direct_iterator(vec_in.begin()),
-                          detail::direct_iterator(vec_in.end()),
-                          detail::direct_iterator(vec_out.begin()), binary_op);
+    if (comm.rank() == 0) {
+      if constexpr (is_exclusive) {
+        assert(init.has_value());
+        std::exclusive_scan(detail::direct_iterator(vec_in.begin()),
+                            detail::direct_iterator(vec_in.end()),
+                            detail::direct_iterator(vec_out.begin()),
+                            init.value(), binary_op);
+      } else {
+        std::inclusive_scan(detail::direct_iterator(vec_in.begin()),
+                            detail::direct_iterator(vec_in.end()),
+                            detail::direct_iterator(vec_out.begin()), binary_op);
+      }
     }
-    mhp::copy(vec_out, d_first);
+    mhp::copy(0, vec_out, d_first);
     return d_first + rng::size(r);
   }
 
