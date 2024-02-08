@@ -56,7 +56,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  ../common/inclusive_scan.cpp
+  ../common/exclusive_scan.cpp
   )
 # cmake-format: on
 

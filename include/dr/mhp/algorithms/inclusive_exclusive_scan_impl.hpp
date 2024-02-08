@@ -38,6 +38,8 @@ void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
   auto in_end_direct = detail::direct_iterator(in.end());
   auto out_begin_direct = detail::direct_iterator(out.begin());
   if (seg_index != 0) {
+    assert(rng::size(in) > 1);
+    assert(rng::size(out) > 1);
     --in_end_direct;
     ++out_begin_direct;
     std::inclusive_scan(policy, in_begin_direct, in_end_direct,
@@ -57,8 +59,31 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   using value_type = U;
   assert(aligned(r, d_first));
 
-  bool use_sycl = mhp::use_sycl();
   auto comm = default_comm();
+  bool use_sycl = mhp::use_sycl();
+
+  if (rng::size(r) <= 2 * comm.size()) {
+    std::vector<value_type> vec_in(rng::size(r));
+    std::vector<value_type> vec_out(rng::size(r));
+    mhp::copy(r, vec_in.begin());
+
+    assert(rng::size(out) > 1);
+
+    if constexpr (is_exclusive) {
+      assert(init.has_value());
+      std::exclusive_scan(detail::direct_iterator(vec_in.begin()),
+                          detail::direct_iterator(vec_in.end()),
+                          detail::direct_iterator(vec_out.begin()),
+                          init.value(), binary_op);
+    } else {
+      std::inclusive_scan(detail::direct_iterator(vec_in.begin()),
+                          detail::direct_iterator(vec_in.end()),
+                          detail::direct_iterator(vec_out.begin()), binary_op);
+    }
+    mhp::copy(vec_out, d_first);
+    return d_first + rng::size(r);
+  }
+
   auto rank = comm.rank();
   auto local_segs = rng::views::zip(local_segments(r), local_segments(d_first));
   auto global_segs =
