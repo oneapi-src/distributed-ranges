@@ -13,9 +13,9 @@ public:
 TYPED_TEST_SUITE(ExclusiveScan, AllTypesWithoutIshmem);
 
 TYPED_TEST(ExclusiveScan, whole_range) {
-  TypeParam dv_in(5);
+  TypeParam dv_in(7);
   xhp::iota(dv_in, 1);
-  TypeParam dv_out(5, 0);
+  TypeParam dv_out(7, 0);
 
   xhp::exclusive_scan(dv_in, dv_out, 10, std::plus<>());
   EXPECT_EQ(10, dv_out[0]);
@@ -23,16 +23,31 @@ TYPED_TEST(ExclusiveScan, whole_range) {
   EXPECT_EQ(10 + 1 + 2, dv_out[2]);
   EXPECT_EQ(10 + 1 + 2 + 3, dv_out[3]);
   EXPECT_EQ(10 + 1 + 2 + 3 + 4, dv_out[4]);
+  EXPECT_EQ(10 + 1 + 2 + 3 + 4 + 5, dv_out[5]);
+  EXPECT_EQ(10 + 1 + 2 + 3 + 4 + 5 + 6, dv_out[6]);
+}
+
+TYPED_TEST(ExclusiveScan, whole_range_small) {
+  TypeParam dv_in(3);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(3, 0);
+
+  xhp::exclusive_scan(dv_in, dv_out, 10, std::plus<>());
+  EXPECT_EQ(10, dv_out[0]);
+  EXPECT_EQ(10 + 1, dv_out[1]);
+  EXPECT_EQ(10 + 1 + 2, dv_out[2]);
 }
 
 TYPED_TEST(ExclusiveScan, empty) {
-  TypeParam dv_in(3, 1);
-  TypeParam dv_out(3, 0);
+  TypeParam dv_in(5, 1);
+  TypeParam dv_out(5, 0);
   xhp::exclusive_scan(rng::begin(dv_in), rng::begin(dv_in), rng::begin(dv_out),
                       0);
   EXPECT_EQ(0, dv_out[0]);
   EXPECT_EQ(0, dv_out[1]);
   EXPECT_EQ(0, dv_out[2]);
+  EXPECT_EQ(0, dv_out[3]);
+  EXPECT_EQ(0, dv_out[4]);
 }
 
 TYPED_TEST(ExclusiveScan, one_element) {
@@ -46,9 +61,9 @@ TYPED_TEST(ExclusiveScan, one_element) {
 }
 
 TYPED_TEST(ExclusiveScan, multiply) {
-  TypeParam dv_in(5);
+  TypeParam dv_in(7);
   xhp::iota(dv_in, 1);
-  TypeParam dv_out(5, 0);
+  TypeParam dv_out(7, 0);
 
   xhp::exclusive_scan(dv_in, dv_out, 1, std::multiplies<>());
 
@@ -57,6 +72,20 @@ TYPED_TEST(ExclusiveScan, multiply) {
   EXPECT_EQ(1 * 2, dv_out[2]);
   EXPECT_EQ(1 * 2 * 3, dv_out[3]);
   EXPECT_EQ(1 * 2 * 3 * 4, dv_out[4]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5, dv_out[5]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6, dv_out[6]);
+}
+
+TYPED_TEST(ExclusiveScan, multiply_small) {
+  TypeParam dv_in(3);
+  xhp::iota(dv_in, 1);
+  TypeParam dv_out(3, 0);
+
+  xhp::exclusive_scan(dv_in, dv_out, 1, std::multiplies<>());
+
+  EXPECT_EQ(1, dv_out[0]);
+  EXPECT_EQ(1, dv_out[1]);
+  EXPECT_EQ(1 * 2, dv_out[2]);
 }
 
 TYPED_TEST(ExclusiveScan, touching_first_segment) {

@@ -59,8 +59,8 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   using value_type = U;
   assert(aligned(r, d_first));
 
-  auto comm = default_comm();
   bool use_sycl = mhp::use_sycl();
+  auto comm = default_comm();
 
   if (rng::size(r) <= 2 * comm.size()) {
     std::vector<value_type> vec_in(rng::size(r));
@@ -75,15 +75,24 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
                             detail::direct_iterator(vec_out.begin()),
                             init.value(), binary_op);
       } else {
-        std::inclusive_scan(detail::direct_iterator(vec_in.begin()),
-                            detail::direct_iterator(vec_in.end()),
-                            detail::direct_iterator(vec_out.begin()),
-                            binary_op);
+        if (init.has_value()) {
+          std::inclusive_scan(detail::direct_iterator(vec_in.begin()),
+                              detail::direct_iterator(vec_in.end()),
+                              detail::direct_iterator(vec_out.begin()),
+                              binary_op, init.value());
+        } else {
+          std::inclusive_scan(detail::direct_iterator(vec_in.begin()),
+                              detail::direct_iterator(vec_in.end()),
+                              detail::direct_iterator(vec_out.begin()),
+                              binary_op);
+        }
       }
     }
     mhp::copy(0, vec_out, d_first);
     return d_first + rng::size(r);
   }
+
+  fmt::print("{}:{} Parallel scan\n", default_comm().rank(), __LINE__);
 
   auto rank = comm.rank();
   auto local_segs = rng::views::zip(local_segments(r), local_segments(d_first));
