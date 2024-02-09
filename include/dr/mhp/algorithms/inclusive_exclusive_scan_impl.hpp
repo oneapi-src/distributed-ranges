@@ -39,14 +39,8 @@ void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
   auto out_begin_direct = detail::direct_iterator(out.begin());
 
   if (seg_index != 0) {
-    // assert(rng::size(in) > 1);
-    // assert(rng::size(out) > 1);
-
-    // if (rng::size(in) <= 1) {
-    fmt::print("{}:{}/{} local_exclusive_scan size in {} size out {}\n",
-               default_comm().rank(), __LINE__, default_comm().size(),
-               rng::size(in), rng::size(out));
-    // }
+    assert(rng::size(in) > 1);
+    assert(rng::size(out) > 1);
     --in_end_direct;
     ++out_begin_direct;
     std::inclusive_scan(policy, in_begin_direct, in_end_direct,
