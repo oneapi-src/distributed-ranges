@@ -37,9 +37,16 @@ void local_exclusive_scan(auto policy, auto in, auto out, auto binary_op,
   auto in_begin_direct = detail::direct_iterator(in.begin());
   auto in_end_direct = detail::direct_iterator(in.end());
   auto out_begin_direct = detail::direct_iterator(out.begin());
+
   if (seg_index != 0) {
-    assert(rng::size(in) > 1);
-    assert(rng::size(out) > 1);
+    // assert(rng::size(in) > 1);
+    // assert(rng::size(out) > 1);
+
+    // if (rng::size(in) <= 1) {
+    fmt::print("{}:{}/{} local_exclusive_scan size in {} size out {}\n",
+               default_comm().rank(), __LINE__, default_comm().size(),
+               rng::size(in), rng::size(out));
+    // }
     --in_end_direct;
     ++out_begin_direct;
     std::inclusive_scan(policy, in_begin_direct, in_end_direct,
@@ -62,7 +69,8 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
   bool use_sycl = mhp::use_sycl();
   auto comm = default_comm();
 
-  if (rng::size(r) <= 2 * comm.size()) {
+  // for input vector, which may have segment of size 1, do sequential scan
+  if (rng::size(r) <= comm.size() * (comm.size() - 1) + 1) {
     std::vector<value_type> vec_in(rng::size(r));
     std::vector<value_type> vec_out(rng::size(r));
     mhp::copy(0, r, vec_in.begin());
@@ -92,8 +100,8 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     return d_first + rng::size(r);
   }
 
-  fmt::print("{}:{} Parallel scan\n", default_comm().rank(), __LINE__);
-
+  fmt::print("{}:{}/{} Parallel scan, r.size \n", default_comm().rank(),
+             __LINE__, default_comm().size(), rng::size(r));
   auto rank = comm.rank();
   auto local_segs = rng::views::zip(local_segments(r), local_segments(d_first));
   auto global_segs =
