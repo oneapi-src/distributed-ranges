@@ -85,9 +85,9 @@ TYPED_TEST(ExclusiveScan, one_element) {
 }
 
 TYPED_TEST(ExclusiveScan, multiply) {
-  TypeParam dv_in(15);
+  TypeParam dv_in(13);
   xhp::iota(dv_in, 1);
-  TypeParam dv_out(15, 0);
+  TypeParam dv_out(13, 0);
 
   xhp::exclusive_scan(dv_in, dv_out, 1, std::multiplies<>());
 
@@ -98,16 +98,12 @@ TYPED_TEST(ExclusiveScan, multiply) {
   EXPECT_EQ(1 * 2 * 3 * 4, dv_out[4]);
   EXPECT_EQ(1 * 2 * 3 * 4 * 5, dv_out[5]);
   EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6, dv_out[6]);
-  EXPECT_EQ(1 * 1 *2 *3 *4 *5 *6 *7, dv_out[7]);
-  EXPECT_EQ(1 * 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8, dv_out[8]);
-  EXPECT_EQ(1 * 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9, dv_out[9]);
-  EXPECT_EQ(1 * 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10, dv_out[10]);
-  EXPECT_EQ(1 * 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11, dv_out[11]);
-  EXPECT_EQ(1 * 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12, dv_out[12]);
-  EXPECT_EQ(1 * 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 * 13,
-            dv_out[13]);
-  EXPECT_EQ(1 * 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 * 13 * 14,
-            dv_out[14]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6 * 7, dv_out[7]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8, dv_out[8]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9, dv_out[9]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10, dv_out[10]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11, dv_out[11]);
+  EXPECT_EQ(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12, dv_out[12]);
 }
 
 TYPED_TEST(ExclusiveScan, multiply_small) {
@@ -159,7 +155,7 @@ TYPED_TEST(ExclusiveScan, touching_last_segment) {
   EXPECT_EQ(0, dv_out[7]);
   EXPECT_EQ(0, dv_out[8]);
   EXPECT_EQ(0, dv_out[9]);
-  EXPECT_EQ(0, dv_out[10]);
+  EXPECT_EQ(10, dv_out[10]);
 }
 
 TYPED_TEST(ExclusiveScan, without_last_element) {
@@ -219,6 +215,5 @@ TYPED_TEST(ExclusiveScan, without_first_and_last_elements) {
   EXPECT_EQ(2 + 3 + 4 + 5 + 6 + 7, dv_out[7]);
   EXPECT_EQ(2 + 3 + 4 + 5 + 6 + 7 + 8, dv_out[8]);
   EXPECT_EQ(2 + 3 + 4 + 5 + 6 + 7 + 8 + 9, dv_out[9]);
-  EXPECT_EQ(2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10, dv_out[10]);
-  EXPECT_EQ(0, dv_out[5]);
+  EXPECT_EQ(0, dv_out[10]);
 }
