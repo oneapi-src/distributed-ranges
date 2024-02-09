@@ -100,8 +100,6 @@ auto inclusive_exclusive_scan_impl_(R &&r, O &&d_first, BinaryOp &&binary_op,
     return d_first + rng::size(r);
   }
 
-  fmt::print("{}:{}/{} Parallel scan, r.size \n", default_comm().rank(),
-             __LINE__, default_comm().size(), rng::size(r));
   auto rank = comm.rank();
   auto local_segs = rng::views::zip(local_segments(r), local_segments(d_first));
   auto global_segs =
