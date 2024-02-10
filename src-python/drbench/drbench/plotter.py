@@ -121,6 +121,12 @@ class Plotter:
         self.ranks = self.db["Ranks"].unique()
         self.ranks.sort()
         self.prefix = prefix
+        self.md_file = open("index.rst", "w")
+        self.md_file.write("==========================\n")
+        self.md_file.write("Borealis Benchmark Results\n")
+        self.md_file.write("==========================\n")
+        self.md_file.write("\n.. list-table::\n\n")
+        self.plots_count = 0
 
     def __plot(
         self,
@@ -194,6 +200,10 @@ class Plotter:
         plt.tight_layout()
         plt.savefig(f"{file_name}.png")
         plt.savefig(f"{file_name}.pdf")
+        new_row = ["*", " "][self.plots_count % 2]
+        self.plots_count += 1
+        self.md_file.write(f"   {new_row} - .. image:: {file_name}.png\n")
+        self.md_file.write(f"          :target: {file_name}.csv\n")
 
     stream_info = {
         "GPU": {
@@ -387,3 +397,9 @@ class Plotter:
                 self.__speedup_plot(
                     bench, device, reference_name=f"{bench}_DR"
                 )
+
+        self.md_file.write("\n\n")
+        self.md_file.write("===================\n")
+        self.md_file.write("Tested code details\n")
+        self.md_file.write("===================\n\n")
+        self.md_file.close()
