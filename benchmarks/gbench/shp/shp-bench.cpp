@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
     ("check", "Check results")
     ("d, num-devices", "number of sycl devices, 0 uses all available devices", cxxopts::value<std::size_t>()->default_value("0"))
     ("drhelp", "Print help")
+    ("different-devices", "ensure no multiple ranks on one device")
     ("reps", "Debug repetitions for short duration vector operations", cxxopts::value<std::size_t>()->default_value("1"))
     ("vector-size", "Default vector size", cxxopts::value<std::size_t>()->default_value("100000000"))
     ("context", "Additional google benchmark context", cxxopts::value<std::vector<std::string>>())
@@ -64,6 +65,7 @@ int main(int argc, char *argv[]) {
   default_repetitions = options["reps"].as<std::size_t>();
   ranks = options["num-devices"].as<std::size_t>();
   weak_scaling = options["weak-scaling"].as<bool>();
+  const bool check_different_devices = options.count("different-devices");
 
   auto available_devices = dr::shp::get_numa_devices(sycl::default_selector_v);
   if (ranks == 0) {
@@ -77,6 +79,7 @@ int main(int argc, char *argv[]) {
 
   if (!dry_run) {
     std::vector<sycl::device> devices;
+    assert(!check_different_devices || ranks <= available_devices.size());
     for (std::size_t i = 0; i < ranks; i++) {
       devices.push_back(available_devices[i % available_devices.size()]);
       benchmark::AddCustomContext("device_info" + std::to_string(i),
