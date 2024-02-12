@@ -8,10 +8,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   #
   set(BENCHMARK_ENABLE_TESTING off)
   set(BENCHMARK_ENABLE_WERROR off)
+  # oneApi 2024.1 compiler refuses to compile code with standard less than C++17
+  set(BENCHMARK_CXX_STANDARD 20)
   FetchContent_Declare(
     googlebench
-    GIT_REPOSITORY https://github.com/google/benchmark.git
-    GIT_TAG v1.8.0)
+    GIT_REPOSITORY https://github.com/lslusarczyk/benchmark.git
+    GIT_TAG set-cxx-std)
   FetchContent_MakeAvailable(googlebench)
 
   if(ENABLE_CUDA)
