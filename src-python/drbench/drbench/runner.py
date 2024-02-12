@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
+import os
 import resource
 import subprocess
+import sys
 import uuid
 from collections import namedtuple
 
@@ -18,6 +20,7 @@ AnalysisConfig = namedtuple(
             "prefix",
             "benchmark_filter",
             "reps",
+            "retries",
             "dry_run",
             "mhp_bench",
             "shp_bench",
@@ -34,22 +37,38 @@ class Runner:
         self.analysis_config = analysis_config
 
     def __execute(self, command: str):
-        logging.info(f"execute\n  {command}")
-        usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
-        if not self.analysis_config.dry_run:
-            subprocess.run(command, shell=True, check=True)
-        usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
-        logging.info(
-            f"  command execution time:"
-            f" user:{usage_end.ru_utime - usage_start.ru_utime:.2f}, "
-            f" system:{usage_end.ru_stime - usage_start.ru_stime:.2f}"
-        )
+        runs_count = 0
+        while True:
+            usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
+            runs_count += 1
+            try:
+                logging.info(
+                    f"execute {runs_count}/{self.analysis_config.retries}\n"
+                    f"  {command}"
+                )
+                if not self.analysis_config.dry_run:
+                    subprocess.run(
+                        command, shell=True, check=True, timeout=300
+                    )
+                usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
+                logging.info(
+                    f" result: command execution time:"
+                    f" user:{usage_end.ru_utime - usage_start.ru_utime:.2f}, "
+                    f" system:{usage_end.ru_stime - usage_start.ru_stime:.2f}"
+                )
+                break
+            except subprocess.TimeoutExpired:
+                logging.warning("command timed out")
+            except subprocess.CalledProcessError as exc:
+                logging.warning(f"command failed with code:{exc.returncode}")
+
+            if runs_count > self.analysis_config.retries:
+                logging.error("failed too mamy times, no more retries")
+                sys.exit(1)
 
     def __run_mhp_analysis(self, params, ranks, ppn, target):
         if target.runtime == Runtime.SYCL:
             params.append("--sycl")
-            if self.analysis_config.different_devices:
-                params.append("--different-devices")
             if target.device == Device.CPU:
                 env = "ONEAPI_DEVICE_SELECTOR=opencl:cpu"
             else:
@@ -71,11 +90,9 @@ class Runner:
             )
 
         self.__execute(
-            (
-                # mpiexec bypasses SLURM/PBS configuration
-                f"{env} mpiexec -n {ranks} -ppn {ppn}"
-                f" {self.analysis_config.mhp_bench} {' '.join(params)}"
-            )
+            # mpiexec bypasses SLURM/PBS configuration
+            f"{env} {os.environ['I_MPI_ROOT']}/bin/mpiexec.hydra -n {ranks} "
+            f"-ppn {ppn} {self.analysis_config.mhp_bench} {' '.join(params)}"
         )
 
     def __run_shp_analysis(self, params, ranks, target):
@@ -117,6 +134,9 @@ class Runner:
 
         if self.analysis_config.device_memory:
             params.append("--device-memory")
+
+        if self.analysis_config.different_devices:
+            params.append("--different-devices")
 
         if analysis_case.target.model == Model.SHP:
             self.__run_shp_analysis(

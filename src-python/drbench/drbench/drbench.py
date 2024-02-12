@@ -18,6 +18,7 @@ class SuiteConfig:
         self.prefix = None
         self.filter = None
         self.reps = None
+        self.retries = None
         self.dry_run = None
         self.mhp_bench = None
         self.shp_bench = None
@@ -41,6 +42,17 @@ option_ppn = click.option(
     type=int,
     default=2,
     help="Number of processes per node",
+)
+
+option_reps = click.option(
+    "--reps", default=50, type=int, help="Number of reps"
+)
+
+option_retries = click.option(
+    "--retries",
+    type=int,
+    default=3,
+    help="count of retries for failed analysis",
 )
 
 option_mhp_bench = click.option(
@@ -123,6 +135,7 @@ def do_run(options):
             options.prefix,
             "\\|".join(options.filter),
             options.reps,
+            options.retries,
             options.dry_run,
             options.mhp_bench,
             options.shp_bench,
@@ -169,7 +182,8 @@ def do_run(options):
     type=int,
     help="Run with 1 ... N ranks",
 )
-@click.option("--reps", default=50, type=int, help="Number of reps")
+@option_reps
+@option_retries
 @click.option(
     "-f",
     "--filter",
@@ -197,6 +211,7 @@ def run(
     ranks,
     rank_range,
     reps,
+    retries,
     filter,
     device_memory,
     mhp_bench,
@@ -222,6 +237,7 @@ def run(
     if rank_range:
         options.ranks = list(range(1, rank_range + 1))
     options.reps = reps
+    options.retries = retries
     options.filter = filter
     options.mhp_bench = mhp_bench
     options.shp_bench = shp_bench
@@ -244,12 +260,8 @@ def run(
     default=2000000000,
     help="Size of a vector",
 )
-@click.option(
-    "--reps",
-    type=int,
-    default=50,
-    help="Number of repetitions",
-)
+@option_reps
+@option_retries
 @click.option(
     "--min-gpus",
     type=int,
@@ -278,6 +290,7 @@ def suite(
     clean,
     vec_size,
     reps,
+    retries,
     min_gpus,
     gpus,
     ppn,
@@ -374,8 +387,8 @@ def suite(
             run_rank_sparse(
                 base,
                 min_gpus,
-                gpus,
-                xhp_filter + shp_filter,
+                min(gpus, 4),
+                shp_no_more_than_4_filter,
                 ["shp_sycl_gpu"],
                 weak_scaling_filter,
                 device_memory=True,
@@ -415,7 +428,10 @@ def suite(
     ]
     mhp_filter = ["Stencil2D_DR", "WaveEquation_DR"]
     device_memory_filter = ["FFT3D_DR", "WaveEquation_DR"]
-    shp_filter = ["FFT3D_DR", ".*Sort_DR", "Gemm_DR"]
+    shp_filter = [".*Sort_DR", "Gemm_DR"]
+    # FFT3D_DR fails with PI_OUT_OF_RESOURCES when GPUS>4,
+    # fails always on 2024.1 and sometimes on 2023.2
+    shp_no_more_than_4_filter = ["FFT3D_DR"]
     # reference benchmarks that do not use shp or mhp
     sycl_reference_filter = [
         "BlackScholes_Reference",
@@ -439,6 +455,7 @@ def suite(
     base.dry_run = dry_run
     base.vec_size = [vec_size]
     base.reps = reps
+    base.retries = retries
     base.different_devices = different_devices
 
     logging.info(f"different_devices:{different_devices}")
