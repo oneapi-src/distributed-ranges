@@ -372,7 +372,7 @@ class Plotter:
                 "Exclusive_Scan",
                 "Inclusive_Scan",
                 "Reduce",
-                "Sort",
+                # "Sort",
                 "Stencil2D",
             ]:
                 self.__speedup_plot(bench, device)

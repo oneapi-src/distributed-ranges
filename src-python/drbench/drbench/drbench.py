@@ -471,17 +471,22 @@ def suite(
         "Exclusive_Scan_DR",
         "Inclusive_Scan_DR",
         "Reduce_DR",
-        ".*Sort_DR",
+        # ".*Sort_DR",
         "WaveEquation_DR",
         "Gemm_Reference",
     ]
     mhp_filter = ["Stencil2D_DR", "WaveEquation_DR"]
     device_memory_filter = ["FFT3D_DR", "WaveEquation_DR"]
-    shp_filter = ["FFT3D_DR", ".*Sort_DR", "Gemm_DR"]
+    shp_filter = [
+        "FFT3D_DR", 
+        # ".*Sort_DR", 
+        "Gemm_DR"
+    ]
     # reference benchmarks that do not use shp or mhp
     sycl_reference_filter = [
         "BlackScholes_Reference",
         "DotProduct_Reference",
+        "Exclusive_Scan_Reference",
         "Inclusive_Scan_Reference",
         "Reduce_Reference",
     ]
@@ -489,7 +494,7 @@ def suite(
         "Stencil2D_Reference",
     ]
     shp_reference_filter = [
-        ".*Sort_Reference",
+        # ".*Sort_Reference",
         "Gemm_Reference",
     ]
 
