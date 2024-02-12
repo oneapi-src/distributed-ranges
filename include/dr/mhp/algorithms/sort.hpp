@@ -136,6 +136,21 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
   }
 }
 
+template <typename Compare>
+void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
+                     auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
+
+  while (vidx < default_comm().size() && segidx < rng::size(ls)) {
+    if (comp(vec_v[vidx - 1], ls[segidx])) {
+      vec_i[vidx] = segidx;
+      vec_s[vidx - 1] = vec_i[vidx] - vec_i[vidx - 1];
+      vidx++;
+    } else {
+      segidx++;
+    }
+  }
+}
+
 /* elements of dist_sort */
 template <typename valT, typename Compare, typename Seg>
 void splitters(Seg &lsegment, Compare &&comp,
@@ -156,12 +171,23 @@ void splitters(Seg &lsegment, Compare &&comp,
    * each segment into equal parts */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    std::vector<sycl::event> events;
+
     for (std::size_t _i = 0; _i < rng::size(vec_lmedians) - 1; _i++) {
       assert(_i * _step_m < rng::size(lsegment));
-      sycl_copy<valT>(&lsegment[_i * _step_m], &vec_lmedians[_i]);
+      // sycl_copy<valT>(&lsegment[_i * _step_m], &vec_lmedians[_i]);
+      sycl::event ev = sycl_queue().memcpy(
+          &vec_lmedians[_i], &lsegment[_i * _step_m], sizeof(valT));
+      events.emplace_back(ev);
     }
-    sycl_copy<valT>(&lsegment[rng::size(lsegment) - 1],
-                    &vec_lmedians[rng::size(vec_lmedians) - 1]);
+    // sycl_copy<valT>(&lsegment[rng::size(lsegment) - 1],
+    //                               &vec_lmedians[rng::size(vec_lmedians) -
+    //                               1]);
+    sycl::event ev =
+        sycl_queue().memcpy(&vec_lmedians[rng::size(vec_lmedians) - 1],
+                            &lsegment[rng::size(lsegment) - 1], sizeof(valT));
+    events.emplace_back(ev);
+    sycl::event::wait(events);
 #else
     assert(false);
 #endif
@@ -179,8 +205,9 @@ void splitters(Seg &lsegment, Compare &&comp,
   std::vector<valT> vec_split_v(_comm_size - 1);
 
   for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
-    assert((_i + 1) * (_comm_size + 1) - 1 < rng::size(vec_gmedians));
-    vec_split_v[_i] = vec_gmedians[(_i + 1) * (_comm_size + 1) - 1];
+    auto global_median_idx = (_i + 1) * (_comm_size + 1) - 1;
+    assert(global_median_idx < rng::size(vec_gmedians));
+    vec_split_v[_i] = vec_gmedians[global_median_idx];
   }
 
   std::size_t segidx = 0, vidx = 1;
@@ -193,29 +220,16 @@ void splitters(Seg &lsegment, Compare &&comp,
     sycl_copy(rng::data(lsegment), rng::data(vec_lseg_tmp),
               rng::size(lsegment));
 
-    while (vidx < _comm_size && segidx < rng::size(lsegment)) {
-      if (comp(vec_split_v[vidx - 1], vec_lseg_tmp[segidx])) {
-        vec_split_i[vidx] = segidx;
-        vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
-        vidx++;
-      } else {
-        segidx++;
-      }
-    }
+    _find_split_idx(vidx, segidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
+                    vec_split_s);
 #else
     assert(false);
 #endif
   } else {
-    while (vidx < _comm_size && segidx < rng::size(lsegment)) {
-      if (comp(vec_split_v[vidx - 1], lsegment[segidx])) {
-        vec_split_i[vidx] = segidx;
-        vec_split_s[vidx - 1] = vec_split_i[vidx] - vec_split_i[vidx - 1];
-        vidx++;
-      } else {
-        segidx++;
-      }
-    }
+    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
+                    vec_split_s);
   }
+
   assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
   vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
 }
@@ -455,7 +469,7 @@ void sort(R &r, Compare &&comp = Compare()) {
     dr::mhp::copy(0, vec_recvdata, rng::begin(r));
 
   } else {
-    DRLOG("mhp::sort() - distributed sort\n");
+    DRLOG("mhp::sort() - distributed sort");
     __detail::dist_sort(r, comp);
     dr::mhp::barrier();
   }
