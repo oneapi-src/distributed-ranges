@@ -144,6 +144,7 @@ def do_run(options):
             "\\|".join(options.filter),
             options.reps,
             options.retries,
+            options.timeout,
             options.dry_run,
             options.mhp_bench,
             options.shp_bench,
