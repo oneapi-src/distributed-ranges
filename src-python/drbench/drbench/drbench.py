@@ -19,6 +19,7 @@ class SuiteConfig:
         self.filter = None
         self.reps = None
         self.retries = None
+        self.timeout = None
         self.dry_run = None
         self.mhp_bench = None
         self.shp_bench = None
@@ -53,6 +54,13 @@ option_retries = click.option(
     type=int,
     default=3,
     help="count of retries for failed analysis",
+)
+
+option_timeout = click.option(
+    "--timeout",
+    type=int,
+    default=600,
+    help="one job timeout in seconds",
 )
 
 option_mhp_bench = click.option(
@@ -184,6 +192,7 @@ def do_run(options):
 )
 @option_reps
 @option_retries
+@option_timeout
 @click.option(
     "-f",
     "--filter",
@@ -212,6 +221,7 @@ def run(
     rank_range,
     reps,
     retries,
+    timeout,
     filter,
     device_memory,
     mhp_bench,
@@ -238,6 +248,7 @@ def run(
         options.ranks = list(range(1, rank_range + 1))
     options.reps = reps
     options.retries = retries
+    options.timeout = timeout
     options.filter = filter
     options.mhp_bench = mhp_bench
     options.shp_bench = shp_bench
@@ -262,6 +273,7 @@ def run(
 )
 @option_reps
 @option_retries
+@option_timeout
 @click.option(
     "--min-gpus",
     type=int,
@@ -291,6 +303,7 @@ def suite(
     vec_size,
     reps,
     retries,
+    timeout,
     min_gpus,
     gpus,
     ppn,
@@ -456,6 +469,7 @@ def suite(
     base.vec_size = [vec_size]
     base.reps = reps
     base.retries = retries
+    base.timeout = timeout
     base.different_devices = different_devices
 
     logging.info(f"different_devices:{different_devices}")

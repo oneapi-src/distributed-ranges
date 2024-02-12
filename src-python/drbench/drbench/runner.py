@@ -21,6 +21,7 @@ AnalysisConfig = namedtuple(
             "benchmark_filter",
             "reps",
             "retries",
+            "timeout",
             "dry_run",
             "mhp_bench",
             "shp_bench",
@@ -48,7 +49,10 @@ class Runner:
                 )
                 if not self.analysis_config.dry_run:
                     subprocess.run(
-                        command, shell=True, check=True, timeout=300
+                        command,
+                        shell=True,
+                        check=True,
+                        timeout=self.analysis_config.timeout,
                     )
                 usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
                 logging.info(
