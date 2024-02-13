@@ -295,6 +295,18 @@ def run(
     default=False,
     help="Do not run shp or reference",
 )
+@click.option(
+    "--shp-only",
+    is_flag=True,
+    default=False,
+    help="Do not run mhp or reference",
+)
+@click.option(
+    "--reference-only",
+    is_flag=True,
+    default=False,
+    help="Do not run mhp or shp",
+)
 def suite(
     prefix,
     mhp_bench,
@@ -310,6 +322,8 @@ def suite(
     ppn,
     different_devices,
     mhp_only,
+    shp_only,
+    reference_only,
 ):
     # Run a list of ranks
     def run_rank_list(
@@ -398,16 +412,6 @@ def suite(
                 device_memory=True,
             )
 
-            run_rank_sparse(
-                base,
-                min_gpus,
-                min(gpus, 4),
-                shp_no_more_than_4_filter,
-                ["shp_sycl_gpu"],
-                weak_scaling_filter,
-                device_memory=True,
-            )
-
     def run_reference(base):
         #
         # GPU devices
@@ -442,10 +446,8 @@ def suite(
     ]
     mhp_filter = ["Stencil2D_DR", "WaveEquation_DR"]
     device_memory_filter = ["FFT3D_DR", "WaveEquation_DR"]
-    shp_filter = [".*Sort_DR", "Gemm_DR"]
-    # FFT3D_DR fails with PI_OUT_OF_RESOURCES when GPUS>4,
-    # fails always on 2024.1 and sometimes on 2023.2
-    shp_no_more_than_4_filter = ["FFT3D_DR"]
+    shp_filter = ["FFT3D_DR", ".*Sort_DR", "Gemm_DR"]
+
     # reference benchmarks that do not use shp or mhp
     sycl_reference_filter = [
         "BlackScholes_Reference",
@@ -478,9 +480,11 @@ def suite(
     if clean and not dry_run:
         do_clean(prefix)
 
-    run_mhp(base)
-    if not mhp_only:
+    if not shp_only and not reference_only:
+        run_mhp(base)
+    if not mhp_only and not reference_only:
         run_shp(base)
+    if not mhp_only and not shp_only:
         run_reference(base)
 
 
