@@ -99,11 +99,9 @@ if(ENABLE_SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
 
-  set(sycl-offload-exclusions ${sycl-exclusions})
-
   add_mhp_ctest(
     NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS --device-memory
-    --gtest_filter=-${sycl-offload-exclusions})
+    --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
     add_mhp_ctest(

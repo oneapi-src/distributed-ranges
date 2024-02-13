@@ -122,7 +122,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 #ifdef SYCL_LANGUAGE_VERSION
       auto policy = dpl_policy();
       auto &&local_segment = dr::ranges::__detail::local(r);
-      DRLOG("GPU dpl::sort(), size {}\n", rng::size(r));
+      DRLOG("GPU dpl::sort(), size {}", rng::size(r));
       oneapi::dpl::sort(
           policy, dr::__detail::direct_iterator(rng::begin(local_segment)),
           dr::__detail::direct_iterator(rng::end(local_segment)), comp);
@@ -130,7 +130,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       assert(false);
 #endif
     } else {
-      DRLOG("cpu rng::sort, size {}\n", rng::size(r));
+      DRLOG("cpu rng::sort, size {}", rng::size(r));
       rng::sort(rng::begin(r), rng::end(r), comp);
     }
   }
@@ -175,14 +175,10 @@ void splitters(Seg &lsegment, Compare &&comp,
 
     for (std::size_t _i = 0; _i < rng::size(vec_lmedians) - 1; _i++) {
       assert(_i * _step_m < rng::size(lsegment));
-      // sycl_copy<valT>(&lsegment[_i * _step_m], &vec_lmedians[_i]);
       sycl::event ev = sycl_queue().memcpy(
           &vec_lmedians[_i], &lsegment[_i * _step_m], sizeof(valT));
       events.emplace_back(ev);
     }
-    // sycl_copy<valT>(&lsegment[rng::size(lsegment) - 1],
-    //                               &vec_lmedians[rng::size(vec_lmedians) -
-    //                               1]);
     sycl::event ev =
         sycl_queue().memcpy(&vec_lmedians[rng::size(vec_lmedians) - 1],
                             &lsegment[rng::size(lsegment) - 1], sizeof(valT));
@@ -250,7 +246,7 @@ void shift_data(const int shift_left, const int shift_right,
   if (static_cast<int>(rng::size(vec_recvdata)) < -shift_left) {
     // Too little data in recv buffer to shift left - first get from right,
     // then send left
-    DRLOG("Get from right first, recvdata size {} shift left {} \n",
+    DRLOG("Get from right first, recvdata size {} shift left {}",
           rng::size(vec_recvdata), shift_left);
     // ** This will never happen, because values eq to split go left **
     assert(false);
@@ -457,7 +453,7 @@ void sort(R &r, Compare &&comp = Compare()) {
     /* Distributed vector of size <= (comm_size-1) * (comm_size-1) may have
      * 0-size local segments. It is also small enough to prefer sequential sort
      */
-    DRLOG("mhp::sort() - local sort\n");
+    DRLOG("mhp::sort() - local sort");
 
     std::vector<valT> vec_recvdata(rng::size(r));
     dr::mhp::copy(0, r, rng::begin(vec_recvdata));
