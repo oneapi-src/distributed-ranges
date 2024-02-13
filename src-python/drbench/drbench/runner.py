@@ -44,7 +44,7 @@ class Runner:
             runs_count += 1
             try:
                 logging.info(
-                    f"execute {runs_count}/{self.analysis_config.retries}\n"
+                    f"execute {runs_count}/{self.analysis_config.retries+1}\n"
                     f"  {command}"
                 )
                 if not self.analysis_config.dry_run:

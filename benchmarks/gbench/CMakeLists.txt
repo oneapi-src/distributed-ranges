@@ -52,6 +52,22 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       COMMAND dr-bench plot
       DEPENDS xhp-bench)
 
+    # shp fails with PI_OUT_OF_RESOURCES when GPUS>4, 3DFFT fails always on
+    # 2024.1 and sometimes on 2023.2 other shp benchmark also failed in 2024 on
+    # 8 GPUs in initialization
+    add_custom_target(aurora-bench-1-shplimited
+                      DEPENDS aurora-bench-results-shplimited)
+    add_custom_command(
+      OUTPUT aurora-bench-results-shplimited
+      # github actions log annotation
+      COMMAND echo "::endgroup::"
+      COMMAND dr-bench clean
+      COMMAND dr-bench suite --gpus 12 --ppn 12 --mhp-only
+      COMMAND dr-bench suite --gpus 12 --ppn 12 --reference-only
+      COMMAND dr-bench suite --gpus 4 --ppn 12 --shp-only
+      COMMAND dr-bench plot
+      DEPENDS xhp-bench)
+
     add_custom_target(aurora-bench-2 DEPENDS aurora-bench-results-2)
     add_custom_command(
       OUTPUT aurora-bench-results-2
