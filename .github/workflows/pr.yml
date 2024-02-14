@@ -105,7 +105,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - config: Debug
+          # Disabled because also gets a timeout
+          # - config: Debug
           - config: Release
     name: ishmem-impi-icpx-${{ matrix.config }}
     env:
