@@ -59,7 +59,7 @@ option_retries = click.option(
 option_timeout = click.option(
     "--timeout",
     type=int,
-    default=600,
+    default=1200,
     help="one job timeout in seconds",
 )
 
