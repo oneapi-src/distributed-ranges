@@ -26,7 +26,12 @@ TEST(DetailTest, parallel_for) {
 
   auto dv = dvec.data();
 
-  dr::__detail::parallel_for(q, n, [=](auto i) { dv[i % size] += 1; }).wait();
+  dr::__detail::parallel_for(q, n, [=](auto i) {
+    sycl::atomic_ref<int, sycl::memory_order::relaxed,
+                     sycl::memory_scope::device>
+        v(dv[i % size]);
+    v += 1;
+  }).wait();
 
   std::vector<int> dvec_local(size);
   shp::copy(dvec.begin(), dvec.end(), dvec_local.begin());
