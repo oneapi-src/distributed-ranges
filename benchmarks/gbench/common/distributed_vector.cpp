@@ -162,9 +162,9 @@ void check_reduce(T actual) {
   }
 }
 
-static void Reduce_DR(benchmark::State &state) {
+template <class... BackendT> static void Reduce_DR(benchmark::State &state) {
   T actual{};
-  xhp::distributed_vector<T> src(default_vector_size, fill);
+  xhp::distributed_vector<T, BackendT...> src(default_vector_size, fill);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
@@ -175,6 +175,10 @@ static void Reduce_DR(benchmark::State &state) {
   check_reduce(actual);
 }
 DR_BENCHMARK(Reduce_DR);
+
+#ifdef DRISHMEM
+DR_BENCHMARK(Reduce_DR<dr::mhp::IshmemBackend>)->Name("Reduce_DR_ishmem");
+#endif
 
 static void Reduce_max_DR(benchmark::State &state) {
   T actual{};
