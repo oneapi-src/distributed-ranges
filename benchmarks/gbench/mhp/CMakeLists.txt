@@ -36,12 +36,14 @@ endif()
 # mhp-quick-bench is for development. By reducing the number of source files, it
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
-add_executable(mhp-quick-bench mhp-bench.cpp ../common/sort.cpp)
+add_executable(mhp-quick-bench mhp-bench.cpp ../common/distributed_vector.cpp)
 
 foreach(mhp-bench-exec IN ITEMS mhp-bench mhp-quick-bench)
   target_compile_definitions(${mhp-bench-exec} PRIVATE BENCH_MHP)
   target_link_libraries(${mhp-bench-exec} benchmark::benchmark cxxopts DR::mpi)
-  target_link_ishmem(${mhp-bench-exec})
+  if(ENABLE_ISHMEM)
+    target_link_ishmem(${mhp-bench-exec})
+  endif()
   if(ENABLE_SYCL)
     target_link_libraries(${mhp-bench-exec} MKL::MKL_DPCPP)
   endif()

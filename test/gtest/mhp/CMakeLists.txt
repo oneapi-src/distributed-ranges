@@ -64,8 +64,10 @@ add_executable(mhp-quick-test
 target_compile_definitions(mhp-quick-test PRIVATE QUICK_TEST)
 
 foreach(test-exec IN ITEMS mhp-tests mhp-tests-3 mhp-quick-test)
+  if(ENABLE_ISHMEM)
+    target_link_ishmem(${test-exec})
+  endif()
   target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
-  target_link_ishmem(${test-exec})
   set_property(TARGET ${test-exec} PROPERTY RULE_LAUNCH_COMPILE
                                             "${CMAKE_COMMAND} -E time")
 endforeach()

@@ -326,14 +326,7 @@ if(ENABLE_ISHMEM)
   function(target_link_ishmem exec_name)
     target_link_libraries(${exec_name} ze_loader pmi_simple sma)
     target_link_libraries(${exec_name} ${CMAKE_BINARY_DIR}/lib/libishmem.a)
-  endfunction()
-
-  add_compile_definitions(DRISHMEM)
-
-else()
-
-  function(target_link_ishmem exec_name)
-
+    target_compile_definitions(${exec_name} PRIVATE DRISHMEM)
   endfunction()
 
 endif()
