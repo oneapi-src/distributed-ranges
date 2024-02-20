@@ -39,8 +39,8 @@ inline void fence_on(auto &&obj) { obj.fence(); }
 // minimal testing for quick builds
 #ifdef DRISHMEM
 using AllTypes =
-    ::testing::Types<dr::mhp::distributed_vector<int>,
-                     dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>>;
+    ::testing::Types<dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>,
+                     dr::mhp::distributed_vector<int>>;
 using IshmemTypes =
     ::testing::Types<dr::mhp::distributed_vector<int, dr::mhp::IshmemBackend>>;
 #else

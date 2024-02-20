@@ -6,17 +6,17 @@
 
 template <typename T> class Halo : public testing::Test {};
 
-// segfault with ISHMEM
-TYPED_TEST_SUITE(Halo, AllTypesWithoutIshmem);
+TYPED_TEST_SUITE(Halo, AllTypes);
 
 template <typename DV>
 void local_is_accessible_in_halo_region(const int halo_prev,
                                         const int halo_next) {
-  if (options.count("device-memory")) {
-    return;
-  }
+
   DV dv(6, dr::mhp::distribution().halo(halo_prev, halo_next));
+  DRLOG("local_is_accessible_in_halo_region TEST START, prev:{}, next:{}",
+        halo_prev, halo_next);
   iota(dv, 0);
+  DRLOG("exchange start");
   dv.halo().exchange();
 
   // arrays below is function depending on size of communicator-1
@@ -58,16 +58,34 @@ void local_is_accessible_in_halo_region(const int halo_prev,
   auto first_legal_idx = std::max(0, first_local_index___[c] - halo_prev);
   auto first_illegal_idx = std::min(6, first_nonlocal_index[c] + halo_next);
 
-  dr::drlog.debug(
-      "checking access to idx between first legal {} and first illegal {}\n",
-      first_legal_idx, first_illegal_idx);
+  DRLOG("checking access to idx between first legal {} and first illegal {}, "
+        "c:{}",
+        first_legal_idx, first_illegal_idx, c);
+
+  if (first_legal_idx == first_illegal_idx) {
+    DRLOG("nothing to check, checks OK");
+    return;
+  }
+
+  std::vector<typename DV::value_type> local_vec(first_illegal_idx -
+                                                 first_legal_idx);
+  typename DV::value_type *in_begin = (dv.begin() + first_legal_idx).local();
+  typename DV::value_type *in_end =
+      in_begin + (first_illegal_idx - first_legal_idx);
+  typename DV::value_type *out_begin = local_vec.data();
+  EXPECT_TRUE(in_begin != nullptr);
+
+  if (dr::mhp::use_sycl())
+    dr::mhp::__detail::sycl_copy(in_begin, in_end, out_begin);
+  else
+    std::copy(in_begin, in_end, out_begin);
 
   for (int idx = first_legal_idx; idx < first_illegal_idx; ++idx) {
-    dr::drlog.debug("checking idx:{}\n", idx);
-    EXPECT_TRUE((dv.begin() + idx).local() != nullptr);
-    EXPECT_EQ(*(dv.begin() + idx).local(), idx);
+    DRLOG("checking idx:{}", idx);
+    EXPECT_EQ(*out_begin, idx);
+    ++out_begin;
   }
-  dr::drlog.debug("checks ok\n");
+  DRLOG("checks ok");
 
   // although assertions indeed happen, but they are not caught by EXPECT_DEATH
   //  if (first_illegal_idx < 6) {

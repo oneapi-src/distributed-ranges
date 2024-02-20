@@ -64,15 +64,18 @@ public:
 
   /// Begin a halo exchange
   void exchange_begin() {
-    drlog.debug("Halo exchange begin\n");
+    DRLOG("Halo exchange receiving");
     receive(halo_groups_);
+    DRLOG("Halo exchange sending");
     send(owned_groups_);
+    DRLOG("Halo exchange begin finished");
   }
 
   /// Complete a halo exchange
   void exchange_finalize() {
+    DRLOG("Halo exchange finalize started");
     reduce_finalize();
-    drlog.debug("Halo exchange finalize\n");
+    DRLOG("Halo exchange finalize finished");
   }
 
   void exchange() {
@@ -92,7 +95,7 @@ public:
       int completed;
       MPI_Waitany(rng::size(requests_), requests_.data(), &completed,
                   MPI_STATUS_IGNORE);
-      drlog.debug("Completed: {}\n", completed);
+      DRLOG("reduce_finalize(op) waitany completed: {}", completed);
       auto &g = *map_[completed];
       if (g.receive && g.buffered) {
         g.unpack(op);
@@ -106,7 +109,7 @@ public:
       int completed;
       MPI_Waitany(rng::size(requests_), requests_.data(), &completed,
                   MPI_STATUS_IGNORE);
-      drlog.debug("Completed: {}\n", completed);
+      DRLOG("reduce_finalize() waitany completed: {}", completed);
       auto &g = *map_[completed];
       if (g.receive && g.buffered) {
         g.unpack();
@@ -146,7 +149,7 @@ private:
     for (auto &g : sends) {
       g.pack();
       g.receive = false;
-      drlog.debug("Sending: {}\n", g.request_index);
+      DRLOG("sending: {}", g.request_index);
       comm_.isend(g.data_pointer(), g.data_size(), g.rank(), g.tag(),
                   &requests_[g.request_index]);
     }
@@ -155,7 +158,7 @@ private:
   void receive(std::vector<Group> &receives) {
     for (auto &g : receives) {
       g.receive = true;
-      drlog.debug("Receiving: {}\n", g.request_index);
+      DRLOG("receiving: {}", g.request_index);
       comm_.irecv(g.data_pointer(), g.data_size(), g.rank(), g.tag(),
                   &requests_[g.request_index]);
     }
