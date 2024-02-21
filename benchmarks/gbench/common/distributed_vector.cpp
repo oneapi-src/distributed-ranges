@@ -152,9 +152,10 @@ DR_BENCHMARK(Copy_Serial);
 T fill = 100;
 void check_reduce(T actual) {
   if (comm_rank == 0) {
-    std::vector<T> local_src(default_vector_size, fill);
-    auto ref = std::reduce(local_src.begin(), local_src.end());
-
+    // Don't call std::reduce on big vectors, result is wrong due to adding
+    // small float to big one. E.g. adding 80M values of 100 results
+    // in 8.58993e+09
+    const T ref = fill * default_vector_size;
     if ((ref - actual) / ref > .001) {
       fmt::print("Mismatch:\n  Ref {} Actual {}\n", ref, actual);
       exit(1);
