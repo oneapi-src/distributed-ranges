@@ -62,28 +62,18 @@ void local_is_accessible_in_halo_region(const int halo_prev,
         "c:{}",
         first_legal_idx, first_illegal_idx, c);
 
-  if (first_legal_idx == first_illegal_idx) {
-    DRLOG("nothing to check, checks OK");
-    return;
-  }
-
-  std::vector<typename DV::value_type> local_vec(first_illegal_idx -
-                                                 first_legal_idx);
-  typename DV::value_type *in_begin = (dv.begin() + first_legal_idx).local();
-  typename DV::value_type *in_end =
-      in_begin + (first_illegal_idx - first_legal_idx);
-  typename DV::value_type *out_begin = local_vec.data();
-  EXPECT_TRUE(in_begin != nullptr);
-
-  if (dr::mhp::use_sycl())
-    dr::mhp::__detail::sycl_copy(in_begin, in_end, out_begin);
-  else
-    std::copy(in_begin, in_end, out_begin);
-
   for (int idx = first_legal_idx; idx < first_illegal_idx; ++idx) {
+    typename DV::value_type *local_ptr = (dv.begin() + idx).local();
+    EXPECT_TRUE(local_ptr != nullptr);
+    typename DV::value_type value_on_host;
+
+    if (dr::mhp::use_sycl())
+      dr::mhp::__detail::sycl_copy(local_ptr, &value_on_host);
+    else
+      value_on_host = *local_ptr;
+
     DRLOG("checking idx:{}", idx);
-    EXPECT_EQ(*out_begin, idx);
-    ++out_begin;
+    EXPECT_EQ(value_on_host, idx);
   }
   DRLOG("checks ok");
 
