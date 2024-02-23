@@ -56,8 +56,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  ../common/exclusive_scan.cpp
-  ../common/inclusive_scan.cpp
+  halo.cpp
   )
 # cmake-format: on
 
@@ -101,6 +100,10 @@ if(ENABLE_SYCL)
 
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
   add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
+  add_mhp_ctest(
+    NAME mhp-quick-test NPROC 1 OFFLOAD SYCL TARGS --device-memory)
+  add_mhp_ctest(
+    NAME mhp-quick-test NPROC 2 OFFLOAD SYCL TARGS --device-memory)
 
   add_mhp_ctest(
     NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS --device-memory

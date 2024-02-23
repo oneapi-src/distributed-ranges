@@ -6,17 +6,17 @@
 
 template <typename T> class Halo : public testing::Test {};
 
-// segfault with ISHMEM
-TYPED_TEST_SUITE(Halo, AllTypesWithoutIshmem);
+TYPED_TEST_SUITE(Halo, AllTypes);
 
 template <typename DV>
 void local_is_accessible_in_halo_region(const int halo_prev,
                                         const int halo_next) {
-  if (options.count("device-memory")) {
-    return;
-  }
+
   DV dv(6, dr::mhp::distribution().halo(halo_prev, halo_next));
+  DRLOG("local_is_accessible_in_halo_region TEST START, prev:{}, next:{}",
+        halo_prev, halo_next);
   iota(dv, 0);
+  DRLOG("exchange start");
   dv.halo().exchange();
 
   // arrays below is function depending on size of communicator-1
@@ -58,16 +58,24 @@ void local_is_accessible_in_halo_region(const int halo_prev,
   auto first_legal_idx = std::max(0, first_local_index___[c] - halo_prev);
   auto first_illegal_idx = std::min(6, first_nonlocal_index[c] + halo_next);
 
-  dr::drlog.debug(
-      "checking access to idx between first legal {} and first illegal {}\n",
-      first_legal_idx, first_illegal_idx);
+  DRLOG("checking access to idx between first legal {} and first illegal {}, "
+        "c:{}",
+        first_legal_idx, first_illegal_idx, c);
 
   for (int idx = first_legal_idx; idx < first_illegal_idx; ++idx) {
-    dr::drlog.debug("checking idx:{}\n", idx);
-    EXPECT_TRUE((dv.begin() + idx).local() != nullptr);
-    EXPECT_EQ(*(dv.begin() + idx).local(), idx);
+    typename DV::value_type *local_ptr = (dv.begin() + idx).local();
+    EXPECT_TRUE(local_ptr != nullptr);
+    typename DV::value_type value_on_host;
+
+    if (dr::mhp::use_sycl())
+      dr::mhp::__detail::sycl_copy(local_ptr, &value_on_host);
+    else
+      value_on_host = *local_ptr;
+
+    DRLOG("checking idx:{}", idx);
+    EXPECT_EQ(value_on_host, idx);
   }
-  dr::drlog.debug("checks ok\n");
+  DRLOG("checks ok");
 
   // although assertions indeed happen, but they are not caught by EXPECT_DEATH
   //  if (first_illegal_idx < 6) {
