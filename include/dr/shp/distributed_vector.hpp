@@ -145,8 +145,9 @@ public:
 
     std::size_t rank = 0;
     for (auto &&device : dr::shp::devices()) {
-      segments_.emplace_back(segment_type(
-          segment_size_, Allocator(dr::shp::context(), device), rank++));
+      segments_.emplace_back(
+          segment_type(segment_size_, Allocator(__detail::queue(rank)), rank));
+      rank++;
     }
   }
 
