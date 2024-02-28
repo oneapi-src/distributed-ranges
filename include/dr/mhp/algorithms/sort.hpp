@@ -24,6 +24,10 @@
 
 namespace dr::mhp {
 
+bool _is_sorted(std::ranges::forward_range auto &r) {
+  return std::is_sorted(dpl_policy(), rng::begin(r), rng::end(r));
+}
+
 namespace __detail {
 
 template <typename T> class buffer {
@@ -133,6 +137,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       DRLOG("cpu rng::sort, size {}", rng::size(r));
       rng::sort(rng::begin(r), rng::end(r), comp);
     }
+    assert(_is_sorted(r));
   }
 }
 
@@ -231,7 +236,7 @@ void splitters(Seg &lsegment, Compare &&comp,
 }
 
 template <typename valT>
-void shift_data(const int shift_left, const int shift_right,
+void shift_data(const int64_t shift_left, const int64_t shift_right,
                 buffer<valT> &vec_recvdata, buffer<valT> &vec_left,
                 buffer<valT> &vec_right) {
 
@@ -240,17 +245,18 @@ void shift_data(const int shift_left, const int shift_right,
   MPI_Request req_l, req_r;
   MPI_Status stat_l, stat_r;
 
-  assert(static_cast<int>(rng::size(vec_left)) == std::max(0, shift_left));
-  assert(static_cast<int>(rng::size(vec_right)) == std::max(0, shift_right));
+  assert(static_cast<int64_t>(rng::size(vec_left)) == std::max(0L, shift_left));
+  assert(static_cast<int64_t>(rng::size(vec_right)) ==
+         std::max(0L, shift_right));
 
-  if (static_cast<int>(rng::size(vec_recvdata)) < -shift_left) {
+  if (static_cast<int64_t>(rng::size(vec_recvdata)) < -shift_left) {
     // Too little data in recv buffer to shift left - first get from right,
     // then send left
     DRLOG("Get from right first, recvdata size {} shift left {}",
           rng::size(vec_recvdata), shift_left);
     // ** This will never happen, because values eq to split go left **
     assert(false);
-  } else if (static_cast<int>(rng::size(vec_recvdata)) < -shift_right) {
+  } else if (static_cast<int64_t>(rng::size(vec_recvdata)) < -shift_right) {
     // Too little data in buffer to shift right - first get from left, then
     // send right
     assert(shift_left > 0);
@@ -285,13 +291,13 @@ void shift_data(const int shift_left, const int shift_right,
       default_comm().isend(rng::data(vec_recvdata), -shift_left, _comm_rank - 1,
                            &req_l);
     } else if (shift_left > 0) {
-      assert(shift_left == static_cast<int>(rng::size(vec_left)));
+      assert(shift_left == static_cast<int64_t>(rng::size(vec_left)));
       default_comm().irecv(rng::data(vec_left), rng::size(vec_left),
                            _comm_rank - 1, &req_l);
     }
 
     if (shift_right > 0) {
-      assert(shift_right == static_cast<int>(rng::size(vec_right)));
+      assert(shift_right == static_cast<int64_t>(rng::size(vec_right)));
       default_comm().irecv(rng::data(vec_right), rng::size(vec_right),
                            _comm_rank + 1, &req_r);
     } else if (shift_right < 0) {
@@ -308,11 +314,11 @@ void shift_data(const int shift_left, const int shift_right,
 }
 
 template <typename valT>
-void copy_results(auto &lsegment, const int shift_left, const int shift_right,
-                  buffer<valT> &vec_recvdata, buffer<valT> &vec_left,
-                  buffer<valT> &vec_right) {
-  const std::size_t invalidate_left = std::max(-shift_left, 0);
-  const std::size_t invalidate_right = std::max(-shift_right, 0);
+void copy_results(auto &lsegment, const int64_t shift_left,
+                  const int64_t shift_right, buffer<valT> &vec_recvdata,
+                  buffer<valT> &vec_left, buffer<valT> &vec_right) {
+  const std::size_t invalidate_left = std::max(-shift_left, 0L);
+  const std::size_t invalidate_right = std::max(-shift_right, 0L);
 
   const std::size_t size_l = rng::size(vec_left);
   const std::size_t size_r = rng::size(vec_right);
@@ -370,13 +376,23 @@ void dist_sort(R &r, Compare &&comp) {
   std::vector<std::size_t> vec_recv_elems(_comm_size, 0);
   std::size_t _total_elems = 0;
 
+  fmt::print("{}:{} Dist sort, local segment size {}\n", default_comm().rank(),
+             __LINE__, rng::size(lsegment));
+
   __detail::local_sort(lsegment, comp);
 
   /* find splitting values - limits of areas to send to other processes */
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
+
   __detail::splitters<valT>(lsegment, comp, vec_split_i, vec_split_s);
+
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
+
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 
   /* prepare data to send and receive */
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
+
   std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
                       vec_rindices.begin(), 0);
   const std::size_t _recv_elems = vec_rindices.back() + vec_rsizes.back();
@@ -389,6 +405,8 @@ void dist_sort(R &r, Compare &&comp) {
    */
   // MPI_Request req_recvelems;
   // default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
+
   default_comm().all_gather(_recv_elems, vec_recv_elems);
 
   /* buffer for received data */
@@ -396,19 +414,26 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* send data not belonging and receive data belonging to local  processes
    */
+  fmt::print("{}:{} alltoallv vec_split_s {} vec_split_i {} vec_rsizes {} "
+             "vec_rindices {}\n",
+             default_comm().rank(), __LINE__, vec_split_s, vec_split_i,
+             vec_rsizes, vec_rindices);
+
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
                            vec_rsizes, vec_rindices);
 
   /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
    * desirable */
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   __detail::local_sort(vec_recvdata, comp);
-
+  assert(_is_sorted(vec_recvdata));
   // MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
 
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
 
   /* prepare data for shift to neighboring processes */
-  std::vector<int> vec_shift(_comm_size - 1);
+  std::vector<int64_t> vec_shift(_comm_size - 1);
 
   const auto desired_elems_num = (_total_elems + _comm_size - 1) / _comm_size;
 
@@ -417,19 +442,21 @@ void dist_sort(R &r, Compare &&comp) {
     vec_shift[_i] = vec_shift[_i - 1] + desired_elems_num - vec_recv_elems[_i];
   }
 
-  const int shift_left = _comm_rank == 0 ? 0 : -vec_shift[_comm_rank - 1];
-  const int shift_right =
+  const int64_t shift_left = _comm_rank == 0 ? 0 : -vec_shift[_comm_rank - 1];
+  const int64_t shift_right =
       _comm_rank == _comm_size - 1 ? 0 : vec_shift[_comm_rank];
 
-  buffer<valT> vec_left(std::max(shift_left, 0));
-  buffer<valT> vec_right(std::max(shift_right, 0));
+  buffer<valT> vec_left(std::max(shift_left, 0L));
+  buffer<valT> vec_right(std::max(shift_right, 0L));
 
   /* shift data if necessary, to have exactly the number of elements equal to
    * lsegment size */
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
                              vec_right);
-
+  assert(_is_sorted(vec_recvdata));
   /* copy results to distributed vector's local segment */
+  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
                                vec_left, vec_right);
 
@@ -446,6 +473,7 @@ void sort(R &r, Compare &&comp = Compare()) {
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
   if (_comm_size == 1) {
+    DRLOG("mhp::sort() - one node only");
     auto &&lsegment = local_segment(r);
     __detail::local_sort(lsegment, comp);
 
@@ -453,7 +481,7 @@ void sort(R &r, Compare &&comp = Compare()) {
     /* Distributed vector of size <= (comm_size-1) * (comm_size-1) may have
      * 0-size local segments. It is also small enough to prefer sequential sort
      */
-    DRLOG("mhp::sort() - local sort");
+    DRLOG("mhp::sort() - local sort on node 0");
 
     std::vector<valT> vec_recvdata(rng::size(r));
     dr::mhp::copy(0, r, rng::begin(vec_recvdata));

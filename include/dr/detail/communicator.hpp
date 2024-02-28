@@ -193,10 +193,10 @@ public:
     assert(rng::size(recvcnt) == size_);
     assert(rng::size(recvdsp) == size_);
 
-    std::vector<int> _sendcnt(size_);
-    std::vector<int> _senddsp(size_);
-    std::vector<int> _recvcnt(size_);
-    std::vector<int> _recvdsp(size_);
+    std::vector<MPI_Count> _sendcnt(size_);
+    std::vector<MPI_Aint> _senddsp(size_);
+    std::vector<MPI_Count> _recvcnt(size_);
+    std::vector<MPI_Aint> _recvdsp(size_);
 
     rng::transform(sendcnt, _sendcnt.begin(),
                    [](auto e) { return e * sizeof(valT); });
@@ -207,7 +207,7 @@ public:
     rng::transform(recvdsp, _recvdsp.begin(),
                    [](auto e) { return e * sizeof(valT); });
 
-    MPI_Alltoallv(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
+    MPI_Alltoallv_c(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
                   MPI_BYTE, rng::data(recvbuf), rng::data(_recvcnt),
                   rng::data(_recvdsp), MPI_BYTE, mpi_comm_);
   }
@@ -227,7 +227,7 @@ public:
   void create(communicator comm, void *data, std::size_t size) {
     local_data_ = data;
     communicator_ = comm;
-    DRLOG("win create:: size: {} data:{}", size, data);
+    DRLOG("win create:: size: {} data:{}", (MPI_Aint)size, data);
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
 
@@ -254,7 +254,15 @@ public:
            std::size_t disp) const {
     DRLOG("MPI comm get:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
+#if (MPI_VERSION >= 4) || (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+    MPI_Rget_c(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
+#else
+    // MPI_Rget origin_count is 32-bit signed int - check range
+    assert(
+        size <= (std::size_t)INT_MAX &&
+        "MPI API requires origin_count to be positive signed 32-bit integer");
     MPI_Rget(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
+#endif
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
@@ -264,12 +272,22 @@ public:
 
   void put(const void *src, std::size_t size, std::size_t rank,
            std::size_t disp) const {
-    DRLOG("MPI comm put:: ({}:{}:{})", rank, disp, size);
+    DRLOG("MPI comm put:: ({}:{}:{})", rank, disp, (int)size);
     MPI_Request request;
+
+#if (MPI_VERSION >= 4) || (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+    MPI_Rput_c(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
+#else
+    // MPI_Rput origin_count is 32-bit signed int - check range
+    assert(
+        size <= (std::size_t)INT_MAX &&
+        "MPI API requires origin_count to be positive signed 32-bit integer");
     MPI_Rput(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
-    DRLOG("MPI comm wait:: ({}:{}:{})", rank, disp, size);
+#endif
+
+    DRLOG("MPI comm wait:: ({}:{}:{})", rank, disp, (MPI_Aint)size);
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-    DRLOG("MPI comm wait finished:: ({}:{}:{})", rank, disp, size);
+    DRLOG("MPI comm wait finished:: ({}:{}:{})", rank, disp, (MPI_Aint)size);
   }
 
   void fence() const {

@@ -15,16 +15,27 @@ template <rng::forward_range X> void fill_random(X &&x) {
 class DRSortFixture : public benchmark::Fixture {
 protected:
   xhp::distributed_vector<T> *a;
+  std::vector<T> local_vec;
 
 public:
   void SetUp(::benchmark::State &) {
     a = new xhp::distributed_vector<T>(default_vector_size);
-    std::vector<T> local(default_vector_size);
-    fill_random(local);
-    xhp::copy(local, rng::begin(*a));
+    local_vec = std::vector<T>(default_vector_size);
+    fill_random(local_vec);
+    xhp::copy(local_vec, rng::begin(*a));
   }
 
-  void TearDown(::benchmark::State &) { delete a; }
+  void TearDown(::benchmark::State &state) {
+    xhp::copy(*a, rng::begin(local_vec));
+
+    if (!rng::is_sorted(local_vec)) {
+      state.SkipWithError("mhp sort did not sort the vector");
+    } else {
+      std::cout << "\n *** mhp::sort did it! ***\n\n";
+    }
+
+    delete a;
+  }
 };
 
 BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
@@ -35,8 +46,6 @@ BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
     xhp::copy(*a, rng::begin(vec));
     stats.rep();
     state.ResumeTiming();
-
-    // sort not implemented in mhp yet
     xhp::sort(vec);
   }
 }
