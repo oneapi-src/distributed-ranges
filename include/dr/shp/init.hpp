@@ -46,12 +46,12 @@ inline std::size_t nprocs() { return __detail::ngpus(); }
 inline device_policy par_unseq;
 
 template <rng::range R>
-inline void init(R &&devices)
+inline void init(sycl::context context, R &&devices)
   requires(
       std::is_same_v<sycl::device, std::remove_cvref_t<rng::range_value_t<R>>>)
 {
   __detail::devices_.assign(rng::begin(devices), rng::end(devices));
-  __detail::global_context_ = new sycl::context(__detail::devices_);
+  __detail::global_context_ = new sycl::context(context);
   __detail::ngpus_ = rng::size(__detail::devices_);
 
   for (auto &&device : __detail::devices_) {
@@ -62,6 +62,15 @@ inline void init(R &&devices)
   }
 
   par_unseq = device_policy(__detail::devices_);
+}
+
+template <rng::range R>
+inline void init(R &&devices)
+  requires(
+      std::is_same_v<sycl::device, std::remove_cvref_t<rng::range_value_t<R>>>)
+{
+  sycl::context context(devices);
+  init(context, devices);
 }
 
 template <__detail::sycl_device_selector Selector>

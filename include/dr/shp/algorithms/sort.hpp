@@ -267,7 +267,7 @@ void sort(R &&r, Compare comp = Compare()) {
 
   // Free temporary memory.
 
-  for (std::size_t i = 0; i < sorted_segegments.size(); i++) {
+  for (std::size_t i = 0; i < sorted_segments.size(); i++) {
     auto &&q = dr::shp::__detail::queue(dr::ranges::rank(segments[i]));
     sycl::free(sorted_segments[i], q);
     sycl::free(splitter_indices[i], q);
