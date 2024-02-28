@@ -143,11 +143,9 @@ public:
         (count + dr::shp::devices().size() - 1) / dr::shp::devices().size();
     capacity_ = segment_size_ * dr::shp::devices().size();
 
-    std::size_t rank = 0;
-    for (auto &&device : dr::shp::devices()) {
+    for (std::size_t rank = 0; rank < dr::shp::devices().size(); rank++) {
       segments_.emplace_back(
           segment_type(segment_size_, Allocator(__detail::queue(rank)), rank));
-      rank++;
     }
   }
 
