@@ -376,23 +376,15 @@ void dist_sort(R &r, Compare &&comp) {
   std::vector<std::size_t> vec_recv_elems(_comm_size, 0);
   std::size_t _total_elems = 0;
 
-  fmt::print("{}:{} Dist sort, local segment size {}\n", default_comm().rank(),
-             __LINE__, rng::size(lsegment));
+  DRLOG("Rank {}: Dist sort, local segment size {}", default_comm().rank(), rng::size(lsegment));
 
   __detail::local_sort(lsegment, comp);
 
   /* find splitting values - limits of areas to send to other processes */
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
-
   __detail::splitters<valT>(lsegment, comp, vec_split_i, vec_split_s);
-
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
-
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
 
   /* prepare data to send and receive */
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
-
   std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
                       vec_rindices.begin(), 0);
   const std::size_t _recv_elems = vec_rindices.back() + vec_rsizes.back();
@@ -400,36 +392,22 @@ void dist_sort(R &r, Compare &&comp) {
   /* send and receive data belonging to each node, then redistribute
    * data to achieve size of data equal to size of local segment */
 
-  /* TODO: all_gather() below can be asynchronous - to be verified in CI
-   * (currently hangs in CI unit tests, but going well when started manually)
-   */
-  // MPI_Request req_recvelems;
-  // default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
-
-  default_comm().all_gather(_recv_elems, vec_recv_elems);
+  MPI_Request req_recvelems;
+  default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
 
   /* buffer for received data */
   buffer<valT> vec_recvdata(_recv_elems);
 
   /* send data not belonging and receive data belonging to local  processes
    */
-  fmt::print("{}:{} alltoallv vec_split_s {} vec_split_i {} vec_rsizes {} "
-             "vec_rindices {}\n",
-             default_comm().rank(), __LINE__, vec_split_s, vec_split_i,
-             vec_rsizes, vec_rindices);
-
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
                            vec_rsizes, vec_rindices);
 
   /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
    * desirable */
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   __detail::local_sort(vec_recvdata, comp);
-  assert(_is_sorted(vec_recvdata));
-  // MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
+  MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
 
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
 
   /* prepare data for shift to neighboring processes */
@@ -451,15 +429,12 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* shift data if necessary, to have exactly the number of elements equal to
    * lsegment size */
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
                              vec_right);
-  assert(_is_sorted(vec_recvdata));
+  
   /* copy results to distributed vector's local segment */
-  fmt::print("{}:{} dist_sort\n", default_comm().rank(), __LINE__);
   __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
                                vec_left, vec_right);
-
 } // __detail::dist_sort
 
 } // namespace __detail

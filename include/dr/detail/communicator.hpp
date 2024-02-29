@@ -257,7 +257,6 @@ public:
 #if (MPI_VERSION >= 4) || (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
     MPI_Rget_c(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
-    // MPI_Rget origin_count is 32-bit signed int - check range
     assert(
         size <= (std::size_t)INT_MAX &&
         "MPI API requires origin_count to be positive signed 32-bit integer");
