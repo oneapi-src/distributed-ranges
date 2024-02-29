@@ -42,8 +42,7 @@ void inclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o,
 
     std::vector<sycl::event> events;
 
-    auto root = dr::shp::devices()[0];
-    dr::shp::device_allocator<T> allocator(dr::shp::context(), root);
+    dr::shp::device_allocator<T> allocator(__detail::queue(0));
     dr::shp::vector<T, dr::shp::device_allocator<T>> partial_sums(
         std::size_t(zipped_segments.size()), allocator);
 

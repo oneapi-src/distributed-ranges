@@ -14,6 +14,8 @@
 #include <dr/shp/device_vector.hpp>
 #include <dr/shp/vector.hpp>
 
+#include <fmt/ranges.h>
+
 namespace dr::shp {
 
 template <typename T, typename L> class distributed_vector_accessor {
@@ -143,11 +145,13 @@ public:
         (count + dr::shp::devices().size() - 1) / dr::shp::devices().size();
     capacity_ = segment_size_ * dr::shp::devices().size();
 
-    std::size_t rank = 0;
-    for (auto &&device : dr::shp::devices()) {
-      segments_.emplace_back(segment_type(
-          segment_size_, Allocator(dr::shp::context(), device), rank++));
+    fmt::print("Allocating segments...\n");
+    for (std::size_t rank = 0; rank < dr::shp::devices().size(); rank++) {
+      fmt::print("Segment {}...\n", rank);
+      segments_.emplace_back(
+          segment_type(segment_size_, Allocator(__detail::queue(rank)), rank));
     }
+    fmt::print("Returning...\n");
   }
 
   distributed_vector(std::size_t count, const T &value)

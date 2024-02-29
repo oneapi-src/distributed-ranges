@@ -39,7 +39,9 @@ template <typename T, typename U>
   requires(std::indirectly_writable<device_ptr<T>, U>)
 sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
                        const U &value) {
+  fmt::print("Fill async...\n");
   auto &&q = __detail::get_queue_for_pointer(first);
+  fmt::print("Got queue...\n");
   auto *arr = first.get_raw_pointer();
   // not using q.fill because of CMPLRLLVM-46438
   return dr::__detail::parallel_for(q, sycl::range<>(last - first),
@@ -49,7 +51,9 @@ sycl::event fill_async(device_ptr<T> first, device_ptr<T> last,
 template <typename T, typename U>
   requires(std::indirectly_writable<device_ptr<T>, U>)
 void fill(device_ptr<T> first, device_ptr<T> last, const U &value) {
+  fmt::print("Fill...\n");
   fill_async(first, last, value).wait();
+  fmt::print("Fill.\n");
 }
 
 template <typename T, dr::remote_contiguous_range R>
