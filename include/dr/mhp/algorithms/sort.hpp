@@ -24,10 +24,6 @@
 
 namespace dr::mhp {
 
-bool _is_sorted(std::ranges::forward_range auto &r) {
-  return std::is_sorted(dpl_policy(), rng::begin(r), rng::end(r));
-}
-
 namespace __detail {
 
 template <typename T> class buffer {
@@ -137,7 +133,6 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       DRLOG("cpu rng::sort, size {}", rng::size(r));
       rng::sort(rng::begin(r), rng::end(r), comp);
     }
-    assert(_is_sorted(r));
   }
 }
 
