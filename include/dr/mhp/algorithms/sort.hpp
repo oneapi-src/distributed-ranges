@@ -376,7 +376,8 @@ void dist_sort(R &r, Compare &&comp) {
   std::vector<std::size_t> vec_recv_elems(_comm_size, 0);
   std::size_t _total_elems = 0;
 
-  DRLOG("Rank {}: Dist sort, local segment size {}", default_comm().rank(), rng::size(lsegment));
+  DRLOG("Rank {}: Dist sort, local segment size {}", default_comm().rank(),
+        rng::size(lsegment));
 
   __detail::local_sort(lsegment, comp);
 
@@ -431,7 +432,7 @@ void dist_sort(R &r, Compare &&comp) {
    * lsegment size */
   __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
                              vec_right);
-  
+
   /* copy results to distributed vector's local segment */
   __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
                                vec_left, vec_right);

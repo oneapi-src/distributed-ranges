@@ -207,9 +207,10 @@ public:
     rng::transform(recvdsp, _recvdsp.begin(),
                    [](auto e) { return e * sizeof(valT); });
 
-    MPI_Alltoallv_c(rng::data(sendbuf), rng::data(_sendcnt), rng::data(_senddsp),
-                  MPI_BYTE, rng::data(recvbuf), rng::data(_recvcnt),
-                  rng::data(_recvdsp), MPI_BYTE, mpi_comm_);
+    MPI_Alltoallv_c(rng::data(sendbuf), rng::data(_sendcnt),
+                    rng::data(_senddsp), MPI_BYTE, rng::data(recvbuf),
+                    rng::data(_recvcnt), rng::data(_recvdsp), MPI_BYTE,
+                    mpi_comm_);
   }
 
   bool operator==(const communicator &other) const {
@@ -254,7 +255,8 @@ public:
            std::size_t disp) const {
     DRLOG("MPI comm get:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
-#if (MPI_VERSION >= 4) || (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+#if (MPI_VERSION >= 4) ||                                                      \
+    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
     MPI_Rget_c(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
     assert(
@@ -274,7 +276,8 @@ public:
     DRLOG("MPI comm put:: ({}:{}:{})", rank, disp, (int)size);
     MPI_Request request;
 
-#if (MPI_VERSION >= 4) || (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+#if (MPI_VERSION >= 4) ||                                                      \
+    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
     MPI_Rput_c(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
     // MPI_Rput origin_count is 32-bit signed int - check range
