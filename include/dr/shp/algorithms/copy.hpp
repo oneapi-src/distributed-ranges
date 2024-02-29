@@ -111,6 +111,8 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
 
   std::vector<sycl::event> events;
 
+  fmt::print("copy_async...\n");
+
   while (first != last) {
     auto &&segment = *segment_iter;
     auto size = rng::distance(segment);
@@ -120,14 +122,23 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     auto local_last = first;
     rng::advance(local_last, n_to_copy);
 
+    fmt::print("copying...\n");
     events.emplace_back(
         dr::shp::copy_async(first, local_last, rng::begin(segment)));
 
+    fmt::print("check queues...\n");
+    dr::shp::check_queues();
+
+    fmt::print("continue...\n");
     ++segment_iter;
     rng::advance(first, n_to_copy);
   }
 
-  return dr::shp::__detail::combine_events(events);
+  for (auto&& event : events) {
+    event.wait();
+  }
+  return events[0];
+  // return dr::shp::__detail::combine_events(events);
 }
 
 auto copy(rng::contiguous_range auto r, dr::distributed_iterator auto d_first) {
@@ -142,7 +153,11 @@ template <std::forward_iterator InputIt, dr::distributed_iterator OutputIt>
   requires __detail::is_syclmemcopyable<std::iter_value_t<InputIt>,
                                         std::iter_value_t<OutputIt>>
 OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
+  fmt::print("Async copy...\n");
   copy_async(first, last, d_first).wait();
+  fmt::print("Checking queues...\n");
+  dr::shp::check_queues();
+  fmt::print("Returning...\n");
   return d_first + (last - first);
 }
 
@@ -166,7 +181,12 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     rng::advance(d_first, size);
   }
 
-  return dr::shp::__detail::combine_events(events);
+  for (auto&& event : events) {
+    event.wait();
+  }
+  return events[0];
+
+  // return dr::shp::__detail::combine_events(events);
 }
 
 template <dr::distributed_iterator InputIt, std::forward_iterator OutputIt>

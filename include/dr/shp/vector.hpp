@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <fmt/ranges.h>
 
 namespace dr::shp {
 
@@ -41,7 +42,9 @@ public:
       : allocator_(alloc) {
     change_capacity_impl_(count);
     using namespace std;
+    fmt::print("Calling fill...\n");
     fill(data(), data() + size(), T{});
+    fmt::print("Returning from fill...\n");
   }
 
   template <std::forward_iterator Iter>

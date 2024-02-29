@@ -11,6 +11,8 @@
 #include <iterator>
 #include <sycl/sycl.hpp>
 
+#include <fmt/ranges.h>
+
 namespace dr::shp {
 
 namespace __detail {
@@ -23,26 +25,48 @@ concept is_syclmemcopyable = std::is_same_v<std::remove_const_t<Src>, Dest> &&
 
 template <std::contiguous_iterator Iter>
 sycl::usm::alloc get_pointer_type(Iter iter) {
-  return sycl::get_pointer_type(std::to_address(iter), shp::context());
+  for (auto&& device : shp::devices()) {
+    try {
+      return sycl::get_pointer_type(std::to_address(iter), __detail::queue(device).get_context());
+    } catch(...) {}
+  }
+  assert(false);
 }
 
 template <typename T>
 sycl::usm::alloc get_pointer_type(shp::device_ptr<T> ptr) {
-  return sycl::get_pointer_type(ptr.get_raw_pointer(), shp::context());
+  for (auto&& device : shp::devices()) {
+    try {
+      return sycl::get_pointer_type(ptr.get_raw_pointer(), __detail::queue(device).get_context());
+    } catch(...) {}
+  }
+  assert(false);
 }
 
 template <std::contiguous_iterator Iter>
 sycl::device get_pointer_device(Iter iter) {
-  return sycl::get_pointer_device(std::to_address(iter), shp::context());
+  for (auto&& device : shp::devices()) {
+    try {
+      return sycl::get_pointer_device(std::to_address(iter), __detail::queue(device).get_context());
+    } catch(...) {}
+  }
+  assert(false);
 }
 
 template <typename T> sycl::device get_pointer_device(shp::device_ptr<T> ptr) {
-  return sycl::get_pointer_device(ptr.get_raw_pointer(), shp::context());
+  for (auto&& device : shp::devices()) {
+    try {
+      return sycl::get_pointer_device(ptr.get_raw_pointer(), __detail::queue(device).get_context());
+    } catch(...) {}
+  }
+  assert(false);
 }
 
 template <typename InputIt> sycl::queue &get_queue_for_pointer(InputIt iter) {
   if (get_pointer_type(iter) == sycl::usm::alloc::device) {
+    fmt::print("Get pointer device...\n");
     auto device = get_pointer_device(iter);
+    fmt::print("Got device...\n");
     return __detail::queue(device);
   } else {
     return default_queue();
@@ -73,7 +97,8 @@ inline sycl::event combine_events(sycl::queue &q,
 }
 
 inline sycl::event combine_events(const std::vector<sycl::event> &events) {
-  auto &&q = __detail::queue(0);
+  sycl::queue q(sycl::cpu_selector_v);
+  // auto &&q = __detail::queue(0);
   return combine_events(q, events);
 }
 
