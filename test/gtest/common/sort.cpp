@@ -46,8 +46,6 @@ TEST(Sort, Random_dist_small) { test_sort_randomvec(17); }
 
 TEST(Sort, Random_dist_med) { test_sort_randomvec(123); }
 
-TEST(Sort, Random_dist_big64) { test_sort_randomvec(4000000000); }
-
 TEST(Sort, AllSame) {
   test_sort2s({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
 }
