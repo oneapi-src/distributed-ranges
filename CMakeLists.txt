@@ -198,6 +198,7 @@ function(add_mhp_ctest_impl)
   endif()
 
   if(AMC_DRLOGS)
+    set(AMC_TEST_NAME "${AMC_TEST_NAME}-log")
     set(drlogs_param --log --logprefix=${AMC_TEST_NAME})
   endif()
 
@@ -219,7 +220,7 @@ function(add_mhp_ctest_impl)
       ${MPIEXEC_PREFLAGS} ${extra_mpiflags} ${wrapper_script} ./${AMC_NAME}
       ${drlogs_param} ${sycl_param} ${AMC_TARGS} COMMAND_EXPAND_LISTS)
 
-  if(NOT AMC_GDB)
+  if(NOT AMC_GDB AND NOT AMC_DRLOGS)
     set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
   endif()
   add_dependencies(mhp-all-tests ${AMC_NAME})
@@ -228,6 +229,8 @@ endfunction()
 function(add_mhp_ctest)
   add_mhp_ctest_impl(${ARGN})
   add_mhp_ctest_impl(${ARGN} GDB)
+  add_mhp_ctest_impl(${ARGN} GDB DRLOGS)
+  add_mhp_ctest_impl(${ARGN} DRLOGS)
 endfunction()
 
 if(ENABLE_ISHMEM)
