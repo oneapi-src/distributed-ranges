@@ -140,6 +140,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       rng::sort(rng::begin(r), rng::end(r), comp);
     }
   }
+  LOG;
 }
 
 template <typename Compare>
@@ -155,6 +156,7 @@ void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
       segidx++;
     }
   }
+  LOG;
 }
 
 /* elements of dist_sort */
@@ -239,6 +241,7 @@ void splitters(Seg &lsegment, Compare &&comp,
 
   assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
   vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
+  LOG;
 }
 
 template <typename valT>
@@ -320,6 +323,7 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
       MPI_Wait(&req_r, &stat_r);
     LOG;
   }
+  LOG;
 }
 
 template <typename valT>
@@ -369,6 +373,7 @@ void copy_results(auto &lsegment, const int64_t shift_left,
                 rng::data(vec_recvdata) + invalidate_left,
                 size_d * sizeof(valT));
   }
+  LOG;
 }
 
 template <dr::distributed_range R, typename Compare>
@@ -390,13 +395,13 @@ void dist_sort(R &r, Compare &&comp) {
 
   DRLOG("Rank {}: Dist sort, local segment size {}", default_comm().rank(),
         rng::size(lsegment));
-
+  LOG;
   __detail::local_sort(lsegment, comp);
 
   /* find splitting values - limits of areas to send to other processes */
   __detail::splitters<valT>(lsegment, comp, vec_split_i, vec_split_s);
   default_comm().alltoall(vec_split_s, vec_rsizes, 1);
-
+  LOG;
   /* prepare data to send and receive */
   std::exclusive_scan(vec_rsizes.begin(), vec_rsizes.end(),
                       vec_rindices.begin(), 0);
@@ -404,7 +409,7 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* send and receive data belonging to each node, then redistribute
    * data to achieve size of data equal to size of local segment */
-
+  LOG;
   MPI_Request req_recvelems;
   default_comm().i_all_gather(_recv_elems, vec_recv_elems, &req_recvelems);
 
@@ -418,6 +423,7 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
    * desirable */
+  LOG;
   __detail::local_sort(vec_recvdata, comp);
   MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
 
@@ -442,10 +448,12 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* shift data if necessary, to have exactly the number of elements equal to
    * lsegment size */
+  LOG;
   __detail::shift_data<valT>(shift_left, shift_right, vec_recvdata, vec_left,
                              vec_right);
 
   /* copy results to distributed vector's local segment */
+  LOG;
   __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
                                vec_left, vec_right);
   LOG;
