@@ -126,9 +126,11 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       auto policy = dpl_policy();
       auto &&local_segment = dr::ranges::__detail::local(r);
       DRLOG("GPU dpl::sort(), size {}", rng::size(r));
+      LOG;
       oneapi::dpl::sort(
           policy, dr::__detail::direct_iterator(rng::begin(local_segment)),
           dr::__detail::direct_iterator(rng::end(local_segment)), comp);
+      LOG;
 #else
       assert(false);
 #endif
