@@ -22,6 +22,8 @@
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/mhp/global.hpp>
 
+#define LOG fmt::print("{}:{}:{}\n", default_comm().rank(), __FILE__, __LINE__);
+
 namespace dr::mhp {
 
 namespace __detail {
@@ -120,6 +122,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
   if (rng::size(r) >= 2) {
     if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+      LOG;
       auto policy = dpl_policy();
       auto &&local_segment = dr::ranges::__detail::local(r);
       DRLOG("GPU dpl::sort(), size {}", rng::size(r));
@@ -130,6 +133,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
       assert(false);
 #endif
     } else {
+      LOG;
       DRLOG("cpu rng::sort, size {}", rng::size(r));
       rng::sort(rng::begin(r), rng::end(r), comp);
     }
@@ -139,7 +143,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 template <typename Compare>
 void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
                      auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
-
+  LOG;
   while (vidx < default_comm().size() && segidx < rng::size(ls)) {
     if (comp(vec_v[vidx - 1], ls[segidx])) {
       vec_i[vidx] = segidx;
@@ -156,6 +160,7 @@ template <typename valT, typename Compare, typename Seg>
 void splitters(Seg &lsegment, Compare &&comp,
                std::vector<std::size_t> &vec_split_i,
                std::vector<std::size_t> &vec_split_s) {
+  LOG;
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
   assert(rng::size(vec_split_i) == _comm_size);
@@ -171,6 +176,7 @@ void splitters(Seg &lsegment, Compare &&comp,
    * each segment into equal parts */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    LOG;
     std::vector<sycl::event> events;
 
     for (std::size_t _i = 0; _i < rng::size(vec_lmedians) - 1; _i++) {
@@ -188,6 +194,7 @@ void splitters(Seg &lsegment, Compare &&comp,
     assert(false);
 #endif
   } else {
+    LOG;
     for (std::size_t _i = 0; _i < rng::size(vec_lmedians) - 1; _i++) {
       assert(_i * _step_m < rng::size(lsegment));
       vec_lmedians[_i] = lsegment[_i * _step_m];
@@ -212,6 +219,7 @@ void splitters(Seg &lsegment, Compare &&comp,
    * sycl_copy takes most of the execution time of the sort procedure */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    LOG;
     std::vector<valT> vec_lseg_tmp(rng::size(lsegment));
     sycl_copy(rng::data(lsegment), rng::data(vec_lseg_tmp),
               rng::size(lsegment));
@@ -222,6 +230,7 @@ void splitters(Seg &lsegment, Compare &&comp,
     assert(false);
 #endif
   } else {
+    LOG;
     _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
                     vec_split_s);
   }
@@ -234,7 +243,7 @@ template <typename valT>
 void shift_data(const int64_t shift_left, const int64_t shift_right,
                 buffer<valT> &vec_recvdata, buffer<valT> &vec_left,
                 buffer<valT> &vec_right) {
-
+  LOG;
   const std::size_t _comm_rank = default_comm().rank();
 
   MPI_Request req_l, req_r;
@@ -264,6 +273,7 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
 
     if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+      LOG;
       sycl_queue().copy<valT>(rng::data(vec_recvdata),
                               rng::data(vec_left) + shift_left,
                               rng::size(vec_recvdata));
@@ -271,6 +281,7 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
       assert(false);
 #endif
     } else {
+      LOG;
       memcpy(rng::data(vec_left) + shift_left, rng::data(vec_recvdata),
              rng::size(vec_recvdata));
     }
@@ -281,7 +292,7 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
     MPI_Wait(&req_r, &stat_r);
   } else {
     // enough data in recv buffer
-
+    LOG;
     if (shift_left < 0) {
       default_comm().isend(rng::data(vec_recvdata), -shift_left, _comm_rank - 1,
                            &req_l);
@@ -290,7 +301,7 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
       default_comm().irecv(rng::data(vec_left), rng::size(vec_left),
                            _comm_rank - 1, &req_l);
     }
-
+    LOG;
     if (shift_right > 0) {
       assert(shift_right == static_cast<int64_t>(rng::size(vec_right)));
       default_comm().irecv(rng::data(vec_right), rng::size(vec_right),
@@ -300,11 +311,12 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
                                shift_right,
                            -shift_right, _comm_rank + 1, &req_r);
     }
-
+    LOG;
     if (shift_left != 0)
       MPI_Wait(&req_l, &stat_l);
     if (shift_right != 0)
       MPI_Wait(&req_r, &stat_r);
+    LOG;
   }
 }
 
@@ -312,6 +324,7 @@ template <typename valT>
 void copy_results(auto &lsegment, const int64_t shift_left,
                   const int64_t shift_right, buffer<valT> &vec_recvdata,
                   buffer<valT> &vec_left, buffer<valT> &vec_right) {
+  LOG;
   const std::size_t invalidate_left = std::max(-shift_left, 0L);
   const std::size_t invalidate_right = std::max(-shift_right, 0L);
 
@@ -322,6 +335,7 @@ void copy_results(auto &lsegment, const int64_t shift_left,
 
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    LOG;
     sycl::event e_l, e_d, e_r;
 
     if (size_l > 0)
@@ -341,6 +355,7 @@ void copy_results(auto &lsegment, const int64_t shift_left,
     assert(false);
 #endif
   } else {
+    LOG;
     if (size_l > 0)
       std::memcpy(rng::data(lsegment), rng::data(vec_left),
                   size_l * sizeof(valT));
@@ -356,7 +371,7 @@ void copy_results(auto &lsegment, const int64_t shift_left,
 
 template <dr::distributed_range R, typename Compare>
 void dist_sort(R &r, Compare &&comp) {
-
+  LOG;
   using valT = typename R::value_type;
 
   const std::size_t _comm_rank = default_comm().rank();
@@ -431,6 +446,7 @@ void dist_sort(R &r, Compare &&comp) {
   /* copy results to distributed vector's local segment */
   __detail::copy_results<valT>(lsegment, shift_left, shift_right, vec_recvdata,
                                vec_left, vec_right);
+  LOG;
 } // __detail::dist_sort
 
 } // namespace __detail
