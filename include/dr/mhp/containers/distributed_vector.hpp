@@ -38,8 +38,7 @@ public:
           "segm_offset:{}, size:{}, peer:{})",
           dst, offset, datalen, segment_index);
 
-#if (MPI_VERSION >= 4) ||                                                      \
-    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+#if MPI_SUPPORTS_RGET_C
     // 64-bit API inside
     win_.get(dst, datalen, segment_index, offset);
 #else
@@ -60,8 +59,7 @@ public:
           "src:{}, size:{}, peer:{})",
           offset, src, datalen, segment_index);
 
-#if (MPI_VERSION >= 4) ||                                                      \
-    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+#if MPI_SUPPORTS_RGET_C
     // 64-bit API inside
     win_.put(src, datalen, segment_index, offset);
 #else
@@ -73,7 +71,6 @@ public:
       off += s;
       remainder -= s;
     }
-
 #endif
   }
 

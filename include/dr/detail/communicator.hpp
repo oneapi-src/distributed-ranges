@@ -4,6 +4,10 @@
 
 #pragma once
 
+#define MPI_SUPPORTS_RGET_C                                                    \
+  (MPI_VERSION >= 4) ||                                                        \
+      (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+
 namespace dr {
 
 class communicator {
@@ -228,7 +232,7 @@ public:
   void create(communicator comm, void *data, std::size_t size) {
     local_data_ = data;
     communicator_ = comm;
-    DRLOG("win create:: size: {} data:{}", (MPI_Aint)size, data);
+    DRLOG("win create:: size: {} data:{}", size, data);
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
 
@@ -255,8 +259,7 @@ public:
            std::size_t disp) const {
     DRLOG("MPI comm get:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
-#if (MPI_VERSION >= 4) ||                                                      \
-    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+#if MPI_SUPPORTS_RGET_C
     MPI_Rget_c(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
     assert(
@@ -273,11 +276,10 @@ public:
 
   void put(const void *src, std::size_t size, std::size_t rank,
            std::size_t disp) const {
-    DRLOG("MPI comm put:: ({}:{}:{})", rank, disp, (int)size);
+    DRLOG("MPI comm put:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
 
-#if (MPI_VERSION >= 4) ||                                                      \
-    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+#if MPI_SUPPORTS_RGET_C
     MPI_Rput_c(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
     // MPI_Rput origin_count is 32-bit signed int - check range
@@ -287,9 +289,9 @@ public:
     MPI_Rput(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #endif
 
-    DRLOG("MPI comm wait:: ({}:{}:{})", rank, disp, (MPI_Aint)size);
+    DRLOG("MPI comm wait:: ({}:{}:{})", rank, disp, size);
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-    DRLOG("MPI comm wait finished:: ({}:{}:{})", rank, disp, (MPI_Aint)size);
+    DRLOG("MPI comm wait finished:: ({}:{}:{})", rank, disp, size);
   }
 
   void fence() const {
