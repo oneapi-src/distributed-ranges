@@ -38,7 +38,20 @@ public:
           "segm_offset:{}, size:{}, peer:{})",
           dst, offset, datalen, segment_index);
 
+#if (MPI_VERSION >= 4) ||                                                      \
+    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+    // 64-bit API inside
     win_.get(dst, datalen, segment_index, offset);
+#else
+    for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
+      std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
+      DRLOG("{}:{} win_.get total {} now {} bytes at off {}, dst offset {}",
+            default_comm().rank(), __LINE__, datalen, s, off, offset + off);
+      win_.get((uint8_t *)dst + off, s, segment_index, offset + off);
+      off += s;
+      remainder -= s;
+    }
+#endif
   }
 
   void putmem(void const *src, std::size_t offset, std::size_t datalen,
@@ -46,7 +59,21 @@ public:
     DRLOG("calling MPI put(segm_offset:{}, "
           "src:{}, size:{}, peer:{})",
           offset, src, datalen, segment_index);
+
+#if (MPI_VERSION >= 4) ||                                                      \
+    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+    // 64-bit API inside
     win_.put(src, datalen, segment_index, offset);
+#else
+    for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
+      std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
+      DRLOG("{}:{} win_.put {} bytes at off {}, dst offset {}",
+            default_comm().rank(), __LINE__, s, off, offset + off);
+      win_.put((uint8_t *)src + off, s, segment_index, offset + off);
+      off += s;
+      remainder -= s;
+    }
+#endif
   }
 
   std::size_t getrank() { return win_.communicator().rank(); }

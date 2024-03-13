@@ -15,29 +15,38 @@ template <rng::forward_range X> void fill_random(X &&x) {
 class DRSortFixture : public benchmark::Fixture {
 protected:
   xhp::distributed_vector<T> *a;
+  xhp::distributed_vector<T> *vec;
+  std::vector<T> local_vec;
 
 public:
   void SetUp(::benchmark::State &) {
     a = new xhp::distributed_vector<T>(default_vector_size);
-    std::vector<T> local(default_vector_size);
-    fill_random(local);
-    xhp::copy(local, rng::begin(*a));
+    vec = new xhp::distributed_vector<T>(default_vector_size);
+    local_vec = std::vector<T>(default_vector_size);
+    fill_random(local_vec);
+    xhp::copy(local_vec, rng::begin(*a));
   }
 
-  void TearDown(::benchmark::State &) { delete a; }
+  void TearDown(::benchmark::State &state) {
+    // copy back to check if last sort really sorted
+    xhp::copy(*vec, rng::begin(local_vec));
+    delete a;
+    delete vec;
+
+    if (!rng::is_sorted(local_vec)) {
+      state.SkipWithError("mhp sort did not sort the vector");
+    }
+  }
 };
 
 BENCHMARK_DEFINE_F(DRSortFixture, Sort_DR)(benchmark::State &state) {
   Stats stats(state, sizeof(T) * a->size());
-  xhp::distributed_vector<T> vec(a->size());
   for (auto _ : state) {
     state.PauseTiming();
-    xhp::copy(*a, rng::begin(vec));
+    xhp::copy(*a, rng::begin(*vec));
     stats.rep();
     state.ResumeTiming();
-
-    // sort not implemented in mhp yet
-    xhp::sort(vec);
+    xhp::sort(*vec);
   }
 }
 
