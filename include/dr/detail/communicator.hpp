@@ -259,8 +259,8 @@ public:
            std::size_t disp) const {
     DRLOG("MPI comm get:: ({}:{}:{})", rank, disp, size);
     MPI_Request request;
-#if (MPI_VERSION >= 4) ||                                                        \
-      (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+#if (MPI_VERSION >= 4) ||                                                      \
+    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
     MPI_Rget_c(dst, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
     assert(
