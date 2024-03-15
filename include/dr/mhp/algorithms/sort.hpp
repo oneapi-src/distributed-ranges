@@ -140,31 +140,49 @@ template <typename T, typename Compare>
 void local_merge(buffer<T> &v, std::vector<std::size_t> &sizes,
                  Compare &&comp) {
 
-  std::vector<int> nind1(sizes.size()), nind2((sizes.size() + 1) / 2);
-  std::exclusive_scan(sizes.begin(), sizes.end(), nind1.begin(), 0);
+  std::vector<int> chunks_ind(sizes.size()),
+      chunks_ind2((sizes.size() + 1) / 2);
+  std::exclusive_scan(sizes.begin(), sizes.end(), chunks_ind.begin(), 0);
 
+#ifdef SYCL_LANGUAGE_VERSION
   auto policy = dpl_policy();
-  int segno = nind1.size();
+#endif
+
+  int segno = chunks_ind.size();
 
   while (segno > 1) {
     int i;
     for (i = 0; i < segno / 2; i++) {
-      auto first = dr::__detail::direct_iterator(v.begin() + nind1[2 * i]);
-      auto middle = dr::__detail::direct_iterator(v.begin() + nind1[2 * i + 1]);
-      auto last =
-          (2 * i + 2 < segno)
-              ? dr::__detail::direct_iterator(v.begin() + nind1[2 * i + 2])
-              : dr::__detail::direct_iterator(v.end());
-      oneapi::dpl::inplace_merge(policy, first, middle, last, comp);
-      nind2[i] = nind1[2 * i];
+      if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+        auto first =
+            dr::__detail::direct_iterator(v.begin() + chunks_ind[2 * i]);
+        auto middle =
+            dr::__detail::direct_iterator(v.begin() + chunks_ind[2 * i + 1]);
+        auto last = (2 * i + 2 < segno)
+                        ? dr::__detail::direct_iterator(v.begin() +
+                                                        chunks_ind[2 * i + 2])
+                        : dr::__detail::direct_iterator(v.end());
+        oneapi::dpl::inplace_merge(policy, first, middle, last, comp);
+#else
+        assert(false);
+#endif
+      } else {
+        auto first = v.begin() + chunks_ind[2 * i];
+        auto middle = v.begin() + chunks_ind[2 * i + 1];
+        auto last =
+            (2 * i + 2 < segno) ? v.begin() + chunks_ind[2 * i + 2] : v.end();
+        std::inplace_merge(first, middle, last, comp);
+      }
+      chunks_ind2[i] = chunks_ind[2 * i];
     }
     if (segno % 2 == 1) {
-      nind2[i] = nind1[2 * i];
+      chunks_ind2[i] = chunks_ind[2 * i];
       segno += 1;
     }
 
     segno /= 2;
-    std::swap(nind1, nind2);
+    std::swap(chunks_ind, chunks_ind2);
   }
 }
 
