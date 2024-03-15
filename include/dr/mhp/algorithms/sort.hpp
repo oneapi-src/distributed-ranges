@@ -136,6 +136,38 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
   }
 }
 
+template <typename T, typename Compare>
+void local_merge(buffer<T> &v, std::vector<std::size_t> &sizes,
+                 Compare &&comp) {
+
+  std::vector<int> nind1(sizes.size()), nind2((sizes.size() + 1) / 2);
+  std::exclusive_scan(sizes.begin(), sizes.end(), nind1.begin(), 0);
+
+  auto policy = dpl_policy();
+  int segno = nind1.size();
+
+  while (segno > 1) {
+    int i;
+    for (i = 0; i < segno / 2; i++) {
+      auto first = dr::__detail::direct_iterator(v.begin() + nind1[2 * i]);
+      auto middle = dr::__detail::direct_iterator(v.begin() + nind1[2 * i + 1]);
+      auto last =
+          (2 * i + 2 < segno)
+              ? dr::__detail::direct_iterator(v.begin() + nind1[2 * i + 2])
+              : dr::__detail::direct_iterator(v.end());
+      oneapi::dpl::inplace_merge(policy, first, middle, last, comp);
+      nind2[i] = nind1[2 * i];
+    }
+    if (segno % 2 == 1) {
+      nind2[i] = nind1[2 * i];
+      segno += 1;
+    }
+
+    segno /= 2;
+    std::swap(nind1, nind2);
+  }
+}
+
 template <typename Compare>
 void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
                      auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
@@ -392,9 +424,8 @@ void dist_sort(R &r, Compare &&comp) {
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
                            vec_rsizes, vec_rindices);
 
-  /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
-   * desirable */
-  __detail::local_sort(vec_recvdata, comp);
+  __detail::local_merge(vec_recvdata, vec_rsizes, comp);
+
   // MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
 
   _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());
