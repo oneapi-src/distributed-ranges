@@ -187,8 +187,9 @@ void local_merge(buffer<T> &v, std::vector<std::size_t> &sizes,
 }
 
 template <typename Compare>
-void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
-                     auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
+void _find_split_idx(std::size_t &vidx, Compare &&comp, auto &ls, auto &vec_v,
+                     auto &vec_i, auto &vec_s) {
+  std::size_t segidx = 0;
   while (vidx < default_comm().size() && segidx < rng::size(ls)) {
     if (comp(vec_v[vidx - 1], ls[segidx])) {
       vec_i[vidx] = segidx;
@@ -255,7 +256,7 @@ void splitters(Seg &lsegment, Compare &&comp,
     vec_split_v[_i] = vec_gmedians[global_median_idx];
   }
 
-  std::size_t segidx = 0, vidx = 1;
+  std::size_t vidx = 1;
 
   /* The while loop is executed in host memory, and together with
    * sycl_copy takes most of the execution time of the sort procedure */
@@ -265,13 +266,13 @@ void splitters(Seg &lsegment, Compare &&comp,
     sycl_copy(rng::data(lsegment), rng::data(vec_lseg_tmp),
               rng::size(lsegment));
 
-    _find_split_idx(vidx, segidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
+    _find_split_idx(vidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
                     vec_split_s);
 #else
     assert(false);
 #endif
   } else {
-    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
+    _find_split_idx(vidx, comp, lsegment, vec_split_v, vec_split_i,
                     vec_split_s);
   }
 
