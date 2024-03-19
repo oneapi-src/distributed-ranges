@@ -139,13 +139,31 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 template <typename Compare>
 void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
                      auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
-  while (vidx < default_comm().size() && segidx < rng::size(ls)) {
-    if (comp(vec_v[vidx - 1], ls[segidx])) {
-      vec_i[vidx] = segidx;
-      vec_s[vidx - 1] = vec_i[vidx] - vec_i[vidx - 1];
-      vidx++;
-    } else {
-      segidx++;
+  if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    auto &&local_policy = dpl_policy();
+    oneapi::dpl::lower_bound(
+        local_policy, dr::__detail::direct_iterator(ls.begin()),
+        dr::__detail::direct_iterator(ls.end()),
+        dr::__detail::direct_iterator(vec_v.begin()),
+        dr::__detail::direct_iterator(vec_v.end()),
+        dr::__detail::direct_iterator(vec_i.begin()), comp);
+    auto chunk_size = 0;
+    for (auto idx : vec_i) {
+      vec_s.push_back(idx - chunk_size);
+      chunk_size += idx;
+    }
+#else
+    assert(false);
+#endif
+    auto first = ls.begin();
+    for (auto idx : vec_v) {
+      auto lower = std::lower_bound(ls.begin(), ls.end(), idx, comp);
+      auto idx_lower = rng::distance(ls.begin(), lower);
+      auto chunk_size = rng::distance(first, lower);
+      vec_i.push_back(idx_lower);
+      vec_s.push_back(chunk_size);
+      std::advance(first, chunk_size);
     }
   }
 }
@@ -211,11 +229,7 @@ void splitters(Seg &lsegment, Compare &&comp,
    * sycl_copy takes most of the execution time of the sort procedure */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
-    std::vector<valT> vec_lseg_tmp(rng::size(lsegment));
-    sycl_copy(rng::data(lsegment), rng::data(vec_lseg_tmp),
-              rng::size(lsegment));
-
-    _find_split_idx(vidx, segidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
+    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
                     vec_split_s);
 #else
     assert(false);
