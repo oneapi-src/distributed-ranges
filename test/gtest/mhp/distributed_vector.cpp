@@ -113,3 +113,87 @@ TEST(MhpTests, DistributedVectorGranularity) {
     previous_size = segment.size();
   }
 }
+
+TEST(MhpTests, DistributedVectorSegments) {
+  std::size_t segment_size = 2;
+  std::size_t n = segment_size * 5;
+  auto dist = dr::mhp::distribution().granularity(2);
+  DV dv(n, dist, segment_size);
+
+  EXPECT_EQ(dv.segments().size(), 5);
+}
+
+TEST(MhpTests, DistributedVectorSegmentSize) {
+  std::size_t segment_size = 2;
+  std::size_t n = segment_size * 5;
+  auto dist = dr::mhp::distribution().granularity(2);
+  DV dv(n, dist, segment_size);
+
+  EXPECT_EQ(rng::size(dv.segments()[0]), segment_size);
+}
+
+TEST(MhpTests, DistributedVectorSegmentSizeIndex) {
+  const std::size_t n = 10;
+  std::size_t segment_size = 2;
+  auto dist = dr::mhp::distribution().granularity(2);
+  DV dv(n, dist, segment_size);
+
+  if (comm_rank == 0) {
+    for (std::size_t i = 0; i < n; i++) {
+      dv[i] = i + 10;
+    }
+  }
+  dr::mhp::fence();
+
+  for (std::size_t i = 0; i < n; i++) {
+    EXPECT_EQ(dv[i], i + 10);
+  }
+}
+
+TEST(MhpTests, DistributedVectorSegmentSizeAlgorithms) {
+  const std::size_t n = 10;
+  const std::size_t seg_size = 2;
+  auto dist = dr::mhp::distribution().granularity(2);
+  const int root = 0;
+  DV dv(n, dist, seg_size);
+
+  if (comm_rank == root) {
+    std::vector<int> ref(n);
+    std::iota(ref.begin(), ref.end(), 1);
+
+    std::iota(dv.begin(), dv.end(), 1);
+
+    EXPECT_TRUE(equal(dv, ref));
+
+    std::iota(ref.begin(), ref.end(), 11);
+    std::copy(ref.begin(), ref.end(), dv.begin());
+    EXPECT_TRUE(equal(dv, ref));
+
+    std::iota(ref.begin(), ref.end(), 21);
+    rng::copy(ref, dv.begin());
+    EXPECT_TRUE(equal(dv, ref));
+
+    std::iota(dv.begin(), dv.end(), 31);
+    rng::copy(dv, ref.begin());
+    EXPECT_TRUE(equal(dv, ref));
+  }
+}
+
+TEST(MhpTests, DistributedVectorSegmentSizeCompare) {
+  const std::size_t n = 12;
+  const std::size_t seg_size1 = 2;
+  const std::size_t seg_size2 = 4;
+  auto dist1 = dr::mhp::distribution().granularity(2);
+  auto dist2 = dr::mhp::distribution().granularity(2);
+  DV dv1(n, dist1, seg_size1);
+  DV dv2(n, dist2, seg_size2);
+
+  std::iota(dv1.begin(), dv1.end(), 0);
+  std::iota(dv2.begin(), dv2.end(), 0);
+
+  for (std::size_t i = 0; i < n; i++) {
+    EXPECT_EQ(dv1[i], dv2[i]);
+  }
+
+  EXPECT_EQ(dv1.begin() + 2, dv2.begin() + 2);
+}
