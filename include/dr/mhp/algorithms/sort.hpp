@@ -137,8 +137,8 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 }
 
 template <typename Compare>
-void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
-                     auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
+void _find_split_idx(Compare &&comp, auto &ls, auto &vec_v, auto &vec_i,
+                     auto &vec_s) {
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     auto &&local_policy = dpl_policy();
@@ -148,10 +148,12 @@ void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
         dr::__detail::direct_iterator(vec_v.begin()),
         dr::__detail::direct_iterator(vec_v.end()),
         dr::__detail::direct_iterator(vec_i.begin()), comp);
-    auto chunk_size = 0;
+
+    auto first = ls.begin();
     for (auto idx : vec_i) {
-      vec_s.push_back(idx - chunk_size);
-      chunk_size += idx;
+      auto chunk_size = rng::distance(first, idx);
+      vec_s.push_back(chunk_size);
+      std::advance(first, chunk_size);
     }
 #else
     assert(false);
@@ -223,24 +225,20 @@ void splitters(Seg &lsegment, Compare &&comp,
     vec_split_v[_i] = vec_gmedians[global_median_idx];
   }
 
-  std::size_t segidx = 0, vidx = 1;
-
   /* The while loop is executed in host memory, and together with
    * sycl_copy takes most of the execution time of the sort procedure */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
-    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
-                    vec_split_s);
+    _find_split_idx(comp, lsegment, vec_split_v, vec_split_i, vec_split_s);
 #else
     assert(false);
 #endif
   } else {
-    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
-                    vec_split_s);
+    _find_split_idx(comp, lsegment, vec_split_v, vec_split_i, vec_split_s);
   }
 
-  assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
-  vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
+  assert(rng::size(lsegment) > vec_split_i.back());
+  vec_split_s.push_back(rng::size(lsegment) - vec_split_i.back());
 }
 
 template <typename valT>
