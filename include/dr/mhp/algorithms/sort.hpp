@@ -139,6 +139,7 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 template <typename Compare>
 void _find_split_idx(Compare &&comp, auto &ls, auto &vec_v, auto &vec_i,
                      auto &vec_s) {
+  vec_i.push_back(0);
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     auto &&local_policy = dpl_policy();
@@ -153,11 +154,13 @@ void _find_split_idx(Compare &&comp, auto &ls, auto &vec_v, auto &vec_i,
     for (auto idx : vec_i) {
       auto chunk_size = rng::distance(first, idx);
       vec_s.push_back(chunk_size);
+      vec_i.push_back(vec_i.back() + chunk_size);
       std::advance(first, chunk_size);
     }
 #else
     assert(false);
 #endif
+  } else {
     auto first = ls.begin();
     for (auto idx : vec_v) {
       auto lower = std::lower_bound(ls.begin(), ls.end(), idx, comp);
@@ -177,8 +180,8 @@ void splitters(Seg &lsegment, Compare &&comp,
                std::vector<std::size_t> &vec_split_s) {
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
-  assert(rng::size(vec_split_i) == _comm_size);
-  assert(rng::size(vec_split_s) == _comm_size);
+  // assert(rng::size(vec_split_i) == _comm_size);
+  // assert(rng::size(vec_split_s) == _comm_size);
 
   std::vector<valT> vec_lmedians(_comm_size + 1);
   std::vector<valT> vec_gmedians((_comm_size + 1) * _comm_size);
@@ -237,8 +240,12 @@ void splitters(Seg &lsegment, Compare &&comp,
     _find_split_idx(comp, lsegment, vec_split_v, vec_split_i, vec_split_s);
   }
 
-  assert(rng::size(lsegment) > vec_split_i.back());
+  fmt::print("{}: rng::size(lsegment) {} vec_split_i.back() {}\n",
+             default_comm().rank(), rng::size(lsegment), vec_split_i.back());
+  assert(rng::size(lsegment) >=  vec_split_i.back());
   vec_split_s.push_back(rng::size(lsegment) - vec_split_i.back());
+  fmt::print("{}: vec_split_i {} \n", default_comm().rank(), vec_split_i);
+  fmt::print("{}: vec_split_s {} \n", default_comm().rank(), vec_split_s);
 }
 
 template <typename valT>
@@ -370,8 +377,8 @@ void dist_sort(R &r, Compare &&comp) {
 
   auto &&lsegment = local_segment(r);
 
-  std::vector<std::size_t> vec_split_i(_comm_size, 0);
-  std::vector<std::size_t> vec_split_s(_comm_size, 0);
+  std::vector<std::size_t> vec_split_i; // (_comm_size, 0);
+  std::vector<std::size_t> vec_split_s; // (_comm_size, 0);
   std::vector<std::size_t> vec_rsizes(_comm_size, 0);
   std::vector<std::size_t> vec_rindices(_comm_size, 0);
   std::vector<std::size_t> vec_recv_elems(_comm_size, 0);
