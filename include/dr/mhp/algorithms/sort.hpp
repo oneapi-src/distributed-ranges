@@ -139,29 +139,31 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 template <typename Compare>
 void _find_split_idx(Compare &&comp, auto &ls, auto &vec_v, auto &vec_i,
                      auto &vec_s) {
-  vec_i.push_back(0);
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    fmt::print("{}: oneapi::dpl::lower_bound\n", default_comm().rank());
     auto &&local_policy = dpl_policy();
     oneapi::dpl::lower_bound(
         local_policy, dr::__detail::direct_iterator(ls.begin()),
-        dr::__detail::direct_iterator(ls.end()),
-        dr::__detail::direct_iterator(vec_v.begin()),
-        dr::__detail::direct_iterator(vec_v.end()),
-        dr::__detail::direct_iterator(vec_i.begin()), comp);
+        dr::__detail::direct_iterator(ls.end()), vec_v.begin(), vec_v.end(),
+        vec_i.begin() + 1, comp);
 
-    auto first = ls.begin();
-    for (auto idx : vec_i) {
-      auto chunk_size = rng::distance(first, idx);
+    for (int _i = 1; _i < vec_i.size(); _i++) {
+      auto chunk_size = vec_i[_i] - vec_i[_i - 1];
       vec_s.push_back(chunk_size);
-      vec_i.push_back(vec_i.back() + chunk_size);
-      std::advance(first, chunk_size);
     }
+    vec_s.push_back(ls.size() - vec_i.back());
+
+    fmt::print("{}: vec_v {}\n", default_comm().rank(), vec_v);
+    fmt::print("{}: vec_i {}\n", default_comm().rank(), vec_i);
+    fmt::print("{}: vec_s {}\n", default_comm().rank(), vec_s);
+
 #else
     assert(false);
 #endif
   } else {
     auto first = ls.begin();
+    vec_i.resize(1);
     for (auto idx : vec_v) {
       auto lower = std::lower_bound(ls.begin(), ls.end(), idx, comp);
       auto idx_lower = rng::distance(ls.begin(), lower);
@@ -170,6 +172,7 @@ void _find_split_idx(Compare &&comp, auto &ls, auto &vec_v, auto &vec_i,
       vec_s.push_back(chunk_size);
       std::advance(first, chunk_size);
     }
+    vec_s.push_back(ls.size() - vec_i.back());
   }
 }
 
@@ -180,7 +183,7 @@ void splitters(Seg &lsegment, Compare &&comp,
                std::vector<std::size_t> &vec_split_s) {
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
-  // assert(rng::size(vec_split_i) == _comm_size);
+  assert(rng::size(vec_split_i) == _comm_size);
   // assert(rng::size(vec_split_s) == _comm_size);
 
   std::vector<valT> vec_lmedians(_comm_size + 1);
@@ -242,8 +245,8 @@ void splitters(Seg &lsegment, Compare &&comp,
 
   fmt::print("{}: rng::size(lsegment) {} vec_split_i.back() {}\n",
              default_comm().rank(), rng::size(lsegment), vec_split_i.back());
-  assert(rng::size(lsegment) >=  vec_split_i.back());
-  vec_split_s.push_back(rng::size(lsegment) - vec_split_i.back());
+  assert(rng::size(lsegment) >= vec_split_i.back());
+  // vec_split_s.push_back(rng::size(lsegment) - vec_split_i.back());
   fmt::print("{}: vec_split_i {} \n", default_comm().rank(), vec_split_i);
   fmt::print("{}: vec_split_s {} \n", default_comm().rank(), vec_split_s);
 }
@@ -377,7 +380,7 @@ void dist_sort(R &r, Compare &&comp) {
 
   auto &&lsegment = local_segment(r);
 
-  std::vector<std::size_t> vec_split_i; // (_comm_size, 0);
+  std::vector<std::size_t> vec_split_i(_comm_size, 0);
   std::vector<std::size_t> vec_split_s; // (_comm_size, 0);
   std::vector<std::size_t> vec_rsizes(_comm_size, 0);
   std::vector<std::size_t> vec_rindices(_comm_size, 0);
