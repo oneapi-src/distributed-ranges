@@ -137,16 +137,110 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 }
 
 template <typename Compare>
-void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
-                     auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
-  while (vidx < default_comm().size() && segidx < rng::size(ls)) {
-    if (comp(vec_v[vidx - 1], ls[segidx])) {
-      vec_i[vidx] = segidx;
-      vec_s[vidx - 1] = vec_i[vidx] - vec_i[vidx - 1];
-      vidx++;
-    } else {
-      segidx++;
+void _find_split_idx(Compare &&comp, auto &ls, auto &vec_v, auto &vec_i,
+                     auto &vec_s) {
+
+  //   fmt::print("{}: ls {}\n", default_comm().rank(), ls);
+  //   // for all same iterate over vec_v until a different element found, find
+  //   idx, use upper_bound if (mhp::use_sycl()) {
+  // #ifdef SYCL_LANGUAGE_VERSION
+  //     fmt::print("{}: oneapi::dpl::lower_bound\n", default_comm().rank());
+  //     auto &&local_policy = dpl_policy();
+  //     oneapi::dpl::lower_bound(
+  //         local_policy, dr::__detail::direct_iterator(ls.begin()),
+  //         dr::__detail::direct_iterator(ls.end()), vec_v.begin(),
+  //         vec_v.end(), vec_i.begin() + 1, comp);
+
+  //     for (std::size_t _i = 1; _i < vec_i.size(); _i++) {
+  //       auto chunk_size = vec_i[_i] - vec_i[_i - 1];
+  //       vec_s[_i - 1] = chunk_size;
+  //     }
+  //     vec_s[rng::size(vec_i) - 1] = rng::size(ls) - vec_i.back();
+
+  //     fmt::print("{}: vec_v {}\n", default_comm().rank(), vec_v);
+  //     fmt::print("{}: vec_i {}\n", default_comm().rank(), vec_i);
+  //     fmt::print("{}: vec_s {}\n", default_comm().rank(), vec_s);
+
+  // #else
+  //     assert(false);
+  // #endif
+  //   } else {
+  //     auto first = ls.begin();
+  //     fmt::print("{}: vec_v {}\n", default_comm().rank(), vec_v);
+  //     // fmt::print("{}: vec_v size {}\n", default_comm().rank(),
+  //     // rng::size(vec_v)); vec_i.resize(1);
+  //     for (std::size_t i = 1; i <= rng::size(vec_v); i++) {
+  //       auto idx = vec_v[i - 1];
+  //       fmt::print("{}: vec_v idx {}\n", default_comm().rank(), idx);
+  //       auto lower = std::lower_bound(ls.begin(), ls.end(), idx, comp);
+  //       std::size_t idx_lower = rng::distance(ls.begin(), lower);
+  //       // necessary e.g. for the 'AllSame' case
+  //       while(idx_lower < rng::size(ls)-1) {
+  //         if(*lower == *(lower+1)) {
+  //           lower +=1;
+  //           idx_lower+=1;
+  //         }
+  //       }
+  //       // update last values vec_i & vec_s
+  //       // if (i!=1 && idx == vec_v[i-2]) {
+  //       //   // std::size_t next = vec_i[i-1] +1;
+  //       //   vec_i[i-1] += 1;
+  //       //   vec_s[i-2] += 1;
+  //       //   std::advance(first, 1);
+  //       //   continue;
+  //       // }
+  //       fmt::print("{}: idx_lower {}\n", default_comm().rank(), idx_lower);
+  //       auto chunk_size = rng::distance(first, lower);
+  //       fmt::print("{}: chunk_size {}\n", default_comm().rank(), chunk_size);
+  //       vec_i[i] = idx_lower;
+  //       vec_s[i - 1] = chunk_size;
+  //       std::advance(first, chunk_size);
+  //     }
+  //     vec_s[vec_i.size() - 1] = ls.size() - vec_i.back();
+  //   }
+
+  auto first = ls.begin();
+  fmt::print("{}: vec_v {}\n", default_comm().rank(), vec_v);
+  // fmt::print("{}: vec_v size {}\n", default_comm().rank(),
+  // rng::size(vec_v)); vec_i.resize(1);
+  for (std::size_t i = 1; i <= rng::size(vec_v); i++) {
+    auto idx = vec_v[i - 1];
+    fmt::print("{}: vec_v idx {}\n", default_comm().rank(), idx);
+    auto lower = std::lower_bound(ls.begin(), ls.end(), idx, comp);
+    std::size_t idx_lower = rng::distance(ls.begin(), lower);
+    // necessary e.g. for the 'AllSame' case
+    while (idx_lower < rng::size(ls) - 1) {
+      if (*lower == *(lower + 1)) {
+        lower += 1;
+        idx_lower += 1;
+      } else {
+        break;
+      }
     }
+    // update last values vec_i & vec_s
+    // if (i!=1 && idx == vec_v[i-2]) {
+    //   // std::size_t next = vec_i[i-1] +1;
+    //   vec_i[i-1] += 1;
+    //   vec_s[i-2] += 1;
+    //   std::advance(first, 1);
+    //   continue;
+    // }
+    fmt::print("{}: idx_lower {}\n", default_comm().rank(), idx_lower);
+    auto chunk_size = rng::distance(first, lower);
+    fmt::print("{}: chunk_size {}\n", default_comm().rank(), chunk_size);
+    vec_i[i] = idx_lower;
+    vec_s[i - 1] = chunk_size;
+    std::advance(first, chunk_size);
+    // if (first == ls.end()-1) {
+    //   break;
+    // }
+  }
+  std::size_t vec_s_sum = std::accumulate(vec_s.begin(), vec_s.end(), 0);
+  // fmt::print("{}: ls_Sum {}\n", default_comm().rank(), ls_sum);
+
+  // in case all chunks are already included
+  if (ls.size() > vec_s_sum) {
+    vec_s[vec_i.size() - 1] = ls.size() - vec_i.back();
   }
 }
 
@@ -205,28 +299,24 @@ void splitters(Seg &lsegment, Compare &&comp,
     vec_split_v[_i] = vec_gmedians[global_median_idx];
   }
 
-  std::size_t segidx = 0, vidx = 1;
-
   /* The while loop is executed in host memory, and together with
    * sycl_copy takes most of the execution time of the sort procedure */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
-    std::vector<valT> vec_lseg_tmp(rng::size(lsegment));
-    sycl_copy(rng::data(lsegment), rng::data(vec_lseg_tmp),
-              rng::size(lsegment));
-
-    _find_split_idx(vidx, segidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
-                    vec_split_s);
+    _find_split_idx(comp, lsegment, vec_split_v, vec_split_i, vec_split_s);
 #else
     assert(false);
 #endif
   } else {
-    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
-                    vec_split_s);
+    _find_split_idx(comp, lsegment, vec_split_v, vec_split_i, vec_split_s);
   }
 
-  assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
-  vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
+  fmt::print("{}: rng::size(lsegment) {} vec_split_i.back() {}\n",
+             default_comm().rank(), rng::size(lsegment), vec_split_i.back());
+  assert(rng::size(lsegment) >= vec_split_i.back());
+  // vec_split_s.push_back(rng::size(lsegment) - vec_split_i.back());
+  fmt::print("{}: vec_split_i {} \n", default_comm().rank(), vec_split_i);
+  fmt::print("{}: vec_split_s {} \n", default_comm().rank(), vec_split_s);
 }
 
 template <typename valT>
@@ -248,7 +338,46 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
     DRLOG("Get from right first, recvdata size {} shift left {}",
           rng::size(vec_recvdata), shift_left);
     // ** This will never happen, because values eq to split go left **
-    assert(false);
+    assert(shift_right > 0);
+
+    default_comm().irecv(rng::data(vec_right), rng::size(vec_right),
+                         _comm_rank + 1, &req_r);
+    fmt::print("{}: shift_left {}\n", default_comm().rank(), shift_left);
+
+    MPI_Wait(&req_r, &stat_r);
+    fmt::print("{}: AA vec_right {}\n", default_comm().rank(), vec_right);
+    fmt::print("{}: AA vec_recv_data {}\n", default_comm().rank(),
+               vec_recvdata);
+    fmt::print("{}: AA vec_recv_data size  {}\n", default_comm().rank(),
+               rng::size(vec_recvdata));
+    vec_recvdata.resize(shift_right + rng::size(vec_recvdata));
+    fmt::print("{}: AA vec_recv_data size after {}\n", default_comm().rank(),
+               rng::size(vec_recvdata));
+    // fmt::print("{}: AA vec_recv_data size after END {}\n",
+    // default_comm().rank(),
+    //            vec_recvdata.end() - shift_right);
+    if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+      sycl_queue().copy<valT>(rng::data(vec_right),
+                              vec_recvdata.end() - shift_right,
+                              rng::size(vec_right));
+#else
+      assert(false);
+#endif
+    } else {
+      memcpy(vec_recvdata.end() - shift_right, rng::data(vec_right),
+             rng::size(vec_right));
+    }
+
+    fmt::print("{}: vec_right size {}\n", default_comm().rank(),
+               rng::size(vec_right));
+    fmt::print("{}: vec_recvdata{}\n", default_comm().rank(), vec_recvdata);
+    fmt::print("{}: shift_right{}\n", default_comm().rank(), shift_right);
+
+    default_comm().isend(rng::data(vec_recvdata), -shift_left, _comm_rank - 1,
+                         &req_l);
+    MPI_Wait(&req_l, &stat_l);
+
   } else if (static_cast<int64_t>(rng::size(vec_recvdata)) < -shift_right) {
     // Too little data in buffer to shift right - first get from left, then
     // send right
@@ -432,6 +561,8 @@ template <dr::distributed_range R, typename Compare = std::less<>>
 void sort(R &r, Compare &&comp = Compare()) {
 
   using valT = typename R::value_type;
+
+  fmt::print("{}: vec r {}\n", default_comm().rank(), r);
 
   std::size_t _comm_rank = default_comm().rank();
   std::size_t _comm_size = default_comm().size(); // dr-style ignore
