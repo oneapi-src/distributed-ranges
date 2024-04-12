@@ -18,7 +18,7 @@ add_executable(
 add_executable(shp-tests-3 shp-tests.cpp containers-3.cpp copy-3.cpp)
 
 # skeleton for rapid builds of individual tests, feel free to change this
-add_executable(shp-quick-test shp-tests.cpp ../common/transform.cpp)
+add_executable(shp-quick-test shp-tests.cpp ../common/sort.cpp)
 target_compile_definitions(shp-quick-test PRIVATE QUICK_TEST)
 
 foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)

@@ -12,6 +12,11 @@
 #include <dr/concepts/concepts.hpp>
 #include <dr/detail/onedpl_direct_iterator.hpp>
 #include <dr/shp/init.hpp>
+
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
+#include <omp.h>
 #include <sycl/sycl.hpp>
 
 namespace dr::shp {
@@ -209,6 +214,14 @@ void sort(R &&r, Compare comp = Compare()) {
 
     std::size_t *splitter_i = splitter_indices[segment_id];
 
+    fmt::print("{}: segment_id: {}\n", __LINE__, segment_id);
+    fmt::print("{}: lsegment size: {}\n", __LINE__, rng::size(local_segment));
+
+    for (int _i = 0; _i < n_splitters; _i++) {
+      fmt::print("{}:{} splitter_i[{}] {}\n", segment_id, __LINE__, _i,
+                 splitter_i[_i]);
+    }
+
     auto p_first = rng::begin(local_segment);
     auto p_last = p_first;
     for (std::size_t i = 0; i < n_splitters; i++) {
@@ -236,7 +249,7 @@ void sort(R &&r, Compare comp = Compare()) {
   events.clear();
 
   // Sort each of these new segments
-  for (std::size_t i = 0; i < sorted_segments.size(); i++) {
+  /* for (std::size_t i = 0; i < sorted_segments.size(); i++) {
     auto &&local_policy =
         dr::shp::__detail::dpl_policy(dr::ranges::rank(segments[i]));
     T *seg = sorted_segments[i];
@@ -245,10 +258,103 @@ void sort(R &&r, Compare comp = Compare()) {
     auto e = __detail::sort_async(local_policy, seg, seg + n_elements, comp);
 
     events.push_back(e);
-  }
+  } */
 
-  dr::shp::__detail::wait(events);
-  events.clear();
+  // merge
+  std::vector<std::vector<std::size_t>> chunks_ind(n_segments),
+      chunks_ind2((n_segments + 1) / 2);
+
+  // #pragma omp parallel num_threads(n_segments)
+  for (int t = 0; t < n_segments; t++) {
+    // int t = omp_get_thread_num();
+    fmt::print("{}:{}: omp par\n", t, __LINE__);
+    std::size_t n_elements = sorted_seg_sizes[t];
+
+    fmt::print("{}:{}: n_elements {}\n", t, __LINE__, n_elements);
+    fmt::print("{}:{}: n_splitters {}\n", t, __LINE__, n_splitters);
+
+    auto _segments = n_segments;
+
+    // while (_segments > 1) {
+    {
+      T tmp;
+      for (int i = 0; i < n_elements; i++) {
+        dr::shp::__detail::queue(t)
+            .memcpy(&tmp, &sorted_segments[t][i], sizeof(T))
+            .wait();
+        fmt::print("{}:{}: seg [{}] = {}\n", t, __LINE__, i, tmp);
+      }
+    }
+
+    assert(rng::size(chunks_ind[t]) == 0);
+    chunks_ind[t].push_back(0);
+
+    for (int _i = 0; _i < n_segments; _i++) {
+      int v = chunks_ind[t].back();
+      if (t == 0) {
+        v += splitter_indices[_i][0];
+        fmt::print("{}:{} v={} (1)\n", t, __LINE__, v);
+      } else if (t == n_segments - 1) {
+        v += (rng::size(__detail::local(segments[_i])) -
+              splitter_indices[_i][n_splitters - 1]);
+        fmt::print("{}:{} v={} segsize={} (2)\n", t, __LINE__, v,
+                   rng::size(__detail::local(segments[_i])));
+      } else {
+        v += (splitter_indices[_i][t] - splitter_indices[_i][t - 1]);
+        fmt::print("{}:{} v={} (3)\n", t, __LINE__, v);
+      }
+
+      chunks_ind[t].push_back(v);
+    }
+    fmt::print("{}:{}: chunks_ind[{}] = {} \n", t, __LINE__, t, chunks_ind[t]);
+
+    int s;
+    for (s = 0; s < _segments / 2; s++) {
+      fmt::print("{}:{}: merge loop {}\n", t, __LINE__, s);
+
+      std::size_t f = chunks_ind[t][2 * s];
+      std::size_t m = chunks_ind[t][2 * s + 1];
+      std::size_t l =
+          (2 * s + 2 < _segments) ? chunks_ind[t][2 * s + 2] : n_elements;
+
+      auto first = dr::__detail::direct_iterator(sorted_segments[t] + f);
+      auto middle = dr::__detail::direct_iterator(sorted_segments[t] + m);
+      auto last = dr::__detail::direct_iterator(sorted_segments[t] + l);
+
+      fmt::print("{}:{}: first: {} mid {} last {}\n", t, __LINE__, f, m, l);
+      oneapi::dpl::inplace_merge(
+          __detail::dpl_policy(dr::ranges::rank(segments[t])), first, middle,
+          last, std::forward<Compare>(comp));
+      fmt::print("{}:{}: merge done\n", t, __LINE__);
+
+      // {
+      //   T tmp;
+      //   for (int i = 0; i < n_elements; i++) {
+      //     __detail::queue(t)
+      //         .memcpy(&tmp, &sorted_segments[t][i], sizeof(T))
+      //         .wait();
+      //     fmt::print("{}:{}: mrgd [{}] = {}\n", t, __LINE__, i, tmp);
+      //   }
+      // }
+
+      // if (n_segments % 2 == 1) {
+      //   chunks_ind2[t] = chunks_ind[2 * t];
+      //   n_segments += 1;
+      // }
+
+      //   _segments /= 2;
+      //   std::swap(chunks_ind, chunks_ind2);
+      //   fmt::print("{}:{}: _segments = {} chunks_ind[{}] = {} \n", t,
+      //   __LINE__,
+      //              _segments, t, chunks_ind[t]);
+      // }
+    }
+  }
+#pragma omp single
+  fmt::print("{}: omp single\n", __LINE__);
+
+  // dr::shp::__detail::wait(events);
+  // events.clear();
 
   // Copy the results into the output.
 
@@ -266,6 +372,8 @@ void sort(R &&r, Compare comp = Compare()) {
   }
 
   dr::shp::__detail::wait(events);
+
+  fmt::print("{}: \n", __LINE__);
 
   // Free temporary memory.
 
