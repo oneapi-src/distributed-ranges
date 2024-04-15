@@ -275,20 +275,21 @@ void sort(R &&r, Compare comp = Compare()) {
 
     assert(rng::size(chunks_ind[t]) == 0);
     chunks_ind[t].push_back(0);
+    chunks_ind2[t].push_back(0);
 
     for (int _i = 0; _i < n_segments; _i++) {
       int v = chunks_ind[t].back();
       if (t == 0) {
         v += splitter_indices[_i][0];
-        fmt::print("{}:{} v={} (1)\n", t, __LINE__, v);
+        // fmt::print("{}:{} v={} (1)\n", t, __LINE__, v);
       } else if (t == n_segments - 1) {
         v += (rng::size(__detail::local(segments[_i])) -
               splitter_indices[_i][n_splitters - 1]);
-        fmt::print("{}:{} v={} segsize={} (2)\n", t, __LINE__, v,
-                   rng::size(__detail::local(segments[_i])));
+        // fmt::print("{}:{} v={} segsize={} (2)\n", t, __LINE__, v,
+        //            rng::size(__detail::local(segments[_i])));
       } else {
         v += (splitter_indices[_i][t] - splitter_indices[_i][t - 1]);
-        fmt::print("{}:{} v={} (3)\n", t, __LINE__, v);
+        // fmt::print("{}:{} v={} (3)\n", t, __LINE__, v);
       }
 
       chunks_ind[t].push_back(v);
@@ -297,6 +298,8 @@ void sort(R &&r, Compare comp = Compare()) {
 
     auto _segments = n_segments;
     while (_segments > 1) {
+      fmt::print("{}:{}: EXTERNAL merge loop, _segments {}\n", t, __LINE__,
+                 _segments);
       {
         T tmp;
         for (int i = 0; i < n_elements; i++) {
@@ -307,9 +310,10 @@ void sort(R &&r, Compare comp = Compare()) {
         }
       }
 
-      int s;
-      for (s = 0; s < _segments / 2; s++) {
-        fmt::print("{}:{}: merge loop {}\n", t, __LINE__, s);
+      int _size = _segments / 2;
+      for (int s = 0; s < _size; s++) {
+        fmt::print("{}:{}: INTERNAL merge loop {} / {} \n", t, __LINE__, s,
+                   _size);
 
         std::size_t f = chunks_ind[t][2 * s];
         std::size_t m = chunks_ind[t][2 * s + 1];
@@ -320,7 +324,6 @@ void sort(R &&r, Compare comp = Compare()) {
         auto middle = dr::__detail::direct_iterator(sorted_segments[t] + m);
         auto last = dr::__detail::direct_iterator(sorted_segments[t] + l);
 
-        chunks_ind2[t].push_back(f);
         chunks_ind2[t].push_back(l);
 
         fmt::print("{}:{}: first: {} mid {} last {}\n", t, __LINE__, f, m, l);
@@ -343,19 +346,20 @@ void sort(R &&r, Compare comp = Compare()) {
                    "chunks_ind2[{}] = {} \n",
                    t, __LINE__, _segments, s, t, chunks_ind[t], t,
                    chunks_ind2[t]);
-
-        if (_segments % 2 == 0) {
-          // fmt::print("{}:{}: writing {} at the end of {}\n", t, __LINE__,
-          //            chunks_ind[t][2 * s], chunks_ind2[t]);
-          // chunks_ind2[t].push_back(chunks_ind[t][2 * s]);
-          _segments /= 2;
-        } else {
-          _segments = (_segments + 1) / 2;
-        }
       }
+
+      if (_segments % 2 == 0) {
+        _segments /= 2;
+      } else {
+        _segments = (_segments + 1) / 2;
+      }
+
       std::swap(chunks_ind[t], chunks_ind2[t]);
-      fmt::print("{}:{}: END OF LOOP _segments = {} chunks_ind[{}] = {} \n", t,
-                 __LINE__, _segments, t, chunks_ind[t]);
+      chunks_ind2[t].clear();
+      chunks_ind2[t].push_back(0);
+      fmt::print(
+          "{}:{}: end of EXTERNAL loop _segments = {} chunks_ind[{}] = {} \n",
+          t, __LINE__, _segments, t, chunks_ind[t]);
     }
   }
 #pragma omp single
