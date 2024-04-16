@@ -153,7 +153,7 @@ void sort(R &&r, Compare comp = Compare()) {
     auto &&local_segment = dr::shp::__detail::local(segment);
 
     std::size_t *splitter_i = sycl::malloc_shared<std::size_t>(
-        n_splitters, q.get_device(), shp::context());
+        n_splitters + 1, q.get_device(), shp::context());
     splitter_indices.push_back(splitter_i);
 
     // Local copy `medians_l` necessary due to [GSD-3893]
@@ -167,6 +167,8 @@ void sort(R &&r, Compare comp = Compare()) {
                           medians_l + n_splitters, splitter_i, comp);
 
     sycl::free(medians_l, shp::context());
+
+    splitter_i[n_splitters] = rng::size(local_segment);
 
     auto p_first = rng::begin(local_segment);
     auto p_last = p_first;
@@ -240,44 +242,32 @@ void sort(R &&r, Compare comp = Compare()) {
   // merge sorted chunks within each of these new segments
 
 #pragma omp parallel num_threads(n_segments)
-  // for (int t = 0; t < n_segments; t++) {
   {
-    std::vector<std::size_t> chunks_ind;
-    std::vector<std::size_t> chunks_ind2;
-
     int t = omp_get_thread_num();
-    std::size_t n_elements = sorted_seg_sizes[t];
 
+    std::vector<std::size_t> chunks_ind, chunks_ind2;
     chunks_ind.push_back(0);
 
-    for (int i = 0; i < n_segments; i++) {
-      int v = chunks_ind.back();
-      if (t == 0) {
-        v += splitter_indices[i][0];
-      } else if (t == n_segments - 1) {
-        v += (rng::size(__detail::local(segments[i])) -
-              splitter_indices[i][t - 1]);
-      } else {
-        v += (splitter_indices[i][t] - splitter_indices[i][t - 1]);
-      }
-
+    std::size_t v = 0;
+    for (std::size_t i = 0; i < n_segments; i++) {
+      v += (t == 0) ? splitter_indices[i][0]
+                    : splitter_indices[i][t] - splitter_indices[i][t - 1];
       chunks_ind.push_back(v);
     }
 
     auto _segments = n_segments;
     while (_segments > 1) {
-      chunks_ind2.clear();
       chunks_ind2.push_back(0);
 
       for (int s = 0; s < _segments / 2; s++) {
 
-        std::size_t f = chunks_ind[2 * s];
-        std::size_t m = chunks_ind[2 * s + 1];
-        std::size_t l =
-            (2 * s + 2 < _segments) ? chunks_ind[2 * s + 2] : n_elements;
+        std::size_t l = (2 * s + 2 < _segments) ? chunks_ind[2 * s + 2]
+                                                : sorted_seg_sizes[t];
 
-        auto first = dr::__detail::direct_iterator(sorted_segments[t] + f);
-        auto middle = dr::__detail::direct_iterator(sorted_segments[t] + m);
+        auto first = dr::__detail::direct_iterator(sorted_segments[t] +
+                                                   chunks_ind[2 * s]);
+        auto middle = dr::__detail::direct_iterator(sorted_segments[t] +
+                                                    chunks_ind[2 * s + 1]);
         auto last = dr::__detail::direct_iterator(sorted_segments[t] + l);
 
         chunks_ind2.push_back(l);
@@ -290,6 +280,7 @@ void sort(R &&r, Compare comp = Compare()) {
       _segments = (_segments + 1) / 2;
 
       std::swap(chunks_ind, chunks_ind2);
+      chunks_ind2.clear();
     }
   } // End of omp parallel region
 
