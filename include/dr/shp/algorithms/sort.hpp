@@ -261,8 +261,8 @@ void sort(R &&r, Compare comp = Compare()) {
   } */
 
   // merge
-  std::vector<std::vector<std::size_t>> chunks_ind(n_segments);
-  std::vector<std::vector<std::size_t>> chunks_ind2(n_segments);
+  std::vector<std::vector<std::size_t>> chunks_ind(n_segments),
+      chunks_ind2((n_segments + 1) / 2);
 
   // #pragma omp parallel num_threads(n_segments)
   for (int t = 0; t < n_segments; t++) {
@@ -272,6 +272,19 @@ void sort(R &&r, Compare comp = Compare()) {
 
     fmt::print("{}:{}: n_elements {}\n", t, __LINE__, n_elements);
     fmt::print("{}:{}: n_splitters {}\n", t, __LINE__, n_splitters);
+
+    auto _segments = n_segments;
+
+    // while (_segments > 1) {
+    {
+      T tmp;
+      for (int i = 0; i < n_elements; i++) {
+        dr::shp::__detail::queue(t)
+            .memcpy(&tmp, &sorted_segments[t][i], sizeof(T))
+            .wait();
+        fmt::print("{}:{}: seg [{}] = {}\n", t, __LINE__, i, tmp);
+      }
+    }
 
     assert(rng::size(chunks_ind[t]) == 0);
     chunks_ind[t].push_back(0);
@@ -295,67 +308,46 @@ void sort(R &&r, Compare comp = Compare()) {
     }
     fmt::print("{}:{}: chunks_ind[{}] = {} \n", t, __LINE__, t, chunks_ind[t]);
 
-    auto _segments = n_segments;
-    while (_segments > 1) {
-      {
-        T tmp;
-        for (int i = 0; i < n_elements; i++) {
-          dr::shp::__detail::queue(t)
-              .memcpy(&tmp, &sorted_segments[t][i], sizeof(T))
-              .wait();
-          fmt::print("{}:{}: seg [{}] = {}\n", t, __LINE__, i, tmp);
-        }
-      }
+    int s;
+    for (s = 0; s < _segments / 2; s++) {
+      fmt::print("{}:{}: merge loop {}\n", t, __LINE__, s);
 
-      int s;
-      for (s = 0; s < _segments / 2; s++) {
-        fmt::print("{}:{}: merge loop {}\n", t, __LINE__, s);
+      std::size_t f = chunks_ind[t][2 * s];
+      std::size_t m = chunks_ind[t][2 * s + 1];
+      std::size_t l =
+          (2 * s + 2 < _segments) ? chunks_ind[t][2 * s + 2] : n_elements;
 
-        std::size_t f = chunks_ind[t][2 * s];
-        std::size_t m = chunks_ind[t][2 * s + 1];
-        std::size_t l =
-            (2 * s + 2 < _segments) ? chunks_ind[t][2 * s + 2] : n_elements;
+      auto first = dr::__detail::direct_iterator(sorted_segments[t] + f);
+      auto middle = dr::__detail::direct_iterator(sorted_segments[t] + m);
+      auto last = dr::__detail::direct_iterator(sorted_segments[t] + l);
 
-        auto first = dr::__detail::direct_iterator(sorted_segments[t] + f);
-        auto middle = dr::__detail::direct_iterator(sorted_segments[t] + m);
-        auto last = dr::__detail::direct_iterator(sorted_segments[t] + l);
+      fmt::print("{}:{}: first: {} mid {} last {}\n", t, __LINE__, f, m, l);
+      oneapi::dpl::inplace_merge(
+          __detail::dpl_policy(dr::ranges::rank(segments[t])), first, middle,
+          last, std::forward<Compare>(comp));
+      fmt::print("{}:{}: merge done\n", t, __LINE__);
 
-        chunks_ind2[t].push_back(f);
-        chunks_ind2[t].push_back(l);
+      // {
+      //   T tmp;
+      //   for (int i = 0; i < n_elements; i++) {
+      //     __detail::queue(t)
+      //         .memcpy(&tmp, &sorted_segments[t][i], sizeof(T))
+      //         .wait();
+      //     fmt::print("{}:{}: mrgd [{}] = {}\n", t, __LINE__, i, tmp);
+      //   }
+      // }
 
-        fmt::print("{}:{}: first: {} mid {} last {}\n", t, __LINE__, f, m, l);
-        oneapi::dpl::inplace_merge(
-            __detail::dpl_policy(dr::ranges::rank(segments[t])), first, middle,
-            last, std::forward<Compare>(comp));
-        fmt::print("{}:{}: merge done\n", t, __LINE__);
+      // if (n_segments % 2 == 1) {
+      //   chunks_ind2[t] = chunks_ind[2 * t];
+      //   n_segments += 1;
+      // }
 
-        // {
-        //   T tmp;
-        //   for (int i = 0; i < n_elements; i++) {
-        //     __detail::queue(t)
-        //         .memcpy(&tmp, &sorted_segments[t][i], sizeof(T))
-        //         .wait();
-        //     fmt::print("{}:{}: mrgd [{}] = {}\n", t, __LINE__, i, tmp);
-        //   }
-        // }
-
-        fmt::print("{}:{}: _segments = {} s = {} chunks_ind[{}] = {} "
-                   "chunks_ind2[{}] = {} \n",
-                   t, __LINE__, _segments, s, t, chunks_ind[t], t,
-                   chunks_ind2[t]);
-
-        if (_segments % 2 == 0) {
-          // fmt::print("{}:{}: writing {} at the end of {}\n", t, __LINE__,
-          //            chunks_ind[t][2 * s], chunks_ind2[t]);
-          // chunks_ind2[t].push_back(chunks_ind[t][2 * s]);
-          _segments /= 2;
-        } else {
-          _segments = (_segments + 1) / 2;
-        }
-      }
-      std::swap(chunks_ind[t], chunks_ind2[t]);
-      fmt::print("{}:{}: END OF LOOP _segments = {} chunks_ind[{}] = {} \n", t,
-                 __LINE__, _segments, t, chunks_ind[t]);
+      //   _segments /= 2;
+      //   std::swap(chunks_ind, chunks_ind2);
+      //   fmt::print("{}:{}: _segments = {} chunks_ind[{}] = {} \n", t,
+      //   __LINE__,
+      //              _segments, t, chunks_ind[t]);
+      // }
     }
   }
 #pragma omp single
