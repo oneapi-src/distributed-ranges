@@ -239,48 +239,47 @@ void sort(R &&r, Compare comp = Compare()) {
 
   // merge sorted chunks within each of these new segments
 
+  std::vector<std::vector<std::size_t>> chunks_ind(n_segments);
+  std::vector<std::vector<std::size_t>> chunks_ind2(n_segments);
+
 #pragma omp parallel num_threads(n_segments)
   // for (int t = 0; t < n_segments; t++) {
   {
-    std::vector<std::size_t> chunks_ind;
-    std::vector<std::size_t> chunks_ind2;
-
     int t = omp_get_thread_num();
     std::size_t n_elements = sorted_seg_sizes[t];
 
-    chunks_ind.push_back(0);
+    chunks_ind[t].push_back(0);
+    chunks_ind2[t].push_back(0);
 
-    for (int i = 0; i < n_segments; i++) {
-      int v = chunks_ind.back();
+    for (int _i = 0; _i < n_segments; _i++) {
+      int v = chunks_ind[t].back();
       if (t == 0) {
-        v += splitter_indices[i][0];
+        v += splitter_indices[_i][0];
       } else if (t == n_segments - 1) {
-        v += (rng::size(__detail::local(segments[i])) -
-              splitter_indices[i][t - 1]);
+        v += (rng::size(__detail::local(segments[_i])) -
+              splitter_indices[_i][n_splitters - 1]);
       } else {
-        v += (splitter_indices[i][t] - splitter_indices[i][t - 1]);
+        v += (splitter_indices[_i][t] - splitter_indices[_i][t - 1]);
       }
 
-      chunks_ind.push_back(v);
+      chunks_ind[t].push_back(v);
     }
 
     auto _segments = n_segments;
     while (_segments > 1) {
-      chunks_ind2.clear();
-      chunks_ind2.push_back(0);
 
       for (int s = 0; s < _segments / 2; s++) {
 
-        std::size_t f = chunks_ind[2 * s];
-        std::size_t m = chunks_ind[2 * s + 1];
+        std::size_t f = chunks_ind[t][2 * s];
+        std::size_t m = chunks_ind[t][2 * s + 1];
         std::size_t l =
-            (2 * s + 2 < _segments) ? chunks_ind[2 * s + 2] : n_elements;
+            (2 * s + 2 < _segments) ? chunks_ind[t][2 * s + 2] : n_elements;
 
         auto first = dr::__detail::direct_iterator(sorted_segments[t] + f);
         auto middle = dr::__detail::direct_iterator(sorted_segments[t] + m);
         auto last = dr::__detail::direct_iterator(sorted_segments[t] + l);
 
-        chunks_ind2.push_back(l);
+        chunks_ind2[t].push_back(l);
 
         oneapi::dpl::inplace_merge(
             __detail::dpl_policy(dr::ranges::rank(segments[t])), first, middle,
@@ -289,7 +288,9 @@ void sort(R &&r, Compare comp = Compare()) {
 
       _segments = (_segments + 1) / 2;
 
-      std::swap(chunks_ind, chunks_ind2);
+      std::swap(chunks_ind[t], chunks_ind2[t]);
+      chunks_ind2[t].clear();
+      chunks_ind2[t].push_back(0);
     }
   } // End of omp parallel region
 
