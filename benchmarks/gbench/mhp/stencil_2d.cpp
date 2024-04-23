@@ -507,6 +507,7 @@ static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
   }
 }
 
-DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
+// Timeout
+// DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
 
 #endif // SYCL_LANGUAGE_VERSION
