@@ -93,6 +93,7 @@ jobs:
         with:
           name: log-pvc-impi-icpx-${{ matrix.config }}
           path: |
+            build/CMakeCache.txt
             build/Testing
             build/test/gtest/mhp/*.log
             build/benchmarks/gbench/mhp/*.log
