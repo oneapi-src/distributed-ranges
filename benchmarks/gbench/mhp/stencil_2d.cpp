@@ -461,6 +461,9 @@ static void Stencil2D_Reference(benchmark::State &state) {
 
 DR_BENCHMARK(Stencil2D_Reference);
 
+/*
+// Disbled due to timeout
+
 //
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style with SYCL
@@ -507,7 +510,6 @@ static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
   }
 }
 
-// Timeout
-// DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
-
+DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
+*/
 #endif // SYCL_LANGUAGE_VERSION
