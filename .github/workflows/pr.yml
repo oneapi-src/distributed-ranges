@@ -84,6 +84,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Generate
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+      - name: Save environment dump
+        run: printenv > build/envdump.txt
       - name: Build tests
         run: cmake --build build --target all-tests -- -j
       - name: Unit tests
@@ -94,6 +96,7 @@ jobs:
           name: log-pvc-impi-icpx-${{ matrix.config }}
           path: |
             build/CMakeCache.txt
+            build/envdump.txt
             build/Testing
             build/test/gtest/mhp/*.log
             build/benchmarks/gbench/mhp/*.log
