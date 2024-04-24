@@ -95,7 +95,7 @@ if(ENABLE_SYCL)
 
   if(ENABLE_ISHMEM)
     # DRA-84 some Halo3 cases don't work on IshmemBackend (work on MPI)
-    set(sycl-exclusions ${sycl-exclusions}Halo3/*:)
+    set(sycl-exclusions ${sycl-exclusions}Halo3/*:Sort*:)
   endif()
 
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)

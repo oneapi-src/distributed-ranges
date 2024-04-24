@@ -220,6 +220,7 @@ function(add_mhp_ctest_impl)
       ${MPIEXEC_PREFLAGS} ${extra_mpiflags} ${wrapper_script} ./${AMC_NAME}
       ${drlogs_param} ${sycl_param} ${AMC_TARGS} COMMAND_EXPAND_LISTS)
 
+  set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT 30)
   if(AMC_TESTLABEL)
     set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
   endif()

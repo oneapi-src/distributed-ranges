@@ -19,6 +19,7 @@ env:
 jobs:
   checks:
     runs-on: intel-ubuntu-latest
+    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
     - name: Ubuntu dependencies
@@ -34,6 +35,7 @@ jobs:
 
   unit_tests:
     runs-on: pvc
+    timeout-minutes: 10
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -68,6 +70,7 @@ jobs:
 
   pvc_unit_tests:
     runs-on: pvc
+    timeout-minutes: 10
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -104,6 +107,7 @@ jobs:
 
   ishmem_unit_tests:
     runs-on: pvc
+    timeout-minutes: 10
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -138,6 +142,7 @@ jobs:
   publish:
     needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
     runs-on: intel-ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
     env:
