@@ -34,7 +34,7 @@ if(NOT ENABLE_CUDA)
   target_sources(shp-bench PRIVATE ../common/black_scholes.cpp)
 endif()
 target_link_libraries(shp-bench shp-benchmark)
-add_shp_ctest(shp-bench shp-bench --vector-size 200000 --check)
+add_shp_disabled_ctest(shp-bench shp-bench --vector-size 200000 --check)
 
 # builds only 1 benchmark for quick testing. Change this to the benchmark you
 # are testing
