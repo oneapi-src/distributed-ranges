@@ -106,7 +106,7 @@ if(ENABLE_SYCL)
     NAME mhp-quick-test NPROC 2 OFFLOAD SYCL TARGS --device-memory)
 
   add_mhp_ctest(
-    NAME mhp-tests NPROC 2 OFFLOAD SYCL TARGS --device-memory
+    NAME mhp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory
     --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
