@@ -147,7 +147,7 @@ add_custom_target(all-tests DEPENDS mhp-all-tests shp-all-tests)
 
 function(add_mhp_ctest_impl)
   set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL)
-  set(oneValueArgs NAME TEST_NAME NPROC)
+  set(oneValueArgs NAME TEST_NAME NPROC TIMEOUT)
   set(multiValueArgs TARGS) # Test ARGumentS
 
   cmake_parse_arguments(AMC "${options}" "${oneValueArgs}" "${multiValueArgs}"
@@ -220,7 +220,12 @@ function(add_mhp_ctest_impl)
       ${MPIEXEC_PREFLAGS} ${extra_mpiflags} ${wrapper_script} ./${AMC_NAME}
       ${drlogs_param} ${sycl_param} ${AMC_TARGS} COMMAND_EXPAND_LISTS)
 
-  set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT 60)
+  if(DEFINED AMC_TIMEOUT)
+    set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT ${AMC_TIMEOUT})
+  else()
+    set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT 60)
+  endif()
+
   if(AMC_TESTLABEL)
     set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
   endif()

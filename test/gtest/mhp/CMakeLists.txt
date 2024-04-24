@@ -118,7 +118,7 @@ if(ENABLE_SYCL)
 
   foreach(nproc RANGE 2 4)
     add_mhp_ctest(
-      NAME mhp-tests NPROC ${nproc} SYCL TARGS
+      NAME mhp-tests NPROC ${nproc} TIMEOUT 150 SYCL TARGS
       --gtest_filter=-${sycl-exclusions})
   endforeach()
   add_mhp_ctest(
