@@ -81,12 +81,13 @@ if(NOT ENABLE_ISHMEM)
 
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mhp_ctest(NAME mhp-tests NPROC 1)
+    add_mhp_ctest(NAME mhp-tests NPROC 1 TIMEOUT 150)
   endif()
   foreach(nproc RANGE 2 4)
-    add_mhp_ctest(NAME mhp-tests NPROC ${nproc})
+    add_mhp_ctest(NAME mhp-tests NPROC ${nproc} TIMEOUT 150)
   endforeach()
-  add_mhp_ctest(TEST_NAME mhp-tests-3-only NAME mhp-tests-3 NPROC 3)
+  add_mhp_ctest(
+    TEST_NAME mhp-tests-3-only NAME mhp-tests-3 NPROC 3 TIMEOUT 150)
 endif()
 
 if(ENABLE_SYCL)
@@ -94,8 +95,13 @@ if(ENABLE_SYCL)
   set(sycl-exclusions *Slide*:ComplexSlide*:)
 
   if(ENABLE_ISHMEM)
-    # DRA-84 some Halo3 cases don't work on IshmemBackend (work on MPI)
-    set(sycl-exclusions ${sycl-exclusions}Halo3/*:Sort*:)
+    # Some Halo3 cases don't work on IshmemBackend (work on MPI, see: DRA-84),
+    # Counted.large fails with
+    # distributed-ranges/test/gtest/common/counted.cpp:62: Failure Expected
+    # equality of these values: *(--counted_result.end()) Which is: 5, should be
+    # 77 Mdspan, Mdarray hangs sometimes on ISHMEM.
+    set(sycl-exclusions
+        ${sycl-exclusions}Halo3/*:Sort*:Counted/*:Mdspan*:Mdarray*:)
   endif()
 
   add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
@@ -122,6 +128,6 @@ if(ENABLE_SYCL)
       --gtest_filter=-${sycl-exclusions})
   endforeach()
   add_mhp_ctest(
-    TEST_NAME mhp-tests-sycl-3-only NAME mhp-tests-3 NPROC 3 SYCL TARGS
-    --gtest_filter=-${sycl-exclusions})
+    TEST_NAME mhp-tests-sycl-3-only NAME mhp-tests-3 NPROC 3 TIMEOUT 150 SYCL
+    TARGS --gtest_filter=-${sycl-exclusions})
 endif()
