@@ -12,6 +12,9 @@ cd ${PBS_O_WORKDIR:-.}
 unset SLURM_TASKS_PER_NODE
 unset SLURM_JOBID
 
+# workaround for missing libaccel-config.so.1 on jfpvc compute nodes
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/dmozog/usr/lib64/
+
 echo "Host: " $(hostname)
 echo "CWD: " $(pwd)
 module list

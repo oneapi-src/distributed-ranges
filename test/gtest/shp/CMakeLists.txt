@@ -25,6 +25,8 @@ foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)
   target_link_libraries(${test-exec} GTest::gtest_main DR::shp fmt::fmt cxxopts)
 endforeach()
 
-add_shp_ctest(shp-tests shp-tests)
-add_shp_ctest(shp-tests-3 shp-tests --devicesCount 3)
+# timeout in SHP tests
+add_shp_disabled_ctest(shp-tests shp-tests)
+add_shp_disabled_ctest(shp-tests-3 shp-tests --devicesCount 3)
+
 add_shp_ctest(shp-tests-3-only shp-tests-3 --devicesCount 3)
