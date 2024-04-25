@@ -146,8 +146,8 @@ add_custom_target(shp-all-tests)
 add_custom_target(all-tests DEPENDS mhp-all-tests shp-all-tests)
 
 function(add_mhp_ctest_impl)
-  set(options OFFLOAD GDB SYCL DRLOGS)
-  set(oneValueArgs NAME TEST_NAME NPROC)
+  set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL)
+  set(oneValueArgs NAME TEST_NAME NPROC TIMEOUT)
   set(multiValueArgs TARGS) # Test ARGumentS
 
   cmake_parse_arguments(AMC "${options}" "${oneValueArgs}" "${multiValueArgs}"
@@ -220,17 +220,32 @@ function(add_mhp_ctest_impl)
       ${MPIEXEC_PREFLAGS} ${extra_mpiflags} ${wrapper_script} ./${AMC_NAME}
       ${drlogs_param} ${sycl_param} ${AMC_TARGS} COMMAND_EXPAND_LISTS)
 
-  if(NOT AMC_GDB AND NOT AMC_DRLOGS)
+  if(DEFINED AMC_TIMEOUT)
+    set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT ${AMC_TIMEOUT})
+  else()
+    set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT 60)
+  endif()
+
+  if(AMC_TESTLABEL)
     set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
   endif()
   add_dependencies(mhp-all-tests ${AMC_NAME})
 endfunction()
 
-function(add_mhp_ctest)
-  add_mhp_ctest_impl(${ARGN})
+function(add_mhp_auxiliary_ctests)
   add_mhp_ctest_impl(${ARGN} GDB)
   add_mhp_ctest_impl(${ARGN} GDB DRLOGS)
   add_mhp_ctest_impl(${ARGN} DRLOGS)
+endfunction()
+
+function(add_mhp_ctest)
+  add_mhp_ctest_impl(${ARGN} TESTLABEL)
+  add_mhp_auxiliary_ctests(${ARGN})
+endfunction()
+
+function(add_mhp_disabled_ctest)
+  add_mhp_ctest_impl(${ARGN})
+  add_mhp_auxiliary_ctests(${ARGN})
 endfunction()
 
 if(ENABLE_ISHMEM)
@@ -334,10 +349,14 @@ if(ENABLE_ISHMEM)
 
 endif()
 
-function(add_shp_ctest test_name name)
+function(add_shp_disabled_ctest test_name name)
   add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
-  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SHP)
   add_dependencies(shp-all-tests ${name})
+endfunction()
+
+function(add_shp_ctest test_name name)
+  add_shp_disabled_ctest(${test_name} ${name} ${ARGN})
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SHP)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})

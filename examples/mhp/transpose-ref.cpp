@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include <stdlib.h>
+#include <vector>
 
 #include "mpi.h"
 
@@ -216,18 +217,18 @@ int main(int argc, char *argv[]) {
   double total_local_copy_time =
       cpu_times.local_copy - cpu_times.block_exchange;
 
-  double total_times[Num_procs];
-  double local_transpose_times[Num_procs];
-  double block_transfer_times[Num_procs];
-  double local_copy_times[Num_procs];
+  std::vector<double> total_times(Num_procs);
+  std::vector<double> local_transpose_times(Num_procs);
+  std::vector<double> block_transfer_times(Num_procs);
+  std::vector<double> local_copy_times(Num_procs);
 
-  MPI_Gather(&cpu_times.total, 1, MPI_DOUBLE, total_times, 1, MPI_DOUBLE, 0,
-             MPI_COMM_WORLD);
-  MPI_Gather(&total_local_transpose_time, 1, MPI_DOUBLE, local_transpose_times,
-             1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Gather(&total_block_transfer_time, 1, MPI_DOUBLE, block_transfer_times, 1,
-             MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Gather(&total_local_copy_time, 1, MPI_DOUBLE, local_copy_times, 1,
+  MPI_Gather(&cpu_times.total, 1, MPI_DOUBLE, total_times.data(), 1, MPI_DOUBLE,
+             0, MPI_COMM_WORLD);
+  MPI_Gather(&total_local_transpose_time, 1, MPI_DOUBLE,
+             local_transpose_times.data(), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Gather(&total_block_transfer_time, 1, MPI_DOUBLE,
+             block_transfer_times.data(), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Gather(&total_local_copy_time, 1, MPI_DOUBLE, local_copy_times.data(), 1,
              MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   if (my_ID == 0) {
