@@ -81,8 +81,8 @@ void sort(R &&r, Compare comp = Compare()) {
   // Each segment has `n_splitters` medians,
   // so `n_segments * n_splitters` medians total.
 
-  T *medians = sycl::malloc_device<T>(n_segments * n_splitters,
-                                      shp::devices()[0], shp::context());
+  T *medians =
+      sycl::malloc_device<T>(n_segments * n_splitters, shp::__detail::queue(0));
   std::size_t segment_id = 0;
 
   for (auto &&segment : segments) {
@@ -150,13 +150,11 @@ void sort(R &&r, Compare comp = Compare()) {
 
     auto &&local_segment = dr::shp::__detail::local(segment);
 
-    std::size_t *splitter_i = sycl::malloc_shared<std::size_t>(
-        n_splitters, q.get_device(), shp::context());
+    std::size_t *splitter_i = sycl::malloc_shared<std::size_t>(n_splitters, q);
     splitter_indices.push_back(splitter_i);
 
     // Local copy `medians_l` necessary due to [GSD-3893]
-    T *medians_l =
-        sycl::malloc_device<T>(n_splitters, q.get_device(), shp::context());
+    T *medians_l = sycl::malloc_device<T>(n_splitters, q);
 
     q.memcpy(medians_l, medians, sizeof(T) * n_splitters).wait();
 
@@ -164,7 +162,7 @@ void sort(R &&r, Compare comp = Compare()) {
                           rng::end(local_segment), medians_l,
                           medians_l + n_splitters, splitter_i, comp);
 
-    sycl::free(medians_l, shp::context());
+    sycl::free(medians_l, q);
 
     auto p_first = rng::begin(local_segment);
     auto p_last = p_first;
@@ -269,15 +267,13 @@ void sort(R &&r, Compare comp = Compare()) {
 
   // Free temporary memory.
 
-  for (auto &&sorted_seg : sorted_segments) {
-    sycl::free(sorted_seg, shp::context());
+  for (std::size_t i = 0; i < sorted_segments.size(); i++) {
+    auto &&q = dr::shp::__detail::queue(dr::ranges::rank(segments[i]));
+    sycl::free(sorted_segments[i], q);
+    sycl::free(splitter_indices[i], q);
   }
 
-  for (auto &&splitter_i : splitter_indices) {
-    sycl::free(splitter_i, shp::context());
-  }
-
-  sycl::free(medians, shp::context());
+  sycl::free(medians, shp::__detail::queue(0));
 }
 
 template <dr::distributed_iterator RandomIt, typename Compare = std::less<>>

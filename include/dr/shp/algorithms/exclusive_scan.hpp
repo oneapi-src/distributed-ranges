@@ -37,8 +37,8 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
   if constexpr (std::is_same_v<std::remove_cvref_t<ExecutionPolicy>,
                                device_policy>) {
 
-    U *d_inits = sycl::malloc_device<U>(rng::size(zipped_segments),
-                                        shp::devices()[0], shp::context());
+    U *d_inits =
+        sycl::malloc_device<U>(rng::size(zipped_segments), __detail::queue(0));
 
     std::vector<sycl::event> events;
 
@@ -63,12 +63,11 @@ void exclusive_scan_impl_(ExecutionPolicy &&policy, R &&r, O &&o, U init,
 
     shp::copy(d_inits, d_inits + inits.size(), inits.data() + 1);
 
-    sycl::free(d_inits, shp::context());
+    sycl::free(d_inits, __detail::queue(0));
 
     inits[0] = init;
 
-    auto root = dr::shp::devices()[0];
-    dr::shp::device_allocator<T> allocator(dr::shp::context(), root);
+    dr::shp::device_allocator<T> allocator(__detail::queue(0));
     dr::shp::vector<T, dr::shp::device_allocator<T>> partial_sums(
         std::size_t(zipped_segments.size()), allocator);
 
