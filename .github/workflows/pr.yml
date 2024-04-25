@@ -101,9 +101,12 @@ jobs:
             build/CMakeCache.txt
             build/envdump.txt
             build/Testing
-            build/test/gtest/{m,s}hp/*.log
-            build/benchmarks/gbench/{m,s}hp/*.log
-            build/examples/{m,s}hp/*.log
+            build/test/gtest/mhp/*.log
+            build/benchmarks/gbench/mhp/*.log
+            build/examples/mhp/*.log
+            build/test/gtest/shp/*.log
+            build/benchmarks/gbench/shp/*.log
+            build/examples/shp/*.log
 
   ishmem_unit_tests:
     runs-on: pvc
