@@ -26,7 +26,7 @@ foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)
 endforeach()
 
 # timeout in SHP tests
-add_shp_disabled_ctest(shp-tests shp-tests)
-add_shp_disabled_ctest(shp-tests-3 shp-tests --devicesCount 3)
+add_shp_ctest(shp-tests shp-tests)
+add_shp_ctest(shp-tests-3 shp-tests --devicesCount 3)
 
 add_shp_ctest(shp-tests-3-only shp-tests-3 --devicesCount 3)
