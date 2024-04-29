@@ -31,7 +31,7 @@ struct fmt::formatter<std::complex<Base>, char>
     : public formatter<string_view> {
   template <typename FmtContext>
   auto format(std::complex<Base> c, FmtContext &ctx) const {
-    format_to(ctx.out(), "{}+{}i", c.real(), c.imag());
+    fmt::format_to(ctx.out(), "{}+{}i", c.real(), c.imag());
     return ctx.out();
   }
 };
