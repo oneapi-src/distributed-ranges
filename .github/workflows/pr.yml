@@ -55,8 +55,6 @@ jobs:
     - name: MHP unit tests
       run: ctest --test-dir build -L MHP -j 4
     - name: SHP unit tests
-      # Does not work on CPU
-      if: false
       run: ctest --test-dir build -L SHP -j 4
     - uses: actions/upload-artifact@v4
       if: always()
