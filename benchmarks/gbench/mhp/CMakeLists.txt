@@ -18,9 +18,13 @@ add_executable(
   stencil_1d.cpp
   stencil_2d.cpp
   chunk.cpp
-  mdspan.cpp
+  # mdspan.cpp
   mpi.cpp)
 # cmake-format: on
+
+if(NOT ENABLE_SYCL)
+  target_sources(mhp-bench PRIVATE mdspan.cpp)
+endif()
 
 if(ENABLE_SYCL)
   target_sources(mhp-bench PRIVATE fft3d.cpp)

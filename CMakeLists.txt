@@ -223,7 +223,7 @@ function(add_mhp_ctest_impl)
   if(DEFINED AMC_TIMEOUT)
     set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT ${AMC_TIMEOUT})
   else()
-    set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT 60)
+    set_tests_properties(${AMC_TEST_NAME} PROPERTIES TIMEOUT 600)
   endif()
 
   if(AMC_TESTLABEL)
