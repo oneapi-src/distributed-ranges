@@ -465,50 +465,49 @@ DR_BENCHMARK(Stencil2D_Reference);
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style with SYCL
 //
-// static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
-//   auto s = default_shape();
-//   auto rows = s[0];
-//   auto cols = s[1];
+[[maybe_unused]] static void
+Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
+  auto s = default_shape();
+  auto rows = s[0];
+  auto cols = s[1];
 
-//   if (rows == 0) {
-//     return;
-//   }
+  if (rows == 0) {
+    return;
+  }
 
-//   auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
-//   dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
-//   dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
-//   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
+  auto dist = dr::mhp::distribution().halo(cols).granularity(cols);
+  dr::mhp::distributed_vector<T> a(rows * cols, init_val, dist);
+  dr::mhp::distributed_vector<T> b(rows * cols, init_val, dist);
+  Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
-//   // fails on devcloud
-//   // Checker checker;
-//   auto in =
-//       dr::mhp::local_segment(rng::subrange(a.begin() + cols, a.end() -
-//       cols));
-//   auto out =
-//       dr::mhp::local_segment(rng::subrange(b.begin() + cols, b.end() -
-//       cols));
-//   auto size = rng::size(in);
-//   assert(size % cols == 0);
-//   auto row_slice = size / cols;
+  // fails on devcloud
+  // Checker checker;
+  auto in =
+      dr::mhp::local_segment(rng::subrange(a.begin() + cols, a.end() - cols));
+  auto out =
+      dr::mhp::local_segment(rng::subrange(b.begin() + cols, b.end() - cols));
+  auto size = rng::size(in);
+  assert(size % cols == 0);
+  auto row_slice = size / cols;
 
-//   auto q = dr::mhp::sycl_queue();
-//   sycl::range global(row_slice, cols - 2);
+  auto q = dr::mhp::sycl_queue();
+  sycl::range global(row_slice, cols - 2);
 
-//   for (auto _ : state) {
-//     for (std::size_t s = 0; s < stencil_steps; s++) {
-//       stats.rep();
-//       auto op = [=](auto it) {
-//         stencil_1darray_op(in, out, cols, it[0], it[1] + 1);
-//       };
-//       dr::mhp::halo(stencil_steps % 2 ? b : a).exchange();
-//       q.parallel_for(sycl::range(row_slice, cols - 2), op).wait();
-//       std::swap(in, out);
-//     }
-//     // fails on devcloud
-//     // checker.check(stencil_steps % 2 ? b : a);
-//   }
-// }
-
+  for (auto _ : state) {
+    for (std::size_t s = 0; s < stencil_steps; s++) {
+      stats.rep();
+      auto op = [=](auto it) {
+        stencil_1darray_op(in, out, cols, it[0], it[1] + 1);
+      };
+      dr::mhp::halo(stencil_steps % 2 ? b : a).exchange();
+      q.parallel_for(sycl::range(row_slice, cols - 2), op).wait();
+      std::swap(in, out);
+    }
+    // fails on devcloud
+    // checker.check(stencil_steps % 2 ? b : a);
+  }
+}
+// disabled due to DRA-136
 // DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
 
 #endif // SYCL_LANGUAGE_VERSION

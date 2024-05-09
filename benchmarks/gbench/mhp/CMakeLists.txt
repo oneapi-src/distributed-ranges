@@ -22,6 +22,7 @@ add_executable(
   mpi.cpp)
 # cmake-format: on
 
+# disabled with SYCL due to DRA-135
 if(NOT ENABLE_SYCL)
   target_sources(mhp-bench PRIVATE mdspan.cpp)
 endif()
@@ -66,12 +67,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MPI_IMPL STREQUAL "openmpi")
   # intermittent fails with: ONEAPI_DEVICE_SELECTOR=opencl:cpu mpirun -n 1
   # ./mhp-bench --vector-size 30000 --rows 100 --columns 100 --check
   add_mhp_ctest(
-    NAME mhp-bench TARGS --vector-size 30000 --rows 100 --columns 100 --check
-    --benchmark_filter=-FFT3D.*)
+    NAME mhp-bench TIMEOUT 200 TARGS --vector-size 30000 --rows 100 --columns
+    100 --check --benchmark_filter=-FFT3D.*)
   if(ENABLE_SYCL)
     add_mhp_ctest(
-      NAME mhp-bench SYCL TARGS --vector-size 30000 --rows 100 --columns 100
-      --check --benchmark_filter=-.*DPL.*)
+      NAME mhp-bench TIMEOUT 200 SYCL TARGS --vector-size 30000 --rows 100
+      --columns 100 --check --benchmark_filter=-.*DPL.*)
   endif()
 endif()
 
