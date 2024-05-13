@@ -15,7 +15,7 @@ chardet==5.2.0
 charset-normalizer==3.3.2
 distlib==0.3.8
 docutils==0.19
-filelock==3.13.1
+filelock==3.14.0
 identify==2.5.35
 idna==3.7
 imagesize==1.4.1
@@ -25,14 +25,14 @@ MarkupSafe==2.1.5
 nodeenv==1.8.0
 packaging==24.0
 platformdirs==4.2.0
-pre-commit==3.6.2
+pre-commit==3.7.0
 pydata-sphinx-theme==0.15.2
 pyenchant==3.2.2
 Pygments==2.17.2
 python-debian==0.1.49
 PyYAML==6.0.1
 requests==2.31.0
-reuse==3.0.1
+reuse==3.0.2
 snowballstemmer==2.2.0
 soupsieve==2.5
 Sphinx==6.2.1
@@ -44,6 +44,6 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.7
 sphinxcontrib-serializinghtml==1.1.10
 sphinxcontrib-spelling==8.0.0
-typing_extensions==4.10.0
+typing_extensions==4.11.0
 urllib3==2.2.1
 virtualenv==20.25.1

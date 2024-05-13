@@ -260,14 +260,14 @@ struct fmt::formatter<Mdspan, char> : public formatter<string_view> {
       index[dim] = i;
       if (dim == mdspan.rank() - 1) {
         if (i == 0) {
-          format_to(ctx.out(), "{}: ", index);
+          fmt::format_to(ctx.out(), "{}: ", index);
         }
-        format_to(ctx.out(), "{:4} ", mdspan(index));
+        fmt::format_to(ctx.out(), "{:4} ", mdspan(index));
       } else {
         format_mdspan(ctx, mdspan, index, dim + 1);
       }
     }
-    format_to(ctx.out(), "\n");
+    fmt::format_to(ctx.out(), "\n");
   }
 };
 
