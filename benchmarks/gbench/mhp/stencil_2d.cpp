@@ -465,7 +465,8 @@ DR_BENCHMARK(Stencil2D_Reference);
 // Distributed vector of floats. Granularity ensures segments contain
 // whole rows. Explicitly process segments SPMD-style with SYCL
 //
-static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
+[[maybe_unused]] static void
+Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
   auto s = default_shape();
   auto rows = s[0];
   auto cols = s[1];
@@ -506,7 +507,7 @@ static void Stencil2D_SegmentedSYCL_DR(benchmark::State &state) {
     // checker.check(stencil_steps % 2 ? b : a);
   }
 }
-
-DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
+// disabled due to DRA-136
+// DR_BENCHMARK(Stencil2D_SegmentedSYCL_DR);
 
 #endif // SYCL_LANGUAGE_VERSION

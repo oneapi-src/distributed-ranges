@@ -1286,7 +1286,8 @@ int main(int argc, char *argv[]) {
 
 static void ShallowWater_DR(benchmark::State &state) {
 
-  int n = 1400;
+  // changed from 1400 to reduce CI time
+  int n = 140;
   std::size_t nread, nwrite, nflop;
   ShallowWater::calculate_complexity(n, n, nread, nwrite, nflop);
   Stats stats(state, nread, nwrite, nflop);

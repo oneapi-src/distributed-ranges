@@ -163,7 +163,8 @@ void check_reduce(T actual) {
   }
 }
 
-template <class... BackendT> static void Reduce_DR(benchmark::State &state) {
+template <class... BackendT>
+[[maybe_unused]] static void Reduce_DR(benchmark::State &state) {
   T actual{};
   xhp::distributed_vector<T, BackendT...> src(default_vector_size, fill);
   Stats stats(state, sizeof(T) * src.size(), 0);
@@ -175,7 +176,8 @@ template <class... BackendT> static void Reduce_DR(benchmark::State &state) {
   }
   check_reduce(actual);
 }
-DR_BENCHMARK(Reduce_DR);
+// disabled due to DRA-134
+// DR_BENCHMARK(Reduce_DR);
 
 #ifdef DRISHMEM
 DR_BENCHMARK(Reduce_DR<dr::mhp::IshmemBackend>)->Name("Reduce_DR_ishmem");

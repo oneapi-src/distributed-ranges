@@ -426,7 +426,7 @@ template <>
 struct fmt::formatter<dr::mhp::halo_bounds> : formatter<string_view> {
   template <typename FmtContext>
   auto format(dr::mhp::halo_bounds hb, FmtContext &ctx) {
-    return format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
+    return fmt::format_to(ctx.out(), "prev: {} next: {}", hb.prev, hb.next);
   }
 };
 
