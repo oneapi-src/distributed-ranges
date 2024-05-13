@@ -35,7 +35,7 @@ requests==2.31.0
 reuse==3.0.2
 snowballstemmer==2.2.0
 soupsieve==2.5
-Sphinx==6.2.1
+Sphinx==7.3.7
 sphinx-book-theme==1.1.2
 sphinxcontrib-applehelp==1.0.8
 sphinxcontrib-devhelp==1.0.6
