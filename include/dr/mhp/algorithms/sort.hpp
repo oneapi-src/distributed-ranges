@@ -35,28 +35,36 @@ public:
   T *end() { return data_ + size_; }
 
   T *resize(std::size_t cnt) {
-    assert(cnt >= size_);
     if (cnt == size_)
       return data_;
 
     if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
-      T *newdata = sycl::malloc<T>(cnt, sycl_queue(), sycl_mem_kind());
-      assert(newdata != nullptr);
-      sycl_queue().copy<T>(data_, newdata, size_);
-      assert(sycl_get(*data_) ==
-             sycl_get(*newdata)); /* surprisingly is helpful in case of mem mgmt
-                                     issues */
-      sycl::free(data_, sycl_queue());
-      data_ = newdata;
+      if (cnt == 0) {
+        sycl::free(data_, sycl_queue());
+        data_ = nullptr;
+      } else {
+        T *newdata = sycl::malloc<T>(cnt, sycl_queue(), sycl_mem_kind());
+        assert(newdata != nullptr);
+        sycl_queue()
+            .copy<T>(data_, newdata, (size_ < cnt) ? size_ : cnt)
+            .wait();
+        sycl::free(data_, sycl_queue());
+        data_ = newdata;
+      }
 #else
       assert(false);
 #endif
     } else {
-      T *newdata = static_cast<T *>(malloc(cnt * sizeof(T)));
-      memcpy(newdata, data_, size_ * sizeof(T));
-      free(data_);
-      data_ = newdata;
+      if (cnt == 0) {
+        free(data_);
+        data_ = nullptr;
+      } else {
+        T *newdata = static_cast<T *>(malloc(cnt * sizeof(T)));
+        memcpy(newdata, data_, size_ * sizeof(T));
+        free(data_);
+        data_ = newdata;
+      }
     }
     size_ = cnt;
     return data_;
@@ -136,25 +144,10 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
   }
 }
 
-template <typename Compare>
-void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
-                     auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
-  while (vidx < default_comm().size() && segidx < rng::size(ls)) {
-    if (comp(vec_v[vidx - 1], ls[segidx])) {
-      vec_i[vidx] = segidx;
-      vec_s[vidx - 1] = vec_i[vidx] - vec_i[vidx - 1];
-      vidx++;
-    } else {
-      segidx++;
-    }
-  }
-}
-
 /* elements of dist_sort */
 template <typename valT, typename Compare, typename Seg>
-void splitters(Seg &lsegment, Compare &&comp,
-               std::vector<std::size_t> &vec_split_i,
-               std::vector<std::size_t> &vec_split_s) {
+void splitters(Seg &lsegment, Compare &&comp, auto &vec_split_i,
+               auto &vec_split_s) {
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
   assert(rng::size(vec_split_i) == _comm_size);
@@ -205,28 +198,39 @@ void splitters(Seg &lsegment, Compare &&comp,
     vec_split_v[_i] = vec_gmedians[global_median_idx];
   }
 
-  std::size_t segidx = 0, vidx = 1;
-
-  /* The while loop is executed in host memory, and together with
-   * sycl_copy takes most of the execution time of the sort procedure */
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
-    std::vector<valT> vec_lseg_tmp(rng::size(lsegment));
-    sycl_copy(rng::data(lsegment), rng::data(vec_lseg_tmp),
-              rng::size(lsegment));
+    auto &&local_policy = dpl_policy();
+    sycl::queue q = sycl_queue();
 
-    _find_split_idx(vidx, segidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
-                    vec_split_s);
+    auto lsb = dr::__detail::direct_iterator(rng::begin(lsegment));
+    auto lse = dr::__detail::direct_iterator(rng::end(lsegment));
+
+    oneapi::dpl::lower_bound(local_policy, lsb, lse, vec_split_v.begin(),
+                             vec_split_v.end(), vec_split_i.begin() + 1, comp);
+
+    for (std::size_t _i = 1; _i < vec_split_i.size(); _i++) {
+      vec_split_s[_i - 1] = vec_split_i[_i] - vec_split_i[_i - 1];
+    }
+    vec_split_s.back() = rng::size(lsegment) - vec_split_i.back();
+
 #else
     assert(false);
 #endif
   } else {
-    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
-                    vec_split_s);
+    auto first = lsegment.begin();
+    for (std::size_t i = 1; i <= rng::size(vec_split_v); i++) {
+      auto idx = vec_split_v[i - 1];
+      auto lower =
+          std::lower_bound(lsegment.begin(), lsegment.end(), idx, comp);
+      auto idx_lower = rng::distance(lsegment.begin(), lower);
+      auto chunk_size = rng::distance(first, lower);
+      vec_split_i[i] = idx_lower;
+      vec_split_s[i - 1] = chunk_size;
+      first = lower;
+    }
+    vec_split_s.back() = rng::size(lsegment) - vec_split_i.back();
   }
-
-  assert(rng::size(lsegment) > vec_split_i[vidx - 1]);
-  vec_split_s[vidx - 1] = rng::size(lsegment) - vec_split_i[vidx - 1];
 }
 
 template <typename valT>
@@ -247,36 +251,44 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
     // then send left
     DRLOG("Get from right first, recvdata size {} shift left {}",
           rng::size(vec_recvdata), shift_left);
-    // ** This will never happen, because values eq to split go left **
-    assert(false);
-  } else if (static_cast<int64_t>(rng::size(vec_recvdata)) < -shift_right) {
-    // Too little data in buffer to shift right - first get from left, then
-    // send right
-    assert(shift_left > 0);
 
-    default_comm().irecv(rng::data(vec_left), rng::size(vec_left),
-                         _comm_rank - 1, &req_l);
-    MPI_Wait(&req_l, &stat_l);
+    assert(shift_right > 0);
 
-    vec_left.resize(shift_left + rng::size(vec_recvdata));
+    default_comm().irecv(rng::data(vec_right), rng::size(vec_right),
+                         _comm_rank + 1, &req_r);
+    MPI_Wait(&req_r, &stat_r);
 
+    std::size_t old_size = rng::size(vec_recvdata);
+    vec_recvdata.resize(rng::size(vec_recvdata) + shift_right);
+
+    assert(rng::size(vec_right) <= rng::size(vec_recvdata) - old_size);
     if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
-      sycl_queue().copy<valT>(rng::data(vec_recvdata),
-                              rng::data(vec_left) + shift_left,
-                              rng::size(vec_recvdata));
+      sycl_queue()
+          .copy<valT>(rng::data(vec_right), rng::data(vec_recvdata) + old_size,
+                      rng::size(vec_right))
+          .wait();
 #else
       assert(false);
 #endif
     } else {
-      memcpy(rng::data(vec_left) + shift_left, rng::data(vec_recvdata),
-             rng::size(vec_recvdata));
+      std::copy(rng::begin(vec_right), rng::end(vec_right),
+                rng::begin(vec_recvdata) + old_size);
     }
-    vec_recvdata.replace(vec_left);
+    vec_right.resize(0);
 
-    default_comm().isend(vec_recvdata.end() + shift_right, -shift_right,
-                         _comm_rank + 1, &req_r);
-    MPI_Wait(&req_r, &stat_r);
+    default_comm().isend(rng::data(vec_recvdata), -shift_left, _comm_rank - 1,
+                         &req_l);
+    MPI_Wait(&req_l, &stat_l);
+
+  } else if (static_cast<int64_t>(rng::size(vec_recvdata)) < -shift_right) {
+    // Too little data in buffer to shift right - first get from left, then
+    // send right
+    // ** This will never happen, because values eq to split go right
+    DRLOG(
+        "Too little data in buffer to shift right - this should never happen");
+    assert(false);
+
   } else {
     // enough data in recv buffer
     if (shift_left < 0) {
@@ -319,33 +331,48 @@ void copy_results(auto &lsegment, const int64_t shift_left,
 #ifdef SYCL_LANGUAGE_VERSION
     sycl::event e_l, e_d, e_r;
 
-    if (size_l > 0)
+    if (size_l > 0) {
+      assert(size_l <= rng::size(lsegment));
       e_l = sycl_queue().copy(rng::data(vec_left), rng::data(lsegment), size_l);
-    if (size_r > 0)
+    }
+    if (size_r > 0) {
+      assert(size_l + size_d + size_r <= rng::size(lsegment));
       e_r = sycl_queue().copy(rng::data(vec_right),
                               rng::data(lsegment) + size_l + size_d, size_r);
-    e_d = sycl_queue().copy(rng::data(vec_recvdata) + invalidate_left,
-                            rng::data(lsegment) + size_l, size_d);
+    }
+    if (size_d > 0) {
+      assert(size_l + size_d <= rng::size(lsegment));
+      assert(invalidate_left + size_d <= rng::size(vec_recvdata));
+      e_d = sycl_queue().copy(rng::data(vec_recvdata) + invalidate_left,
+                              rng::data(lsegment) + size_l, size_d);
+    }
     if (size_l > 0)
       e_l.wait();
     if (size_r > 0)
       e_r.wait();
-    e_d.wait();
+    if (size_d > 0)
+      e_d.wait();
 
 #else
     assert(false);
 #endif
   } else {
-    if (size_l > 0)
-      std::memcpy(rng::data(lsegment), rng::data(vec_left),
-                  size_l * sizeof(valT));
-    if (size_r > 0)
-      std::memcpy(rng::data(lsegment) + size_l + size_d, rng::data(vec_right),
-                  size_r * sizeof(valT));
-
-    std::memcpy(rng::data(lsegment) + size_l,
-                rng::data(vec_recvdata) + invalidate_left,
-                size_d * sizeof(valT));
+    if (size_l > 0) {
+      assert(size_l <= rng::size(lsegment));
+      std::copy(rng::begin(vec_left), rng::end(vec_left), rng::begin(lsegment));
+    }
+    if (size_r > 0) {
+      assert(size_l + size_d + size_r <= rng::size(lsegment));
+      std::copy(rng::begin(vec_right), rng::end(vec_right),
+                rng::begin(lsegment) + size_l + size_d);
+    }
+    if (size_d > 0) {
+      assert(size_l + size_d <= rng::size(lsegment));
+      assert(invalidate_left + size_d <= rng::size(vec_recvdata));
+      std::copy(rng::begin(vec_recvdata) + invalidate_left,
+                rng::begin(vec_recvdata) + invalidate_left + size_d,
+                rng::begin(lsegment) + size_l);
+    }
   }
 }
 
@@ -380,7 +407,7 @@ void dist_sort(R &r, Compare &&comp) {
 
   /* send and receive data belonging to each node, then redistribute
    * data to achieve size of data equal to size of local segment */
-  /* async all_gather causes problems on some systems */
+  /* async i_all_gather causes problems on some systems */
   // MPI_Request req_recvelems;
   default_comm().all_gather(_recv_elems, vec_recv_elems);
 
