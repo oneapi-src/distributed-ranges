@@ -14,7 +14,7 @@ cfgv==3.4.0
 chardet==5.2.0
 charset-normalizer==3.3.2
 distlib==0.3.8
-docutils==0.19
+docutils==0.21.2
 filelock==3.14.0
 identify==2.5.35
 idna==3.7
