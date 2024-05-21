@@ -8,6 +8,8 @@
 
 .. image:: https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges/actions/workflows/pr.yml/badge.svg
    :target: https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges/actions/workflows/pr.yml
+.. image:: https://www.bestpractices.dev/projects/8975/badge
+   :target: https://www.bestpractices.dev/projects/8975
 
 Productivity library for distributed and partitioned memory based on
 C++ Ranges.
