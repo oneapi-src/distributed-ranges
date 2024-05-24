@@ -225,20 +225,20 @@ void sort(R &&r, Compare comp = Compare()) {
   {
     int t = omp_get_thread_num();
 
-    std::vector<std::size_t> chunks_ind, chunks_ind2;
+    std::vector<std::size_t> chunks_ind;
     for (std::size_t i = 0; i < n_segments; i++) {
       chunks_ind.push_back(push_positions[i][t]);
     }
-    chunks_ind.push_back(sorted_seg_sizes[t]);
 
     auto _segments = n_segments;
     while (_segments > 1) {
-      chunks_ind2.push_back(0);
+      std::vector<std::size_t> new_chunks;
+      new_chunks.push_back(0);
 
       for (int s = 0; s < _segments / 2; s++) {
 
-        std::size_t l = (2 * s + 2 < _segments) ? chunks_ind[2 * s + 2]
-                                                : sorted_seg_sizes[t];
+        const std::size_t l = (2 * s + 2 < _segments) ? chunks_ind[2 * s + 2]
+                                                      : sorted_seg_sizes[t];
 
         auto first = dr::__detail::direct_iterator(sorted_segments[t] +
                                                    chunks_ind[2 * s]);
@@ -246,7 +246,7 @@ void sort(R &&r, Compare comp = Compare()) {
                                                     chunks_ind[2 * s + 1]);
         auto last = dr::__detail::direct_iterator(sorted_segments[t] + l);
 
-        chunks_ind2.push_back(l);
+        new_chunks.push_back(l);
 
         oneapi::dpl::inplace_merge(
             __detail::dpl_policy(dr::ranges::rank(segments[t])), first, middle,
@@ -255,8 +255,7 @@ void sort(R &&r, Compare comp = Compare()) {
 
       _segments = (_segments + 1) / 2;
 
-      std::swap(chunks_ind, chunks_ind2);
-      chunks_ind2.clear();
+      std::swap(chunks_ind, new_chunks);
     }
   } // End of omp parallel region
 
