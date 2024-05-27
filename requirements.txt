@@ -31,7 +31,7 @@ pyenchant==3.2.2
 Pygments==2.18.0
 python-debian==0.1.49
 PyYAML==6.0.1
-requests==2.32.0
+requests==2.32.2
 reuse==3.0.2
 snowballstemmer==2.2.0
 soupsieve==2.5
