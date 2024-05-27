@@ -386,11 +386,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # stl
     add_compile_options(-Wno-error=pass-failed)
     add_compile_options(-Wno-error=unknown-pragmas)
+    add_compile_options(-qopenmp)
+    add_link_options(-qopenmp)
 
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-      add_compile_options(-qopenmp -qopt-streaming-stores=always
-                          -qopt-zmm-usage=high)
-      add_link_options(-qopenmp)
+      add_compile_options(-qopt-streaming-stores=always -qopt-zmm-usage=high)
     endif()
   endif()
 
