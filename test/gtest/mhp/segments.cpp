@@ -41,7 +41,10 @@ TYPED_TEST(SegmentUtils, LocalSegment) {
   }
   Ops1<TypeParam> ops(10);
   auto segments = dr::mhp::local_segments(ops.dist_vec);
-  EXPECT_EQ(dr::mhp::local_segment(ops.dist_vec), *rng::begin(segments));
+  auto ls = dr::mhp::local_segment(ops.dist_vec);
+  if (ls.size() == 0) // comparison would not be possible
+    return;
+  EXPECT_EQ(ls, *rng::begin(segments));
 }
 
 TYPED_TEST(SegmentUtils, OnlyRank0Data) {
