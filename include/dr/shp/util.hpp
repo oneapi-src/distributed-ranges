@@ -5,6 +5,7 @@
 #pragma once
 
 #include <iostream>
+#include <omp.h>
 #include <sycl/sycl.hpp>
 
 namespace dr::shp {
@@ -116,6 +117,29 @@ std::vector<sycl::device> get_devices(Selector &&selector) {
 
 template <typename Selector>
 std::vector<sycl::device> get_numa_devices(Selector &&selector) {
+#ifdef USE_OMP_INTEROP
+  // possible to move ompt_queues_ shp::__detail as a global object
+  static std::vector<sycl::queue *> ompt_queues_;
+  if (ompt_queues_.empty()) {
+    int num_devices = omp_get_num_devices();
+    for (int d = 0; d < num_devices; ++d) {
+      omp_interop_t interop = nullptr;
+#pragma omp interop device(d) init(prefer_type("sycl"), targetsync : interop)
+      int result;
+      sycl::queue *omp_queue = static_cast<sycl::queue *>(
+          omp_get_interop_ptr(interop, omp_ipr_targetsync, &result));
+      if (result != omp_irc_success)
+        throw std::runtime_error(
+            "Fail to obtain sycl::queue by openmp::interop");
+      ompt_queues_.emplace_back(omp_queue);
+    }
+  }
+  std::vector<sycl::device> devices;
+  for (auto &&q : ompt_queues_) {
+    devices.push_back(q->get_device());
+  }
+  return devices;
+#else
   try {
     return get_numa_devices_impl_(std::forward<Selector>(selector));
   } catch (sycl::exception const &e) {
@@ -127,6 +151,7 @@ std::vector<sycl::device> get_numa_devices(Selector &&selector) {
       throw;
     }
   }
+#endif
 }
 
 // Return exactly `n` devices obtained using the selector `selector`.
