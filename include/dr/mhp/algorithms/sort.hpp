@@ -140,19 +140,17 @@ template <typename T, typename Compare>
 void local_merge(buffer<T> &v, std::vector<std::size_t> &sizes,
                  Compare &&comp) {
 
-  std::vector<int> chunks_ind(sizes.size()),
-      chunks_ind2((sizes.size() + 1) / 2);
+  std::vector<int> chunks_ind(sizes.size());
   std::exclusive_scan(sizes.begin(), sizes.end(), chunks_ind.begin(), 0);
 
 #ifdef SYCL_LANGUAGE_VERSION
   auto policy = dpl_policy();
 #endif
 
-  int segno = chunks_ind.size();
-
-  while (segno > 1) {
-    int i;
-    for (i = 0; i < segno / 2; i++) {
+  while (chunks_ind.size() > 1) {
+    const auto segno = chunks_ind.size();
+    std::vector<int> next_chunk_ind;
+    for (std::size_t i = 0; i < segno / 2; i++) {
       auto first = v.begin() + chunks_ind[2 * i];
       auto middle = v.begin() + chunks_ind[2 * i + 1];
       auto last =
@@ -169,15 +167,12 @@ void local_merge(buffer<T> &v, std::vector<std::size_t> &sizes,
       } else {
         std::inplace_merge(first, middle, last, comp);
       }
-      chunks_ind2[i] = chunks_ind[2 * i];
+      next_chunk_ind.push_back(chunks_ind[2 * i]);
     }
     if (segno % 2 == 1) {
-      chunks_ind2[i] = chunks_ind[2 * i];
-      segno += 1;
+      next_chunk_ind.push_back(chunks_ind[segno - 1]);
     }
-
-    segno /= 2;
-    std::swap(chunks_ind, chunks_ind2);
+    std::swap(chunks_ind, next_chunk_ind);
   }
 }
 
