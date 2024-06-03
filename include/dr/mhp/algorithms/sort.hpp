@@ -137,42 +137,36 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
 }
 
 template <typename T, typename Compare>
-void local_merge(buffer<T> &v, std::vector<std::size_t> &sizes,
+void local_merge(buffer<T> &v, std::vector<std::size_t> chunks,
                  Compare &&comp) {
 
-  std::vector<int> chunks_ind(sizes.size());
-  std::exclusive_scan(sizes.begin(), sizes.end(), chunks_ind.begin(), 0);
+  std::exclusive_scan(chunks.begin(), chunks.end(), chunks.begin(), 0);
 
-#ifdef SYCL_LANGUAGE_VERSION
-  auto policy = dpl_policy();
-#endif
-
-  while (chunks_ind.size() > 1) {
-    const auto segno = chunks_ind.size();
-    std::vector<int> next_chunk_ind;
+  while (chunks.size() > 1) {
+    std::size_t segno = chunks.size();
+    std::vector<std::size_t> next_chunks;
     for (std::size_t i = 0; i < segno / 2; i++) {
-      auto first = v.begin() + chunks_ind[2 * i];
-      auto middle = v.begin() + chunks_ind[2 * i + 1];
-      auto last =
-          (2 * i + 2 < segno) ? v.begin() + chunks_ind[2 * i + 2] : v.end();
+      auto first = v.begin() + chunks[2 * i];
+      auto middle = v.begin() + chunks[2 * i + 1];
+      auto last = (2 * i + 2 < segno) ? v.begin() + chunks[2 * i + 2] : v.end();
       if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
         auto dfirst = dr::__detail::direct_iterator(first);
         auto dmiddle = dr::__detail::direct_iterator(middle);
         auto dlast = dr::__detail::direct_iterator(last);
-        oneapi::dpl::inplace_merge(policy, dfirst, dmiddle, dlast, comp);
+        oneapi::dpl::inplace_merge(dpl_policy(), dfirst, dmiddle, dlast, comp);
 #else
         assert(false);
 #endif
       } else {
         std::inplace_merge(first, middle, last, comp);
       }
-      next_chunk_ind.push_back(chunks_ind[2 * i]);
+      next_chunks.push_back(chunks[2 * i]);
     }
     if (segno % 2 == 1) {
-      next_chunk_ind.push_back(chunks_ind[segno - 1]);
+      next_chunks.push_back(chunks[segno - 1]);
     }
-    std::swap(chunks_ind, next_chunk_ind);
+    std::swap(chunks, next_chunks);
   }
 }
 
