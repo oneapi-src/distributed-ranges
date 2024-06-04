@@ -22,7 +22,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "distributed-ranges"
-copyright = "2022-2023, Intel"
+copyright = "2022-2024, Intel"
 
 
 # -- General configuration ---------------------------------------------------
@@ -71,6 +71,7 @@ html_theme_options = {
 
 # -- Options for spelling extension-------------------------------------------
 spelling_warning = True
+spelling_word_list_filename = "spelling_wordlist.txt"
 
 # -- Options for breathe
 
