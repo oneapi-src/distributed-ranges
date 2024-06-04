@@ -113,7 +113,7 @@ Add this to your main to enable logging::
 Contributing
 ------------
 
-See [CONTRIBUTING](./CONTRIBUTING.md)
+See `CONTRIBUTING`_.
 
 
 See also
@@ -139,7 +139,7 @@ See also
 .. _`Spec Editing`: doc/spec/README.rst
 .. _`Fuzz Testing`: test/fuzz/README.rst
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
-
+.. _`CONTRIBUTING`: CONTRIBUTING.md
 .. _`Distributed Ranges, why you need it`: https://github.com/oneapi-src/distributed-ranges/blob/main/doc/presentations/Distributed%20Ranges%2C%20why%20you%20need%20it.pdf
 .. _`Get Started with Distributed Ranges`: https://www.intel.com/content/www/us/en/developer/articles/guide/get-started-with-distributed-ranges.html
 .. _`Sample repository showing Distributed Ranges usage`: https://github.com/oneapi-src/distributed-ranges-tutorial
