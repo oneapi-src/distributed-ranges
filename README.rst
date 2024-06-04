@@ -48,8 +48,8 @@ according to developer needs. Contact us by writing a `new issue`_.
 Examples
 --------
 
-See [Get Started with Distributed Ranges](https://www.intel.com/content/www/us/en/developer/articles/guide/get-started-with-distributed-ranges.html)
-for a few well explained examples. Additionally build all tests of this repository to run much more examples.
+See `Sample repository showing Distributed Ranges usage`_ for a few well explained examples.
+Additionally you may build all tests of this repository to see and run much more examples.
 
 Build and test with gcc for CPU::
 
@@ -68,8 +68,8 @@ See how example is run and the output::
 Adding Distributed Ranges to your project
 -----------------------------------------
 
-See [Sample repository showing Distributed Ranges usage](https://github.com/oneapi-src/distributed-ranges-tutorial)
-for a live example how to write CMakeLists.txt. Alternalively read details below.
+See `Sample repository showing Distributed Ranges usage`_
+for a live example how to write CMakeLists.txt. Alternatively you may read details below.
 
 If your project uses CMAKE, add the following to your
 ``CMakeLists.txt`` to download the library::

@@ -68,18 +68,18 @@ commit automatically with `git commit -s`.
 
 If you want to build the document or run the pre-commit checks, you
 must install some python packages. Create a python virtual environment
-and install dependencies::
+and install dependencies:
 ```
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Activate virtual environment::
+Activate virtual environment:
 ```
 source venv/bin/activate
 ```
-For benchmarking::
+For benchmarking:
 ```
 pip install src-python/drbench
 ```
