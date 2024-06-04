@@ -28,20 +28,21 @@ Documentation
 -------------
 
 - Usage:
-  - Introductory presentation: [Distributed Ranges, why you need it](https://github.com/oneapi-src/distributed-ranges/blob/main/doc/presentations/Distributed%20Ranges%2C%20why%20you%20need%20it.pdf), 2024
-  - Article: [Get Started with Distributed Ranges](https://www.intel.com/content/www/us/en/developer/articles/guide/get-started-with-distributed-ranges.html), 2023
-  - Tutorial: [Sample repository showing Distributed Ranges usage](https://github.com/oneapi-src/distributed-ranges-tutorial)
+  - Introductory presentation: `Distributed Ranges, why you need it`_, 2024
+  - Article: `Get Started with Distributed Ranges`_, 2023
+  - Tutorial: `Sample repository showing Distributed Ranges usage`_
 - Design / Implementation:
-  - Conference paper: ["Distributed Ranges: A Model for Distributed Data Structures, Algorithms, and Views"](https://dl.acm.org/doi/10.1145/3650200.3656632), 2024
-  - Talk: [CppCon 2023: Benjamin Brock "Distributed Ranges: Model for Building Distributed Data Structures, Algorithms & Views"](https://www.youtube.com/watch?v=X_dlJcV21YI), 2023
-  - Technical presentation: [Intel Innovation'23](https://github.com/oneapi-src/distributed-ranges/blob/main/doc/presentations/Distributed%20Ranges.pdf), 2023
-  - [API specification](https://oneapi-src.github.io/distributed-ranges/spec/)
-  - [Doxygen](https://oneapi-src.github.io/distributed-ranges/doxygen/)
+  - Conference paper: `Distributed Ranges, A Model for Distributed Data Structures, Algorithms, and Views`_, 2024
+  - Talk: `CppCon 2023; Benjamin Brock; Distributed Ranges`_, 2023
+  - Technical presentation: `Intel Innovation'23`_, 2023
+  - `API specification`_
+  - `Doxygen`_
 
 Contact us
 ----------
 
-We seek collaboration opportunities and welcome feedback on ways to extend the library, according to developer needs. Contact us by writing a [new issue](https://github.com/oneapi-src/distributed-ranges/issues/new).
+We seek collaboration opportunities and welcome feedback on ways to extend the library,
+according to developer needs. Contact us by writing a `new issue`_.
 
 
 Examples
@@ -138,3 +139,13 @@ See also
 .. _`Spec Editing`: doc/spec/README.rst
 .. _`Fuzz Testing`: test/fuzz/README.rst
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
+
+.. _`Distributed Ranges, why you need it`: https://github.com/oneapi-src/distributed-ranges/blob/main/doc/presentations/Distributed%20Ranges%2C%20why%20you%20need%20it.pdf
+.. _`Get Started with Distributed Ranges`: https://www.intel.com/content/www/us/en/developer/articles/guide/get-started-with-distributed-ranges.html
+.. _`Sample repository showing Distributed Ranges usage`: https://github.com/oneapi-src/distributed-ranges-tutorial
+.. _`Distributed Ranges, A Model for Distributed Data Structures, Algorithms, and Views`: https://dl.acm.org/doi/10.1145/3650200.3656632
+.. _`CppCon 2023; Benjamin Brock; Distributed Ranges`: https://www.youtube.com/watch?v=X_dlJcV21YI
+.. _`Intel Innovation'23`: https://github.com/oneapi-src/distributed-ranges/blob/main/doc/presentations/Distributed%20Ranges.pdf
+.. _`API specification`: https://oneapi-src.github.io/distributed-ranges/spec/
+.. _`Doxygen`: https://oneapi-src.github.io/distributed-ranges/doxygen/
+.. _`new issue`: issues/new
