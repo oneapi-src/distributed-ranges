@@ -62,7 +62,7 @@ repos:
   rev: v2.2.4
   hooks:
   - id: codespell
-    entry: codespell --ignore-words ignore-spelling-words.txt
+    entry: codespell --ignore-words doc/spec/source/spelling_wordlist.txt
     types: [text]
 
 - repo: local
