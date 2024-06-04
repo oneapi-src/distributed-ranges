@@ -6,6 +6,16 @@ SPDX-License-Identifier: BSD-3-Clause
 
 # Contributing
 
+### Submitting a PR
+
+Follow the standard github workflow. Fork this repo, clone your fork,
+make changes, commit to a new branch, push branch to your fork. Submit
+a PR from your fork.
+
+The CI runs static checks and runs the test system. See
+[pre-commit](doc/developer/testing/pre-commit.rst) for information on
+failing static checks.
+
 ### License
 
 <PROJECT NAME> is licensed under the terms in [LICENSE]<link to license file in repo>. By contributing to the project, you agree to the license and copyright terms therein and release your contribution under these terms.
@@ -53,3 +63,23 @@ Use your real name (sorry, no pseudonyms or anonymous contributions.)
 
 If you set your `user.name` and `user.email` git configs, you can sign your
 commit automatically with `git commit -s`.
+
+### Check your change locally
+
+If you want to build the document or run the pre-commit checks, you
+must install some python packages. Create a python virtual environment
+and install dependencies::
+```
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Activate virtual environment::
+```
+source venv/bin/activate
+```
+For benchmarking::
+```
+pip install src-python/drbench
+```

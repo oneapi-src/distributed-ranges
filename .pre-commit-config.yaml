@@ -41,6 +41,7 @@ repos:
   rev: v1.1.1
   hooks:
   - id: doc8
+    args: ['--max-line-length=120']
 
 - repo: https://github.com/pycqa/isort
   rev: 5.12.0
