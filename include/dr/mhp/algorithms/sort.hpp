@@ -208,19 +208,10 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
     vec_recvdata.resize(rng::size(vec_recvdata) + shift_right);
 
     assert(rng::size(vec_right) <= rng::size(vec_recvdata) - old_size);
-    if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-      sycl_queue()
-          .copy<valT>(rng::data(vec_right), rng::data(vec_recvdata) + old_size,
-                      rng::size(vec_right))
-          .wait();
-#else
-      assert(false);
-#endif
-    } else {
-      std::copy(rng::begin(vec_right), rng::end(vec_right),
-                rng::begin(vec_recvdata) + old_size);
-    }
+
+    __detail::copy(rng::data(vec_right), rng::data(vec_recvdata) + old_size,
+                   rng::size(vec_right));
+    
     vec_right.resize(0);
 
     default_comm().isend(rng::data(vec_recvdata), -shift_left, _comm_rank - 1,
