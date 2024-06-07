@@ -80,21 +80,6 @@ void local_merge(buffer<T> &v, std::vector<std::size_t> chunks,
   }
 }
 
-template <typename Compare>
-void _find_split_idx(std::size_t &vidx, Compare &&comp, auto &ls, auto &vec_v,
-                     auto &vec_i, auto &vec_s) {
-  std::size_t segidx = 0;
-  while (vidx < default_comm().size() && segidx < rng::size(ls)) {
-    if (comp(vec_v[vidx - 1], ls[segidx])) {
-      vec_i[vidx] = segidx;
-      vec_s[vidx - 1] = vec_i[vidx] - vec_i[vidx - 1];
-      vidx++;
-    } else {
-      segidx++;
-    }
-  }
-}
-
 /* elements of dist_sort */
 template <typename valT, typename Compare, typename Seg>
 void splitters(Seg &lsegment, Compare &&comp, auto &vec_split_i,
