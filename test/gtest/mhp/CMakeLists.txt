@@ -104,12 +104,11 @@ if(ENABLE_SYCL)
         ${sycl-exclusions}Halo3/*:Sort*:Counted/*:Mdspan*:Mdarray*:)
   endif()
 
-  add_mhp_ctest(NAME mhp-quick-test NPROC 1 SYCL)
-  add_mhp_ctest(NAME mhp-quick-test NPROC 2 SYCL)
-  add_mhp_ctest(
-    NAME mhp-quick-test NPROC 1 OFFLOAD SYCL TARGS --device-memory)
-  add_mhp_ctest(
-    NAME mhp-quick-test NPROC 2 OFFLOAD SYCL TARGS --device-memory)
+  foreach(nproc RANGE 1 4)
+    add_mhp_ctest(NAME mhp-quick-test NPROC ${nproc} SYCL)
+    add_mhp_ctest(
+      NAME mhp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory)
+  endforeach()
 
   add_mhp_ctest(
     NAME mhp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory

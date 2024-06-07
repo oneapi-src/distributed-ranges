@@ -2,9 +2,9 @@
 ..
 .. SPDX-License-Identifier: BSD-3-Clause
 
-====================
+===================
  Distributed Ranges
-====================
+===================
 
 .. image:: https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges/actions/workflows/pr.yml/badge.svg
    :target: https://github.com/intel-sandbox/libraries.runtimes.hpc.dds.distributed-ranges/actions/workflows/pr.yml
@@ -14,71 +14,62 @@
 Productivity library for distributed and partitioned memory based on
 C++ Ranges.
 
-`Overview slides`_
+About
+-----
 
-.. _`Overview slides`: doc/presentations/Distributed%20Ranges.pdf
+Distributed Ranges is a productivity library for distributed and partitioned memory based on C++ ranges.
+It offers a collection of data structures, views, and algorithms for building generic abstractions
+and provides interoperability with MPI, SHMEM, SYCL and OpenMP and portability on CPUs and GPUs.
+NUMA-aware allocators and distributed data structures facilitate development of C++ applications
+on heterogeneous nodes with multiple devices and achieve excellent performance and parallel scalability
+by exploiting local compute and data access.
 
-The documentation is built from main branch on every commit and
-published at `latest spec`_ and `latest doxygen`_.
+Documentation
+-------------
 
-`Benchmark results`_
+- Usage:
+  - Introductory presentation: `Distributed Ranges, why you need it`_, 2024
+  - Article: `Get Started with Distributed Ranges`_, 2023
+  - Tutorial: `Sample repository showing Distributed Ranges usage`_
+- Design / Implementation:
+  - Conference paper: `Distributed Ranges, A Model for Distributed Data Structures, Algorithms, and Views`_, 2024
+  - Talk: `CppCon 2023; Benjamin Brock; Distributed Ranges`_, 2023
+  - Technical presentation: `Intel Innovation'23`_, 2023
+  - `API specification`_
+  - `Doxygen`_
 
-.. _`Benchmark results`: devcloud.rst
+Contact us
+----------
 
-Environment Setup
-=================
+We seek collaboration opportunities and welcome feedback on ways to extend the library,
+according to developer needs. Contact us by writing a `new issue`_.
 
-On Ubuntu 22.04::
-
-  sudo apt install g++-12
-
-If you want to build the document or run the pre-commit checks, you
-must install some python packages. Create a python virtual environment
-and install dependencies::
-
-  python -m venv venv
-  source venv/bin/activate
-  pip install -r requirements.txt
-
-Activate virtual environment::
-
-  source venv/bin/activate
-
-For benchmarking::
-
-  pip install src-python/drbench
 
 Examples
-========
+--------
+
+See `Sample repository showing Distributed Ranges usage`_ for a few well explained examples.
+Additionally you may build all tests of this repository to see and run much more examples.
 
 Build and test with gcc for CPU::
 
   CXX=g++-12 cmake -B build
   make -C build -j all test
 
-Build and test with ipcx for SYCL && CPU::
+Build and test with ipcx for SYCL && CPU/GPU::
 
   CXX=icpx cmake -B build -DENABLE_SYCL=ON
-
-Build and test with ipcx for SYCL && CPU on devcloud::
-
-  CXX=icpx cmake -B build -DENABLE_SYCL=ON -DENABLE_MPIFORK=on
 
 See how example is run and the output::
 
   cd build
   ctest -VV
 
-Logging
-=======
+Adding Distributed Ranges to your project
+-----------------------------------------
 
-Add this to your main to enable logging::
-
-  std::ofstream logfile(fmt::format("dr.{}.log", comm_rank));
-  dr::drlog.set_file(logfile);
-
-Adding DR to a project
-======================
+See `Sample repository showing Distributed Ranges usage`_
+for a live example how to write CMakeLists.txt. Alternatively you may read details below.
 
 If your project uses CMAKE, add the following to your
 ``CMakeLists.txt`` to download the library::
@@ -110,19 +101,20 @@ Use ``-I`` and ``-L`` to find headers and libs during compilation::
 
   g++ -std=c=++20 -I <prefix>/include -L <prefix>/lib -L /opt/intel/oneapi/mpi/latest/lib/release -lfmt -lmpicxx -lmpi
 
+Logging
+-------
 
-Developer Information
-=====================
+Add this to your main to enable logging::
 
-Submitting a PR
----------------
+  std::ofstream logfile(fmt::format("dr.{}.log", comm_rank));
+  dr::drlog.set_file(logfile);
 
-Follow the standard github workflow. Fork this repo, clone your fork,
-make changes, commit to a new branch, push branch to your fork. Submit
-a PR from your fork.
 
-The CI runs static checks and runs the test system. See `pre-commit`_
-for information on failing static checks.
+Contributing
+------------
+
+See `CONTRIBUTING`_.
+
 
 See also
 --------
@@ -144,9 +136,16 @@ See also
 
 .. _`Security`: SECURITY.md
 .. _`Testing`: doc/developer/testing
-.. _`pre-commit`: doc/developer/testing/pre-commit.rst
 .. _`Spec Editing`: doc/spec/README.rst
 .. _`Fuzz Testing`: test/fuzz/README.rst
 .. _`Print Type`: https://stackoverflow.com/a/14617848/2525421
-.. _`latest spec`: https://cautious-dollop-yopgy9g.pages.github.io/spec
-.. _`latest doxygen`: https://cautious-dollop-yopgy9g.pages.github.io/doxygen
+.. _`CONTRIBUTING`: CONTRIBUTING.md
+.. _`Distributed Ranges, why you need it`: https://github.com/oneapi-src/distributed-ranges/blob/main/doc/presentations/Distributed%20Ranges%2C%20why%20you%20need%20it.pdf
+.. _`Get Started with Distributed Ranges`: https://www.intel.com/content/www/us/en/developer/articles/guide/get-started-with-distributed-ranges.html
+.. _`Sample repository showing Distributed Ranges usage`: https://github.com/oneapi-src/distributed-ranges-tutorial
+.. _`Distributed Ranges, A Model for Distributed Data Structures, Algorithms, and Views`: https://dl.acm.org/doi/10.1145/3650200.3656632
+.. _`CppCon 2023; Benjamin Brock; Distributed Ranges`: https://www.youtube.com/watch?v=X_dlJcV21YI
+.. _`Intel Innovation'23`: https://github.com/oneapi-src/distributed-ranges/blob/main/doc/presentations/Distributed%20Ranges.pdf
+.. _`API specification`: https://oneapi-src.github.io/distributed-ranges/spec/
+.. _`Doxygen`: https://oneapi-src.github.io/distributed-ranges/doxygen/
+.. _`new issue`: issues/new
