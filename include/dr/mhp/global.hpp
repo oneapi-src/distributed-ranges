@@ -215,8 +215,7 @@ inline const auto &dpl_policy() {
 
 namespace dr::mhp::__detail {
 
-template<typename T>
-void copy(const T *src, T *dst, std::size_t sz) {
+template <typename T> void copy(const T *src, T *dst, std::size_t sz) {
   if (mhp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
     sycl::queue().copy(src, dst, sz).wait();
