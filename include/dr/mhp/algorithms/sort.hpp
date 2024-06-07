@@ -196,7 +196,7 @@ void shift_data(const int64_t shift_left, const int64_t shift_right,
 
     __detail::copy(rng::data(vec_right), rng::data(vec_recvdata) + old_size,
                    rng::size(vec_right));
-    
+
     vec_right.resize(0);
 
     default_comm().isend(rng::data(vec_recvdata), -shift_left, _comm_rank - 1,
