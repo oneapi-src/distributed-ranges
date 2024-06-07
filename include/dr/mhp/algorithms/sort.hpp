@@ -26,104 +26,6 @@ namespace dr::mhp {
 
 namespace __detail {
 
-template <typename T> class buffer {
-public:
-  using value_type = T;
-  std::size_t size() { return size_; }
-  T *data() { return data_; }
-  T *begin() { return data_; }
-  T *end() { return data_ + size_; }
-
-  T *resize(std::size_t cnt) {
-    if (cnt == size_)
-      return data_;
-
-    if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-      if (cnt == 0) {
-        sycl::free(data_, sycl_queue());
-        data_ = nullptr;
-      } else {
-        T *newdata = sycl::malloc<T>(cnt, sycl_queue(), sycl_mem_kind());
-        assert(newdata != nullptr);
-        sycl_queue()
-            .copy<T>(data_, newdata, (size_ < cnt) ? size_ : cnt)
-            .wait();
-        sycl::free(data_, sycl_queue());
-        data_ = newdata;
-      }
-#else
-      assert(false);
-#endif
-    } else {
-      if (cnt == 0) {
-        free(data_);
-        data_ = nullptr;
-      } else {
-        T *newdata = static_cast<T *>(malloc(cnt * sizeof(T)));
-        memcpy(newdata, data_, size_ * sizeof(T));
-        free(data_);
-        data_ = newdata;
-      }
-    }
-    size_ = cnt;
-    return data_;
-  }
-
-  void replace(buffer &other) {
-    if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-      if (data_ != nullptr)
-        sycl::free(data_, sycl_queue());
-#else
-      assert(false);
-#endif
-    } else {
-      if (data_ != nullptr)
-        free(data_);
-    }
-    data_ = rng::data(other);
-    size_ = rng::size(other);
-    other.data_ = nullptr;
-    other.size_ = 0;
-  }
-
-  ~buffer() {
-    if (data_ != nullptr) {
-      if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-        sycl::free(this->data_, sycl_queue());
-#else
-        assert(false);
-#endif
-      } else {
-        free(data_);
-      }
-    }
-    data_ = nullptr;
-    size_ = 0;
-  }
-
-  buffer(std::size_t cnt) : size_(cnt) {
-    if (cnt > 0) {
-      if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-        data_ = sycl::malloc<T>(cnt, sycl_queue(), sycl_mem_kind());
-#else
-        assert(false);
-#endif
-      } else {
-        data_ = static_cast<T *>(malloc(cnt * sizeof(T)));
-      }
-      assert(data_ != nullptr);
-    }
-  }
-
-private:
-  T *data_ = nullptr;
-  std::size_t size_ = 0;
-}; // class buffer
-
 template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
   if (rng::size(r) >= 2) {
     if (mhp::use_sycl()) {
@@ -165,10 +67,10 @@ void splitters(Seg &lsegment, Compare &&comp, auto &vec_split_i,
 #ifdef SYCL_LANGUAGE_VERSION
     std::vector<sycl::event> events;
 
-    for (std::size_t _i = 0; _i < rng::size(vec_lmedians) - 1; _i++) {
-      assert(_i * _step_m < rng::size(lsegment));
+    for (std::size_t i = 0; i < rng::size(vec_lmedians) - 1; i++) {
+      assert(i * _step_m < rng::size(lsegment));
       sycl::event ev = sycl_queue().memcpy(
-          &vec_lmedians[_i], &lsegment[_i * _step_m], sizeof(valT));
+          &vec_lmedians[i], &lsegment[i * _step_m], sizeof(valT));
       events.emplace_back(ev);
     }
     sycl::event ev =
@@ -180,9 +82,9 @@ void splitters(Seg &lsegment, Compare &&comp, auto &vec_split_i,
     assert(false);
 #endif
   } else {
-    for (std::size_t _i = 0; _i < rng::size(vec_lmedians) - 1; _i++) {
-      assert(_i * _step_m < rng::size(lsegment));
-      vec_lmedians[_i] = lsegment[_i * _step_m];
+    for (std::size_t i = 0; i < rng::size(vec_lmedians) - 1; i++) {
+      assert(i * _step_m < rng::size(lsegment));
+      vec_lmedians[i] = lsegment[i * _step_m];
     }
     vec_lmedians.back() = lsegment.back();
   }
@@ -192,10 +94,10 @@ void splitters(Seg &lsegment, Compare &&comp, auto &vec_split_i,
 
   std::vector<valT> vec_split_v(_comm_size - 1);
 
-  for (std::size_t _i = 0; _i < _comm_size - 1; _i++) {
-    auto global_median_idx = (_i + 1) * (_comm_size + 1) - 1;
+  for (std::size_t i = 0; i < _comm_size - 1; i++) {
+    auto global_median_idx = (i + 1) * (_comm_size + 1) - 1;
     assert(global_median_idx < rng::size(vec_gmedians));
-    vec_split_v[_i] = vec_gmedians[global_median_idx];
+    vec_split_v[i] = vec_gmedians[global_median_idx];
   }
 
   if (mhp::use_sycl()) {
@@ -209,28 +111,21 @@ void splitters(Seg &lsegment, Compare &&comp, auto &vec_split_i,
     oneapi::dpl::lower_bound(local_policy, lsb, lse, vec_split_v.begin(),
                              vec_split_v.end(), vec_split_i.begin() + 1, comp);
 
-    for (std::size_t _i = 1; _i < vec_split_i.size(); _i++) {
-      vec_split_s[_i - 1] = vec_split_i[_i] - vec_split_i[_i - 1];
-    }
-    vec_split_s.back() = rng::size(lsegment) - vec_split_i.back();
-
 #else
     assert(false);
 #endif
   } else {
-    auto first = lsegment.begin();
     for (std::size_t i = 1; i <= rng::size(vec_split_v); i++) {
       auto idx = vec_split_v[i - 1];
       auto lower =
           std::lower_bound(lsegment.begin(), lsegment.end(), idx, comp);
-      auto idx_lower = rng::distance(lsegment.begin(), lower);
-      auto chunk_size = rng::distance(first, lower);
-      vec_split_i[i] = idx_lower;
-      vec_split_s[i - 1] = chunk_size;
-      first = lower;
+      vec_split_i[i] = rng::distance(lsegment.begin(), lower);
     }
-    vec_split_s.back() = rng::size(lsegment) - vec_split_i.back();
   }
+  for (std::size_t i = 1; i < vec_split_i.size(); i++) {
+    vec_split_s[i - 1] = vec_split_i[i] - vec_split_i[i - 1];
+  }
+  vec_split_s.back() = rng::size(lsegment) - vec_split_i.back();
 }
 
 template <typename valT>
@@ -432,8 +327,8 @@ void dist_sort(R &r, Compare &&comp) {
   const auto desired_elems_num = (_total_elems + _comm_size - 1) / _comm_size;
 
   vec_shift[0] = desired_elems_num - vec_recv_elems[0];
-  for (std::size_t _i = 1; _i < _comm_size - 1; _i++) {
-    vec_shift[_i] = vec_shift[_i - 1] + desired_elems_num - vec_recv_elems[_i];
+  for (std::size_t i = 1; i < _comm_size - 1; i++) {
+    vec_shift[i] = vec_shift[i - 1] + desired_elems_num - vec_recv_elems[i];
   }
 
   const int64_t shift_left = _comm_rank == 0 ? 0 : -vec_shift[_comm_rank - 1];

@@ -215,6 +215,19 @@ inline const auto &dpl_policy() {
 
 namespace dr::mhp::__detail {
 
+template<typename T>
+void copy(const T *src, T *dst, std::size_t sz) {
+  if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    sycl::queue().copy(src, dst, sz).wait();
+#else
+    assert(false);
+#endif
+  } else {
+    memcpy(dst, src, sz * sizeof(T));
+  }
+}
+
 template <typename T> class allocator {
 
 public:
@@ -258,5 +271,62 @@ public:
 private:
   std::allocator<T> std_allocator_;
 };
+
+template <typename T> class buffer {
+
+public:
+  using value_type = T;
+  std::size_t size() { return size_; }
+
+  buffer(std::size_t cnt) : size_(cnt) {
+    if (cnt > 0) {
+      data_ = alloc_.allocate(cnt);
+      assert(data_ != nullptr);
+    }
+  }
+
+  ~buffer() {
+    if (data_ != nullptr)
+      alloc_.deallocate(data_, size_);
+    data_ = nullptr;
+    size_ = 0;
+  }
+
+  T *resize(std::size_t cnt) {
+    if (cnt == size_)
+      return data_;
+
+    if (cnt == 0) {
+      alloc_.deallocate(data_, size_);
+      data_ = nullptr;
+    } else {
+      T *newdata = alloc_.allocate(cnt);
+      copy(data_, newdata, std::min(size_, cnt));
+      alloc_.deallocate(data_, size_);
+      data_ = newdata;
+    }
+    size_ = cnt;
+    return data_;
+  }
+
+  void replace(buffer &other) {
+    if (data_ != nullptr)
+      alloc_.deallocate(data_, size_);
+
+    data_ = rng::data(other);
+    size_ = rng::size(other);
+    other.data_ = nullptr;
+    other.size_ = 0;
+  }
+
+  T *data() { return data_; }
+  T *begin() { return data_; }
+  T *end() { return data_ + size_; }
+
+private:
+  allocator<T> alloc_;
+  T *data_ = nullptr;
+  std::size_t size_ = 0;
+}; // class buffer
 
 } // namespace dr::mhp::__detail
