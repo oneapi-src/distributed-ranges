@@ -176,8 +176,8 @@ template <class... BackendT>
   }
   check_reduce(actual);
 }
-// disabled due to DRA-134
-// DR_BENCHMARK(Reduce_DR);
+
+DR_BENCHMARK(Reduce_DR);
 
 #ifdef DRISHMEM
 DR_BENCHMARK(Reduce_DR<dr::mhp::IshmemBackend>)->Name("Reduce_DR_ishmem");
