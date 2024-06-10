@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: "oneDPL"
+permissions: read-all
+
+on:
+  workflow_dispatch:
+  # 6am UTC is 10pm PST, 11pm PDT
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  onedpl:
+    runs-on: gkpvc
+    timeout-minutes: 20
+    env:
+      CXX: icpx
+      CTEST_OUTPUT_ON_FAILURE: 1
+    steps:
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+    - name: Checkout Distributed Ranges branch in oneDPL
+      uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      with:
+        repository: oneapi-src/oneDPL
+        ref: distributed-ranges
+        path: dr
+    - name: Generate
+      run: |
+        . /opt/intel/oneapi/setvars.sh
+        cmake -B dr/build -DCMAKE_CXX_STANDARD=23 -DCMAKE_CXX_COMPILER=icpx -DONEDPL_BACKEND=dpcpp -DCMAKE_BUILD_TYPE=Release dr
+    - name: Build SHP tests
+      run: |
+        . /opt/intel/oneapi/setvars.sh
+        cmake --build dr/build --target shp-all-tests -- -j
+    - name: Run SHP tests
+      run: |
+        . /opt/intel/oneapi/setvars.sh
+        ctest --test-dir dr/build -L SHP -j 4
+    # srun -p cluster dr/scripts/run_command_on_compute_node.sh dr/build/Testing/tests.outerr.txt ctest --test-dir dr/build -L TESTLABEL -j 4
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      if: always()
+      with:
+        name: log-pvc-impi-icpx
+        path: |
+          dr/build/CMakeCache.txt
+          dr/build/test/distributed-ranges/shp/*.log
