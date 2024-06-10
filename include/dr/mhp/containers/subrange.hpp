@@ -78,7 +78,7 @@ public:
     return this->index_ <=> other.index_;
   }
 
-  // Only these arithmetics manipulate internal state
+  // Only these arithmetic manipulate internal state
   auto &operator-=(difference_type n) {
     index_ -= n;
     return *this;

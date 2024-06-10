@@ -21,10 +21,10 @@ jobs:
     runs-on: intel-ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
     - name: Ubuntu dependencies
       run: scripts/install-doxygen.sh
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
         python-version: '3.10'
         cache: 'pip'
@@ -47,7 +47,7 @@ jobs:
     env:
       CXX: ${{ matrix.cxx }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
     - name: Generate
       run: cmake -B build
     - name: Build
@@ -56,7 +56,7 @@ jobs:
       run: ctest --test-dir build -L MHP -j 4
     - name: SHP unit tests
       run: ctest --test-dir build -L SHP -j 4
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       if: always()
       with:
         name: log-gcc-${{ env.CXX }}
@@ -82,7 +82,7 @@ jobs:
       CXX: icpx
       FI_PROVIDER: tcp
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Generate
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
       - name: Save environment dump
@@ -91,7 +91,7 @@ jobs:
         run: cmake --build build --target all-tests -- -j
       - name: Unit tests
         run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: always()
         with:
           name: log-pvc-impi-icpx-${{ matrix.config }}
@@ -121,7 +121,7 @@ jobs:
     env:
       CXX: icpx
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Generate
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3
       - name: Build ISHMEM
@@ -130,7 +130,7 @@ jobs:
         run: cmake --build build --target mhp-tests mhp-tests-3 -- -j
       - name: MHP unit tests
         run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: always()
         with:
           name: log-ishmem-impi-icpx-${{ matrix.config }}
@@ -150,8 +150,8 @@ jobs:
       SPHINXOPTS: -q -W
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+    - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
         python-version: '3.10'
         cache: 'pip'
@@ -162,7 +162,7 @@ jobs:
       run: |
         make -C doc/spec html
     - name: Checkout gh-pages
-      uses: actions/checkout@v4
+      uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       with:
         ref: gh-pages
         path: gh-pages

@@ -136,9 +136,44 @@ template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
   }
 }
 
+template <typename T, typename Compare>
+void local_merge(buffer<T> &v, std::vector<std::size_t> chunks,
+                 Compare &&comp) {
+
+  std::exclusive_scan(chunks.begin(), chunks.end(), chunks.begin(), 0);
+
+  while (chunks.size() > 1) {
+    std::size_t segno = chunks.size();
+    std::vector<std::size_t> next_chunks;
+    for (std::size_t i = 0; i < segno / 2; i++) {
+      auto first = v.begin() + chunks[2 * i];
+      auto middle = v.begin() + chunks[2 * i + 1];
+      auto last = (2 * i + 2 < segno) ? v.begin() + chunks[2 * i + 2] : v.end();
+      if (mhp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+        auto dfirst = dr::__detail::direct_iterator(first);
+        auto dmiddle = dr::__detail::direct_iterator(middle);
+        auto dlast = dr::__detail::direct_iterator(last);
+        oneapi::dpl::inplace_merge(dpl_policy(), dfirst, dmiddle, dlast, comp);
+#else
+        assert(false);
+#endif
+      } else {
+        std::inplace_merge(first, middle, last, comp);
+      }
+      next_chunks.push_back(chunks[2 * i]);
+    }
+    if (segno % 2 == 1) {
+      next_chunks.push_back(chunks[segno - 1]);
+    }
+    std::swap(chunks, next_chunks);
+  }
+}
+
 template <typename Compare>
-void _find_split_idx(std::size_t &vidx, std::size_t &segidx, Compare &&comp,
-                     auto &ls, auto &vec_v, auto &vec_i, auto &vec_s) {
+void _find_split_idx(std::size_t &vidx, Compare &&comp, auto &ls, auto &vec_v,
+                     auto &vec_i, auto &vec_s) {
+  std::size_t segidx = 0;
   while (vidx < default_comm().size() && segidx < rng::size(ls)) {
     if (comp(vec_v[vidx - 1], ls[segidx])) {
       vec_i[vidx] = segidx;
@@ -205,7 +240,7 @@ void splitters(Seg &lsegment, Compare &&comp,
     vec_split_v[_i] = vec_gmedians[global_median_idx];
   }
 
-  std::size_t segidx = 0, vidx = 1;
+  std::size_t vidx = 1;
 
   /* The while loop is executed in host memory, and together with
    * sycl_copy takes most of the execution time of the sort procedure */
@@ -215,13 +250,13 @@ void splitters(Seg &lsegment, Compare &&comp,
     sycl_copy(rng::data(lsegment), rng::data(vec_lseg_tmp),
               rng::size(lsegment));
 
-    _find_split_idx(vidx, segidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
+    _find_split_idx(vidx, comp, vec_lseg_tmp, vec_split_v, vec_split_i,
                     vec_split_s);
 #else
     assert(false);
 #endif
   } else {
-    _find_split_idx(vidx, segidx, comp, lsegment, vec_split_v, vec_split_i,
+    _find_split_idx(vidx, comp, lsegment, vec_split_v, vec_split_i,
                     vec_split_s);
   }
 
@@ -392,9 +427,8 @@ void dist_sort(R &r, Compare &&comp) {
   default_comm().alltoallv(lsegment, vec_split_s, vec_split_i, vec_recvdata,
                            vec_rsizes, vec_rindices);
 
-  /* TODO: vec recvdata is partially sorted, implementation of merge on GPU is
-   * desirable */
-  __detail::local_sort(vec_recvdata, comp);
+  __detail::local_merge(vec_recvdata, vec_rsizes, comp);
+
   // MPI_Wait(&req_recvelems, MPI_STATUS_IGNORE);
 
   _total_elems = std::reduce(vec_recv_elems.begin(), vec_recv_elems.end());

@@ -25,6 +25,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   option(DISABLED_TESTS "Run disabled tests" OFF)
   option(ENABLE_SYCL "Build with sycl support" OFF)
   option(ENABLE_CUDA "Build for cuda" OFF)
+  option(ENABLE_OMP_TARGET "Build to enable OMP Target" OFF)
   option(ENABLE_FORMAT "Build with format library" ON)
   option(GCC_TOOLCHAIN, "GCC toolchain to be used by clang-based compilers" OFF)
 
@@ -45,6 +46,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     set(ENABLE_SYCL on)
+    if(ENABLE_OMP_TARGET)
+      message(STATUS "ENABLE OMP_TARGET with IntelLLVM")
+      add_compile_definitions(USE_OMP_INTEROP)
+      add_compile_options(-fiopenmp -fopenmp-targets=spir64)
+      add_link_options(-fiopenmp -fopenmp-targets=spir64)
+    endif()
   endif()
 
   if(ENABLE_SYCL)
@@ -387,10 +394,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-error=pass-failed)
     add_compile_options(-Wno-error=unknown-pragmas)
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-      add_compile_options(-qopenmp -qopt-streaming-stores=always
-                          -qopt-zmm-usage=high)
+    if(NOT ENABLE_OMP_TARGET)
+      add_compile_options(-qopenmp)
       add_link_options(-qopenmp)
+    endif()
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+      add_compile_options(-qopt-streaming-stores=always -qopt-zmm-usage=high)
     endif()
   endif()
 
