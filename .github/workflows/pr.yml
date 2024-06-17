@@ -21,7 +21,7 @@ jobs:
     runs-on: intel-ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
     - name: Ubuntu dependencies
       run: scripts/install-doxygen.sh
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
@@ -47,7 +47,7 @@ jobs:
     env:
       CXX: ${{ matrix.cxx }}
     steps:
-    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
     - name: Generate
       run: cmake -B build
     - name: Build
@@ -82,7 +82,7 @@ jobs:
       CXX: icpx
       FI_PROVIDER: tcp
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Generate
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
       - name: Save environment dump
@@ -121,7 +121,7 @@ jobs:
     env:
       CXX: icpx
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Generate
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3
       - name: Build ISHMEM
@@ -150,7 +150,7 @@ jobs:
       SPHINXOPTS: -q -W
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
         python-version: '3.10'
@@ -162,7 +162,7 @@ jobs:
       run: |
         make -C doc/spec html
     - name: Checkout gh-pages
-      uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         ref: gh-pages
         path: gh-pages
