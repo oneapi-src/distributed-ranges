@@ -26,6 +26,63 @@ namespace dr::mhp {
 
 namespace __detail {
 
+template <typename T> class buffer {
+
+public:
+  using value_type = T;
+  std::size_t size() { return size_; }
+
+  buffer(std::size_t cnt) : size_(cnt) {
+    if (cnt > 0) {
+      data_ = alloc_.allocate(cnt);
+      assert(data_ != nullptr);
+    }
+  }
+
+  ~buffer() {
+    if (data_ != nullptr)
+      alloc_.deallocate(data_, size_);
+    data_ = nullptr;
+    size_ = 0;
+  }
+
+  T *resize(std::size_t cnt) {
+    if (cnt == size_)
+      return data_;
+
+    if (cnt == 0) {
+      alloc_.deallocate(data_, size_);
+      data_ = nullptr;
+    } else {
+      T *newdata = alloc_.allocate(cnt);
+      copy(data_, newdata, std::min(size_, cnt));
+      alloc_.deallocate(data_, size_);
+      data_ = newdata;
+    }
+    size_ = cnt;
+    return data_;
+  }
+
+  void replace(buffer &other) {
+    if (data_ != nullptr)
+      alloc_.deallocate(data_, size_);
+
+    data_ = rng::data(other);
+    size_ = rng::size(other);
+    other.data_ = nullptr;
+    other.size_ = 0;
+  }
+
+  T *data() { return data_; }
+  T *begin() { return data_; }
+  T *end() { return data_ + size_; }
+
+private:
+  allocator<T> alloc_;
+  T *data_ = nullptr;
+  std::size_t size_ = 0;
+}; // class buffer
+
 template <typename R, typename Compare> void local_sort(R &r, Compare &&comp) {
   if (rng::size(r) >= 2) {
     if (mhp::use_sycl()) {
