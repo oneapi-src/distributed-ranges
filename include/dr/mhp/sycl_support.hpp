@@ -4,6 +4,9 @@
 
 #pragma once
 
+// file for helper functions working only if compiled with SYCL, assert
+// otherwise
+
 #ifdef SYCL_LANGUAGE_VERSION
 
 namespace dr::mhp {

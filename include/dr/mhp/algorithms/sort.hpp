@@ -139,8 +139,9 @@ void local_merge(buffer<T> &v, std::vector<std::size_t> chunks,
 
 /* elements of dist_sort */
 template <typename valT, typename Compare, typename Seg>
-void splitters(Seg &lsegment, Compare &&comp, auto &vec_split_i,
-               auto &vec_split_s) {
+void splitters(Seg &lsegment, Compare &&comp,
+               std::vector<std::size_t> &vec_split_i,
+               std::vector<std::size_t> &vec_split_s) {
   const std::size_t _comm_size = default_comm().size(); // dr-style ignore
 
   assert(rng::size(vec_split_i) == _comm_size);
