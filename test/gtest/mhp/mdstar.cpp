@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <dr/detail/mdarray_shim.hpp>
-#include <dr/mhp/allocator.hpp>
 
 #include "xhp-tests.hpp"
 

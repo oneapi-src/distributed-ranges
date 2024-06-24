@@ -8,18 +8,6 @@
 
 namespace dr::mhp::__detail {
 
-template <typename T> void copy(const T *src, T *dst, std::size_t sz) {
-  if (mhp::use_sycl()) {
-#ifdef SYCL_LANGUAGE_VERSION
-    sycl::queue().copy(src, dst, sz).wait();
-#else
-    assert(false);
-#endif
-  } else {
-    memcpy(dst, src, sz * sizeof(T));
-  }
-}
-
 template <typename T> class allocator {
 
 public:
