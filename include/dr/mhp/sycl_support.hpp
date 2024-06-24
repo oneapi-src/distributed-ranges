@@ -4,6 +4,9 @@
 
 #pragma once
 
+// file for helper functions working only if compiled with SYCL, assert
+// otherwise
+
 #ifdef SYCL_LANGUAGE_VERSION
 
 namespace dr::mhp {
@@ -29,7 +32,7 @@ template <typename T> auto sycl_get(T &v1, T &v2) {
   return temp;
 }
 
-template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
+template <typename T> void sycl_copy(T const *begin, T const *end, T *dst) {
   sycl_queue().memcpy(dst, begin, (end - begin) * sizeof(T)).wait();
 }
 
@@ -80,7 +83,7 @@ template <typename T> auto sycl_get(T &v1, T &v2) {
   return std::pair<T, T>{v1, v2};
 }
 
-template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
+template <typename T> void sycl_copy(T const *begin, T const *end, T *dst) {
   assert(false);
 }
 
@@ -90,7 +93,8 @@ template <typename T> void sycl_copy(T *begin, T *end, T *dst) {
 
 namespace dr::mhp::__detail {
 
-template <typename T> void sycl_copy(T *src, T *dst, std::size_t size = 1) {
+template <typename T>
+void sycl_copy(T const *src, T *dst, std::size_t size = 1) {
   sycl_copy(src, src + size, dst);
 }
 

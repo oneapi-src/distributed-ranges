@@ -6,6 +6,7 @@
 
 #include <dr/detail/mdspan_shim.hpp>
 #include <dr/detail/ranges_shim.hpp>
+#include <dr/mhp/allocator.hpp>
 #include <dr/mhp/containers/distributed_mdarray.hpp>
 
 namespace dr::mhp::__detail {

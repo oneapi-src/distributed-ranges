@@ -55,7 +55,9 @@
 #include <dr/mhp/halo.hpp>
 #include <dr/mhp/global.hpp>
 #include <dr/mhp/sycl_support.hpp>
+#include <dr/mhp/common_support.hpp>
 #include <dr/mhp/alignment.hpp>
+#include <dr/mhp/allocator.hpp>
 #include <dr/mhp/views/views.hpp>
 #include <dr/mhp/views/zip.hpp>
 #include <dr/mhp/views/enumerate.hpp>

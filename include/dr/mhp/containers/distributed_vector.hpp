@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/mhp/algorithms/fill.hpp>
+#include <dr/mhp/allocator.hpp>
 #include <dr/mhp/containers/distribution.hpp>
 #include <dr/mhp/containers/segment.hpp>
 
