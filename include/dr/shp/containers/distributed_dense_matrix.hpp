@@ -264,6 +264,7 @@ public:
     auto remote_tile = tile(tile_index);
     auto event = shp::copy_async(
         remote_tile.data(), remote_tile.data() + tile_size, local_tile.data());
+    // TODO: use/enhance the existing future in parallel_backend_sycl_utils.h
     return future(std::move(local_tile), {event});
   }
 
