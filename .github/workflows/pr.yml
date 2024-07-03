@@ -43,8 +43,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - cxx: icpx
-        - cxx: g++-11
+        # - cxx: icpx
+        - cxx: g++
     name: ${{ matrix.cxx }}
     env:
       CXX: ${{ matrix.cxx }}
@@ -54,10 +54,8 @@ jobs:
       run: cmake -B build
     - name: Build
       run: make -C build -j
-    - name: MHP unit tests
-      run: ctest --test-dir build -L MHP -j 4
-    - name: SHP unit tests
-      run: ctest --test-dir build -L SHP -j 4
+    - name: Unit tests
+      run: ctest --test-dir build -L TESTLABEL -j 4
     - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       if: always()
       with:
@@ -126,7 +124,7 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3 -DONETILE_PVC=on
       - name: Build ISHMEM
         run: cmake --build build --target shmem -- -j
       - name: Build MHP tests

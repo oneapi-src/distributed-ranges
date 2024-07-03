@@ -334,6 +334,13 @@ if(ENABLE_ISHMEM)
     BUILD_COMMAND make
     INSTALL_COMMAND make install)
 
+  # use this if using Intel Data Center GPU Max 1100
+  if(ONETILE_PVC)
+    set(ISHM_PARAMS "-DUSE_REDUCED_LINK_ENGINE_SET")
+  else()
+    set(ISHM_PARAMS "")
+  endif()
+
   ExternalProject_Add(
     ishmem
     GIT_REPOSITORY
@@ -344,7 +351,8 @@ if(ENABLE_ISHMEM)
     CMAKE_ARGS -DCMAKE_BUILD_TYPE=STRING:${CMAKE_BUILD_TYPE}
     CMAKE_CACHE_ARGS
       "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
-      "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}" ${SOS_L0_PARAM})
+      "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}" ${SOS_L0_PARAM}
+      ${ISHM_PARAMS})
 
   add_custom_target(shmem DEPENDS ishmem)
 
