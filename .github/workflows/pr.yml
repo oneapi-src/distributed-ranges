@@ -17,10 +17,12 @@ env:
   CTEST_OUTPUT_ON_FAILURE: 1
 
 jobs:
-#  checks:
-#    runs-on: intel-ubuntu-latest
-#    timeout-minutes: 10
-#    steps:
+  checks:
+    runs-on: gkpvc # intel-ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: do nothing
+      run: echo OK
 #    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 #    - name: Ubuntu dependencies
 #      run: scripts/install-doxygen.sh
