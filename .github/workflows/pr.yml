@@ -90,7 +90,8 @@ jobs:
       - name: Build tests
         run: cmake --build build --target all-tests -- -j
       - name: Unit tests
-        run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
+        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
+        run: ctest --test-dir build -L TESTLABEL -j 4
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: always()
         with:
@@ -129,7 +130,8 @@ jobs:
       - name: Build MHP tests
         run: cmake --build build --target mhp-tests mhp-tests-3 -- -j
       - name: MHP unit tests
-        run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
+        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
+        ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: always()
         with:
