@@ -34,7 +34,7 @@ jobs:
       run: pre-commit run --all
 
   unit_tests:
-    runs-on: pvc
+    runs-on: gkpvc
     timeout-minutes: 30
     strategy:
       # test everything, even if one fails
@@ -67,7 +67,7 @@ jobs:
           build/examples/mhp/*.log
 
   pvc_unit_tests:
-    runs-on: pvc
+    runs-on: gkpvc
     timeout-minutes: 30
     strategy:
       # test everything, even if one fails
@@ -108,7 +108,7 @@ jobs:
             build/examples/shp/*.log
 
   ishmem_unit_tests:
-    runs-on: pvc
+    runs-on: gkpvc
     timeout-minutes: 30
     strategy:
       # test everything, even if one fails
@@ -131,7 +131,7 @@ jobs:
         run: cmake --build build --target mhp-tests mhp-tests-3 -- -j
       - name: MHP unit tests
         # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
-        ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
+        run: ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: always()
         with:
