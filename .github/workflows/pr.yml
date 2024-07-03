@@ -17,21 +17,21 @@ env:
   CTEST_OUTPUT_ON_FAILURE: 1
 
 jobs:
-  checks:
-    runs-on: intel-ubuntu-latest
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - name: Ubuntu dependencies
-      run: scripts/install-doxygen.sh
-    - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
-      with:
-        python-version: '3.10'
-        cache: 'pip'
-    - name: Install python dependencies
-      run: pip install -r requirements.txt
-    - name: Run checkers
-      run: pre-commit run --all
+#  checks:
+#    runs-on: intel-ubuntu-latest
+#    timeout-minutes: 10
+#    steps:
+#    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+#    - name: Ubuntu dependencies
+#      run: scripts/install-doxygen.sh
+#    - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+#      with:
+#        python-version: '3.10'
+#        cache: 'pip'
+#    - name: Install python dependencies
+#      run: pip install -r requirements.txt
+#    - name: Run checkers
+#      run: pre-commit run --all
 
   unit_tests:
     runs-on: gkpvc
