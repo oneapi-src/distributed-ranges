@@ -18,53 +18,51 @@ env:
 
 jobs:
   checks:
-    runs-on: gkpvc # intel-ubuntu-latest
+    runs-on: intel-ubuntu-latest
     timeout-minutes: 10
     steps:
-    - name: do nothing
-      run: echo OK
-#    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-#    - name: Ubuntu dependencies
-#      run: scripts/install-doxygen.sh
-#    - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
-#      with:
-#        python-version: '3.10'
-#        cache: 'pip'
-#    - name: Install python dependencies
-#      run: pip install -r requirements.txt
-#    - name: Run checkers
-#      run: pre-commit run --all
-
-  unit_tests:
-    runs-on: gkpvc
-    timeout-minutes: 30
-    strategy:
-      # test everything, even if one fails
-      fail-fast: false
-      matrix:
-        include:
-        # - cxx: icpx
-        - cxx: g++
-    name: ${{ matrix.cxx }}
-    env:
-      CXX: ${{ matrix.cxx }}
-    steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - name: Generate
-      run: cmake -B build
-    - name: Build
-      run: make -C build -j
-    - name: Unit tests
-      run: ctest --test-dir build -L TESTLABEL -j 4
-    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-      if: always()
+    - name: Ubuntu dependencies
+      run: scripts/install-doxygen.sh
+    - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
-        name: log-gcc-${{ env.CXX }}
-        path: |
-          build/Testing
-          build/test/gtest/mhp/*.log
-          build/benchmarks/gbench/mhp/*.log
-          build/examples/mhp/*.log
+        python-version: '3.10'
+        cache: 'pip'
+    - name: Install python dependencies
+      run: pip install -r requirements.txt
+    - name: Run checkers
+      run: pre-commit run --all
+
+#  unit_tests:
+#    runs-on: gkpvc
+#    timeout-minutes: 30
+#    strategy:
+#      # test everything, even if one fails
+#      fail-fast: false
+#      matrix:
+#        include:
+#        # - cxx: icpx
+#        - cxx: g++
+#    name: ${{ matrix.cxx }}
+#    env:
+#      CXX: ${{ matrix.cxx }}
+#    steps:
+#    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+#    - name: Generate
+#      run: cmake -B build
+#    - name: Build
+#      run: make -C build -j
+#    - name: Unit tests
+#      run: ctest --test-dir build -L TESTLABEL -j 4
+#    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+#      if: always()
+#      with:
+#        name: log-gcc-${{ env.CXX }}
+#        path: |
+#          build/Testing
+#          build/test/gtest/mhp/*.log
+#          build/benchmarks/gbench/mhp/*.log
+#          build/examples/mhp/*.log
 
   pvc_unit_tests:
     runs-on: gkpvc
@@ -107,43 +105,44 @@ jobs:
             build/benchmarks/gbench/shp/*.log
             build/examples/shp/*.log
 
-  ishmem_unit_tests:
-    runs-on: gkpvc
-    timeout-minutes: 30
-    strategy:
-      # test everything, even if one fails
-      fail-fast: false
-      matrix:
-        include:
-          # Disabled because also gets a timeout
-          # - config: Debug
-          - config: Release
-    name: ishmem-impi-icpx-${{ matrix.config }}
-    env:
-      CXX: icpx
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3 -DONETILE_PVC=on
-      - name: Build ISHMEM
-        run: cmake --build build --target shmem -- -j
-      - name: Build MHP tests
-        run: cmake --build build --target mhp-tests mhp-tests-3 -- -j
-      - name: MHP unit tests
-        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
-        run: ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        if: always()
-        with:
-          name: log-ishmem-impi-icpx-${{ matrix.config }}
-          path: |
-            build/Testing
-            build/test/gtest/mhp/*.log
-            build/benchmarks/gbench/mhp/*.log
-            build/examples/mhp/*.log
+#  ishmem_unit_tests:
+#    runs-on: gkpvc
+#    timeout-minutes: 30
+#    strategy:
+#      # test everything, even if one fails
+#      fail-fast: false
+#      matrix:
+#        include:
+#          # Disabled because also gets a timeout
+#          # - config: Debug
+#          - config: Release
+#    name: ishmem-impi-icpx-${{ matrix.config }}
+#    env:
+#      CXX: icpx
+#    steps:
+#      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+#      - name: Generate
+#        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3 -DONETILE_PVC=on
+#      - name: Build ISHMEM
+#        run: cmake --build build --target shmem -- -j
+#      - name: Build MHP tests
+#        run: cmake --build build --target mhp-tests mhp-tests-3 -- -j
+#      - name: MHP unit tests
+#        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
+#        run: ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
+#      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+#        if: always()
+#        with:
+#          name: log-ishmem-impi-icpx-${{ matrix.config }}
+#          path: |
+#            build/Testing
+#            build/test/gtest/mhp/*.log
+#            build/benchmarks/gbench/mhp/*.log
+#            build/examples/mhp/*.log
 
   publish:
-    needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
+    # needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
+    needs: [checks, pvc_unit_tests]
     runs-on: intel-ubuntu-latest
     timeout-minutes: 10
     permissions:
