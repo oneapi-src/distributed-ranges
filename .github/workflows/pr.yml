@@ -33,6 +33,7 @@ jobs:
     - name: Run checkers
       run: pre-commit run --all
 
+# disabled due to DRA-163
 #  unit_tests:
 #    runs-on: gkpvc
 #    timeout-minutes: 30
@@ -108,6 +109,7 @@ jobs:
             build/benchmarks/gbench/shp/*.log
             build/examples/shp/*.log
 
+# disabled due to DRA-164
 #  ishmem_unit_tests:
 #    runs-on: gkpvc
 #    timeout-minutes: 30
