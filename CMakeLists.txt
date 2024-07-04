@@ -291,7 +291,7 @@ if(ENABLE_ISHMEM)
   if(ENABLE_OFI)
     ExternalProject_Add(
       ofi
-      GIT_REPOSITORY git@github.com:ofiwg/libfabric.git
+      GIT_REPOSITORY https://github.com/ofiwg/libfabric.git
       GIT_TAG v1.18.0
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ofisrc
       DEPENDS ${SOS_DEPS}
@@ -320,7 +320,7 @@ if(ENABLE_ISHMEM)
 
   ExternalProject_Add(
     sos
-    GIT_REPOSITORY git@github.com:Sandia-OpenSHMEM/SOS.git
+    GIT_REPOSITORY https://github.com/Sandia-OpenSHMEM/SOS.git
     GIT_TAG main
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/sossrc
     DEPENDS ${SOS_DEPS}
@@ -343,8 +343,7 @@ if(ENABLE_ISHMEM)
 
   ExternalProject_Add(
     ishmem
-    GIT_REPOSITORY
-      git@github.com:intel-innersource/libraries.runtimes.hpc.shmem.ishmem.git
+    GIT_REPOSITORY https://github.com/oneapi-src/ishmem.git
     GIT_TAG main
     INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS sos
