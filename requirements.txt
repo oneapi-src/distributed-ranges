@@ -22,7 +22,7 @@ imagesize==1.4.1
 Jinja2==3.1.4
 license-expression==30.2.0
 MarkupSafe==2.1.5
-nodeenv==1.8.0
+nodeenv==1.9.1
 packaging==24.0
 platformdirs==4.2.0
 pre-commit==3.7.0
