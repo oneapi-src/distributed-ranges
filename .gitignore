@@ -4,3 +4,11 @@
 
 *egg-info
 ._*
+.idea
+.vscode
+build/
+cmake-build-debug/
+Testing/Temporary
+.gitignore
+include/dr/shp/algorithms/for_each.hpp
+test/gtest/common/for_each.cpp

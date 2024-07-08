@@ -45,6 +45,32 @@ TYPED_TEST(ForEach, RangeAlignedZip) {
   EXPECT_EQ(local, dist);
 }
 
+TYPED_TEST(ForEach, LimitedLength) {
+  Ops1<TypeParam> ops(10);
+
+  auto negate = [](auto &&v) { v = -v; };
+  auto input = ops.vec;
+  auto affected_length = rng::size(input) / 2;
+
+  xhp::for_each_n(ops.dist_vec.begin(), affected_length, negate);
+  rng::for_each_n(ops.vec.begin(), affected_length, negate);
+
+  EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
+}
+
+TYPED_TEST(ForEach, WholeLength) {
+  Ops1<TypeParam> ops(10);
+
+  auto negate = [](auto &&v) { v = -v; };
+  auto input = ops.vec;
+  auto affected_length = rng::size(input);
+
+  xhp::for_each_n(ops.dist_vec.begin(), affected_length, negate);
+  rng::for_each(ops.vec.begin(), ops.vec.end(), negate);
+
+  EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
+}
+
 // Disabled. Not sure how to support this properly for MHP. We need to
 // copy the values local so we can operate on them. Read-only data
 // seems doable but writing misaligned data is harder. We should
