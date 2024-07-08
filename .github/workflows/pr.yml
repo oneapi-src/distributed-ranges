@@ -55,7 +55,7 @@ jobs:
 #      run: make -C build -j
 #    - name: Unit tests
 #      run: ctest --test-dir build -L TESTLABEL -j 4
-#    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+#    - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
 #      if: always()
 #      with:
 #        name: log-gcc-${{ env.CXX }}
@@ -94,7 +94,7 @@ jobs:
       - name: Unit tests
         # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
         run: ctest --test-dir build -L TESTLABEL -j 4
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
         if: always()
         with:
           name: log-pvc-impi-icpx-${{ matrix.config }}
@@ -135,7 +135,7 @@ jobs:
 #      - name: MHP unit tests
 #        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
 #        run: ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
-#      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+#      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
 #        if: always()
 #        with:
 #          name: log-ishmem-impi-icpx-${{ matrix.config }}
