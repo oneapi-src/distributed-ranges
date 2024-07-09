@@ -59,7 +59,7 @@ template <typename ExecutionPolicy, dr::distributed_iterator Iter,
 void for_each_n(ExecutionPolicy &&policy, Iter begin, I n, Fn &&fn) {
   auto end = begin;
   rng::advance(end, n);
-  for_each(std::forward<ExecutionPolicy>(policy), śbegin, end,
+  for_each(std::forward<ExecutionPolicy>(policy), begin, end,
            std::forward<Fn>(fn));
 }
 
