@@ -5,9 +5,23 @@
 #include "xhp-tests.hpp"
 
 // Fixture
-template <typename T> class ForEach : public testing::Test {
-public:
-};
+template <typename T> class ForEach : public testing::Test { public: };
+
+template <typename T>
+void test_foreach_n(std::vector<T> v, int n, int initial_skip, auto func) {
+  auto size = v.size();
+  xhp::distributed_vector<T> d_v(size);
+
+  for (std::size_t idx = 0; idx < size; idx++) {
+    d_v[idx] = v[idx];
+  }
+  barrier();
+
+  xhp::for_each_n(d_v.begin() + initial_skip, n, func);
+  rng::for_each_n(v.begin() + initial_skip, n, func);
+
+  EXPECT_TRUE(equal(v, d_v));
+}
 
 TYPED_TEST_SUITE(ForEach, AllTypes);
 
@@ -45,27 +59,28 @@ TYPED_TEST(ForEach, RangeAlignedZip) {
   EXPECT_EQ(local, dist);
 }
 
-TYPED_TEST(ForEach, LimitedLength) {
-  Ops1<TypeParam> ops(10);
-
+TYPED_TEST(ForEach, ForEachN) {
   auto negate = [](auto &&v) { v = -v; };
-  auto input = ops.vec;
-  auto affected_length = rng::size(input) / 2;
-
-  xhp::for_each_n(ops.dist_vec.begin(), affected_length, negate);
-  rng::for_each_n(ops.vec.begin(), affected_length, negate);
-
-  EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
+  test_foreach_n<int>({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 5, 0, negate);
 }
 
-TYPED_TEST(ForEach, WholeLength) {
+TYPED_TEST(ForEach, ForEachNLongerThanSize) {
+  auto negate = [](auto &&v) { v = -v; };
+  test_foreach_n<int>({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 10, 0, negate);
+}
+
+TYPED_TEST(ForEach, ForEachNPartial) {
+  auto negate = [](auto &&v) { v = -v; };
+  test_foreach_n<int>({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 5, 2, negate);
+}
+
+TYPED_TEST(ForEach, ForEachNWholeLength) {
   Ops1<TypeParam> ops(10);
 
   auto negate = [](auto &&v) { v = -v; };
   auto input = ops.vec;
-  auto affected_length = rng::size(input);
 
-  xhp::for_each_n(ops.dist_vec.begin(), affected_length, negate);
+  xhp::for_each_n(ops.dist_vec.begin(), 10, negate);
   rng::for_each(ops.vec.begin(), ops.vec.end(), negate);
 
   EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));

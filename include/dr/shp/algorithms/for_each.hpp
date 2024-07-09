@@ -56,16 +56,17 @@ void for_each(Iter begin, Iter end, Fn &&fn) {
 
 template <typename ExecutionPolicy, dr::distributed_iterator Iter,
           std::integral I, typename Fn>
-void for_each_n(ExecutionPolicy &&policy, Iter begin, I n, Fn &&fn) {
+Iter for_each_n(ExecutionPolicy &&policy, Iter begin, I n, Fn fn) {
   auto end = begin;
   rng::advance(end, n);
   for_each(std::forward<ExecutionPolicy>(policy), begin, end,
            std::forward<Fn>(fn));
+  return end;
 }
 
-template <dr::distributed_iterator R, std::integral I, typename Fn>
-void for_each_n(R &&r, I n, Fn &&fn) {
-  for_each_n(dr::shp::par_unseq, std::forward<R>(r), n, std::forward<Fn>(fn));
+template <dr::distributed_iterator Iter, std::integral I, typename Fn>
+Iter for_each_n(Iter &&r, I n, Fn fn) {
+  return for_each_n(dr::shp::par_unseq, std::forward<Iter>(r), n, fn);
 }
 
 } // namespace dr::shp
