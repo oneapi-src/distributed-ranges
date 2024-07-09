@@ -5,7 +5,9 @@
 #include "xhp-tests.hpp"
 
 // Fixture
-template <typename T> class ForEach : public testing::Test { public: };
+template <typename T> class ForEach : public testing::Test {
+public:
+};
 
 template <typename T>
 void test_foreach_n(std::vector<T> v, int n, int initial_skip, auto func) {
