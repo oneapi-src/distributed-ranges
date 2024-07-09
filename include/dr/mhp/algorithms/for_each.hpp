@@ -53,4 +53,13 @@ void for_each(DI first, DI last, auto op) {
   mhp::for_each(rng::subrange(first, last), op);
 }
 
+/// Collective for_each on iterator/sentinel for a distributed range
+template <dr::distributed_iterator DI, std::integral I>
+DI for_each_n(DI first, I n, auto op) {
+  auto last = first;
+  rng::advance(last, n);
+  mhp::for_each(first, last, op);
+  return last;
+}
+
 } // namespace dr::mhp
