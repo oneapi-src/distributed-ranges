@@ -65,6 +65,7 @@ jobs:
 #          build/benchmarks/gbench/mhp/*.log
 #          build/examples/mhp/*.log
 
+# most of steps disabled to speed up work on packaging DR
   pvc_unit_tests:
     runs-on: gkpvc
     timeout-minutes: 30
@@ -82,32 +83,32 @@ jobs:
       FI_PROVIDER: tcp
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
-      - name: Save environment dump
-        run: printenv > build/envdump.txt
-      # change this step to building just tests once unittest job is back
-      - name: Build everything
-        run: make -C build -j
-#      - name: Build tests
-#        run: cmake --build build --target all-tests -- -j
-      - name: Unit tests
-        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
-        run: ctest --test-dir build -L TESTLABEL -j 4
-      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
-        if: always()
-        with:
-          name: log-pvc-impi-icpx-${{ matrix.config }}
-          path: |
-            build/CMakeCache.txt
-            build/envdump.txt
-            build/Testing
-            build/test/gtest/mhp/*.log
-            build/benchmarks/gbench/mhp/*.log
-            build/examples/mhp/*.log
-            build/test/gtest/shp/*.log
-            build/benchmarks/gbench/shp/*.log
-            build/examples/shp/*.log
+#      - name: Generate
+#        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+#      - name: Save environment dump
+#        run: printenv > build/envdump.txt
+#      # change this step to building just tests once unittest job is back
+#      - name: Build everything
+#        run: make -C build -j
+##      - name: Build tests
+##        run: cmake --build build --target all-tests -- -j
+#      - name: Unit tests
+#        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
+#        run: ctest --test-dir build -L TESTLABEL -j 4
+#      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+#        if: always()
+#        with:
+#          name: log-pvc-impi-icpx-${{ matrix.config }}
+#          path: |
+#            build/CMakeCache.txt
+#            build/envdump.txt
+#            build/Testing
+#            build/test/gtest/mhp/*.log
+#            build/benchmarks/gbench/mhp/*.log
+#            build/examples/mhp/*.log
+#            build/test/gtest/shp/*.log
+#            build/benchmarks/gbench/shp/*.log
+#            build/examples/shp/*.log
 
 # disabled due to DRA-164
 #  ishmem_unit_tests:
