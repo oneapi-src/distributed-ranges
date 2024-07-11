@@ -145,6 +145,20 @@ jobs:
 #            build/benchmarks/gbench/mhp/*.log
 #            build/examples/mhp/*.log
 
+  package:
+    needs: [checks]
+    runs-on: intel-ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      CXX: g++-12
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - run: |
+        apt-get install build-essential debhelper=13* cmake g++-12 git mpi-default-dev libfmt-dev librange-v3-dev devscripts dh-make libgtest-dev libcxxopts-dev
+        dpkg-deb --build distributed-ranges
+
   publish:
     # needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
     needs: [checks, pvc_unit_tests]
