@@ -145,6 +145,19 @@ jobs:
 #            build/benchmarks/gbench/mhp/*.log
 #            build/examples/mhp/*.log
 
+  package:
+    needs: []
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      CXX: g++-13
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - run: |
+        echo "creating DEB package is going to be here"
+
   publish:
     # needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
     needs: [checks, pvc_unit_tests]
