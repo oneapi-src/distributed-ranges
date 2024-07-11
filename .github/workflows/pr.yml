@@ -147,7 +147,7 @@ jobs:
 #            build/examples/mhp/*.log
 
   package:
-    needs: [checks]
+    needs: []
     runs-on: intel-ubuntu-latest
     timeout-minutes: 10
     permissions:
