@@ -157,7 +157,11 @@ jobs:
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
     - run: |
-        echo "creating DEB package is going to be here"
+        sudo apt-get install libgtest-dev libfmt-dev -y
+        sudo apt-get remove libgcc-14-dev cpp-14-x86-64-linux-gnu -y  # gcc14 toolkit not supported yet by DR
+        # install packages from oneAPI like oneDPL does
+        # apt-get install build-essential debhelper=13* cmake g++-12 git mpi-default-dev libfmt-dev librange-v3-dev devscripts dh-make libgtest-dev libcxxopts-dev
+        dpkg-deb --build distributed-ranges
 
   publish:
     # needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
