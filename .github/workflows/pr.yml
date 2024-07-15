@@ -156,12 +156,24 @@ jobs:
       CXX: g++-13
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - run: |
-        sudo apt-get install libgtest-dev libfmt-dev -y
+    - name: Install packages
+      run: |
+        sudo apt-get install libgtest-dev libfmt-dev, libcxxopts-dev, libfmt-dev, cmake, g++ -y
         sudo apt-get remove libgcc-14-dev cpp-14-x86-64-linux-gnu -y  # gcc14 toolkit not supported yet by DR
         # install packages from oneAPI like oneDPL does
         # apt-get install build-essential debhelper=13* cmake g++-12 git mpi-default-dev libfmt-dev librange-v3-dev devscripts dh-make libgtest-dev libcxxopts-dev
+    - name: Build a package
+      run: |
+        . /opt/intel/oneapi/setvars.sh
+        cd ..
         dpkg-deb --build distributed-ranges
+    - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+      if: always()
+      with:
+        name: dr_deb
+        path: |
+          ../distributed-ranges.deb
+
 
   publish:
     # needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]

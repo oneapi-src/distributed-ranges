@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     devscripts \
     dh-make \
     libgtest-dev \
-    libcxxopts-dev \ 
+    libcxxopts-dev \
     && apt-get clean
 
 ENV DEBIAN_FRONTEND=noninteractive
