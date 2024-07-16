@@ -195,8 +195,26 @@ void fft(std::size_t nreps, std::size_t x, std::size_t y, std::size_t z) {
   if (nreps == 0) {
     fft3d.check();
   } else {
+    double elapsed = 0;
     for (int iter = 0; iter < nreps; ++iter) {
+      auto begin = std::chrono::steady_clock::now();
       fft3d.compute();
+      auto end = std::chrono::steady_clock::now();
+      if (iter)
+        elapsed += std::chrono::duration<double>(end - begin).count();
+    }
+
+    if (comm_rank == 0) {
+      std::size_t volume = x * y * z;
+      std::size_t fft_flops =
+          2 * static_cast<std::size_t>(5. * volume *
+                                       std::log2(static_cast<double>(volume)));
+      double t_avg = elapsed / (nreps - 1);
+      fmt::print("fft3d-mhp {0} {3} AvgTime {1:.3f} GFLOPS {2:.3f}\n", x, t_avg,
+                 fft_flops / t_avg * 1e-9, comm_size);
+      for (int iter = 0; iter < nreps; ++iter) {
+        fft3d.compute();
+      }
     }
   }
 }
