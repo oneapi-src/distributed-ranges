@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 FROM intel/oneapi:latest
 
 RUN apt-get update && apt-get install -y \
