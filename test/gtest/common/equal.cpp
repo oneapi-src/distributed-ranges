@@ -16,7 +16,7 @@ TYPED_TEST(Equals, Same) {
 
   xhp::distributed_vector<int> toCompareXhp(10);
   std::vector<int> toCompareStd(10);
-  
+
   for (std::size_t idx = 0; idx < 10; idx++) {
     toCompareXhp[idx] = ops.dist_vec[idx];
     toCompareStd[idx] = ops.vec[idx];
@@ -34,7 +34,7 @@ TYPED_TEST(Equals, Different) {
 
   xhp::distributed_vector<int> toCompareXhp(10);
   std::vector<int> toCompareStd(10);
-  
+
   for (std::size_t idx = 0; idx < 10; idx++) {
     toCompareXhp[idx] = ops.dist_vec[idx];
     toCompareStd[idx] = ops.vec[idx];

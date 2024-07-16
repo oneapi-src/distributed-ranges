@@ -64,7 +64,6 @@ TYPED_TEST(TransformTest, zip_merge) {
   // auto zipped_view = dr::shp::views::zip(a, b);
   // dr::shp::transform(dr::shp::par_unseq, zipped_view, res.begin(), min);
   // This line causes segmentation fault, as specified in bug report DRA-184
-
 }
 
 TYPED_TEST(TransformTest, part_not_aligned) {
