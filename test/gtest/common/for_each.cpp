@@ -22,7 +22,7 @@ void test_foreach_n(std::vector<T> v, int n, int initial_skip, auto func) {
   xhp::for_each_n(d_v.begin() + initial_skip, n, func);
   rng::for_each_n(v.begin() + initial_skip, n, func);
 
-  EXPECT_TRUE(equal(v, d_v));
+  EXPECT_TRUE(equal_gtest(v, d_v));
 }
 
 TYPED_TEST_SUITE(ForEach, AllTypes);
