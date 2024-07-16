@@ -8,8 +8,8 @@ add_executable(
   shp-tests
   shp-tests.cpp ../common/all.cpp ../common/copy.cpp ../common/counted.cpp
   ../common/distributed_vector.cpp ../common/drop.cpp ../common/enumerate.cpp
-  ../common/equal.cpp
-  ../common/fill.cpp ../common/for_each.cpp ../common/iota.cpp
+  ../common/equal.cpp ../common/fill.cpp ../common/for_each.cpp
+  ../common/iota.cpp
   # ../common/iota_view.cpp
   ../common/reduce.cpp ../common/sort.cpp ../common/subrange.cpp
   ../common/take.cpp ../common/transform.cpp ../common/transform_view.cpp

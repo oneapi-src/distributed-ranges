@@ -16,8 +16,8 @@ namespace dr::shp {
 
 template <typename ExecutionPolicy, dr::distributed_range R1,
           dr::distributed_range R2>
-requires std::equality_comparable_with<rng::range_value_t<R1>,
-                                       rng::range_value_t<R2>>
+  requires std::equality_comparable_with<rng::range_value_t<R1>,
+                                         rng::range_value_t<R2>>
 bool equal(ExecutionPolicy &&policy, R1 &&r1, R2 &&r2) {
 
   if (rng::distance(r1) != rng::distance(r2)) {

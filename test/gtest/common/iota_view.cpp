@@ -41,8 +41,8 @@ TYPED_TEST(IotaView, Transform) {
 
   xhp::transform(v, dv.begin(), negate);
 
-  EXPECT_TRUE(
-      equal_gtest(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
+  EXPECT_TRUE(equal_gtest(
+      dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
 }
 
 TYPED_TEST(IotaView, ForEach) {
@@ -58,6 +58,6 @@ TYPED_TEST(IotaView, ForEach) {
 
   xhp::for_each(z, negate);
 
-  EXPECT_TRUE(
-      equal_gtest(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
+  EXPECT_TRUE(equal_gtest(
+      dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
 }

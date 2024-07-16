@@ -11,7 +11,8 @@ TYPED_TEST(CopyTest, dist2local_async) {
   dr::shp::copy_async(rng::begin(dist_vec), rng::end(dist_vec),
                       rng::begin(local_vec))
       .wait();
-  EXPECT_TRUE(equal_gtest(local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5}));
+  EXPECT_TRUE(
+      equal_gtest(local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5}));
 }
 
 TYPED_TEST(CopyTest, local2dist_async) {
@@ -20,7 +21,8 @@ TYPED_TEST(CopyTest, local2dist_async) {
   dr::shp::copy_async(rng::begin(local_vec), rng::end(local_vec),
                       rng::begin(dist_vec))
       .wait();
-  EXPECT_TRUE(equal_gtest(dist_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5}));
+  EXPECT_TRUE(
+      equal_gtest(dist_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5}));
 }
 
 TYPED_TEST(CopyTest, dist2local_sync) {
@@ -72,8 +74,8 @@ TYPED_TEST(CopyTest, dist2local_async_can_interleave) {
                           rng::begin(local_vec) + 4);
   event_1.wait();
   event_2.wait();
-  EXPECT_TRUE(
-      equal_gtest(local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 2, 3, 4, 5}));
+  EXPECT_TRUE(equal_gtest(
+      local_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 2, 3, 4, 5}));
 }
 
 TYPED_TEST(CopyTest, local2dist_async_can_interleave) {
@@ -86,7 +88,8 @@ TYPED_TEST(CopyTest, local2dist_async_can_interleave) {
       rng::begin(local_vec_2), rng::end(local_vec_2), rng::begin(dist_vec) + 3);
   event_1.wait();
   event_2.wait();
-  EXPECT_TRUE(equal_gtest(dist_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5}));
+  EXPECT_TRUE(
+      equal_gtest(dist_vec, typename TestFixture::LocalVec{1, 2, 3, 4, 5}));
 }
 
 TYPED_TEST(CopyTest, dist2local_sliced_bothSides) {
@@ -107,8 +110,8 @@ TYPED_TEST(CopyTest, dist2local_sliced_left) {
 
   dr::shp::copy(rng::begin(dist_vec) + 1, rng::end(dist_vec),
                 rng::begin(local_vec));
-  EXPECT_TRUE(equal_gtest(local_vec, typename TestFixture::LocalVec{2, 3, 4, 5, 6, 7,
-                                                              8, 9, 10, 0}));
+  EXPECT_TRUE(equal_gtest(local_vec, typename TestFixture::LocalVec{
+                                         2, 3, 4, 5, 6, 7, 8, 9, 10, 0}));
 }
 
 TYPED_TEST(CopyTest, dist2local_sliced_right) {
