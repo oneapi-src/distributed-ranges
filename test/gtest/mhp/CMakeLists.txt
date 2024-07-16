@@ -15,7 +15,6 @@ add_executable(
   ../common/distributed_vector.cpp
   ../common/drop.cpp
   ../common/enumerate.cpp
-  ../common/equal.cpp
   ../common/exclusive_scan.cpp
   ../common/fill.cpp
   ../common/for_each.cpp
