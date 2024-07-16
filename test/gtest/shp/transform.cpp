@@ -21,7 +21,8 @@ TYPED_TEST(TransformTest, whole_aligned) {
   EXPECT_EQ(r.in, a.end());
   EXPECT_EQ(r.out, b.end());
 
-  EXPECT_TRUE(equal_gtest(b, typename TestFixture::LocalVec{10, 11, 12, 13, 14}));
+  EXPECT_TRUE(
+      equal_gtest(b, typename TestFixture::LocalVec{10, 11, 12, 13, 14}));
 }
 
 TYPED_TEST(TransformTest, whole_non_aligned) {
@@ -34,8 +35,8 @@ TYPED_TEST(TransformTest, whole_non_aligned) {
   EXPECT_EQ(r.in, a.end());
   EXPECT_EQ(*r.out, 55);
 
-  EXPECT_TRUE(equal_gtest(b, typename TestFixture::LocalVec{10, 11, 12, 13, 14, 55,
-                                                      56, 57, 58, 59, 60}));
+  EXPECT_TRUE(equal_gtest(b, typename TestFixture::LocalVec{
+                                 10, 11, 12, 13, 14, 55, 56, 57, 58, 59, 60}));
 }
 
 TYPED_TEST(TransformTest, part_aligned) {
@@ -51,6 +52,21 @@ TYPED_TEST(TransformTest, part_aligned) {
   EXPECT_TRUE(equal_gtest(b, typename TestFixture::LocalVec{9, 11, 12, 13, 9}));
 }
 
+TYPED_TEST(TransformTest, zip_merge) {
+  // const typename TestFixture::DistVec a = {1, 1, 0, 1, 1};
+  // typename TestFixture::DistVec b = {1, 0, 1, 0, 1};
+
+  // dr::shp::distributed_vector<int> res(5);
+
+  // auto min = [=](auto &&pair) {
+  //   return std::min(pair.first, pair.second);
+  // };
+  // auto zipped_view = dr::shp::views::zip(a, b);
+  // dr::shp::transform(dr::shp::par_unseq, zipped_view, res.begin(), min);
+  // This line causes segmentation fault, as specified in bug report DRA-184
+
+}
+
 TYPED_TEST(TransformTest, part_not_aligned) {
   const typename TestFixture::DistVec a = {0, 1, 2, 3};
   typename TestFixture::DistVec b = {9, 9, 9, 9, 9, 9, 9, 9, 9};
@@ -61,8 +77,8 @@ TYPED_TEST(TransformTest, part_not_aligned) {
   EXPECT_EQ(r_in, a.end());
   EXPECT_EQ(r_out, rng::begin(b) + 8); // initial shift in b + subrange size
 
-  EXPECT_TRUE(
-      equal_gtest(b, typename TestFixture::LocalVec{9, 9, 9, 9, 9, 11, 12, 13, 9}));
+  EXPECT_TRUE(equal_gtest(
+      b, typename TestFixture::LocalVec{9, 9, 9, 9, 9, 11, 12, 13, 9}));
 }
 
 TYPED_TEST(TransformTest, inplace_whole) {

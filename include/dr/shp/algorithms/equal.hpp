@@ -20,8 +20,9 @@ requires std::equality_comparable_with<rng::range_value_t<R1>,
                                        rng::range_value_t<R2>>
 bool equal(ExecutionPolicy &&policy, R1 &&r1, R2 &&r2) {
 
-  if (rng::distance(r1) != rng::distance(r2))
+  if (rng::distance(r1) != rng::distance(r2)) {
     return false;
+  }
 
   // we must use ints instead of bools, because distributed ranges do not
   // support bools
