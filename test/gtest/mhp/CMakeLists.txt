@@ -15,6 +15,7 @@ add_executable(
   ../common/distributed_vector.cpp
   ../common/drop.cpp
   ../common/enumerate.cpp
+  ../common/equal.cpp
   ../common/exclusive_scan.cpp
   ../common/fill.cpp
   ../common/for_each.cpp
@@ -56,7 +57,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  ../common/reduce.cpp
+  ../common/equal.cpp
   )
 # cmake-format: on
 

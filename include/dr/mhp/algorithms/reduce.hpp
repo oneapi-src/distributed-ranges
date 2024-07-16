@@ -4,11 +4,6 @@
 
 #pragma once
 
-#ifdef SYCL_LANGUAGE_VERSION
-#include <sycl/sycl.hpp>
-#endif
-#include <dr/mhp/sycl_support.hpp>
-
 namespace dr::mhp::__detail {
 
 inline auto std_reduce(rng::forward_range auto &&r, auto &&binary_op) {
@@ -40,11 +35,10 @@ inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
                          sycl::known_identity_v<Fn, T>, binary_op);
     } else {
       dr::drlog.debug("  peel 1st value\n");
-      auto first_value = *rng::begin(r);
       return std::reduce(dpl_policy(),
                          dr::__detail::direct_iterator(rng::begin(r) + 1),
                          dr::__detail::direct_iterator(rng::end(r)),
-                         sycl_get(first_value), binary_op);
+                         sycl_get(*rng::begin(r)), binary_op);
     }
   }
 #else
