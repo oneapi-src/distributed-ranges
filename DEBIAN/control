@@ -1,7 +1,5 @@
-# SPDX-FileCopyrightText: Intel Corporation
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
+X-SPDX-FileCopyrightText: Intel Corporation
+X-SPDX-License-Identifier: BSD-3-Clause
 Source: distributed-ranges
 Section: libs
 Priority: optional
@@ -15,4 +13,3 @@ Package: distributed-ranges
 Architecture: any
 Version: 1.0
 Description: Distributed Ranges library
- A library for distributed range-based parallel programming.
