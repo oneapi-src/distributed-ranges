@@ -18,7 +18,7 @@ TYPED_TEST(CopyTest, dist2local_wholesegment) {
 
   auto ret_it = dr::shp::copy(rng::begin(dist_vec) + 4,
                               rng::begin(dist_vec) + 8, rng::begin(local_vec));
-  EXPECT_TRUE(equal(local_vec, typename TestFixture::LocalVec{5, 6, 7, 8}));
+  EXPECT_TRUE(equal_gtest(local_vec, typename TestFixture::LocalVec{5, 6, 7, 8}));
   EXPECT_EQ(ret_it, rng::end(local_vec));
 }
 
@@ -29,7 +29,7 @@ TYPED_TEST(CopyTest, local2dist_wholesegment) {
                                             7, 8, 9, 10, 11, 12};
   auto ret_it = dr::shp::copy(rng::begin(local_vec), rng::end(local_vec),
                               rng::begin(dist_vec) + 4);
-  EXPECT_TRUE(equal(dist_vec, typename TestFixture::LocalVec{
+  EXPECT_TRUE(equal_gtest(dist_vec, typename TestFixture::LocalVec{
                                   1, 2, 3, 4, 50, 60, 70, 80, 9, 10, 11, 12}));
   EXPECT_EQ(*ret_it, 9);
 }

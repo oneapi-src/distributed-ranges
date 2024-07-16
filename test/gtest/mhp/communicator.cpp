@@ -39,7 +39,7 @@ TEST(Communicator, Alltoallv) {
       vec_ref[i * SIZE + j] = 10 * i + 1;
     }
 
-  EXPECT_TRUE(equal(vec_ref, vec_dst));
+  EXPECT_TRUE(equal_gtest(vec_ref, vec_dst));
 }
 
 TEST(Communicator, Allgather) {
@@ -61,5 +61,5 @@ TEST(Communicator, Allgather) {
       vec_ref[i * SIZE + j] = 10 * i + 1;
     }
 
-  EXPECT_TRUE(equal(vec_ref, vec_dst));
+  EXPECT_TRUE(equal_gtest(vec_ref, vec_dst));
 }

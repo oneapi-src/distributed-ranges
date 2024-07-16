@@ -21,7 +21,7 @@ void test_sort(LV v, auto func) {
   std::sort(v.begin(), v.end(), func);
   xhp::sort(d_v, func);
 
-  EXPECT_TRUE(equal(v, d_v));
+  EXPECT_TRUE(equal_gtest(v, d_v));
 }
 
 void test_sort2s(LV v) {

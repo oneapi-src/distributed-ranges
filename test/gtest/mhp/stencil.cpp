@@ -27,7 +27,7 @@ TEST(Stencil, 1D) {
   if (comm_rank == 0) {
     rng::iota(v_in, 10);
     EXPECT_TRUE(check_segments(dv_in));
-    EXPECT_TRUE(equal(v_in, dv_in));
+    EXPECT_TRUE(equal_gtest(v_in, dv_in));
   }
 
   MPI_Barrier(comm);

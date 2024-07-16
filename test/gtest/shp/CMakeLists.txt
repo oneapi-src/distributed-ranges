@@ -8,6 +8,7 @@ add_executable(
   shp-tests
   shp-tests.cpp ../common/all.cpp ../common/copy.cpp ../common/counted.cpp
   ../common/distributed_vector.cpp ../common/drop.cpp ../common/enumerate.cpp
+  ../common/equal.cpp
   ../common/fill.cpp ../common/for_each.cpp ../common/iota.cpp
   # ../common/iota_view.cpp
   ../common/reduce.cpp ../common/sort.cpp ../common/subrange.cpp
@@ -18,7 +19,7 @@ add_executable(
 add_executable(shp-tests-3 shp-tests.cpp containers-3.cpp copy-3.cpp)
 
 # skeleton for rapid builds of individual tests, feel free to change this
-add_executable(shp-quick-test shp-tests.cpp ../common/sort.cpp)
+add_executable(shp-quick-test shp-tests.cpp ../common/equal.cpp)
 target_compile_definitions(shp-quick-test PRIVATE QUICK_TEST)
 
 foreach(test-exec IN ITEMS shp-tests shp-tests-3 shp-quick-test)

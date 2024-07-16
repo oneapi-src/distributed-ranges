@@ -51,19 +51,19 @@ TEST(MhpTests, DistributedVectorAlgorithms) {
 
     std::iota(dv.begin(), dv.end(), 1);
 
-    EXPECT_TRUE(equal(dv, ref));
+    EXPECT_TRUE(equal_gtest(dv, ref));
 
     std::iota(ref.begin(), ref.end(), 11);
     std::copy(ref.begin(), ref.end(), dv.begin());
-    EXPECT_TRUE(equal(dv, ref));
+    EXPECT_TRUE(equal_gtest(dv, ref));
 
     std::iota(ref.begin(), ref.end(), 21);
     rng::copy(ref, dv.begin());
-    EXPECT_TRUE(equal(dv, ref));
+    EXPECT_TRUE(equal_gtest(dv, ref));
 
     std::iota(dv.begin(), dv.end(), 31);
     rng::copy(dv, ref.begin());
-    EXPECT_TRUE(equal(dv, ref));
+    EXPECT_TRUE(equal_gtest(dv, ref));
   }
 }
 

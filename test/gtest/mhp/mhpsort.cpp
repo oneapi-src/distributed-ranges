@@ -21,5 +21,5 @@ TEST(MhpSort, DISABLED_BigRandom) {
   std::sort(v.begin(), v.end());
   dr::mhp::sort(d_v);
 
-  EXPECT_TRUE(equal(v, d_v));
+  EXPECT_TRUE(equal_gtest(v, d_v));
 }

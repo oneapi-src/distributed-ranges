@@ -21,7 +21,7 @@ TYPED_TEST(IotaView, ZipWithDR) {
     dve = ve;
   });
 
-  EXPECT_TRUE(equal(std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, dv));
+  EXPECT_TRUE(equal_gtest(std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, dv));
 }
 
 TYPED_TEST(IotaView, Copy) {
@@ -31,7 +31,7 @@ TYPED_TEST(IotaView, Copy) {
   xhp::copy(v, dv.begin());
 
   barrier();
-  EXPECT_TRUE(equal(std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, dv));
+  EXPECT_TRUE(equal_gtest(std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, dv));
 }
 
 TYPED_TEST(IotaView, Transform) {
@@ -42,7 +42,7 @@ TYPED_TEST(IotaView, Transform) {
   xhp::transform(v, dv.begin(), negate);
 
   EXPECT_TRUE(
-      equal(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
+      equal_gtest(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
 }
 
 TYPED_TEST(IotaView, ForEach) {
@@ -59,5 +59,5 @@ TYPED_TEST(IotaView, ForEach) {
   xhp::for_each(z, negate);
 
   EXPECT_TRUE(
-      equal(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
+      equal_gtest(dv, std::vector<int>{-1, -2, -3, -4, -5, -6, -7, -8, -9, -10}));
 }
