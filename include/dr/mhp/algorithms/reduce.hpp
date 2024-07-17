@@ -103,6 +103,10 @@ auto reduce(std::size_t root, bool root_provided, DR &&dr, auto &&binary_op) {
 template <typename T, dr::distributed_range DR>
 T reduce(std::size_t root, bool root_provided, DR &&dr, T init,
          auto &&binary_op = std::plus<>{}) {
+
+  if (rng::empty(dr)) {
+    return init;
+  }
   return binary_op(init, reduce(root, root_provided, dr, binary_op));
 }
 

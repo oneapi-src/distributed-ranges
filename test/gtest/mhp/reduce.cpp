@@ -38,14 +38,14 @@ TYPED_TEST(ReduceMHP, RootIterators) {
   }
 }
 
-// Example of code that should be compiling, but does not, described in issue DRA-192
-// TYPED_TEST(ReduceMHP, NotCompiling) {
+// Example of code that should be compiling, but does not, described in issue
+// DRA-192 TYPED_TEST(ReduceMHP, NotCompiling) {
 //   dr::mhp::distributed_vector<int> r1(10);
 
 //   auto add = [](auto &&elem) {
 //     return elem + 1;
 //   };
-  
+
 //   auto added = dr::mhp::views::transform(r1, add);
 //   auto min = [](double x, double y) { return std::min(x, y); };
 //   auto result = dr::mhp::reduce(root, added, 1, min);

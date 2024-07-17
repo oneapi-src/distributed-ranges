@@ -15,38 +15,51 @@ TYPED_TEST(Equals, Same) {
   Ops1<TypeParam> ops(10);
 
   xhp::distributed_vector<int> toCompareXhp(10);
-  std::vector<int> toCompareStd(10);
 
   for (std::size_t idx = 0; idx < 10; idx++) {
     toCompareXhp[idx] = ops.dist_vec[idx];
-    toCompareStd[idx] = ops.vec[idx];
   }
   barrier();
 
   bool xhpEq = xhp::equal(ops.dist_vec, toCompareXhp);
-  bool stdEq = rng::equal(ops.vec, toCompareStd);
 
-  EXPECT_TRUE(xhpEq == stdEq);
+  EXPECT_TRUE(xhpEq);
 }
 
 TYPED_TEST(Equals, Different) {
   Ops1<TypeParam> ops(10);
 
   xhp::distributed_vector<int> toCompareXhp(10);
-  std::vector<int> toCompareStd(10);
 
   for (std::size_t idx = 0; idx < 10; idx++) {
     toCompareXhp[idx] = ops.dist_vec[idx];
-    toCompareStd[idx] = ops.vec[idx];
   }
 
-  toCompareXhp[2] = -ops.dist_vec[2];
-  toCompareStd[2] = -ops.vec[2];
+  toCompareXhp[2] = ops.dist_vec[2] + 1;
 
   barrier();
 
   bool xhpEq = xhp::equal(ops.dist_vec, toCompareXhp);
-  bool stdEq = rng::equal(ops.vec, toCompareStd);
 
-  EXPECT_TRUE(xhpEq == stdEq);
+  EXPECT_TRUE(!xhpEq);
+}
+
+TYPED_TEST(Equals, EmptiesEqual) {
+  Ops1<TypeParam> ops(0);
+
+  xhp::distributed_vector<int> toCompareXhp(0);
+
+  bool xhpEq = xhp::equal(ops.dist_vec, toCompareXhp);
+
+  EXPECT_TRUE(xhpEq);
+}
+
+TYPED_TEST(Equals, EmptyNotEmptyDifferent) {
+  Ops1<TypeParam> ops(0);
+
+  xhp::distributed_vector<int> toCompareXhp(10);
+
+  bool xhpEq = xhp::equal(ops.dist_vec, toCompareXhp);
+
+  EXPECT_TRUE(!xhpEq);
 }
