@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: dr
+Upstream-Contact: lukasz.slusarczyk@intel.com
+Source: https://www.github.com/oneapi-src/distributed-ranges
+Files: *
+Copyright: 2024 Intel Corporation
+License: BSD-3-Clause
+ BSD 3-Clause License

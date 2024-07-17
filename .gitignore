@@ -4,3 +4,20 @@
 
 *egg-info
 ._*
+
+..deb
+.vscode/
+DEBIAN/distributed-ranges.cron.d.ex
+DEBIAN/distributed-ranges.doc-base.ex
+DEBIAN/postinst.ex
+DEBIAN/preinst.ex
+Testing/
+_deps/
+build.log
+build/
+dds/
+distributed-ranges_0.1.orig.tar.gz
+setup-devcloud-access-195420.txt
+src-python/
+test/Testing/
+venv/

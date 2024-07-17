@@ -9,8 +9,10 @@ Standards-Version: 4.6.0
 Homepage: https://www.intel.com/content/www/us/en/developer/articles/guide/get-started-with-distributed-ranges.html
 Vcs-Browser: https://www.github.com/oneapi-src/distributed-ranges
 Vcs-Git: https://www.github.com/oneapi-src/distributed-ranges.git
+
 Package: distributed-ranges
-Architecture: amd64
-Version: 1.0
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+# Version: 1.0
 Description: Distributed Ranges library
  test test
