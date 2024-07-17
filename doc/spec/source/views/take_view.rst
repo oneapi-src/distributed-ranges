@@ -15,7 +15,7 @@ Interface
 
 .. code-block:: cpp
 
-  dr::mhp::views::take
+  dr::mp::views::take
   dr::shp::views::take
 
 For interface, see `std::ranges::views::take`_

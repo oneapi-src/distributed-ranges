@@ -15,7 +15,7 @@ Option 1
 
    dr::
    shp::
-   mhp::
+   mp::
 
 Option 2
 ========
@@ -24,7 +24,7 @@ Option 2
 
    dr::
    dr::shp::
-   dr::mhp::
+   dr::mp::
 
 Variation 1
 ===========

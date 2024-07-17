@@ -13,16 +13,16 @@
 Interface
 =========
 
-MHP
+MP
 ---
 
-.. doxygenfunction:: dr::mhp::copy(rng::forward_range auto &&in, dr::distributed_iterator auto out)
+.. doxygenfunction:: dr::mp::copy(rng::forward_range auto &&in, dr::distributed_iterator auto out)
    :outline:
-.. doxygenfunction:: dr::mhp::copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out)
+.. doxygenfunction:: dr::mp::copy(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out)
    :outline:
-.. doxygenfunction:: dr::mhp::copy(std::size_t root, dr::distributed_contiguous_range auto &&in, std::contiguous_iterator auto out)
+.. doxygenfunction:: dr::mp::copy(std::size_t root, dr::distributed_contiguous_range auto &&in, std::contiguous_iterator auto out)
    :outline:
-.. doxygenfunction:: dr::mhp::copy(std::size_t root, rng::contiguous_range auto &&in, dr::distributed_contiguous_iterator auto out)
+.. doxygenfunction:: dr::mp::copy(std::size_t root, rng::contiguous_range auto &&in, dr::distributed_contiguous_iterator auto out)
    :outline:
 
 SHP

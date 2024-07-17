@@ -54,15 +54,15 @@ inline auto device_info(sycl::device device) {
 
 extern bool check_results;
 
-#ifdef BENCH_MHP
+#ifdef BENCH_MP
 #ifdef SYCL_LANGUAGE_VERSION
 
-inline sycl::context *mhp_global_context_ = nullptr;
+inline sycl::context *mp_global_context_ = nullptr;
 inline std::vector<sycl::device> devices;
 
 inline sycl::queue get_queue() {
-  if (mhp_global_context_ != nullptr) {
-    return sycl::queue(*mhp_global_context_, devices[0]);
+  if (mp_global_context_ != nullptr) {
+    return sycl::queue(*mp_global_context_, devices[0]);
   }
 
   auto root_devices = sycl::platform().get_devices();
@@ -90,15 +90,15 @@ inline sycl::queue get_queue() {
 
   assert(rng::size(devices) > 0);
 
-  mhp_global_context_ = new sycl::context(devices);
-  return sycl::queue(*mhp_global_context_, devices[0]);
+  mp_global_context_ = new sycl::context(devices);
+  return sycl::queue(*mp_global_context_, devices[0]);
 }
 
 #endif
 
-#include "dr/mhp.hpp"
+#include "dr/mp.hpp"
 
-namespace xhp = dr::mhp;
+namespace xhp = dr::mp;
 
 extern std::size_t stencil_steps;
 extern std::size_t num_rows;

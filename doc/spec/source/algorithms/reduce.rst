@@ -13,32 +13,32 @@
 Interface
 =========
 
-MHP
+MP
 ---
 
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DR &&dr, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DR &&dr, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DR &&dr, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(DR &&dr, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DR &&dr, T init)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DR &&dr, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DR &&dr, T init)
+.. doxygenfunction:: dr::mp::reduce(DR &&dr, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DR &&dr)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DR &&dr)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DR &&dr)
+.. doxygenfunction:: dr::mp::reduce(DR &&dr)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DI first, DI last, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(DI first, DI last, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last, T init)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DI first, DI last, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DI first, DI last, T init)
+.. doxygenfunction:: dr::mp::reduce(DI first, DI last, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DI first, DI last)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DI first, DI last)
+.. doxygenfunction:: dr::mp::reduce(DI first, DI last)
   :outline:
 
 SHP

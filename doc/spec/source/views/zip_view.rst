@@ -14,12 +14,12 @@
 Interface
 =========
 
-MHP
+MP
 ---
 
-.. doxygenclass:: dr::mhp::zip_view
+.. doxygenclass:: dr::mp::zip_view
    :members:
-.. doxygenfunction:: dr::mhp::views::zip
+.. doxygenfunction:: dr::mp::views::zip
    :outline:
 
 SHP

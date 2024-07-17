@@ -295,7 +295,7 @@ concept streamable = requires(std::ostream &os, T value) {
   { os << value } -> std::convertible_to<std::ostream &>;
 };
 
-namespace dr::mhp {
+namespace dr::mp {
 
 // gtest relies on ADL to find the printer
 template <typename T, typename B>
@@ -325,7 +325,7 @@ bool operator==(const xhp::distributed_vector<T, B> &dist_vec,
   return is_equal(local_vec, dist_vec);
 }
 
-} // namespace dr::mhp
+} // namespace dr::mp
 
 namespace dr::shp {
 

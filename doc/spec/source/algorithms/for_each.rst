@@ -12,11 +12,11 @@
 
 Interface
 =========
-MHP
+MP
 ---
-.. doxygenfunction:: dr::mhp::for_each(dr::distributed_range auto &&dr, auto op)
+.. doxygenfunction:: dr::mp::for_each(dr::distributed_range auto &&dr, auto op)
   :outline:
-.. doxygenfunction:: dr::mhp::for_each(DI first, DI last, auto op)
+.. doxygenfunction:: dr::mp::for_each(DI first, DI last, auto op)
   :outline:
 
 SHP

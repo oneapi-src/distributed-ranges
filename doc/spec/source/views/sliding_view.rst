@@ -16,7 +16,7 @@ Interface
 
 .. code-block:: cpp
 
-  dr::mhp::views::sliding
+  dr::mp::views::sliding
   dr::shp::views::sliding
 
 Description

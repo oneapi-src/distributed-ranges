@@ -12,7 +12,7 @@
 
 #define TEST_SHP
 
-// To share tests with MHP
+// To share tests with MP
 const std::size_t comm_rank = 0;
 const std::size_t comm_size = 1;
 

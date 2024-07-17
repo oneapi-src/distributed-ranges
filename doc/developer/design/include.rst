@@ -13,13 +13,13 @@ Application developers using distributed ranges library.
 
 Use::
 
-   #include "mhp.hpp"
+   #include "mp.hpp"
 
 or::
 
    #include "shp.hpp"
 
-No other includes. The names ``mhp.hpp`` and ``shp.hpp`` are likely to
+No other includes. The names ``mp.hpp`` and ``shp.hpp`` are likely to
 change. In the future, we may support selective includes. Externally
 exposed include paths cannot be changed without breaking compatibility.
 
@@ -71,11 +71,11 @@ Directory Structure
 ``dr/shp``
   Single process, multi GPU model
 
-``dr/mhp``
+``dr/mp``
   Multi-process, single XPU model
 
 ``dr/views``
-  Views shared between SHP/MHP
+  Views shared between SHP/MP
 
 ``dr/shp/algorithms``
   Algorithm implemenentations specific to SHP (e.g. ``shp::for_each``)

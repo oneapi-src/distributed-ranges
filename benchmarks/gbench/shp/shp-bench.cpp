@@ -9,7 +9,7 @@ std::size_t default_repetitions;
 bool weak_scaling;
 bool check_results;
 
-// shp always uses device memory, but it is optional for mhp
+// shp always uses device memory, but it is optional for mp
 bool device_memory = true;
 
 std::size_t comm_rank = 0;

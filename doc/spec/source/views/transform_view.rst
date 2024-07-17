@@ -15,7 +15,7 @@ Interface
 
 .. code-block:: cpp
 
-  dr::mhp::views::transform
+  dr::mp::views::transform
   dr::shp::views::transform
 
 For interface, see `std::ranges::views::transform`_

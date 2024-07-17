@@ -14,5 +14,5 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(dr)
 
 set(CMAKE_CXX_STANDARD 20)
-add_executable(mhp-app mhp-app.cpp)
-target_link_libraries(mhp-app MPI::MPI_CXX DR::mpi)
+add_executable(mp-app mp-app.cpp)
+target_link_libraries(mp-app MPI::MPI_CXX DR::mpi)

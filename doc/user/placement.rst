@@ -33,19 +33,19 @@ cores.
 .. _`GPU Pinning`: https://www.intel.com/content/www/us/en/docs/mpi-library/developer-reference-linux/2021-8/gpu-pinning.html
 .. _`CPU Pinning`: https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library-pinning-simulator.html#gs.10glno
 
-MHP/CPU
+MP/CPU
 =======
 
 The examples that follow are for a 2 socket system with 24 cores in
 each socket.  Fully utilize 1 socket::
 
-  I_MPI_PIN_DOMAIN=core I_MPI_PIN_ORDER=compact I_MPI_PIN_CELL=unit mpirun -n 24 ./mhp-bench
+  I_MPI_PIN_DOMAIN=core I_MPI_PIN_ORDER=compact I_MPI_PIN_CELL=unit mpirun -n 24 ./mp-bench
 
 Fully utilize 2 sockets::
 
-  I_MPI_PIN_DOMAIN=core I_MPI_PIN_ORDER=compact I_MPI_PIN_CELL=unit mpirun -n 48 ./mhp-bench
+  I_MPI_PIN_DOMAIN=core I_MPI_PIN_ORDER=compact I_MPI_PIN_CELL=unit mpirun -n 48 ./mp-bench
 
-MHP/SYCL Using CPU Devices
+MP/SYCL Using CPU Devices
 ==========================
 
 The examples that follow are for a 2 socket system with 24 cores in
@@ -58,17 +58,17 @@ each socket.  Use ``sycl-ls`` to discover available devices::
 
 Fully utilize 1 socket with 1 SYCL device::
 
-  ONEAPI_DEVICE_SELECTOR=opencl:cpu I_MPI_PIN_DOMAIN=socket mpirun -n 1 ./mhp-bench --sycl
+  ONEAPI_DEVICE_SELECTOR=opencl:cpu I_MPI_PIN_DOMAIN=socket mpirun -n 1 ./mp-bench --sycl
 
 Fully utilize 2 sockets with 2 SYCL devices::
 
-  ONEAPI_DEVICE_SELECTOR=opencl:cpu I_MPI_PIN_DOMAIN=socket I_MPI_PIN_ORDER=compact I_MPI_PIN_CELL=unit mpirun -n 2 ./mhp-bench --sycl
+  ONEAPI_DEVICE_SELECTOR=opencl:cpu I_MPI_PIN_DOMAIN=socket I_MPI_PIN_ORDER=compact I_MPI_PIN_CELL=unit mpirun -n 2 ./mp-bench --sycl
 
 Fully utilize all sockets with 1 SYCL device. Programs that use a
 single SYCL device to use 2 sockets typically have poor NUMA behavior
 so it is recommended to instead use 1 device per socket.::
 
-  ONEAPI_DEVICE_SELECTOR=opencl:1 mpirun -n 1 ./mhp-bench --sycl
+  ONEAPI_DEVICE_SELECTOR=opencl:1 mpirun -n 1 ./mp-bench --sycl
 
 SHP Using CPU Devices
 =====================

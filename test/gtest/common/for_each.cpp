@@ -88,7 +88,7 @@ TYPED_TEST(ForEach, ForEachNWholeLength) {
   EXPECT_TRUE(check_unary_op(input, ops.vec, ops.dist_vec));
 }
 
-// Disabled. Not sure how to support this properly for MHP. We need to
+// Disabled. Not sure how to support this properly for MP. We need to
 // copy the values local so we can operate on them. Read-only data
 // seems doable but writing misaligned data is harder. We should
 // support some algorithms that do data movements that align data.

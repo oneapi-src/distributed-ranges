@@ -17,7 +17,7 @@ function(add_long_fuzz_mpi_test test_name name processes)
             ${MPIEXEC_PREFLAGS} ./${name} ${ARGN} COMMAND_EXPAND_LISTS)
 endfunction()
 
-add_mhp_ctest(
+add_mp_ctest(
   cpu-fuzz-commit cpu-fuzz 1 -max_len=16 -runs=1000000 -ignore_remaining_args=1
   -controller=1)
 

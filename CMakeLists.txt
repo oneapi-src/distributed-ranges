@@ -148,11 +148,11 @@ FetchContent_Declare(
   GIT_TAG mdspan-0.6.0)
 FetchContent_MakeAvailable(mdspan)
 
-add_custom_target(mhp-all-tests)
+add_custom_target(mp-all-tests)
 add_custom_target(shp-all-tests)
-add_custom_target(all-tests DEPENDS mhp-all-tests shp-all-tests)
+add_custom_target(all-tests DEPENDS mp-all-tests shp-all-tests)
 
-function(add_mhp_ctest_impl)
+function(add_mp_ctest_impl)
   set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL)
   set(oneValueArgs NAME TEST_NAME NPROC TIMEOUT)
   set(multiValueArgs TARGS) # Test ARGumentS
@@ -234,25 +234,25 @@ function(add_mhp_ctest_impl)
   endif()
 
   if(AMC_TESTLABEL)
-    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
+    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MP)
   endif()
-  add_dependencies(mhp-all-tests ${AMC_NAME})
+  add_dependencies(mp-all-tests ${AMC_NAME})
 endfunction()
 
-function(add_mhp_auxiliary_ctests)
-  add_mhp_ctest_impl(${ARGN} GDB)
-  add_mhp_ctest_impl(${ARGN} GDB DRLOGS)
-  add_mhp_ctest_impl(${ARGN} DRLOGS)
+function(add_mp_auxiliary_ctests)
+  add_mp_ctest_impl(${ARGN} GDB)
+  add_mp_ctest_impl(${ARGN} GDB DRLOGS)
+  add_mp_ctest_impl(${ARGN} DRLOGS)
 endfunction()
 
-function(add_mhp_ctest)
-  add_mhp_ctest_impl(${ARGN} TESTLABEL)
-  add_mhp_auxiliary_ctests(${ARGN})
+function(add_mp_ctest)
+  add_mp_ctest_impl(${ARGN} TESTLABEL)
+  add_mp_auxiliary_ctests(${ARGN})
 endfunction()
 
-function(add_mhp_disabled_ctest)
-  add_mhp_ctest_impl(${ARGN})
-  add_mhp_auxiliary_ctests(${ARGN})
+function(add_mp_disabled_ctest)
+  add_mp_ctest_impl(${ARGN})
+  add_mp_auxiliary_ctests(${ARGN})
 endfunction()
 
 if(ENABLE_ISHMEM)
@@ -411,7 +411,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     endif()
   endif()
 
-  add_subdirectory(test/gtest/mhp)
+  add_subdirectory(test/gtest/mp)
 
   if(ENABLE_SYCL)
     # disables rng::detail::box_compress::coalesce which causes rng::box to use
@@ -424,7 +424,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   add_subdirectory(examples/serial)
   add_subdirectory(test/gtest/serial)
-  add_subdirectory(examples/mhp)
+  add_subdirectory(examples/mp)
   add_subdirectory(benchmarks/gbench)
 
   # Requires clang, icpx/llvm nightly do not support the tools

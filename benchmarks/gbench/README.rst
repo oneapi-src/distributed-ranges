@@ -10,32 +10,32 @@ We use google bench for micro-benchmarks.
 
 Show standard google bench options::
 
-  ./mhp-bench --help
+  ./mp-bench --help
 
 Show custom options::
 
-  ./mhp-bench --drhelp
+  ./mp-bench --drhelp
 
 See `user guide`_ for more information on google benchmark.
 
-MHP Sample Commands
+MP Sample Commands
 ===================
 
 Run all benchmarks with 2 ranks. Each rank uses a single thread::
 
-  mpirun -n 2 ./mhp-bench --benchmark_counters_tabular=true
+  mpirun -n 2 ./mp-bench --benchmark_counters_tabular=true
 
 Run all benchmarks with 2 ranks. Each rank uses a single SYCL device::
 
-  mpirun -n 2 ./mhp-bench --benchmark_counters_tabular=true --sycl
+  mpirun -n 2 ./mp-bench --benchmark_counters_tabular=true --sycl
 
 Run 2D stencil algorithms::
 
-  mpirun -n 2 ./mhp-bench --benchmark_counters_tabular=true --benchmark_filter=Stencil2D
+  mpirun -n 2 ./mp-bench --benchmark_counters_tabular=true --benchmark_filter=Stencil2D
 
 Run distributed ranges algorithms::
 
-  mpirun -n 2 ./mhp-bench --benchmark_counters_tabular=true --benchmark_filter=.*DR
+  mpirun -n 2 ./mp-bench --benchmark_counters_tabular=true --benchmark_filter=.*DR
 
 
 SHP Sample Commands

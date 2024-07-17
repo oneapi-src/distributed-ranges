@@ -31,10 +31,10 @@ echo "::endgroup::"
 #ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L SHP
 #echo "::endgroup::"
 
-echo "::group::MHP GPU Test"
-ONEAPI_DEVICE_SELECTOR=level_zero:* time ctest --test-dir build -L MHP
+echo "::group::MP GPU Test"
+ONEAPI_DEVICE_SELECTOR=level_zero:* time ctest --test-dir build -L MP
 echo "::endgroup::"
 
-echo "::group::MHP CPU Test"
-ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L MHP
+echo "::group::MP CPU Test"
+ONEAPI_DEVICE_SELECTOR=opencl:cpu time ctest --test-dir build -L MP
 echo "::endgroup::"

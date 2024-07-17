@@ -15,7 +15,7 @@ Interface
 
 .. code-block:: cpp
 
-  dr::mhp::views::counted
+  dr::mp::views::counted
   dr::shp::views::counted
 
 For interface, see `std::ranges::views::counted`_
