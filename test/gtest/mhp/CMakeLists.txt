@@ -57,7 +57,7 @@ add_executable(
 
 add_executable(mhp-quick-test
   mhp-tests.cpp
-  ../common/equal.cpp
+  reduce.cpp
   )
 # cmake-format: on
 

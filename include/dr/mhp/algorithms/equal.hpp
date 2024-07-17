@@ -26,8 +26,12 @@ bool equal(std::size_t root, bool root_provided, R1 &&r1, R2 &&r2) {
   };
 
   auto zipped_views = views::zip(r1, r2);
+
+  // we are using mhp::transform instead of mhp::views::transform due to compilation error
+  // refer to DRA-192 and test/gtest/mhp/reduce.cpp
   mhp::distributed_vector<int> compared(rng::distance(r1));
   mhp::transform(zipped_views, compared.begin(), compare);
+
   auto min = [](double x, double y) { return std::min(x, y); };
   if (root_provided) {
     auto result = mhp::reduce(root, compared, 1, min);
