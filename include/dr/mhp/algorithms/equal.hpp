@@ -37,8 +37,8 @@ inline auto dpl_equal(rng::forward_range auto &&r1,
 } // namespace
 namespace dr::mhp {
 template <dr::distributed_range R1, dr::distributed_range R2>
-requires std::equality_comparable_with<rng::range_value_t<R1>,
-                                       rng::range_value_t<R2>>
+  requires std::equality_comparable_with<rng::range_value_t<R1>,
+                                         rng::range_value_t<R2>>
 bool equal(std::size_t root, bool root_provided, R1 &&r1, R2 &&r2) {
   // using value_type = rng::range_value_t<DR>;
   auto comm = default_comm();
@@ -103,8 +103,10 @@ bool equal(std::size_t root, bool root_provided, R1 &&r1, R2 &&r2) {
 }
 
 template <dr::distributed_range R1, dr::distributed_range R2>
-requires std::equality_comparable_with<rng::range_value_t<R1>,
-                                       rng::range_value_t<R2>>
-bool equal(R1 &&r1, R2 &&r2) { return equal(0, false, r1, r2); }
+  requires std::equality_comparable_with<rng::range_value_t<R1>,
+                                         rng::range_value_t<R2>>
+bool equal(R1 &&r1, R2 &&r2) {
+  return equal(0, false, r1, r2);
+}
 
 } // namespace dr::mhp
