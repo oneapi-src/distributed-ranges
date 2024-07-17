@@ -60,10 +60,10 @@ bool equal(std::size_t root, bool root_provided, R1 &&r1, R2 &&r2) {
       bool res = false;
       if (mhp::use_sycl()) {
         dr::drlog.debug("  with DPL\n");
-        res = dpl_equal(r.first, r.second);
+        res = __detail::dpl_equal(r.first, r.second);
       } else {
         dr::drlog.debug("  with CPU\n");
-        res = std_equal(r.first, r.second);
+        res = __detail::std_equal(r.first, r.second);
       }
       if (res) {
         return 1;
@@ -72,7 +72,7 @@ bool equal(std::size_t root, bool root_provided, R1 &&r1, R2 &&r2) {
     };
     auto locals = rng::views::transform(
         rng::views::zip(local_segments(r1), local_segments(r2)), compare);
-    auto local = std_all(locals);
+    auto local = __detail::std_all(locals);
 
     std::vector<int> all(comm.size());
     // we have to use int here,
@@ -82,20 +82,20 @@ bool equal(std::size_t root, bool root_provided, R1 &&r1, R2 &&r2) {
       // Everyone gathers to root, only root reduces
       comm.gather(local, std::span{all}, root);
       if (root == comm.rank()) {
-        return check_all(std_all(all));
+        return __detail::check_all(__detail::std_all(all));
       } else {
         return true;
       }
     } else {
       // Everyone gathers and everyone reduces
       comm.all_gather(local, all);
-      return check_all(std_all(all));
+      return __detail::check_all(__detail::std_all(all));
     }
   } else {
     dr::drlog.debug("Serial equal\n");
     bool result = true;
     if (!root_provided || root == comm.rank()) {
-      result = std_equal(r1, r2);
+      result = __detail::std_equal(r1, r2);
     }
     barrier();
     return result;
@@ -107,7 +107,7 @@ template <dr::distributed_range R1, dr::distributed_range R2>
   requires std::equality_comparable_with<rng::range_value_t<R1>,
                                          rng::range_value_t<R2>>
 bool equal(R1 &&r1, R2 &&r2) {
-  return __detail::equal(0, false, r1, r2);
+  return equal(0, false, r1, r2);
 }
 
 } // namespace dr::mhp
