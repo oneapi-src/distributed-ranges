@@ -5,7 +5,9 @@
 #pragma once
 #include <concepts>
 #include <dr/concepts/concepts.hpp>
-namespace {
+
+namespace dr::mhp {
+namespace __detail {
 
 inline int std_all(rng::forward_range auto &&r) {
   auto min = [](double x, double y) { return std::min(x, y); };
@@ -34,8 +36,7 @@ inline auto dpl_equal(rng::forward_range auto &&r1,
 #endif
 }
 
-} // namespace
-namespace dr::mhp {
+} // namespace __detail
 template <dr::distributed_range R1, dr::distributed_range R2>
   requires std::equality_comparable_with<rng::range_value_t<R1>,
                                          rng::range_value_t<R2>>
@@ -106,7 +107,7 @@ template <dr::distributed_range R1, dr::distributed_range R2>
   requires std::equality_comparable_with<rng::range_value_t<R1>,
                                          rng::range_value_t<R2>>
 bool equal(R1 &&r1, R2 &&r2) {
-  return equal(0, false, r1, r2);
+  return __detail::equal(0, false, r1, r2);
 }
 
 } // namespace dr::mhp
