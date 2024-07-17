@@ -65,6 +65,7 @@
 #include <dr/mhp/views/mdspan_view.hpp>
 #include <dr/mhp/views/submdspan_view.hpp>
 #include <dr/mhp/algorithms/copy.hpp>
+#include <dr/mhp/algorithms/equal.hpp>
 #include <dr/mhp/algorithms/fill.hpp>
 #include <dr/mhp/algorithms/for_each.hpp>
 #include <dr/mhp/algorithms/exclusive_scan.hpp>

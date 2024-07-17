@@ -47,9 +47,9 @@ TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_greater_than_halo_plus_1) {
   auto dv_sliding_view = xhp::views::sliding(dv, 8);
 
   EXPECT_EQ(rng::size(dv_sliding_view), 3);
-  EXPECT_TRUE(equal({1, 2, 3, 4, 5, 6, 7, 8}, dv_sliding_view[0]));
-  EXPECT_TRUE(equal({2, 3, 4, 5, 6, 7, 8, 9}, dv_sliding_view[1]));
-  EXPECT_TRUE(equal({3, 4, 5, 6, 7, 8, 9, 10}, dv_sliding_view[2]));
+  EXPECT_TRUE(equal_gtest({1, 2, 3, 4, 5, 6, 7, 8}, dv_sliding_view[0]));
+  EXPECT_TRUE(equal_gtest({2, 3, 4, 5, 6, 7, 8, 9}, dv_sliding_view[1]));
+  EXPECT_TRUE(equal_gtest({3, 4, 5, 6, 7, 8, 9, 10}, dv_sliding_view[2]));
 }
 
 TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_less_than_halo_plus_1) {
@@ -58,10 +58,10 @@ TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_less_than_halo_plus_1) {
   auto dv_sliding_view = xhp::views::sliding(dv, 6);
 
   EXPECT_EQ(rng::size(dv_sliding_view), 5);
-  EXPECT_TRUE(equal({1, 2, 3, 4, 5, 6}, dv_sliding_view[0]));
-  EXPECT_TRUE(equal({2, 3, 4, 5, 6, 7}, dv_sliding_view[1]));
+  EXPECT_TRUE(equal_gtest({1, 2, 3, 4, 5, 6}, dv_sliding_view[0]));
+  EXPECT_TRUE(equal_gtest({2, 3, 4, 5, 6, 7}, dv_sliding_view[1]));
   // ...
-  EXPECT_TRUE(equal({5, 6, 7, 8, 9, 10}, dv_sliding_view[4]));
+  EXPECT_TRUE(equal_gtest({5, 6, 7, 8, 9, 10}, dv_sliding_view[4]));
 }
 
 TYPED_TEST(Slide, slide_can_modify_inplace) {

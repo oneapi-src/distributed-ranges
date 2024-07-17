@@ -51,8 +51,8 @@ TYPED_TEST(Subrange, Transform) {
   auto null_op = [](auto v) { return v; };
   xhp::transform(s1, s2.begin(), null_op);
 
-  EXPECT_TRUE(equal(v2, std::vector<int>{-1, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-                                         20, -1, -1}));
+  EXPECT_TRUE(equal_gtest(v2, std::vector<int>{-1, 11, 12, 13, 14, 15, 16, 17,
+                                               18, 19, 20, -1, -1}));
 }
 
 TYPED_TEST(Subrange, Reduce) {

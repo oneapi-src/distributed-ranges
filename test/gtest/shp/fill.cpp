@@ -20,7 +20,7 @@ TYPED_TEST(FillTest, fill_all) {
   for (auto &&segment : segments) {
     dr::shp::fill(segment.begin(), segment.end(), value);
   }
-  EXPECT_TRUE(equal(
+  EXPECT_TRUE(equal_gtest(
       dist_vec, typename TestFixture::DistVec{1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
   ;
 }
