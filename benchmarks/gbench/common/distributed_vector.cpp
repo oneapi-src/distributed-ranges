@@ -180,7 +180,7 @@ template <class... BackendT>
 DR_BENCHMARK(Reduce_DR);
 
 #ifdef DRISHMEM
-DR_BENCHMARK(Reduce_DR<dr::mhp::IshmemBackend>)->Name("Reduce_DR_ishmem");
+DR_BENCHMARK(Reduce_DR<dr::mp::IshmemBackend>)->Name("Reduce_DR_ishmem");
 #endif
 
 static void Reduce_max_DR(benchmark::State &state) {
@@ -268,7 +268,7 @@ static void TransformIdentity_Serial(benchmark::State &state) {
 
 DR_BENCHMARK(TransformIdentity_Serial);
 
-#ifndef BENCH_SHP
+#ifndef BENCH_SP
 // segfault
 
 static void Mul_DR(benchmark::State &state) {

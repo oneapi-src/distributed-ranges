@@ -14,8 +14,8 @@ Option 1
 ::
 
    dr::
-   shp::
-   mhp::
+   sp::
+   mp::
 
 Option 2
 ========
@@ -23,21 +23,21 @@ Option 2
 ::
 
    dr::
-   dr::shp::
-   dr::mhp::
+   dr::sp::
+   dr::mp::
 
 Variation 1
 ===========
 
-``shp.hpp`` does::
+``sp.hpp`` does::
 
   namespace dr {
 
-  using namespace shp;
+  using namespace sp;
 
   }}
 
-If you include ``shp.hpp``, everything you need is in ``dr::``.
+If you include ``sp.hpp``, everything you need is in ``dr::``.
 
 Variation 2
 ===========

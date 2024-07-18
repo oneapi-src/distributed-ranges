@@ -75,7 +75,7 @@ repos:
     always_run: true
   - id: dr-style-include
     name: dr-style-include
-    entry: python3 scripts/dr-style.py --Werror --include include/dr/mhp
+    entry: python3 scripts/dr-style.py --Werror --include include/dr/mp
     language: system
     pass_filenames: false
     always_run: true

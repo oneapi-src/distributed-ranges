@@ -148,11 +148,11 @@ FetchContent_Declare(
   GIT_TAG mdspan-0.6.0)
 FetchContent_MakeAvailable(mdspan)
 
-add_custom_target(mhp-all-tests)
-add_custom_target(shp-all-tests)
-add_custom_target(all-tests DEPENDS mhp-all-tests shp-all-tests)
+add_custom_target(mp-all-tests)
+add_custom_target(sp-all-tests)
+add_custom_target(all-tests DEPENDS mp-all-tests sp-all-tests)
 
-function(add_mhp_ctest_impl)
+function(add_mp_ctest_impl)
   set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL)
   set(oneValueArgs NAME TEST_NAME NPROC TIMEOUT)
   set(multiValueArgs TARGS) # Test ARGumentS
@@ -234,25 +234,25 @@ function(add_mhp_ctest_impl)
   endif()
 
   if(AMC_TESTLABEL)
-    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
+    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MP)
   endif()
-  add_dependencies(mhp-all-tests ${AMC_NAME})
+  add_dependencies(mp-all-tests ${AMC_NAME})
 endfunction()
 
-function(add_mhp_auxiliary_ctests)
-  add_mhp_ctest_impl(${ARGN} GDB)
-  add_mhp_ctest_impl(${ARGN} GDB DRLOGS)
-  add_mhp_ctest_impl(${ARGN} DRLOGS)
+function(add_mp_auxiliary_ctests)
+  add_mp_ctest_impl(${ARGN} GDB)
+  add_mp_ctest_impl(${ARGN} GDB DRLOGS)
+  add_mp_ctest_impl(${ARGN} DRLOGS)
 endfunction()
 
-function(add_mhp_ctest)
-  add_mhp_ctest_impl(${ARGN} TESTLABEL)
-  add_mhp_auxiliary_ctests(${ARGN})
+function(add_mp_ctest)
+  add_mp_ctest_impl(${ARGN} TESTLABEL)
+  add_mp_auxiliary_ctests(${ARGN})
 endfunction()
 
-function(add_mhp_disabled_ctest)
-  add_mhp_ctest_impl(${ARGN})
-  add_mhp_auxiliary_ctests(${ARGN})
+function(add_mp_disabled_ctest)
+  add_mp_ctest_impl(${ARGN})
+  add_mp_auxiliary_ctests(${ARGN})
 endfunction()
 
 if(ENABLE_ISHMEM)
@@ -363,14 +363,14 @@ if(ENABLE_ISHMEM)
 
 endif()
 
-function(add_shp_disabled_ctest test_name name)
+function(add_sp_disabled_ctest test_name name)
   add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
-  add_dependencies(shp-all-tests ${name})
+  add_dependencies(sp-all-tests ${name})
 endfunction()
 
-function(add_shp_ctest test_name name)
-  add_shp_disabled_ctest(${test_name} ${name} ${ARGN})
-  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SHP)
+function(add_sp_ctest test_name name)
+  add_sp_disabled_ctest(${test_name} ${name} ${ARGN})
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SP)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -411,20 +411,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     endif()
   endif()
 
-  add_subdirectory(test/gtest/mhp)
+  add_subdirectory(test/gtest/mp)
 
   if(ENABLE_SYCL)
     # disables rng::detail::box_compress::coalesce which causes rng::box to use
     # global non-const variable, which can not be used in SYCL kernels
     add_compile_definitions(RANGES_WORKAROUND_MSVC_249830)
 
-    add_subdirectory(examples/shp)
-    add_subdirectory(test/gtest/shp)
+    add_subdirectory(examples/sp)
+    add_subdirectory(test/gtest/sp)
   endif()
 
   add_subdirectory(examples/serial)
   add_subdirectory(test/gtest/serial)
-  add_subdirectory(examples/mhp)
+  add_subdirectory(examples/mp)
   add_subdirectory(benchmarks/gbench)
 
   # Requires clang, icpx/llvm nightly do not support the tools

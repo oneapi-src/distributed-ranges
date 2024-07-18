@@ -12,27 +12,27 @@
 
 Interface
 =========
-MHP
+MP
 ---
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::exclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::exclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, T init, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, T init)
+.. doxygenfunction:: dr::sp::exclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, T init)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(R &&r, O &&o, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::exclusive_scan(R &&r, O &&o, T init, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(R &&r, O &&o, T init)
+.. doxygenfunction:: dr::sp::exclusive_scan(R &&r, O &&o, T init)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, T init, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, T init)
+.. doxygenfunction:: dr::sp::exclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, T init)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(Iter first, Iter last, OutputIter d_first, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::exclusive_scan(Iter first, Iter last, OutputIter d_first, T init, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::exclusive_scan(Iter first, Iter last, OutputIter d_first, T init)
+.. doxygenfunction:: dr::sp::exclusive_scan(Iter first, Iter last, OutputIter d_first, T init)
   :outline
 
 Description

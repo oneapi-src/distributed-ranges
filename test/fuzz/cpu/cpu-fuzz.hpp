@@ -8,7 +8,7 @@
 
 #include "mpi.h"
 
-#include "dr/mhp.hpp"
+#include "dr/mp.hpp"
 
 extern MPI_Comm comm;
 extern int comm_rank;

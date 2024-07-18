@@ -34,7 +34,7 @@ public:
     delete vec;
 
     if (!rng::is_sorted(local_vec)) {
-      state.SkipWithError("mhp sort did not sort the vector");
+      state.SkipWithError("mp sort did not sort the vector");
     }
   }
 };
@@ -64,8 +64,8 @@ protected:
 public:
   void SetUp(::benchmark::State &) {
     dr::drlog.debug("setting up SyclSortFixture\n");
-    // when using mhp's get_queue() long execution is observed in this test
-    // (probably due to JIT), now mhp and shp use their own get_queue-s
+    // when using mp's get_queue() long execution is observed in this test
+    // (probably due to JIT), now mp and sp use their own get_queue-s
     queue = get_queue();
     policy = oneapi::dpl::execution::make_device_policy(queue);
     local_vec = std::vector<T>(default_vector_size);
