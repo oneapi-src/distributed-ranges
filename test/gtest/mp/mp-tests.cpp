@@ -19,7 +19,7 @@ void dr_init() {
                  q.get_device().get_info<sycl::info::device::name>());
     }
     dr::mp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
-                                                    : sycl::usm::alloc::shared);
+                                                   : sycl::usm::alloc::shared);
     return;
   }
 #endif

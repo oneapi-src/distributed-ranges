@@ -209,7 +209,7 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
       stats.rep();
       dr::mp::halo(in).exchange();
       dr::mp::for_each(dr::mp::views::zip(in, out),
-                        stencil_foreach_stdArray_op);
+                       stencil_foreach_stdArray_op);
       std::swap(in, out);
     }
     checker.check_array(stencil_steps % 2 ? b : a);

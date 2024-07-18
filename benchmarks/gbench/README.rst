@@ -38,14 +38,14 @@ Run distributed ranges algorithms::
   mpirun -n 2 ./mp-bench --benchmark_counters_tabular=true --benchmark_filter=.*DR
 
 
-SHP Sample Commands
+SP Sample Commands
 ===================
 
-By default, SHP uses all available devices. When running on a 2 socket
-CPU system, SHP partitions the root device into 2 devices. Use ``-d``
+By default, SP uses all available devices. When running on a 2 socket
+CPU system, SP partitions the root device into 2 devices. Use ``-d``
 to explicitly control the number of devices::
 
-  ./shp-bench --benchmark_time_unit=ms --benchmark_counters_tabular=true -d 2
+  ./sp-bench --benchmark_time_unit=ms --benchmark_counters_tabular=true -d 2
 
 Benchmark Variants
 ==================

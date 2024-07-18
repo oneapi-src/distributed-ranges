@@ -19,13 +19,13 @@ MP
 .. doxygenfunction:: dr::mp::transform(rng::forward_range auto &&in, dr::distributed_iterator auto out, auto op)
 .. doxygenfunction:: dr::mp::transform(DI_IN &&first, DI_IN &&last, dr::distributed_iterator auto &&out, auto op)
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in, dr::distributed_iterator auto out, auto &&fn)
-.. doxygenfunction:: dr::shp::transform(R &&in, Iter out, Fn &&fn)
-.. doxygenfunction:: dr::shp::transform(ExecutionPolicy &&policy, Iter1 in_begin, Iter1 in_end, Iter2 out_end, Fn &&fn)
-.. doxygenfunction:: dr::shp::transform(Iter1 in_begin, Iter1 in_end, Iter2 out_end, Fn &&fn)
+.. doxygenfunction:: dr::sp::transform(ExecutionPolicy &&policy, dr::distributed_range auto &&in, dr::distributed_iterator auto out, auto &&fn)
+.. doxygenfunction:: dr::sp::transform(R &&in, Iter out, Fn &&fn)
+.. doxygenfunction:: dr::sp::transform(ExecutionPolicy &&policy, Iter1 in_begin, Iter1 in_end, Iter2 out_end, Fn &&fn)
+.. doxygenfunction:: dr::sp::transform(Iter1 in_begin, Iter1 in_end, Iter2 out_end, Fn &&fn)
 
 
 Description

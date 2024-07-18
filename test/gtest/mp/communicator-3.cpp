@@ -26,7 +26,7 @@ TEST(Communicator3, AlltoallvThreeRanksOnly) {
   std::vector<std::size_t> recvdispl = {0, 3, 6};
 
   dr::mp::default_comm().alltoallv(vec_src, sendsizes, senddispl, vec_dst,
-                                    recvsizes, recvdispl);
+                                   recvsizes, recvdispl);
 
   std::vector<T> vec_ref_0 = {1, 2, 3, 1, 2, 3, 1, 2, 3};
   std::vector<T> vec_ref_1 = {0, 5, 0, 0, 5, 0, 0, 5, 0};

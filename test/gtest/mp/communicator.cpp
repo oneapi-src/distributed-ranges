@@ -30,7 +30,7 @@ TEST(Communicator, Alltoallv) {
   }
 
   dr::mp::default_comm().alltoallv(vec_src, sendsizes, senddispl, vec_dst,
-                                    recvsizes, recvdispl);
+                                   recvsizes, recvdispl);
 
   std::vector<T> vec_ref(comm_size * SIZE);
 

@@ -79,8 +79,8 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
         // TODO: Extend sycl_utils.hpp to handle ranges > 1D. It uses
         // ndrange and handles > 32 bits.
         dr::__detail::parallel_for(
-            mp::sycl_queue(),
-            sycl::range(mdspan0.extent(0), mdspan0.extent(1)), do_point)
+            mp::sycl_queue(), sycl::range(mdspan0.extent(0), mdspan0.extent(1)),
+            do_point)
             .wait();
 #else
         assert(false);

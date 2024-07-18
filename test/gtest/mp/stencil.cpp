@@ -44,7 +44,7 @@ TEST(Stencil, 1D) {
   };
 
   dr::mp::transform(dv_in.begin() + radius, dv_in.end() - radius,
-                     dv_out.begin() + radius, sum);
+                    dv_out.begin() + radius, sum);
 
   if (comm_rank == 0) {
     V v_out(n);

@@ -65,7 +65,7 @@ public:
   void SetUp(::benchmark::State &) {
     dr::drlog.debug("setting up SyclSortFixture\n");
     // when using mp's get_queue() long execution is observed in this test
-    // (probably due to JIT), now mp and shp use their own get_queue-s
+    // (probably due to JIT), now mp and sp use their own get_queue-s
     queue = get_queue();
     policy = oneapi::dpl::execution::make_device_policy(queue);
     local_vec = std::vector<T>(default_vector_size);

@@ -21,8 +21,8 @@ template <dr::distributed_contiguous_range R,
           dr::distributed_contiguous_range O, typename T>
 auto exclusive_scan(R &&r, O &&o, T init) {
   return dr::mp::exclusive_scan(std::forward<R>(r), std::forward<O>(o),
-                                 static_cast<rng::range_value_t<R>>(init),
-                                 std::plus<rng::range_value_t<R>>());
+                                static_cast<rng::range_value_t<R>>(init),
+                                std::plus<rng::range_value_t<R>>());
 }
 
 // Distributed iterator versions
@@ -33,7 +33,7 @@ OutputIter exclusive_scan(Iter first, Iter last, OutputIter d_first, T init,
                           BinaryOp &&binary_op) {
 
   return dr::mp::exclusive_scan(rng::subrange(first, last), d_first,
-                                 std::forward<BinaryOp>(binary_op), init);
+                                std::forward<BinaryOp>(binary_op), init);
 }
 
 template <dr::distributed_iterator Iter, dr::distributed_iterator OutputIter,
@@ -43,7 +43,7 @@ OutputIter exclusive_scan(Iter first, Iter last, OutputIter d_first, T init) {
   auto d_last = d_first;
   rng::advance(d_last, dist);
   dr::mp::exclusive_scan(rng::subrange(first, last),
-                          rng::subrange(d_first, d_last), init);
+                         rng::subrange(d_first, d_last), init);
 
   return d_last;
 }

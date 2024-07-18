@@ -268,7 +268,7 @@ static void TransformIdentity_Serial(benchmark::State &state) {
 
 DR_BENCHMARK(TransformIdentity_Serial);
 
-#ifndef BENCH_SHP
+#ifndef BENCH_SP
 // segfault
 
 static void Mul_DR(benchmark::State &state) {

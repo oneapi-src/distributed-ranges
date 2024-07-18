@@ -25,12 +25,12 @@ MP
 .. doxygenfunction:: dr::mp::copy(std::size_t root, rng::contiguous_range auto &&in, dr::distributed_contiguous_iterator auto out)
    :outline:
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::copy(InputIt first, InputIt last, OutputIt d_first)
+.. doxygenfunction:: dr::sp::copy(InputIt first, InputIt last, OutputIt d_first)
    :outline:
-.. doxygenfunction:: dr::shp::copy(device_ptr<T> first, device_ptr<T> last, Iter d_first)
+.. doxygenfunction:: dr::sp::copy(device_ptr<T> first, device_ptr<T> last, Iter d_first)
    :outline:
 
 

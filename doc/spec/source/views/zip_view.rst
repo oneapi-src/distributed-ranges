@@ -22,12 +22,12 @@ MP
 .. doxygenfunction:: dr::mp::views::zip
    :outline:
 
-SHP
+SP
 ---
 
-.. doxygenclass:: dr::shp::zip_view
+.. doxygenclass:: dr::sp::zip_view
    :members:
-.. doxygenfunction:: dr::shp::views::zip
+.. doxygenfunction:: dr::sp::views::zip
    :outline:
 
 Description

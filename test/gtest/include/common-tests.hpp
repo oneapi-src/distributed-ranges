@@ -327,7 +327,7 @@ bool operator==(const xhp::distributed_vector<T, B> &dist_vec,
 
 } // namespace dr::mp
 
-namespace dr::shp {
+namespace dr::sp {
 
 // gtest relies on ADL to find the printer
 template <typename T>
@@ -357,7 +357,7 @@ bool operator==(const xhp::distributed_vector<T> &dist_vec,
   return is_equal(dist_vec, local_vec);
 }
 
-} // namespace dr::shp
+} // namespace dr::sp
 
 namespace DR_RANGES_NAMESPACE {
 

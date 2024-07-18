@@ -106,13 +106,13 @@ extern std::size_t num_columns;
 
 #endif
 
-#ifdef BENCH_SHP
+#ifdef BENCH_SP
 
-#include "dr/shp.hpp"
+#include "dr/sp.hpp"
 
-namespace xhp = dr::shp;
+namespace xhp = dr::sp;
 
-inline sycl::queue &get_queue() { return dr::shp::__detail::default_queue(); }
+inline sycl::queue &get_queue() { return dr::sp::__detail::default_queue(); }
 
 #endif
 

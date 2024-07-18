@@ -34,8 +34,8 @@ endif()
 if(NOT ENABLE_CUDA)
   # does not compile in CUDA because: black_scholes.cpp uses std::log
   # shallow_water, wave_equation uses uses exp
-  target_sources(mp-bench PRIVATE ../common/black_scholes.cpp
-                                   shallow_water.cpp wave_equation.cpp)
+  target_sources(mp-bench PRIVATE ../common/black_scholes.cpp shallow_water.cpp
+                                  wave_equation.cpp)
 endif()
 
 # mp-quick-bench is for development. By reducing the number of source files, it

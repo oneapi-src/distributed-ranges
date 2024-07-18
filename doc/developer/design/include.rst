@@ -17,9 +17,9 @@ Use::
 
 or::
 
-   #include "shp.hpp"
+   #include "sp.hpp"
 
-No other includes. The names ``mp.hpp`` and ``shp.hpp`` are likely to
+No other includes. The names ``mp.hpp`` and ``sp.hpp`` are likely to
 change. In the future, we may support selective includes. Externally
 exposed include paths cannot be changed without breaking compatibility.
 
@@ -46,8 +46,8 @@ relative to root (``-I`` path) and use ``<>``. Example::
 
   #include <dr/concepts/concepts.hpp>
   #include <dr/detail/onedpl_direct_iterator.hpp>
-  #include <dr/shp/algorithms/execution_policy.hpp>
-  #include <dr/shp/init.hpp>
+  #include <dr/sp/algorithms/execution_policy.hpp>
+  #include <dr/sp/init.hpp>
   #include <dr/views/transform.hpp>
 
 Use ``pragma once`` to protect against multiple inclusion. Start with
@@ -68,21 +68,21 @@ Directory Structure
 ``dr/detail``
   Does not fit elsewhere
 
-``dr/shp``
+``dr/sp``
   Single process, multi GPU model
 
 ``dr/mp``
   Multi-process, single XPU model
 
 ``dr/views``
-  Views shared between SHP/MP
+  Views shared between SP/MP
 
-``dr/shp/algorithms``
-  Algorithm implemenentations specific to SHP (e.g. ``shp::for_each``)
+``dr/sp/algorithms``
+  Algorithm implemenentations specific to SP (e.g. ``sp::for_each``)
 
-``dr/shp/containers``
-  Container implemenentations specific to SHP
-  (e.g. ``shp::distributed_vector``)
+``dr/sp/containers``
+  Container implemenentations specific to SP
+  (e.g. ``sp::distributed_vector``)
 
-``dr/shp/views``
-  Views implemenentations specific to SHP (e.g. ``shp::views::slice``)
+``dr/sp/views``
+  Views implemenentations specific to SP (e.g. ``sp::views::slice``)

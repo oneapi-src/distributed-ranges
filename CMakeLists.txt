@@ -149,8 +149,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(mdspan)
 
 add_custom_target(mp-all-tests)
-add_custom_target(shp-all-tests)
-add_custom_target(all-tests DEPENDS mp-all-tests shp-all-tests)
+add_custom_target(sp-all-tests)
+add_custom_target(all-tests DEPENDS mp-all-tests sp-all-tests)
 
 function(add_mp_ctest_impl)
   set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL)
@@ -363,14 +363,14 @@ if(ENABLE_ISHMEM)
 
 endif()
 
-function(add_shp_disabled_ctest test_name name)
+function(add_sp_disabled_ctest test_name name)
   add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
-  add_dependencies(shp-all-tests ${name})
+  add_dependencies(sp-all-tests ${name})
 endfunction()
 
-function(add_shp_ctest test_name name)
-  add_shp_disabled_ctest(${test_name} ${name} ${ARGN})
-  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SHP)
+function(add_sp_ctest test_name name)
+  add_sp_disabled_ctest(${test_name} ${name} ${ARGN})
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SP)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -418,8 +418,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # global non-const variable, which can not be used in SYCL kernels
     add_compile_definitions(RANGES_WORKAROUND_MSVC_249830)
 
-    add_subdirectory(examples/shp)
-    add_subdirectory(test/gtest/shp)
+    add_subdirectory(examples/sp)
+    add_subdirectory(test/gtest/sp)
   endif()
 
   add_subdirectory(examples/serial)

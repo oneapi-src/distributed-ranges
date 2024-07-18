@@ -31,7 +31,7 @@ public:
   auto operator()(R &&r) const {
     using W = std::uint32_t;
     return mp::views::zip(mp::views::iota(W(0), W(rng::distance(r))),
-                           std::forward<R>(r));
+                          std::forward<R>(r));
   }
 
   template <rng::viewable_range R>

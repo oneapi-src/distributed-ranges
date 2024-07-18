@@ -41,32 +41,32 @@ MP
 .. doxygenfunction:: dr::mp::reduce(DI first, DI last)
   :outline:
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, R &&r, T init)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, R &&r, T init)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, R &&r)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, R &&r)
   :outline:
 
 Iterator versions
 
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, Iter first, Iter last)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, Iter first, Iter last)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init, BinaryOp &&binary_op)
   :outline:
 
 Execution policy-less algorithms
 
-.. doxygenfunction:: dr::shp::reduce(R &&r)
+.. doxygenfunction:: dr::sp::reduce(R &&r)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(R &&r, T init)
+.. doxygenfunction:: dr::sp::reduce(R &&r, T init)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(R &&r, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::reduce(R &&r, T init, BinaryOp &&binary_op)
   :outline:
 
 Description

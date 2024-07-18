@@ -312,7 +312,7 @@ void compute_aux_fields(Array &u, Array &v, Array &e, Array &hu, Array &hv,
     auto qg_view = dr::mp::views::submdspan(qg.view(), start, end);
     auto qd_view = dr::mp::views::submdspan(qd.view(), start, end);
     dr::mp::stencil_for_each(kernel, q_view, qa_view, qb_view, qg_view,
-                              qd_view);
+                             qd_view);
   }
   dr::mp::halo(qa).exchange_begin();
   dr::mp::halo(qb).exchange_begin();
@@ -400,7 +400,7 @@ void rhs(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto qd_view = dr::mp::views::submdspan(qd.view(), start, end);
     auto dudt_view = dr::mp::views::submdspan(dudt.view(), start, end);
     dr::mp::stencil_for_each(kernel, e_view, u_view, v_view, hv_view, qa_view,
-                              qb_view, qg_view, qd_view, dudt_view);
+                             qb_view, qg_view, qd_view, dudt_view);
   }
 
   { // dvdt
@@ -433,7 +433,7 @@ void rhs(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto qd_view = dr::mp::views::submdspan(qd.view(), start, end);
     auto dvdt_view = dr::mp::views::submdspan(dvdt.view(), start, end);
     dr::mp::stencil_for_each(kernel, e_view, u_view, v_view, hu_view, qa_view,
-                              qb_view, qg_view, qd_view, dvdt_view);
+                             qb_view, qg_view, qd_view, dvdt_view);
   }
 
   { // dedt
@@ -495,7 +495,7 @@ void stage1(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto qd_view = dr::mp::views::submdspan(qd.view(), start, end);
     auto u1_view = dr::mp::views::submdspan(u1.view(), start, end);
     dr::mp::stencil_for_each(kernel, e_view, u_view, v_view, hv_view, qa_view,
-                              qb_view, qg_view, qd_view, u1_view);
+                             qb_view, qg_view, qd_view, u1_view);
   }
   dr::mp::halo(u1).exchange_begin();
 
@@ -529,7 +529,7 @@ void stage1(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto qd_view = dr::mp::views::submdspan(qd.view(), start, end);
     auto v1_view = dr::mp::views::submdspan(v1.view(), start, end);
     dr::mp::stencil_for_each(kernel, e_view, u_view, v_view, hu_view, qa_view,
-                              qb_view, qg_view, qd_view, v1_view);
+                             qb_view, qg_view, qd_view, v1_view);
   }
   dr::mp::halo(v1).exchange_begin();
 
@@ -596,8 +596,8 @@ void stage2(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto u_view = dr::mp::views::submdspan(u.view(), start, end);
     auto u2_view = dr::mp::views::submdspan(u2.view(), start, end);
     dr::mp::stencil_for_each(kernel, e1_view, u1_view, v1_view, hv_view,
-                              qa_view, qb_view, qg_view, qd_view, u_view,
-                              u2_view);
+                             qa_view, qb_view, qg_view, qd_view, u_view,
+                             u2_view);
   }
   dr::mp::halo(u2).exchange_begin();
 
@@ -633,8 +633,8 @@ void stage2(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto v_view = dr::mp::views::submdspan(v.view(), start, end);
     auto v2_view = dr::mp::views::submdspan(v2.view(), start, end);
     dr::mp::stencil_for_each(kernel, e1_view, u1_view, v1_view, hu_view,
-                              qa_view, qb_view, qg_view, qd_view, v_view,
-                              v2_view);
+                             qa_view, qb_view, qg_view, qd_view, v_view,
+                             v2_view);
   }
   dr::mp::halo(v2).exchange_begin();
 
@@ -653,7 +653,7 @@ void stage2(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto e_view = dr::mp::views::submdspan(e.view(), start, end);
     auto e2_view = dr::mp::views::submdspan(e2.view(), start, end);
     dr::mp::stencil_for_each(kernel, e1_view, hu_view, hv_view, e_view,
-                              e2_view);
+                             e2_view);
   }
   dr::mp::halo(e2).exchange_begin();
 }
@@ -702,7 +702,7 @@ void stage3(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto qd_view = dr::mp::views::submdspan(qd.view(), start, end);
     auto u_view = dr::mp::views::submdspan(u.view(), start, end);
     dr::mp::stencil_for_each(kernel, e2_view, u2_view, v2_view, hv_view,
-                              qa_view, qb_view, qg_view, qd_view, u_view);
+                             qa_view, qb_view, qg_view, qd_view, u_view);
   }
   dr::mp::halo(u).exchange_begin();
 
@@ -737,7 +737,7 @@ void stage3(Array &u, Array &v, Array &e, Array &hu, Array &hv, Array &dudy,
     auto qd_view = dr::mp::views::submdspan(qd.view(), start, end);
     auto v_view = dr::mp::views::submdspan(v.view(), start, end);
     dr::mp::stencil_for_each(kernel, e2_view, u2_view, v2_view, hu_view,
-                              qa_view, qb_view, qg_view, qd_view, v_view);
+                             qa_view, qb_view, qg_view, qd_view, v_view);
   }
   dr::mp::halo(v).exchange_begin();
 
@@ -1017,11 +1017,10 @@ int run(
         auto h_view = dr::mp::views::submdspan(h.view(), start, end);
         auto ke_view = dr::mp::views::submdspan(ke.view(), start, end);
         dr::mp::stencil_for_each(kernel, e_view, u_view, v_view, h_view,
-                                  ke_view);
+                                 ke_view);
       }
-      double total_ke =
-          ((dr::mp::reduce(ke, static_cast<T>(0), std::plus{}))) * grid.dx *
-          grid.dy;
+      double total_ke = ((dr::mp::reduce(ke, static_cast<T>(0), std::plus{}))) *
+                        grid.dx * grid.dy;
 
       // total energy
       double total_ene = total_pe + total_ke;
@@ -1084,26 +1083,23 @@ int run(
       rhs(u1, v1, e1, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, dudt, dvdt,
           dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt, true);
       dr::mp::transform(dr::mp::views::zip(u, u1, dudt), u2.begin(),
-                         rk_update2);
+                        rk_update2);
       dr::mp::halo(u2).exchange_begin();
       dr::mp::transform(dr::mp::views::zip(v, v1, dvdt), v2.begin(),
-                         rk_update2);
+                        rk_update2);
       dr::mp::halo(v2).exchange_begin();
       dr::mp::transform(dr::mp::views::zip(e, e1, dedt), e2.begin(),
-                         rk_update2);
+                        rk_update2);
       dr::mp::halo(e2).exchange_begin();
 
       // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
       rhs(u2, v2, e2, hu, hv, dudy, dvdx, H_at_f, q, qa, qb, qg, qd, dudt, dvdt,
           dedt, h, g, f, grid.dx_inv, grid.dy_inv, dt, true);
-      dr::mp::transform(dr::mp::views::zip(u, u2, dudt), u.begin(),
-                         rk_update3);
+      dr::mp::transform(dr::mp::views::zip(u, u2, dudt), u.begin(), rk_update3);
       dr::mp::halo(u).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(v, v2, dvdt), v.begin(),
-                         rk_update3);
+      dr::mp::transform(dr::mp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
       dr::mp::halo(v).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(e, e2, dedt), e.begin(),
-                         rk_update3);
+      dr::mp::transform(dr::mp::views::zip(e, e2, dedt), e.begin(), rk_update3);
       dr::mp::halo(e).exchange_begin();
     }
   }
@@ -1159,7 +1155,7 @@ int run(
     return err * err;
   };
   dr::mp::transform(dr::mp::views::zip(e, e_exact), error.begin(),
-                     error_kernel);
+                    error_kernel);
   double err_L2 = dr::mp::reduce(error, static_cast<T>(0), std::plus{}) *
                   grid.dx * grid.dy / grid.lx / grid.ly;
   err_L2 = std::sqrt(err_L2);
@@ -1260,7 +1256,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Run on: "
               << q.get_device().get_info<sycl::info::device::name>() << "\n";
     dr::mp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
-                                                    : sycl::usm::alloc::shared);
+                                                   : sycl::usm::alloc::shared);
 #else
     std::cout << "Sycl support requires icpx\n";
     exit(1);

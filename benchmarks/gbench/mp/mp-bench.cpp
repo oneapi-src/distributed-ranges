@@ -35,7 +35,7 @@ void dr_init() {
     sycl::queue q = dr::mp::select_queue(options.count("different-devices"));
     benchmark::AddCustomContext("device_info", device_info(q.get_device()));
     dr::mp::init(q, device_memory ? sycl::usm::alloc::device
-                                   : sycl::usm::alloc::shared);
+                                  : sycl::usm::alloc::shared);
     return;
   }
 #endif

@@ -29,7 +29,7 @@ TYPED_TEST(ReduceMP, RootIterators) {
   Ops1<TypeParam> ops(10);
 
   auto result = dr::mp::reduce(root, ops.dist_vec.begin() + 1,
-                                ops.dist_vec.end() - 1, 0, std::plus{});
+                               ops.dist_vec.end() - 1, 0, std::plus{});
 
   if (comm_rank == root) {
     EXPECT_EQ(

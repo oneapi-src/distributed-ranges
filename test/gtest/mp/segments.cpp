@@ -15,7 +15,7 @@ TYPED_TEST_SUITE(Segmented, AllTypesWithoutIshmem);
 TYPED_TEST(Segmented, StaticAssert) {
   Ops1<TypeParam> ops(10);
   auto segmented = dr::mp::segmented_view(rng::views::iota(100),
-                                           dr::ranges::segments(ops.dist_vec));
+                                          dr::ranges::segments(ops.dist_vec));
   static_assert(std::forward_iterator<decltype(segmented.begin())>);
   static_assert(rng::forward_range<decltype(segmented)>);
 }
@@ -23,7 +23,7 @@ TYPED_TEST(Segmented, StaticAssert) {
 TYPED_TEST(Segmented, Basic) {
   Ops1<TypeParam> ops(10);
   auto segmented = dr::mp::segmented_view(rng::views::iota(100),
-                                           dr::ranges::segments(ops.dist_vec));
+                                          dr::ranges::segments(ops.dist_vec));
   EXPECT_EQ(dr::ranges::segments(ops.dist_vec), segmented);
 }
 

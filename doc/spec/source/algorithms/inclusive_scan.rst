@@ -16,38 +16,38 @@ Interface
 MP
 ---
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, BinaryOp &&binary_op, T init)
+.. doxygenfunction:: dr::sp::inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, BinaryOp &&binary_op, T init)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o)
+.. doxygenfunction:: dr::sp::inclusive_scan(ExecutionPolicy &&policy, R &&r, O &&o)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op, T init)
+.. doxygenfunction:: dr::sp::inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op, T init)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first)
+.. doxygenfunction:: dr::sp::inclusive_scan(ExecutionPolicy &&policy, Iter first, Iter last, OutputIter d_first)
   :outline:
 
 Execution policy-less versions
 
-.. doxygenfunction:: dr::shp::inclusive_scan(R &&r, O &&o)
+.. doxygenfunction:: dr::sp::inclusive_scan(R &&r, O &&o)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op, T init)
+.. doxygenfunction:: dr::sp::inclusive_scan(R &&r, O &&o, BinaryOp &&binary_op, T init)
   :outline:
 
 Distributed iterator versions
 
-.. doxygenfunction:: dr::shp::inclusive_scan(Iter first, Iter last, OutputIter d_first)
+.. doxygenfunction:: dr::sp::inclusive_scan(Iter first, Iter last, OutputIter d_first)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::inclusive_scan(Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::inclusive_scan(Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op, T init)
+.. doxygenfunction:: dr::sp::inclusive_scan(Iter first, Iter last, OutputIter d_first, BinaryOp &&binary_op, T init)
   :outline:
 
 Description

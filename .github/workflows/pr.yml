@@ -105,9 +105,9 @@ jobs:
             build/test/gtest/mp/*.log
             build/benchmarks/gbench/mp/*.log
             build/examples/mp/*.log
-            build/test/gtest/shp/*.log
-            build/benchmarks/gbench/shp/*.log
-            build/examples/shp/*.log
+            build/test/gtest/sp/*.log
+            build/benchmarks/gbench/sp/*.log
+            build/examples/sp/*.log
 
 # disabled due to DRA-164
 #  ishmem_unit_tests:

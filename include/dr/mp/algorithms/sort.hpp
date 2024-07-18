@@ -5,7 +5,7 @@
 #pragma once
 
 #ifdef SYCL_LANGUAGE_VERSION
-#include <dr/shp/init.hpp>
+#include <dr/sp/init.hpp>
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/iterator>

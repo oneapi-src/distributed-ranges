@@ -48,8 +48,7 @@ using AllTypes = ::testing::Types<dr::mp::distributed_vector<int>>;
 using IshmemTypes = ::testing::Types<dr::mp::distributed_vector<int>>;
 
 #endif
-using AllTypesWithoutIshmem =
-    ::testing::Types<dr::mp::distributed_vector<int>>;
+using AllTypesWithoutIshmem = ::testing::Types<dr::mp::distributed_vector<int>>;
 
 namespace dr::mp {
 

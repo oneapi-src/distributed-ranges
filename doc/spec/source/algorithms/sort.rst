@@ -16,12 +16,12 @@ Interface
 MP
 ---
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::sort(R &&r, Compare comp = Compare())
+.. doxygenfunction:: dr::sp::sort(R &&r, Compare comp = Compare())
    :outline:
-.. doxygenfunction:: dr::shp::sort(RandomIt first, RandomIt last, Compare comp = Compare())
+.. doxygenfunction:: dr::sp::sort(RandomIt first, RandomIt last, Compare comp = Compare())
    :outline:
 
 Description

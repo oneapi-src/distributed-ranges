@@ -61,8 +61,8 @@ TEST(Alignment, ZipAligned) {
 
 TEST(Alignment, ZipMisaligned) {
   Ops2<DV> ops(10);
-  auto is_aligned = dr::mp::aligned(dr::mp::views::zip(
-      dr::mp::views::drop(ops.dist_vec0, 1), ops.dist_vec1));
+  auto is_aligned = dr::mp::aligned(
+      dr::mp::views::zip(dr::mp::views::drop(ops.dist_vec0, 1), ops.dist_vec1));
   if (comm_size == 1) {
     // If there is a single segment, then it is aligned
     EXPECT_TRUE(is_aligned);
