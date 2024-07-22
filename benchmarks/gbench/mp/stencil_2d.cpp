@@ -198,8 +198,8 @@ static void Stencil2D_ForeachStdArray_DR(benchmark::State &state) {
   auto fill_row = [](auto &row) {
     std::fill(row.begin(), row.end(), init_val);
   };
-  xhp::for_each(a, fill_row);
-  xhp::for_each(b, fill_row);
+  xp::for_each(a, fill_row);
+  xp::for_each(b, fill_row);
 
   Checker checker;
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
@@ -279,8 +279,8 @@ static void Stencil2D_Tiled_DR(benchmark::State &state) {
   auto dist = dr::mp::distribution().halo(1);
   dr::mp::distributed_mdarray<T, 2> a(s, dist);
   dr::mp::distributed_mdarray<T, 2> b(s, dist);
-  xhp::fill(a, init_val);
-  xhp::fill(b, init_val);
+  xp::fill(a, init_val);
+  xp::fill(b, init_val);
 
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
@@ -336,8 +336,8 @@ static void Stencil2D_MdspanTuple_DR(benchmark::State &state) {
   auto dist = dr::mp::distribution().halo(1);
   dr::mp::distributed_mdarray<T, 2> a(shape, dist);
   dr::mp::distributed_mdarray<T, 2> b(shape, dist);
-  xhp::fill(a, init_val);
-  xhp::fill(b, init_val);
+  xp::fill(a, init_val);
+  xp::fill(b, init_val);
 
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
@@ -382,8 +382,8 @@ static void Stencil2D_DR(benchmark::State &state) {
   auto dist = dr::mp::distribution().halo(radius);
   dr::mp::distributed_mdarray<T, 2> a(shape, dist);
   dr::mp::distributed_mdarray<T, 2> b(shape, dist);
-  xhp::fill(a, init_val);
-  xhp::fill(b, init_val);
+  xp::fill(a, init_val);
+  xp::fill(b, init_val);
 
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
@@ -397,7 +397,7 @@ static void Stencil2D_DR(benchmark::State &state) {
     for (std::size_t s = 0; s < stencil_steps; s++) {
       stats.rep();
       dr::mp::halo(*in_array).exchange();
-      xhp::stencil_for_each(mdspan_stencil_op, in, out);
+      xp::stencil_for_each(mdspan_stencil_op, in, out);
       std::swap(in, out);
       std::swap(in_array, out_array);
     }

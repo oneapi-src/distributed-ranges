@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 #include <dr/mp/views/sliding.hpp>
 
 template <typename T> class Slide : public testing::Test {};
@@ -16,7 +16,7 @@ TYPED_TEST(Slide, is_compliant) {
   std::iota(rng::begin(lv), rng::end(lv), 100);
 
   auto local_sliding_view = rng::sliding_view(lv, 5); // halo_bounds + 1
-  auto dv_sliding_view = xhp::views::sliding(dv, 5);
+  auto dv_sliding_view = xp::views::sliding(dv, 5);
 
   static_assert(compliant_view<decltype(dv_sliding_view)>);
   EXPECT_TRUE(check_view(local_sliding_view, dv_sliding_view));
@@ -24,27 +24,27 @@ TYPED_TEST(Slide, is_compliant) {
 
 TYPED_TEST(Slide, is_compliant_even_when_empty) {
   TypeParam dv(10, dr::mp::distribution().halo(5));
-  auto dv_sliding_view = xhp::views::sliding(dv, 11);
+  auto dv_sliding_view = xp::views::sliding(dv, 11);
   EXPECT_TRUE(rng::empty(dv_sliding_view));
   static_assert(compliant_view<decltype(dv_sliding_view)>);
 }
 
 TYPED_TEST(Slide, segements_are_present) {
   TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::mp::distribution().halo(3));
-  const auto dv_segments = dr::ranges::segments(xhp::views::sliding(dv, 7));
+  const auto dv_segments = dr::ranges::segments(xp::views::sliding(dv, 7));
   EXPECT_EQ(rng::size(dv_segments), comm_size);
 }
 
 TYPED_TEST(Slide, segements_are_present_if_n_equals_halo_plus_1) {
   TypeParam dv(EVENLY_DIVIDABLE_SIZE, dr::mp::distribution().halo(3));
-  const auto dv_segments = dr::ranges::segments(xhp::views::sliding(dv, 7));
+  const auto dv_segments = dr::ranges::segments(xp::views::sliding(dv, 7));
   EXPECT_EQ(rng::size(dv_segments), comm_size);
 }
 
 TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_greater_than_halo_plus_1) {
   TypeParam dv(10, dr::mp::distribution().halo(3));
   iota(dv, 1);
-  auto dv_sliding_view = xhp::views::sliding(dv, 8);
+  auto dv_sliding_view = xp::views::sliding(dv, 8);
 
   EXPECT_EQ(rng::size(dv_sliding_view), 3);
   EXPECT_TRUE(equal_gtest({1, 2, 3, 4, 5, 6, 7, 8}, dv_sliding_view[0]));
@@ -55,7 +55,7 @@ TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_greater_than_halo_plus_1) {
 TYPED_TEST(Slide, can_use_nonlocal_algorithms_with_n_less_than_halo_plus_1) {
   TypeParam dv(10, dr::mp::distribution().halo(3));
   iota(dv, 1);
-  auto dv_sliding_view = xhp::views::sliding(dv, 6);
+  auto dv_sliding_view = xp::views::sliding(dv, 6);
 
   EXPECT_EQ(rng::size(dv_sliding_view), 5);
   EXPECT_TRUE(equal_gtest({1, 2, 3, 4, 5, 6}, dv_sliding_view[0]));
@@ -68,7 +68,7 @@ TYPED_TEST(Slide, slide_can_modify_inplace) {
   TypeParam dv(6, dr::mp::distribution().halo(1));
   iota(dv, 10); // 10,11,12,13,14,15
   dv.halo().exchange();
-  xhp::for_each(xhp::views::sliding(dv, 3), [](auto &&r) {
+  xp::for_each(xp::views::sliding(dv, 3), [](auto &&r) {
   // SYCL kernel cannot use exceptions
 #ifndef SYCL_LANGUAGE_VERSION
     EXPECT_EQ(3, rng::size(r));
@@ -91,8 +91,8 @@ TYPED_TEST(Slide, slide_no_halo_works_with_transform) {
   TypeParam dv_out(6, 0); // 0,0,0,0,0,0
   iota(dv_in, 10);        // 10,11,12,13,14,15
 
-  xhp::transform(xhp::views::sliding(dv_in, 1), rng::begin(dv_out),
-                 [](auto &&v) { return v[0] * 2; });
+  xp::transform(xp::views::sliding(dv_in, 1), rng::begin(dv_out),
+                [](auto &&v) { return v[0] * 2; });
 
   EXPECT_EQ(20, dv_out[0]);
   EXPECT_EQ(22, dv_out[1]);
@@ -110,8 +110,8 @@ TYPED_TEST(Slide, slide_works_with_transform_algorithm) {
   iota(dv_in, 0);          // 0,1,2,3,4,5,6,7,8,9
   dv_in.halo().exchange();
 
-  xhp::transform(xhp::views::sliding(dv_in, 5), rng::begin(dv_out) + 2,
-                 [](auto &&r) { return rng::accumulate(r, 0); });
+  xp::transform(xp::views::sliding(dv_in, 5), rng::begin(dv_out) + 2,
+                [](auto &&r) { return rng::accumulate(r, 0); });
 
   EXPECT_EQ(0, dv_out[0]);
   EXPECT_EQ(0, dv_out[1]);
@@ -130,10 +130,10 @@ TYPED_TEST(Slide, slide_works_with_transform_view) {
   iota(dv, 0); // 0,1,2,3,4,5,6,7,8,9
   dv.halo().exchange();
 
-  auto sv = xhp::views::sliding(dv, 3);
+  auto sv = xp::views::sliding(dv, 3);
   EXPECT_EQ(rng::size(sv), 8);
 
-  auto slided_and_transformed_view = xhp::views::transform(sv, [](auto &&r) {
+  auto slided_and_transformed_view = xp::views::transform(sv, [](auto &&r) {
     // change 3-element range into prefix sum
     // r = r * 2;
     return rng::accumulate(r, 0);
@@ -141,7 +141,7 @@ TYPED_TEST(Slide, slide_works_with_transform_view) {
 
   EXPECT_EQ(rng::size(slided_and_transformed_view), 8);
 
-  xhp::for_each(slided_and_transformed_view, [](auto &&v) {
+  xp::for_each(slided_and_transformed_view, [](auto &&v) {
     // nothing complex can be done without output, just reading value
     typename TypeParam::value_type x [[maybe_unused]] = v;
     x = x + 1;
@@ -157,8 +157,8 @@ TYPED_TEST(Slide, two_slides_can_be_zipped_and_read_by_foreach) {
   iota(dv_2, 20); // 20,21,22,23,24,25
   dv_2.halo().exchange();
 
-  xhp::for_each(
-      xhp::zip_view(xhp::views::sliding(dv_1, 3), xhp::views::sliding(dv_2, 3)),
+  xp::for_each(
+      xp::zip_view(xp::views::sliding(dv_1, 3), xp::views::sliding(dv_2, 3)),
       [](auto &&zr) {
         auto &[first, second] = zr;
 // SYCL kernel cannot use exceptions
@@ -186,9 +186,9 @@ TYPED_TEST(Slide, slide_works_on_transformed_range) {
   dv.halo().exchange();
 
   auto transformed_dv =
-      dv | xhp::views::transform([](auto &&e) { return e * 2; });
+      dv | xp::views::transform([](auto &&e) { return e * 2; });
 
-  xhp::for_each(xhp::views::sliding(transformed_dv, 3), [](auto &&r) {
+  xp::for_each(xp::views::sliding(transformed_dv, 3), [](auto &&r) {
   // SYCL kernel cannot use exceptions
 #ifndef SYCL_LANGUAGE_VERSION
     EXPECT_EQ(3, rng::size(r));
@@ -210,7 +210,7 @@ TYPED_TEST(Slide, slide_works_on_transformed_range) {
 
 TEST(ComplexSlide, transform_works_between_vectors_of_arrays) {
   using Row = std::array<int, 6>;
-  using DV = xhp::distributed_vector<Row>;
+  using DV = xp::distributed_vector<Row>;
 
   DV dv_in(6, dr::mp::distribution().halo(1));
   DV dv_out(6);
@@ -226,7 +226,7 @@ TEST(ComplexSlide, transform_works_between_vectors_of_arrays) {
   fence();
   dv_in.halo().exchange();
 
-  xhp::for_each(dv_out, [](auto &&row) { rng::fill(row, 0); });
+  xp::for_each(dv_out, [](auto &&row) { rng::fill(row, 0); });
 
   auto stencil_op = [](auto &&three_rows) {
     auto ret_val = Row{0, 0, 0, 0, 0, 0};
@@ -236,8 +236,8 @@ TEST(ComplexSlide, transform_works_between_vectors_of_arrays) {
     return ret_val;
   };
 
-  xhp::transform(xhp::views::sliding(dv_in, 3), rng::begin(dv_out) + 1,
-                 stencil_op);
+  xp::transform(xp::views::sliding(dv_in, 3), rng::begin(dv_out) + 1,
+                stencil_op);
 
   // computes expected sum of stencil_op when center has given value
   auto c = [](int v) { return v + (v - 10) + (v + 10) + (v - 1) + (v + 1); };

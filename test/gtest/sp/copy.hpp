@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 
 template <typename AllocT> class CopyTest : public testing::Test {
 public:

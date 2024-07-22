@@ -40,8 +40,8 @@ void show2d(const std::string &title, Mdarray &mat) {
 
 BENCHMARK_DEFINE_F(TransposeFixture, Transpose2D_DR)(benchmark::State &state) {
   Mdarray in(shape2d), out(shape2d);
-  xhp::iota(in, 100);
-  xhp::iota(out, 200);
+  xp::iota(in, 100);
+  xp::iota(out, 200);
 
   Stats stats(state, bytes2d, bytes2d);
 

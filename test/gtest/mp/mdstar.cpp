@@ -4,7 +4,7 @@
 
 #include <dr/detail/mdarray_shim.hpp>
 
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 
 #if __GNUC__ == 10 && __GNUC_MINOR__ == 4
 // mdspan triggers gcc 10 bugs, skip these tests
@@ -34,8 +34,8 @@ protected:
 };
 
 TEST_F(Mdspan, StaticAssert) {
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto mdspan = xhp::views::mdspan(dist, extents2d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
+  auto mdspan = xp::views::mdspan(dist, extents2d);
   static_assert(rng::forward_range<decltype(mdspan)>);
   static_assert(dr::distributed_range<decltype(mdspan)>);
   auto segments = dr::ranges::segments(mdspan);
@@ -46,50 +46,50 @@ TEST_F(Mdspan, StaticAssert) {
 }
 
 TEST_F(Mdspan, Iterator) {
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto mdspan = xhp::views::mdspan(dist, extents2d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
+  auto mdspan = xp::views::mdspan(dist, extents2d);
 
   *mdspan.begin() = 17;
-  xhp::fence();
+  xp::fence();
   EXPECT_EQ(17, *mdspan.begin());
   EXPECT_EQ(17, dist[0]);
 }
 
 TEST_F(Mdspan, Mdindex2D) {
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto dmdspan = xhp::views::mdspan(dist, extents2d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
+  auto dmdspan = xp::views::mdspan(dist, extents2d);
 
   std::size_t i = 1, j = 2;
   dmdspan.mdspan()(i, j) = 17;
-  xhp::fence();
+  xp::fence();
   EXPECT_EQ(17, dist[i * ydim + j]);
   EXPECT_EQ(17, dmdspan.mdspan()(i, j));
 }
 
 TEST_F(Mdspan, Mdindex3D) {
-  xhp::distributed_vector<T> dist(n3d, dist3d_1d);
-  auto dmdspan = xhp::views::mdspan(dist, extents3d);
+  xp::distributed_vector<T> dist(n3d, dist3d_1d);
+  auto dmdspan = xp::views::mdspan(dist, extents3d);
 
   std::size_t i = 1, j = 2, k = 0;
   dmdspan.mdspan()(i, j, k) = 17;
-  xhp::fence();
+  xp::fence();
   EXPECT_EQ(17, dist[i * ydim * zdim + j * zdim + k]);
   EXPECT_EQ(17, dmdspan.mdspan()(i, j, k));
 }
 
 TEST_F(Mdspan, Pipe) {
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto mdspan = dist | xhp::views::mdspan(extents2d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
+  auto mdspan = dist | xp::views::mdspan(extents2d);
 
   *mdspan.begin() = 17;
-  xhp::fence();
+  xp::fence();
   EXPECT_EQ(17, *mdspan.begin());
   EXPECT_EQ(17, dist[0]);
 }
 
 TEST_F(Mdspan, SegmentExtents) {
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto dmdspan = xhp::views::mdspan(dist, extents2d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
+  auto dmdspan = xp::views::mdspan(dist, extents2d);
 
   // Sum of leading dimension matches original
   std::size_t x = 0;
@@ -103,10 +103,10 @@ TEST_F(Mdspan, SegmentExtents) {
 }
 
 TEST_F(Mdspan, Subrange) {
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto inner = rng::subrange(dist.begin() + ydim, dist.end() - ydim);
   std::array<std::size_t, 2> inner_extents({extents2d[0] - 2, extents2d[1]});
-  auto dmdspan = xhp::views::mdspan(inner, inner_extents);
+  auto dmdspan = xp::views::mdspan(inner, inner_extents);
 
   // Summing up leading dimension size of segments should equal
   // original minus 2 rows
@@ -121,9 +121,9 @@ TEST_F(Mdspan, Subrange) {
 }
 
 TEST_F(Mdspan, GridExtents) {
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
-  xhp::iota(dist, 100);
-  auto dmdspan = xhp::views::mdspan(dist, extents2d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
+  xp::iota(dist, 100);
+  auto dmdspan = xp::views::mdspan(dist, extents2d);
   auto grid = dmdspan.grid();
 
   auto x = 0;
@@ -145,9 +145,9 @@ TEST_F(Mdspan, GridLocalReference) {
     return;
   }
 
-  xhp::distributed_vector<T> dist(n2d, dist2d_1d);
-  xhp::iota(dist, 100);
-  auto dmdspan = xhp::views::mdspan(dist, extents2d);
+  xp::distributed_vector<T> dist(n2d, dist2d_1d);
+  xp::iota(dist, 100);
+  auto dmdspan = xp::views::mdspan(dist, extents2d);
   auto grid = dmdspan.grid();
 
   auto tile = grid(0, 0).mdspan();
@@ -162,15 +162,15 @@ TEST_F(Mdspan, GridLocalReference) {
 using Mdarray = Mdspan;
 
 TEST_F(Mdarray, StaticAssert) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
   static_assert(rng::forward_range<decltype(mdarray)>);
   static_assert(dr::distributed_range<decltype(mdarray)>);
   static_assert(dr::distributed_mdspan_range<decltype(mdarray)>);
 }
 
 TEST_F(Mdarray, Basic) {
-  xhp::distributed_mdarray<T, 2> dist(extents2d);
-  xhp::iota(dist, 100);
+  xp::distributed_mdarray<T, 2> dist(extents2d);
+  xp::iota(dist, 100);
 
   md::mdarray<T, dr::__detail::md_extents<2>> local(xdim, ydim);
   rng::iota(&local(0, 0), &local(0, 0) + local.size(), 100);
@@ -179,10 +179,10 @@ TEST_F(Mdarray, Basic) {
 }
 
 TEST_F(Mdarray, Iterator) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
 
   *mdarray.begin() = 17;
-  xhp::fence();
+  xp::fence();
   EXPECT_EQ(17, *mdarray.begin());
   EXPECT_EQ(17, mdarray[0]);
 }
@@ -192,8 +192,8 @@ auto mdrange_message(auto &mdarray) {
 }
 
 TEST_F(Mdarray, Mdindex2D) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  xhp::fill(mdarray, 1);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::fill(mdarray, 1);
 
   std::size_t i = 1, j = 2;
   mdarray.mdspan()(i, j) = 17;
@@ -202,18 +202,18 @@ TEST_F(Mdarray, Mdindex2D) {
 }
 
 TEST_F(Mdarray, Mdindex3D) {
-  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+  xp::distributed_mdarray<T, 3> mdarray(extents3d);
 
   std::size_t i = 1, j = 2, k = 0;
   mdarray.mdspan()(i, j, k) = 17;
-  xhp::fence();
+  xp::fence();
   EXPECT_EQ(17, mdarray[i * ydim * zdim + j * zdim + k]);
   EXPECT_EQ(17, mdarray.mdspan()(i, j, k));
 }
 
 TEST_F(Mdarray, GridExtents) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  xhp::iota(mdarray, 100);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::iota(mdarray, 100);
   auto grid = mdarray.grid();
 
   auto x = 0;
@@ -235,8 +235,8 @@ TEST_F(Mdarray, GridLocalReference) {
     return;
   }
 
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  xhp::iota(mdarray, 100);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::iota(mdarray, 100);
   auto grid = mdarray.grid();
 
   auto tile = grid(0, 0).mdspan();
@@ -254,10 +254,9 @@ TEST_F(Mdarray, Halo) {
     return;
   }
 
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d,
-                                         xhp::distribution().halo(1));
+  xp::distributed_mdarray<T, 2> mdarray(extents2d, xp::distribution().halo(1));
   dr::mp::halo(mdarray);
-  xhp::iota(mdarray, 100);
+  xp::iota(mdarray, 100);
   auto grid = mdarray.grid();
 
   auto tile = grid(0, 0).mdspan();
@@ -270,8 +269,8 @@ TEST_F(Mdarray, Halo) {
 }
 
 TEST_F(Mdarray, Enumerate) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  auto e = xhp::views::enumerate(mdarray);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  auto e = xp::views::enumerate(mdarray);
   static_assert(dr::distributed_range<decltype(e)>);
 }
 
@@ -282,7 +281,7 @@ TEST_F(Mdarray, Slabs) {
   }
 
   // leading dimension decomp of 3d array creates slabs
-  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+  xp::distributed_mdarray<T, 3> mdarray(extents3d);
   for (auto slab : dr::mp::local_mdspans(mdarray)) {
     for (std::size_t i = 0; i < slab.extent(0); i++) {
       for (std::size_t j = 0; j < slab.extent(1); j++) {
@@ -302,7 +301,7 @@ TEST_F(Mdarray, Slabs) {
 
 TEST_F(Mdarray, MdForEach3d) {
   // leading dimension decomp of 3d array creates slabs
-  xhp::distributed_mdarray<T, 3> mdarray(extents3d);
+  xp::distributed_mdarray<T, 3> mdarray(extents3d);
   std::vector<T> local(extents3d[0] * extents3d[1] * extents3d[2], 0);
   rng::iota(local, 0);
 
@@ -312,14 +311,14 @@ TEST_F(Mdarray, MdForEach3d) {
   };
   dr::mp::for_each(set, mdarray);
 
-  EXPECT_EQ(xhp::views::take(mdarray.view(), local.size()), local)
+  EXPECT_EQ(xp::views::take(mdarray.view(), local.size()), local)
       << mdrange_message(mdarray);
 }
 
 TEST_F(Mdarray, Transpose2D) {
-  xhp::distributed_mdarray<double, 2> md_in(extents2d), md_out(extents2dt);
-  xhp::iota(md_in, 100);
-  xhp::iota(md_out, 200);
+  xp::distributed_mdarray<double, 2> md_in(extents2d), md_out(extents2dt);
+  xp::iota(md_in, 100);
+  xp::iota(md_out, 200);
 
   md::mdarray<T, dr::__detail::md_extents<2>> local(extents2dt);
   for (std::size_t i = 0; i < md_out.extent(0); i++) {
@@ -328,14 +327,14 @@ TEST_F(Mdarray, Transpose2D) {
     }
   }
 
-  xhp::transpose(md_in, md_out);
+  xp::transpose(md_in, md_out);
   EXPECT_EQ(md_out.mdspan(), local);
 }
 
 TEST_F(Mdarray, Transpose3D) {
-  xhp::distributed_mdarray<double, 3> md_in(extents3d), md_out(extents3dt);
-  xhp::iota(md_in, 100);
-  xhp::iota(md_out, 200);
+  xp::distributed_mdarray<double, 3> md_in(extents3d), md_out(extents3dt);
+  xp::iota(md_in, 100);
+  xp::iota(md_out, 200);
 
   md::mdarray<T, dr::__detail::md_extents<3>> local(extents3dt);
   for (std::size_t i = 0; i < md_out.extent(0); i++) {
@@ -346,28 +345,28 @@ TEST_F(Mdarray, Transpose3D) {
     }
   }
 
-  xhp::transpose(md_in, md_out);
+  xp::transpose(md_in, md_out);
   EXPECT_EQ(local, md_out.mdspan()) << fmt::format("md_in\n{}", md_in.mdspan());
 }
 
 using Submdspan = Mdspan;
 
 TEST_F(Submdspan, StaticAssert) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
   auto submdspan =
-      xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+      xp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   static_assert(rng::forward_range<decltype(submdspan)>);
   static_assert(dr::distributed_range<decltype(submdspan)>);
 }
 
 TEST_F(Submdspan, Mdindex2D) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  xhp::fill(mdarray, 1);
-  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::fill(mdarray, 1);
+  auto sub = xp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
 
   std::size_t i = 1, j = 0;
   sub.mdspan()(i, j) = 17;
-  xhp::fence();
+  xp::fence();
   EXPECT_EQ(17, sub.mdspan()(i, j));
   EXPECT_EQ(17, mdarray.mdspan()(slice_starts[0] + i, slice_starts[1] + j));
   EXPECT_EQ(17, mdarray[(i + slice_starts[0]) * ydim + j + slice_starts[1]])
@@ -375,9 +374,9 @@ TEST_F(Submdspan, Mdindex2D) {
 }
 
 TEST_F(Submdspan, GridExtents) {
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  xhp::iota(mdarray, 100);
-  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::iota(mdarray, 100);
+  auto sub = xp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   auto grid = sub.grid();
   EXPECT_EQ(slice_ends[0] - slice_starts[0], sub.mdspan().extent(0));
   EXPECT_EQ(slice_ends[1] - slice_starts[1], sub.mdspan().extent(1));
@@ -403,9 +402,9 @@ TEST_F(Submdspan, GridLocalReference) {
     return;
   }
 
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  xhp::iota(mdarray, 100);
-  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::iota(mdarray, 100);
+  auto sub = xp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   auto grid = sub.grid();
 
   std::size_t i = 0, j = 0;
@@ -429,9 +428,9 @@ TEST_F(Submdspan, Segments) {
     return;
   }
 
-  xhp::distributed_mdarray<T, 2> mdarray(extents2d);
-  xhp::iota(mdarray, 100);
-  auto sub = xhp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
+  xp::distributed_mdarray<T, 2> mdarray(extents2d);
+  xp::iota(mdarray, 100);
+  auto sub = xp::views::submdspan(mdarray.view(), slice_starts, slice_ends);
   auto sspan = sub.mdspan();
   auto sub_segments = dr::ranges::segments(sub);
   using segment_type = rng::range_value_t<decltype(sub_segments)>;
@@ -468,48 +467,48 @@ TEST_F(Submdspan, Segments) {
 using MdForeach = Mdspan;
 
 TEST_F(MdForeach, 2ops) {
-  xhp::distributed_mdarray<T, 2> a(extents2d);
-  xhp::distributed_mdarray<T, 2> b(extents2d);
+  xp::distributed_mdarray<T, 2> a(extents2d);
+  xp::distributed_mdarray<T, 2> b(extents2d);
   auto mda = a.mdspan();
   auto mdb = b.mdspan();
-  xhp::iota(a, 100);
-  xhp::iota(b, 200);
+  xp::iota(a, 100);
+  xp::iota(b, 200);
   auto copy_op = [](auto v) {
     auto &[in, out] = v;
     out = in;
   };
 
-  xhp::for_each(copy_op, a, b);
+  xp::for_each(copy_op, a, b);
   EXPECT_EQ(mda(0, 0), mdb(0, 0));
   EXPECT_EQ(mda(xdim - 1, ydim - 1), mdb(xdim - 1, ydim - 1));
 }
 
 TEST_F(MdForeach, 3ops) {
-  xhp::distributed_mdarray<T, 2> a(extents2d);
-  xhp::distributed_mdarray<T, 2> b(extents2d);
-  xhp::distributed_mdarray<T, 2> c(extents2d);
-  xhp::iota(a, 100);
-  xhp::iota(b, 200);
-  xhp::iota(c, 200);
+  xp::distributed_mdarray<T, 2> a(extents2d);
+  xp::distributed_mdarray<T, 2> b(extents2d);
+  xp::distributed_mdarray<T, 2> c(extents2d);
+  xp::iota(a, 100);
+  xp::iota(b, 200);
+  xp::iota(c, 200);
   auto copy_op = [](auto v) {
     auto [in1, in2, out] = v;
     out = in1 + in2;
   };
 
-  xhp::for_each(copy_op, a, b, c);
+  xp::for_each(copy_op, a, b, c);
   EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2))
       << fmt::format("A:\n{}\nB:\n{}\nC:\n{}", a.mdspan(), b.mdspan(),
                      c.mdspan());
 }
 
 TEST_F(MdForeach, Indexed) {
-  xhp::distributed_mdarray<T, 2> dist(extents2d);
+  xp::distributed_mdarray<T, 2> dist(extents2d);
   auto op = [l = ydim](auto index, auto v) {
     auto &[o] = v;
     o = index[0] * l + index[1];
   };
 
-  xhp::for_each(op, dist);
+  xp::for_each(op, dist);
   for (std::size_t i = 0; i < xdim; i++) {
     for (std::size_t j = 0; j < ydim; j++) {
       EXPECT_EQ(dist.mdspan()(i, j), i * ydim + j)
@@ -521,10 +520,10 @@ TEST_F(MdForeach, Indexed) {
 using MdStencilForeach = Mdspan;
 
 TEST_F(MdStencilForeach, 2ops) {
-  xhp::distributed_mdarray<T, 2> a(extents2d);
-  xhp::distributed_mdarray<T, 2> b(extents2d);
-  xhp::iota(a, 100);
-  xhp::iota(b, 200);
+  xp::distributed_mdarray<T, 2> a(extents2d);
+  xp::distributed_mdarray<T, 2> b(extents2d);
+  xp::iota(a, 100);
+  xp::iota(b, 200);
   auto mda = a.mdspan();
   auto mdb = b.mdspan();
   auto copy_op = [](auto v) {
@@ -532,25 +531,25 @@ TEST_F(MdStencilForeach, 2ops) {
     out(0, 0) = in(0, 0);
   };
 
-  xhp::stencil_for_each(copy_op, a, b);
+  xp::stencil_for_each(copy_op, a, b);
   EXPECT_EQ(mda(0, 0), mdb(0, 0));
   EXPECT_EQ(mda(2, 2), mdb(2, 2));
   EXPECT_EQ(mda(xdim - 1, ydim - 1), mdb(xdim - 1, ydim - 1));
 }
 
 TEST_F(MdStencilForeach, 3ops) {
-  xhp::distributed_mdarray<T, 2> a(extents2d);
-  xhp::distributed_mdarray<T, 2> b(extents2d);
-  xhp::distributed_mdarray<T, 2> c(extents2d);
-  xhp::iota(a, 100);
-  xhp::iota(b, 200);
-  xhp::iota(c, 300);
+  xp::distributed_mdarray<T, 2> a(extents2d);
+  xp::distributed_mdarray<T, 2> b(extents2d);
+  xp::distributed_mdarray<T, 2> c(extents2d);
+  xp::iota(a, 100);
+  xp::iota(b, 200);
+  xp::iota(c, 300);
   auto copy_op = [](auto v) {
     auto [in1, in2, out] = v;
     out(0, 0) = in1(0, 0) + in2(0, 0);
   };
 
-  xhp::stencil_for_each(copy_op, a, b, c);
+  xp::stencil_for_each(copy_op, a, b, c);
   EXPECT_EQ(a.mdspan()(2, 2) + b.mdspan()(2, 2), c.mdspan()(2, 2));
 }
 

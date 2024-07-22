@@ -68,8 +68,8 @@ DR_BENCHMARK(Stencil1D_Subrange_Std);
 
 static void Stencil1D_Subrange_DR(benchmark::State &state) {
   auto dist = dr::mp::distribution().halo(1);
-  xhp::distributed_vector<T> a(default_vector_size, init_val, dist);
-  xhp::distributed_vector<T> b(default_vector_size, init_val, dist);
+  xp::distributed_vector<T> a(default_vector_size, init_val, dist);
+  xp::distributed_vector<T> b(default_vector_size, init_val, dist);
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   auto in = rng::subrange(a.begin() + 1, a.end() - 1);
@@ -78,8 +78,8 @@ static void Stencil1D_Subrange_DR(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < stencil_steps; i++) {
       stats.rep();
-      xhp::halo(in).exchange();
-      xhp::transform(in, out.begin(), stencil1d_subrange_op);
+      xp::halo(in).exchange();
+      xp::transform(in, out.begin(), stencil1d_subrange_op);
       std::swap(in, out);
     }
   }

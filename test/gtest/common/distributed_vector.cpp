@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 
 // Fixture
 template <typename T> class DistributedVectorAllTypes : public testing::Test {
@@ -80,7 +80,7 @@ TYPED_TEST(DistributedVectorAllTypes, Segments) {
 
 TEST(DistributedVector, ConstructorBasic) {
   DRLOG("Running ConstructorBasic test");
-  xhp::distributed_vector<int> dist_vec(10);
+  xp::distributed_vector<int> dist_vec(10);
   iota(dist_vec, 100);
 
   std::vector<int> local_vec(10);
@@ -91,7 +91,7 @@ TEST(DistributedVector, ConstructorBasic) {
 
 TEST(DistributedVector, ConstructorFill) {
   DRLOG("Running ConstructorFill test");
-  xhp::distributed_vector<int> dist_vec(10, 1);
+  xp::distributed_vector<int> dist_vec(10, 1);
 
   std::vector<int> local_vec(10, 1);
 
