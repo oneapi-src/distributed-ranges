@@ -16,7 +16,7 @@ extern std::size_t comm_rank;
 extern std::size_t comm_size;
 extern cxxopts::ParseResult options;
 
-namespace xhp = dr::mp;
+namespace xp = dr::mp;
 
 template <typename V>
 concept compliant_view = rng::forward_range<V> && rng::random_access_range<V> &&

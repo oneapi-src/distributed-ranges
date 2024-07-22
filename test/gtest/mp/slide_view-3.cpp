@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 #include <dr/mp/views/sliding.hpp>
 
 template <typename T> class Slide3 : public testing::Test {};
@@ -18,7 +18,7 @@ TYPED_TEST(Slide3, no_sides) {
   TypeParam dv(6);
   iota(dv, 1);
 
-  auto dv_sliding_view = xhp::views::sliding(dv, 1);
+  auto dv_sliding_view = xp::views::sliding(dv, 1);
   EXPECT_EQ(rng::size(dv_sliding_view), 6);
   EXPECT_TRUE(equal_gtest({1}, dv_sliding_view[0]));
   EXPECT_TRUE(equal_gtest({2}, dv_sliding_view[1]));
@@ -48,7 +48,7 @@ TYPED_TEST(Slide3, with_sides) {
   TypeParam dv(6, dr::mp::distribution().halo(1));
   iota(dv, 1);
 
-  auto dv_sliding_view = xhp::views::sliding(dv, 3);
+  auto dv_sliding_view = xp::views::sliding(dv, 3);
   EXPECT_EQ(rng::size(dv_sliding_view), 4);
   EXPECT_TRUE(equal_gtest({1, 2, 3}, dv_sliding_view[0]));
   EXPECT_TRUE(equal_gtest({2, 3, 4}, dv_sliding_view[1]));
@@ -81,7 +81,7 @@ TYPED_TEST(Slide3, local_no_sides_converts_to_correct_pointers) {
   iota(dv, 1);
   fence();
 
-  auto dv_sliding_view = xhp::views::sliding(dv, 1);
+  auto dv_sliding_view = xp::views::sliding(dv, 1);
   for (auto &&ls : dr::mp::local_segments(dv_sliding_view)) {
     EXPECT_EQ(2, rng::size(ls));
     static_assert(
@@ -111,7 +111,7 @@ TYPED_TEST(Slide3,
   iota(dv, 1);
   dv.halo().exchange();
 
-  auto dv_sliding_view = xhp::views::sliding(dv, 5);
+  auto dv_sliding_view = xp::views::sliding(dv, 5);
   for (auto &&ls : dr::mp::local_segments(dv_sliding_view)) {
     static_assert(
         std::same_as<decltype(ls[0][0]), typename TypeParam::value_type &>);
@@ -140,7 +140,7 @@ TYPED_TEST(
   iota(dv, 1);
   dv.halo().exchange();
 
-  auto dv_sliding_view = xhp::views::sliding(dv, 3);
+  auto dv_sliding_view = xp::views::sliding(dv, 3);
   for (auto &&ls : dr::mp::local_segments(dv_sliding_view)) {
     switch (dr::mp::default_comm().rank()) {
     case 0:

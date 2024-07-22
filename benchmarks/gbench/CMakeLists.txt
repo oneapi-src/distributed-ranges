@@ -29,6 +29,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   if(ENABLE_SYCL)
     add_subdirectory(sp)
-    add_custom_target(xhp-bench DEPENDS mp-bench sp-bench)
+    add_custom_target(xp-bench DEPENDS mp-bench sp-bench)
   endif()
 endif()

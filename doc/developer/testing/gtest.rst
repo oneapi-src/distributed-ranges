@@ -46,7 +46,7 @@ Shims
 Shims are generic names/functions that are defined differently in mp
 and sp.
 
-* Use ``xhp::`` as the namespace when you need ``sp::`` or ``mp::``
+* Use ``xp::`` as the namespace when you need ``sp::`` or ``mp::``
   namespaces.
 * ``default_policy(dv)`` where ``dv`` is a distributed vector. Use for
   algorithms that require a policy.
@@ -73,7 +73,7 @@ allocators.
   with a ``TYPED_TEST_SUITE``. In a typed test suite ``TypeParam`` is
   the ``distributed_vector`` type being tested in the instantiation of
   the test. It is useful when sp/mp have different test types that
-  cannot be unified with ``xhp::`` (e.g. allocators).
+  cannot be unified with ``xp::`` (e.g. allocators).
 ``Ops1``, ``Ops2``, ``Ops3``
   Provides some boiler plate code to create and initialize
   ``distributed_vector`` and ``std::vector``. Provides inputs for 1-3

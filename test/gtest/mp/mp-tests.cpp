@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 
 MPI_Comm comm;
 std::size_t comm_rank;

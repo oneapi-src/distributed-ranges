@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 
 using T = int;
 using DV = dr::mp::distributed_vector<T>;

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "xhp-tests.hpp"
+#include "xp-tests.hpp"
 #include <dr/sp.hpp>
 
 namespace sp = dr::sp;

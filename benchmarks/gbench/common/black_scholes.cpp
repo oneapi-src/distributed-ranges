@@ -31,11 +31,11 @@ static void BlackScholes_DR(benchmark::State &state) {
   T r = 0;
   T sig = 0;
 
-  xhp::distributed_vector<T> s0(default_vector_size, scalar);
-  xhp::distributed_vector<T> x(default_vector_size, scalar);
-  xhp::distributed_vector<T> t(default_vector_size, scalar);
-  xhp::distributed_vector<T> vcall(default_vector_size, scalar);
-  xhp::distributed_vector<T> vput(default_vector_size, scalar);
+  xp::distributed_vector<T> s0(default_vector_size, scalar);
+  xp::distributed_vector<T> x(default_vector_size, scalar);
+  xp::distributed_vector<T> t(default_vector_size, scalar);
+  xp::distributed_vector<T> vcall(default_vector_size, scalar);
+  xp::distributed_vector<T> vput(default_vector_size, scalar);
 
   Stats stats(state, sizeof(T) * (s0.size() + x.size() + t.size()),
               sizeof(T) * (vcall.size() + vput.size()));
@@ -44,8 +44,8 @@ static void BlackScholes_DR(benchmark::State &state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
 
-      xhp::for_each(xhp::views::zip(s0, x, t, vcall, vput),
-                    [r, sig, bs = black_scholes](auto e) { bs(r, sig, e); });
+      xp::for_each(xp::views::zip(s0, x, t, vcall, vput),
+                   [r, sig, bs = black_scholes](auto e) { bs(r, sig, e); });
     }
   }
 }

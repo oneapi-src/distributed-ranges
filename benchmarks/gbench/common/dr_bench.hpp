@@ -98,7 +98,7 @@ inline sycl::queue get_queue() {
 
 #include "dr/mp.hpp"
 
-namespace xhp = dr::mp;
+namespace xp = dr::mp;
 
 extern std::size_t stencil_steps;
 extern std::size_t num_rows;
@@ -110,7 +110,7 @@ extern std::size_t num_columns;
 
 #include "dr/sp.hpp"
 
-namespace xhp = dr::sp;
+namespace xp = dr::sp;
 
 inline sycl::queue &get_queue() { return dr::sp::__detail::default_queue(); }
 
