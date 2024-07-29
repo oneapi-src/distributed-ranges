@@ -32,7 +32,7 @@ Pygments==2.18.0
 python-debian==0.1.49
 PyYAML==6.0.1
 requests==2.32.3
-reuse==3.0.2
+reuse==4.0.3
 snowballstemmer==2.2.0
 soupsieve==2.5
 Sphinx==7.4.7
