@@ -17,7 +17,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv) {
   MPI_Comm_rank(comm, &comm_rank);
   MPI_Comm_size(comm, &comm_size);
 
-  dr::mhp::init();
+  dr::mp::init();
 
   cxxopts::Options options_spec((*argv)[0], "Fuzz CPU tests");
 

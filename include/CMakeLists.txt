@@ -31,15 +31,15 @@ if(ENABLE_SYCL)
 endif()
 target_include_directories(dr_mpi INTERFACE . vendor)
 
-# shp: sycl, single process, multi-gpu
+# sp: sycl, single process, multi-gpu
 
-add_library(dr_shp INTERFACE)
-add_library(DR::shp ALIAS dr_shp)
+add_library(dr_sp INTERFACE)
+add_library(DR::sp ALIAS dr_sp)
 
-target_include_directories(dr_shp INTERFACE . vendor)
-target_compile_definitions(dr_shp INTERFACE USE_MKL
-                                            _GLIBCXX_USE_TBB_PAR_BACKEND=0)
-target_link_libraries(dr_shp INTERFACE range-v3 oneDPL fmt::fmt MKL::MKL_DPCPP)
+target_include_directories(dr_sp INTERFACE . vendor)
+target_compile_definitions(dr_sp INTERFACE USE_MKL
+                                           _GLIBCXX_USE_TBB_PAR_BACKEND=0)
+target_link_libraries(dr_sp INTERFACE range-v3 oneDPL fmt::fmt MKL::MKL_DPCPP)
 
 # For use, see:
 # https://github.com/illuhad/hipSYCL/blob/develop/doc/using-hipsycl.md#using-the-cmake-integration
@@ -47,6 +47,6 @@ target_link_libraries(dr_shp INTERFACE range-v3 oneDPL fmt::fmt MKL::MKL_DPCPP)
 # -DHIPSYCL_TARGETS="<targets>"
 if($(HIPSYCL_TARGETS))
   find_package(hipSYCL REQUIRED)
-  add_sycl_to_target(TARGET dr_shp)
-  target_compile_options(dr_shp INTERFACE --hipsycl-targets='cuda:sm_75')
+  add_sycl_to_target(TARGET dr_sp)
+  target_compile_options(dr_sp INTERFACE --hipsycl-targets='cuda:sm_75')
 endif()

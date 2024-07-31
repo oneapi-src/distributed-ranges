@@ -15,7 +15,7 @@ Interface
 
 .. code-block:: cpp
 
-  dr::mhp::views::drop
-  dr::shp::views::drop
+  dr::mp::views::drop
+  dr::sp::views::drop
 
 For interface, see `std::ranges::views::drop`_

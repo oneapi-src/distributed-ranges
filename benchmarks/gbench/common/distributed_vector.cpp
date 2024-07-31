@@ -15,12 +15,12 @@ using T = float;
 
 static void Fill_DR(benchmark::State &state) {
   T init = 0;
-  xhp::distributed_vector<T> a(default_vector_size, init);
+  xp::distributed_vector<T> a(default_vector_size, init);
   Stats stats(state, 0, sizeof(T) * a.size());
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      xhp::fill(a, init);
+      xp::fill(a, init);
     }
   }
 }
@@ -122,13 +122,13 @@ DR_BENCHMARK(Copy_QueueCopy_SYCL);
 #endif
 
 static void Copy_DR(benchmark::State &state) {
-  xhp::distributed_vector<T> src(default_vector_size);
-  xhp::distributed_vector<T> dst(default_vector_size);
+  xp::distributed_vector<T> src(default_vector_size);
+  xp::distributed_vector<T> dst(default_vector_size);
   Stats stats(state, sizeof(T) * src.size(), sizeof(T) * dst.size());
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      xhp::copy(src, dst.begin());
+      xp::copy(src, dst.begin());
     }
   }
 }
@@ -166,12 +166,12 @@ void check_reduce(T actual) {
 template <class... BackendT>
 [[maybe_unused]] static void Reduce_DR(benchmark::State &state) {
   T actual{};
-  xhp::distributed_vector<T, BackendT...> src(default_vector_size, fill);
+  xp::distributed_vector<T, BackendT...> src(default_vector_size, fill);
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      actual = xhp::reduce(src);
+      actual = xp::reduce(src);
     }
   }
   check_reduce(actual);
@@ -180,19 +180,19 @@ template <class... BackendT>
 DR_BENCHMARK(Reduce_DR);
 
 #ifdef DRISHMEM
-DR_BENCHMARK(Reduce_DR<dr::mhp::IshmemBackend>)->Name("Reduce_DR_ishmem");
+DR_BENCHMARK(Reduce_DR<dr::mp::IshmemBackend>)->Name("Reduce_DR_ishmem");
 #endif
 
 static void Reduce_max_DR(benchmark::State &state) {
   T actual{};
   auto max = [](T x, T y) { return std::max(x, y); };
-  xhp::distributed_vector<T> src(default_vector_size, fill);
+  xp::distributed_vector<T> src(default_vector_size, fill);
 
   Stats stats(state, sizeof(T) * src.size(), 0);
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      actual = xhp::reduce(src, fill, max);
+      actual = xp::reduce(src, fill, max);
     }
   }
   if (actual != fill) {
@@ -241,13 +241,13 @@ DR_BENCHMARK(Reduce_Reference);
 #endif
 
 static void TransformIdentity_DR(benchmark::State &state) {
-  xhp::distributed_vector<T> src(default_vector_size);
-  xhp::distributed_vector<T> dst(default_vector_size);
+  xp::distributed_vector<T> src(default_vector_size);
+  xp::distributed_vector<T> dst(default_vector_size);
   Stats stats(state, sizeof(T) * src.size(), sizeof(T) * dst.size());
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      xhp::transform(src, dst.begin(), std::identity());
+      xp::transform(src, dst.begin(), std::identity());
     }
   }
 }
@@ -268,13 +268,13 @@ static void TransformIdentity_Serial(benchmark::State &state) {
 
 DR_BENCHMARK(TransformIdentity_Serial);
 
-#ifndef BENCH_SHP
+#ifndef BENCH_SP
 // segfault
 
 static void Mul_DR(benchmark::State &state) {
-  xhp::distributed_vector<T> a(default_vector_size);
-  xhp::distributed_vector<T> b(default_vector_size);
-  xhp::distributed_vector<T> c(default_vector_size);
+  xp::distributed_vector<T> a(default_vector_size);
+  xp::distributed_vector<T> b(default_vector_size);
+  xp::distributed_vector<T> c(default_vector_size);
   Stats stats(state, sizeof(T) * (a.size() + b.size()), sizeof(T) * c.size());
   auto mul = [](auto v) {
     auto [a, b] = v;
@@ -283,7 +283,7 @@ static void Mul_DR(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      xhp::transform(xhp::views::zip(a, b), c.begin(), mul);
+      xp::transform(xp::views::zip(a, b), c.begin(), mul);
     }
   }
 }

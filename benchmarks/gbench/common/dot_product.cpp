@@ -31,8 +31,8 @@ void check_dp(auto actual, const nostd::source_location location =
 }
 
 static void DotProduct_DR(benchmark::State &state) {
-  xhp::distributed_vector<T> a(default_vector_size, init_val);
-  xhp::distributed_vector<T> b(default_vector_size, init_val);
+  xp::distributed_vector<T> a(default_vector_size, init_val);
+  xp::distributed_vector<T> b(default_vector_size, init_val);
   Stats stats(state, sizeof(T) * (a.size() + b.size()), 0);
   auto mul = [](auto v) {
     auto [a, b] = v;
@@ -42,7 +42,7 @@ static void DotProduct_DR(benchmark::State &state) {
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
-      res = xhp::reduce(xhp::views::zip(a, b) | xhp::views::transform(mul));
+      res = xp::reduce(xp::views::zip(a, b) | xp::views::transform(mul));
       benchmark::DoNotOptimize(res);
     }
   }

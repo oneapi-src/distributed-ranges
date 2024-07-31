@@ -38,20 +38,20 @@ all_rules = [
         "use // namespace dr",
     ),
     (
-        r"namespace mhp {",
-        "use namespace dr::mhp {",
+        r"namespace mp {",
+        "use namespace dr::mp {",
     ),
     (
-        r"// namespace mhp",
-        "use // namespace dr::mhp",
+        r"// namespace mp",
+        "use // namespace dr::mp",
     ),
     (
-        r"namespace shp {",
-        "use namespace dr::shp {",
+        r"namespace sp {",
+        "use namespace dr::sp {",
     ),
     (
-        r"// namespace shp",
-        "use // namespace dr::shp",
+        r"// namespace sp",
+        "use // namespace dr::sp",
     ),
     (
         r"[( ]size_t ",

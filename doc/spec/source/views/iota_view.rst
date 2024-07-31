@@ -15,7 +15,7 @@ Interface
 
 .. code-block:: cpp
 
-  dr::mhp::views::all
-  dr::shp::views::all
+  dr::mp::views::all
+  dr::sp::views::all
 
 For interface, see `std::ranges::views::all`_
