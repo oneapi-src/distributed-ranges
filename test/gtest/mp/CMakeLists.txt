@@ -11,6 +11,7 @@ add_executable(
   mp-tests.cpp
   ../common/all.cpp
   ../common/copy.cpp
+  ../common/count.cpp
   ../common/counted.cpp
   ../common/distributed_vector.cpp
   ../common/drop.cpp
@@ -57,7 +58,7 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  ../common/equal.cpp
+  ../common/count.cpp
   )
 # cmake-format: on
 

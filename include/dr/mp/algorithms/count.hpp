@@ -4,11 +4,11 @@
 
 #pragma once
 
-namespace dr::mhp::__detail {
+namespace dr::mp::__detail {
 
 inline auto add_counts(rng::forward_range auto &&r) {
   rng::range_difference_t<decltype(r)> zero{};
-  
+
   return std::accumulate(rng::begin(r), rng::end(r), zero);
 }
 
@@ -19,10 +19,9 @@ inline auto std_count_if(rng::forward_range auto &&r, auto &&pred) {
     return count_type{};
   }
 
-  return std::count_if(std::execution::par_unseq, 
+  return std::count_if(std::execution::par_unseq,
                        dr::__detail::direct_iterator(rng::begin(r)),
-                       dr::__detail::direct_iterator(rng::end(r)), 
-                       pred);
+                       dr::__detail::direct_iterator(rng::end(r)), pred);
 }
 
 inline auto dpl_count_if(rng::forward_range auto &&r, auto &&pred) {
@@ -33,10 +32,9 @@ inline auto dpl_count_if(rng::forward_range auto &&r, auto &&pred) {
     return count_type{};
   }
 
-  return std::count_if(dpl_policy(),
+  return std::count_if(mp::dpl_policy(),
                        dr::__detail::direct_iterator(rng::begin(r)),
-                       dr::__detail::direct_iterator(rng::end(r)),
-                       pred);
+                       dr::__detail::direct_iterator(rng::end(r)), pred);
 #else
   assert(false);
   return count_type{};
@@ -46,7 +44,7 @@ inline auto dpl_count_if(rng::forward_range auto &&r, auto &&pred) {
 template <dr::distributed_range DR>
 auto count_if(std::size_t root, bool root_provided, DR &&dr, auto &&pred) {
   using count_type = rng::range_difference_t<decltype(dr)>;
-  auto comm = default_comm();
+  auto comm = mp::default_comm();
 
   if (rng::empty(dr)) {
     return count_type{};
@@ -58,7 +56,7 @@ auto count_if(std::size_t root, bool root_provided, DR &&dr, auto &&pred) {
     // Count within the local segments
     auto count = [=](auto &&r) {
       assert(rng::size(r) > 0);
-      if (mhp::use_sycl()) {
+      if (mp::use_sycl()) {
         dr::drlog.debug("  with DPL\n");
         return dpl_count_if(r, pred);
       } else {
@@ -90,14 +88,14 @@ auto count_if(std::size_t root, bool root_provided, DR &&dr, auto &&pred) {
     if (!root_provided || root == comm.rank()) {
       result = add_counts(dr);
     }
-    barrier();
+    mp::barrier();
     return result;
   }
 }
-    
-} // namespace dr::mhp::__detail
 
-namespace dr::mhp {
+} // namespace dr::mp::__detail
+
+namespace dr::mp {
 
 //
 // Ranges
@@ -106,27 +104,26 @@ namespace dr::mhp {
 // range, elem, w/wo root
 
 template <typename T, dr::distributed_range DR>
-auto count(std::size_t root, DR &&dr, const T& value) {
-    auto pred = [=](auto &&v) { return v == value; };
-    return __detail::count_if(root, true, dr, pred);
+auto count(std::size_t root, DR &&dr, const T &value) {
+  auto pred = [=](auto &&v) { return v == value; };
+  return __detail::count_if(root, true, dr, pred);
 }
 
 template <typename T, dr::distributed_range DR>
-auto count(DR &&dr, const T& value) {
-    auto pred = [=](auto &&v) { return v == value; };
-    return __detail::count_if(0, false, dr, pred);
+auto count(DR &&dr, const T &value) {
+  auto pred = [=](auto &&v) { return v == value; };
+  return __detail::count_if(0, false, dr, pred);
 }
 
 // range, predicate, w/wo root
 
 template <dr::distributed_range DR>
 auto count_if(std::size_t root, DR &&dr, auto &&pred) {
-    return __detail::count_if(root, true, dr, pred);
+  return __detail::count_if(root, true, dr, pred);
 }
 
-template <dr::distributed_range DR>
-auto count_if(DR &&dr, auto &&pred) {
-    return __detail::count_if(0, false, dr, pred);
+template <dr::distributed_range DR> auto count_if(DR &&dr, auto &&pred) {
+  return __detail::count_if(0, false, dr, pred);
 }
 
 //
@@ -136,27 +133,27 @@ auto count_if(DR &&dr, auto &&pred) {
 // range, elem, w/wo root
 
 template <typename T, dr::distributed_iterator DI>
-auto count(std::size_t root, DI first, DI last, const T& value) {
-    auto pred = [=](auto &&v) { return v == value; };
-    return __detail::count_if(root, true, rng::subrange(first, last), pred);
+auto count(std::size_t root, DI first, DI last, const T &value) {
+  auto pred = [=](auto &&v) { return v == value; };
+  return __detail::count_if(root, true, rng::subrange(first, last), pred);
 }
 
 template <typename T, dr::distributed_iterator DI>
-auto count(DI first, DI last, const T& value) {
-    auto pred = [=](auto &&v) { return v == value; };
-    return __detail::count_if(0, false, rng::subrange(first, last), pred);
+auto count(DI first, DI last, const T &value) {
+  auto pred = [=](auto &&v) { return v == value; };
+  return __detail::count_if(0, false, rng::subrange(first, last), pred);
 }
 
 // range, predicate, w/wo root
 
 template <dr::distributed_iterator DI>
 auto count_if(std::size_t root, DI first, DI last, auto &&pred) {
-    return __detail::count_if(root, true, rng::subrange(first, last), pred);
+  return __detail::count_if(root, true, rng::subrange(first, last), pred);
 }
 
 template <dr::distributed_iterator DI>
 auto count_if(DI first, DI last, auto &&pred) {
-    return __detail::count_if(0, false, rng::subrange(first, last), pred);
+  return __detail::count_if(0, false, rng::subrange(first, last), pred);
 }
 
-}; // namespace dr::mhp
+}; // namespace dr::mp
