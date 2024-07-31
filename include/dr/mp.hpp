@@ -52,34 +52,6 @@
 #include <dr/views/views.hpp>
 #include <dr/views/transform.hpp>
 
-<<<<<<< HEAD:include/dr/mhp.hpp
-#include <dr/mhp/halo.hpp>
-#include <dr/mhp/global.hpp>
-#include <dr/mhp/sycl_support.hpp>
-#include <dr/mhp/common_support.hpp>
-#include <dr/mhp/alignment.hpp>
-#include <dr/mhp/allocator.hpp>
-#include <dr/mhp/views/views.hpp>
-#include <dr/mhp/views/zip.hpp>
-#include <dr/mhp/views/enumerate.hpp>
-#include <dr/mhp/views/sliding.hpp>
-#include <dr/mhp/views/mdspan_view.hpp>
-#include <dr/mhp/views/submdspan_view.hpp>
-#include <dr/mhp/algorithms/copy.hpp>
-#include <dr/mhp/algorithms/fill.hpp>
-#include <dr/mhp/algorithms/for_each.hpp>
-#include <dr/mhp/algorithms/exclusive_scan.hpp>
-#include <dr/mhp/algorithms/inclusive_scan.hpp>
-#include <dr/mhp/algorithms/iota.hpp>
-#include <dr/mhp/algorithms/reduce.hpp>
-#include <dr/mhp/algorithms/sort.hpp>
-#include <dr/mhp/algorithms/md_for_each.hpp>
-#include <dr/mhp/algorithms/transform.hpp>
-#include <dr/mhp/algorithms/transpose.hpp>
-#include <dr/mhp/algorithms/count.hpp>
-#include <dr/mhp/containers/distributed_vector.hpp>
-#include <dr/mhp/containers/distributed_mdarray.hpp>
-=======
 #include <dr/mp/halo.hpp>
 #include <dr/mp/global.hpp>
 #include <dr/mp/sycl_support.hpp>
@@ -93,6 +65,7 @@
 #include <dr/mp/views/mdspan_view.hpp>
 #include <dr/mp/views/submdspan_view.hpp>
 #include <dr/mp/algorithms/copy.hpp>
+#include <dr/mp/algorithms/count.hpp>
 #include <dr/mp/algorithms/equal.hpp>
 #include <dr/mp/algorithms/fill.hpp>
 #include <dr/mp/algorithms/for_each.hpp>
@@ -106,4 +79,3 @@
 #include <dr/mp/algorithms/transpose.hpp>
 #include <dr/mp/containers/distributed_vector.hpp>
 #include <dr/mp/containers/distributed_mdarray.hpp>
->>>>>>> a9468e93d71f48ca7b977472fd01d63965c21d75:include/dr/mp.hpp
