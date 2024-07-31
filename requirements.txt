@@ -42,7 +42,7 @@ sphinxcontrib-devhelp==1.0.6
 sphinxcontrib-htmlhelp==2.0.5
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.7
-sphinxcontrib-serializinghtml==1.1.10
+sphinxcontrib-serializinghtml==2.0.0
 sphinxcontrib-spelling==8.0.0
 typing_extensions==4.12.2
 urllib3==2.2.2
