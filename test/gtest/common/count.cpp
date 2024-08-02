@@ -12,7 +12,12 @@ protected:
 TYPED_TEST_SUITE(Count, AllTypes);
 
 TYPED_TEST(Count, BasicFirstElem) {
-  Ops1<TypeParam> ops(10);
+  std::vector<int> vec { 1, 2, 3, 1, 1, 3, 4, 1, 5, 6, 7 };
+
+  Ops1<TypeParam> ops(vec.size());
+  ops.vec = vec;
+  xp::copy(ops.vec, ops.dist_vec.begin());
+
   auto value = *ops.vec.begin();
 
   EXPECT_EQ(std::count(ops.vec.begin(), ops.vec.end(), value),
@@ -20,8 +25,13 @@ TYPED_TEST(Count, BasicFirstElem) {
 }
 
 TYPED_TEST(Count, BasicFirstElemIf) {
-  Ops1<TypeParam> ops(10);
-  auto value = *ops.vec.begin();
+  std::vector<int> vec { 1, 2, 3, 1, 1, 3, 4, 1, 5, 6, 7 };
+
+  Ops1<TypeParam> ops(vec.size());
+  ops.vec = vec;
+  xp::copy(ops.vec, ops.dist_vec.begin());
+
+  auto value = *vec.begin();
   auto pred = [=](auto &&v) { return v == value; };
 
   EXPECT_EQ(std::count_if(ops.vec.begin(), ops.vec.end(), pred),
@@ -29,7 +39,7 @@ TYPED_TEST(Count, BasicFirstElemIf) {
 }
 
 TYPED_TEST(Count, FirstElemsIf) {
-  Ops1<TypeParam> ops(10);
+  Ops1<TypeParam> ops(20);
   auto pred = [=](auto &&v) { return v < 5; };
 
   EXPECT_EQ(std::count_if(ops.vec.begin(), ops.vec.end(), pred),
