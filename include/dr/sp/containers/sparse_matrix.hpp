@@ -47,11 +47,12 @@ public:
                                        size_type idx) noexcept
       : segments_(rng::views::all(std::forward<Segments>(segments))),
         segment_id_(segment_id), idx_(idx) {
-          while (idx_ >= rng::size((*(segments_.begin() + segment_id_))) && segment_id_ < rng::size(segments_)) {
-            segment_id_++;
-            idx_ = 0;
-          }
-        }
+    while (idx_ >= rng::size((*(segments_.begin() + segment_id_))) &&
+           segment_id_ < rng::size(segments_)) {
+      segment_id_++;
+      idx_ = 0;
+    }
+  }
 
   constexpr distributed_range_accessor &
   operator+=(difference_type offset) noexcept {
@@ -64,7 +65,8 @@ public:
       idx_ += current_offset;
       offset -= current_offset;
 
-      while (idx_ >= rng::size((*(segments_.begin() + segment_id_))) && segment_id_ < rng::size(segments_)) {
+      while (idx_ >= rng::size((*(segments_.begin() + segment_id_))) &&
+             segment_id_ < rng::size(segments_)) {
         segment_id_++;
         idx_ = 0;
       }
@@ -177,7 +179,7 @@ public:
       : shape_(shape), partition_(partition.clone()) {
     init_();
   }
-  
+
   sparse_matrix(dr::sp::csr_matrix_view<T, I> local_mat,
                 const matrix_partition &partition)
       : shape_(local_mat.shape()), partition_(partition.clone()) {
@@ -410,6 +412,7 @@ private:
     auto ptr = dr::sp::row_cyclic();
     return std::make_unique<dr::sp::block_cyclic>(ptr);
   }
+
 private:
   key_type shape_;
   key_type grid_shape_;

@@ -262,10 +262,7 @@ auto mmread(std::string file_path, const matrix_partition &partition,
 
 template <typename T, typename I = std::size_t>
 auto mmread(std::string file_path, bool one_indexed = true) {
-  return mmread<T, I>(
-      file_path,
-      dr::sp::row_cyclic(),
-      one_indexed);
+  return mmread<T, I>(file_path, dr::sp::row_cyclic(), one_indexed);
 }
 
 } // namespace dr::sp
