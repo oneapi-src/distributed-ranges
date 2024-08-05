@@ -26,11 +26,11 @@ TEST(SparseMatrix, IterationForward) {
     auto [real_index, real_value] = reference[i];
     auto [m, n] = index;
     auto [r_m, r_n] = real_index;
-    
-    EXPECT_TRUE(m == r_m && n == r_n)
-        << fmt::format("Reference m, n:\n  {}, {}\nActual:\n  {}, {}\n", r_m, r_n, m, n);
-    EXPECT_TRUE(value == real_value)
-        << fmt::format("Reference value:\n  {}\nActual:\n  {}\n", real_value, value);
+
+    EXPECT_TRUE(m == r_m && n == r_n) << fmt::format(
+        "Reference m, n:\n  {}, {}\nActual:\n  {}, {}\n", r_m, r_n, m, n);
+    EXPECT_TRUE(value == real_value) << fmt::format(
+        "Reference value:\n  {}\nActual:\n  {}\n", real_value, value);
     i++;
   }
 }
@@ -61,10 +61,9 @@ TEST(SparseMatrix, IterationReverse) {
     auto [real_index, real_value] = reference[i];
     auto [m, n] = index;
     auto [r_m, r_n] = real_index;
-    EXPECT_TRUE(m == r_m && n == r_n)
-        << fmt::format("Reference m, n:\n  {}, {}\nActual:\n  {}, {}\n", r_m, r_n, m, n);
-    EXPECT_TRUE(value == real_value)
-        << fmt::format("Reference value:\n  {}\nActual:\n  {}\n", real_value, value);
+    EXPECT_TRUE(m == r_m && n == r_n) << fmt::format(
+        "Reference m, n:\n  {}, {}\nActual:\n  {}, {}\n", r_m, r_n, m, n);
+    EXPECT_TRUE(value == real_value) << fmt::format(
+        "Reference value:\n  {}\nActual:\n  {}\n", real_value, value);
   }
 }
-
