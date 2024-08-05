@@ -6,17 +6,17 @@ TEST(SparseMatrix, Iteration) {
   std::size_t k = 100;
   using T = float;
   using I = int;
-  std::vector<std::pair<std::pair<I,I>,T>> base;
+  std::vector<std::pair<std::pair<I, I>, T>> base;
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < k; j++) {
       base.push_back({{i, j}, i + j});
     }
   }
 
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m,k}, base.size(), std::allocator<T>{});
-  dr::sp::sparse_matrix<T, I> a = dr::sp::create_distributed(
-      csr,
-      dr::sp::row_cyclic());
+  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
+                                              std::allocator<T>{});
+  dr::sp::sparse_matrix<T, I> a =
+      dr::sp::create_distributed(csr, dr::sp::row_cyclic());
   int i = 0;
   for (auto elem : a) {
     auto [index, value] = elem;

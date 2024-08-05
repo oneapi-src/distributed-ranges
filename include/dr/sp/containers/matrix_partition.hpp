@@ -91,8 +91,7 @@ private:
 inline auto row_cyclic() {
   return block_cyclic({dr::sp::tile::div, dr::sp::tile::div},
                       {dr::sp::nprocs(), 1});
-} 
-
+}
 
 inline std::vector<block_cyclic> partition_matmul(std::size_t m, std::size_t n,
                                                   std::size_t k) {

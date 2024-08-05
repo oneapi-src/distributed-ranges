@@ -34,7 +34,6 @@ TEST(SparseMatrix, Gemv) {
       << fmt::format("Reference:\n  {}\nActual:\n  {}\n", c_ref, c_local);
 }
 
-
 TEST(SparseMatrix, EmptyGemv) {
   std::size_t m = 100;
   std::size_t k = 100;
@@ -42,10 +41,10 @@ TEST(SparseMatrix, EmptyGemv) {
   using I = int;
 
   dr::sp::__detail::coo_matrix<T, I> base;
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m,k}, base.size(), std::allocator<T>{});
-  dr::sp::sparse_matrix<T, I> a = dr::sp::create_distributed(
-      csr,
-      dr::sp::row_cyclic());
+  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
+                                              std::allocator<T>{});
+  dr::sp::sparse_matrix<T, I> a =
+      dr::sp::create_distributed(csr, dr::sp::row_cyclic());
 
   dr::sp::distributed_vector<T> b(k, 1.f);
   dr::sp::distributed_vector<T> c(m, 0.f);
@@ -67,17 +66,17 @@ TEST(SparseMatrix, ZeroVector) {
   std::size_t k = 100;
   using T = float;
   using I = int;
-  std::vector<std::pair<std::pair<I,I>,T>> base;
+  std::vector<std::pair<std::pair<I, I>, T>> base;
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < k; j++) {
       base.push_back({{i, j}, i + j});
     }
   }
 
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m,k}, base.size(), std::allocator<T>{});
-  dr::sp::sparse_matrix<T, I> a = dr::sp::create_distributed(
-      csr,
-      dr::sp::row_cyclic());
+  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
+                                              std::allocator<T>{});
+  dr::sp::sparse_matrix<T, I> a =
+      dr::sp::create_distributed(csr, dr::sp::row_cyclic());
 
   dr::sp::distributed_vector<T> b(k, 0.f);
   dr::sp::distributed_vector<T> c(m, 0.f);
@@ -153,7 +152,6 @@ TEST(SparseMatrix, NotSquareMatrixOtherAxis) {
   EXPECT_TRUE(fp_equal(c_ref, c_local))
       << fmt::format("Reference:\n  {}\nActual:\n  {}\n", c_ref, c_local);
 }
-
 
 TEST(SparseMatrix, VerySparseMatrix) {
   std::size_t m = 100;
