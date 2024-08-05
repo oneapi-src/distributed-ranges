@@ -186,23 +186,6 @@ inline coo_matrix<T, I> mmread(std::string file_path, bool one_indexed = true) {
     }
   }
 
-  auto sort_fn = [](const auto &a, const auto &b) {
-    auto &&[a_index, a_value] = a;
-    auto &&[b_index, b_value] = b;
-    auto &&[a_i, a_j] = a_index;
-    auto &&[b_i, b_j] = b_index;
-    if (a_i < b_i) {
-      return true;
-    } else if (a_i == b_i) {
-      if (a_j < b_j) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  std::sort(matrix.begin(), matrix.end(), sort_fn);
-
   f.close();
 
   return matrix;
@@ -281,8 +264,7 @@ template <typename T, typename I = std::size_t>
 auto mmread(std::string file_path, bool one_indexed = true) {
   return mmread<T, I>(
       file_path,
-      dr::sp::block_cyclic({dr::sp::tile::div, dr::sp::tile::div},
-                           {dr::sp::nprocs(), 1}),
+      dr::sp::row_cyclic(),
       one_indexed);
 }
 

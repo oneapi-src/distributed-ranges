@@ -46,7 +46,12 @@ public:
   constexpr distributed_range_accessor(Segments segments, size_type segment_id,
                                        size_type idx) noexcept
       : segments_(rng::views::all(std::forward<Segments>(segments))),
-        segment_id_(segment_id), idx_(idx) {}
+        segment_id_(segment_id), idx_(idx) {
+          while (idx_ >= rng::size((*(segments_.begin() + segment_id_))) && segment_id_ < rng::size(segments_)) {
+            segment_id_++;
+            idx_ = 0;
+          }
+        }
 
   constexpr distributed_range_accessor &
   operator+=(difference_type offset) noexcept {
@@ -59,7 +64,7 @@ public:
       idx_ += current_offset;
       offset -= current_offset;
 
-      if (idx_ >= rng::size((*(segments_.begin() + segment_id_)))) {
+      while (idx_ >= rng::size((*(segments_.begin() + segment_id_))) && segment_id_ < rng::size(segments_)) {
         segment_id_++;
         idx_ = 0;
       }
@@ -71,14 +76,16 @@ public:
 
       difference_type new_idx = difference_type(idx_) - current_offset;
 
-      if (new_idx < 0) {
+      while (new_idx < 0 && segment_id_ > 0) {
         segment_id_--;
         new_idx = rng::size(*(segments_.begin() + segment_id_)) - 1;
       }
 
       idx_ = new_idx;
+      offset += current_offset;
     }
 
+    assert(offset == 0);
     return *this;
   }
 
@@ -151,12 +158,12 @@ public:
       distributed_sparse_matrix_iterator<std::span<segment_type> &&>;
 
   sparse_matrix(key_type shape)
-      : shape_(shape), partition_(new dr::sp::block_cyclic()) {
+      : shape_(shape), partition_(default_partition_()) {
     init_();
   }
 
   sparse_matrix(key_type shape, double density)
-      : shape_(shape), partition_(new dr::sp::block_cyclic()) {
+      : shape_(shape), partition_(default_partition_()) {
     init_random_(density);
   }
 
@@ -169,6 +176,12 @@ public:
   sparse_matrix(key_type shape, const matrix_partition &partition)
       : shape_(shape), partition_(partition.clone()) {
     init_();
+  }
+  
+  sparse_matrix(dr::sp::csr_matrix_view<T, I> local_mat,
+                const matrix_partition &partition)
+      : shape_(local_mat.shape()), partition_(partition.clone()) {
+    init_csr_(local_mat);
   }
 
   size_type size() const noexcept { return total_nnz_; }
@@ -393,6 +406,10 @@ private:
     segments_ = generate_segments_();
   }
 
+  std::unique_ptr<dr::sp::matrix_partition> default_partition_() {
+    auto ptr = dr::sp::row_cyclic();
+    return std::make_unique<dr::sp::block_cyclic>(ptr);
+  }
 private:
   key_type shape_;
   key_type grid_shape_;
