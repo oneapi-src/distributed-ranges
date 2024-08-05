@@ -21,7 +21,6 @@ inline auto count_if_local(rng::forward_range auto &&r, auto &&pred) {
                          dr::__detail::direct_iterator(rng::end(r)), pred);
 #else
     assert(false);
-    return rng::range_difference_t<decltype(r)>{};
 #endif
   } else {
     dr::drlog.debug("  with CPU\n");
