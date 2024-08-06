@@ -180,12 +180,6 @@ public:
     init_();
   }
 
-  sparse_matrix(dr::sp::csr_matrix_view<T, I> local_mat,
-                const matrix_partition &partition)
-      : shape_(local_mat.shape()), partition_(partition.clone()) {
-    init_csr_(local_mat);
-  }
-
   size_type size() const noexcept { return total_nnz_; }
 
   key_type shape() const noexcept { return shape_; }
