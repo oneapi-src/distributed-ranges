@@ -26,22 +26,6 @@ namespace __detail {
 template <typename Tuples, typename Allocator>
 auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
                     Allocator &&allocator) {
-  auto sort_fn = [](const auto &a, const auto &b) {
-    auto &&[a_index, a_value] = a;
-    auto &&[b_index, b_value] = b;
-    auto &&[a_i, a_j] = a_index;
-    auto &&[b_i, b_j] = b_index;
-    if (a_i < b_i) {
-      return true;
-    } else if (a_i == b_i) {
-      if (a_j < b_j) {
-        return true;
-      }
-    }
-    return false;
-  };
-  std::sort(tuples.begin(), tuples.end(), sort_fn);
-
   auto &&[index, v] = *tuples.begin();
   auto &&[i, j] = index;
 
@@ -284,22 +268,6 @@ auto mmread(std::string file_path, const matrix_partition &partition,
   auto shape = m.shape();
   auto nnz = m.size();
 
-  auto sort_fn = [](const auto &a, const auto &b) {
-    auto &&[a_index, a_value] = a;
-    auto &&[b_index, b_value] = b;
-    auto &&[a_i, a_j] = a_index;
-    auto &&[b_i, b_j] = b_index;
-    if (a_i < b_i) {
-      return true;
-    } else if (a_i == b_i) {
-      if (a_j < b_j) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  std::sort(m.begin(), m.end(), sort_fn);
   auto local_mat = __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
 
   auto a = create_distributed(local_mat, partition);
