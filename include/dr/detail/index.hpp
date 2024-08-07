@@ -72,6 +72,17 @@ public:
   }
 
   constexpr bool operator==(const index &) const noexcept = default;
+  constexpr bool operator<(const index &other) const noexcept
+    requires(std::totally_ordered<T>)
+  {
+    if (first < other.first) {
+      return true;
+    }
+    if (first == other.first && second < other.second) {
+      return true;
+    }
+    return false;
+  }
 
   template <std::size_t Index>
   constexpr T get() const noexcept

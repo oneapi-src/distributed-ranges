@@ -19,7 +19,7 @@ namespace dr::sp {
 template <dr::distributed_range C, typename T, typename I,
           dr::distributed_range B>
 void flat_gemv(C &&c, dr::sp::sparse_matrix<T, I> &a, B &&b) {
-  assert(c.size() == b.size());
+  assert(a.shape()[0] == c.size());
   assert(a.shape()[1] == b.size());
   assert(a.grid_shape()[0] == c.segments().size());
   assert(a.grid_shape()[1] == 1);
@@ -79,7 +79,7 @@ template <dr::distributed_range C, typename T, typename I,
           dr::distributed_range B>
 void gemv(C &&c, dr::sp::sparse_matrix<T, I> &a, B &&b,
           sp::duplicated_vector<rng::range_value_t<B>> &scratch) {
-  assert(c.size() == b.size());
+  assert(a.shape()[0] == c.size());
   assert(a.shape()[1] == b.size());
   assert(a.grid_shape()[0] == c.segments().size());
   assert(a.grid_shape()[1] == 1);
@@ -104,6 +104,7 @@ void gemv(C &&c, dr::sp::sparse_matrix<T, I> &a, B &&b,
         dr::ranges::local(b_duplicated.local_vector(a_tile.rank()).begin());
     auto c_iter = dr::ranges::local(c.segments()[i].begin());
 
+    assert(c.segments()[i].size() == a_tile.shape()[0]);
     auto &&q = __detail::queue(a_tile.rank());
 
     auto event = __detail::local_gemv(q, a_tile, b_iter, c_iter,

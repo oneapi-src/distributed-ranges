@@ -86,7 +86,12 @@ private:
 
   dr::index<> tile_shape_;
   dr::index<> grid_shape_;
-}; // namespace dr::sp
+};
+
+inline auto row_cyclic() {
+  return block_cyclic({dr::sp::tile::div, dr::sp::tile::div},
+                      {dr::sp::nprocs(), 1});
+}
 
 inline std::vector<block_cyclic> partition_matmul(std::size_t m, std::size_t n,
                                                   std::size_t k) {
