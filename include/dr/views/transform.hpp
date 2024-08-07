@@ -118,6 +118,7 @@ private:
 };
 
 template <rng::random_access_range V, std::copy_constructible F>
+  requires(std::is_default_constructible_v<F>)
 class transform_view : public rng::view_interface<transform_view<V, F>> {
 public:
   template <rng::viewable_range R>

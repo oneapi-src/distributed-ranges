@@ -20,7 +20,7 @@ struct AOS_Struct {
 #ifndef DRISHMEM
 struct OpsAOS {
 
-  using dist_vec_type = xhp::distributed_vector<AOS_Struct>;
+  using dist_vec_type = xp::distributed_vector<AOS_Struct>;
   using vec_type = std::vector<AOS_Struct>;
 
   OpsAOS(std::size_t n) : dist_vec(n), vec(n) {
@@ -202,7 +202,7 @@ auto check_mutate_view_message(auto &ops, rng::range auto &&ref,
   auto negate = [](auto &&val) { val = -val; };
   auto input_vector = ops.vec;
   std::vector input_view(ref.begin(), ref.end());
-  xhp::for_each(actual, negate);
+  xp::for_each(actual, negate);
   rng::for_each(ref, negate);
 
   // Check mutated view
@@ -224,14 +224,14 @@ auto gtest_result(const auto &message) {
   }
 }
 
-auto equal(rng::range auto &&ref, rng::range auto &&actual,
-           std::string title = " ") {
+auto equal_gtest(rng::range auto &&ref, rng::range auto &&actual,
+                 std::string title = " ") {
   return gtest_result(equal_message(ref, actual, title));
 }
 
 template <rng::range Rng>
-auto equal(std::initializer_list<rng::range_value_t<Rng>> ref, Rng &&actual,
-           std::string title = " ") {
+auto equal_gtest(std::initializer_list<rng::range_value_t<Rng>> ref,
+                 Rng &&actual, std::string title = " ") {
   return gtest_result(
       equal_message(std::vector<rng::range_value_t<Rng>>(ref), actual, title));
 }
@@ -295,12 +295,12 @@ concept streamable = requires(std::ostream &os, T value) {
   { os << value } -> std::convertible_to<std::ostream &>;
 };
 
-namespace dr::mhp {
+namespace dr::mp {
 
 // gtest relies on ADL to find the printer
 template <typename T, typename B>
 std::ostream &operator<<(std::ostream &os,
-                         const xhp::distributed_vector<T, B> &dist) {
+                         const xp::distributed_vector<T, B> &dist) {
   os << "{ ";
   bool first = true;
   for (const auto &val : dist) {
@@ -320,19 +320,19 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 template <typename T, typename B>
-bool operator==(const xhp::distributed_vector<T, B> &dist_vec,
+bool operator==(const xp::distributed_vector<T, B> &dist_vec,
                 const std::vector<T> &local_vec) {
   return is_equal(local_vec, dist_vec);
 }
 
-} // namespace dr::mhp
+} // namespace dr::mp
 
-namespace dr::shp {
+namespace dr::sp {
 
 // gtest relies on ADL to find the printer
 template <typename T>
 std::ostream &operator<<(std::ostream &os,
-                         const xhp::distributed_vector<T> &dist) {
+                         const xp::distributed_vector<T> &dist) {
   os << "{ ";
   bool first = true;
   for (const auto &val : dist) {
@@ -352,12 +352,12 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 template <typename T>
-bool operator==(const xhp::distributed_vector<T> &dist_vec,
+bool operator==(const xp::distributed_vector<T> &dist_vec,
                 const std::vector<T> &local_vec) {
   return is_equal(dist_vec, local_vec);
 }
 
-} // namespace dr::shp
+} // namespace dr::sp
 
 namespace DR_RANGES_NAMESPACE {
 

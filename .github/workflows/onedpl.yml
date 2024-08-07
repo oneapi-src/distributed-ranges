@@ -39,4 +39,4 @@ jobs:
         name: log-pvc-impi-icpx
         path: |
           dr/build/CMakeCache.txt
-          dr/build/test/distributed-ranges/shp/*.log
+          dr/build/test/distributed-ranges/sp/*.log
