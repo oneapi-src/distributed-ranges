@@ -262,13 +262,18 @@ auto create_distributed(dr::sp::csr_matrix_view<T, I> local_mat,
 }
 
 template <typename T, typename I = std::size_t>
-auto mmread(std::string file_path, const matrix_partition &partition,
-            bool one_indexed = true) {
+auto read_csr(std::string file_path, bool one_indexed = true) {
   auto m = __detail::mmread<T, I>(file_path, one_indexed);
   auto shape = m.shape();
   auto nnz = m.size();
 
-  auto local_mat = __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
+  return __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
+}
+
+template <typename T, typename I = std::size_t>
+auto mmread(std::string file_path, const matrix_partition &partition,
+            bool one_indexed = true) {
+  auto local_mat = read_csr<T>(file_path, one_indexed);
 
   auto a = create_distributed(local_mat, partition);
 

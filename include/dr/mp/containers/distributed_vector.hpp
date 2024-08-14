@@ -276,6 +276,14 @@ public:
 
   void fence() { backend.fence(); }
 
+  auto segment_size() const {
+    return segment_size_;
+  }
+
+  auto get_segment_offset(std::size_t segment_id) const {
+    return segment_id * segment_size_;
+  }
+
 private:
   void init(auto size, auto dist) {
     size_ = size;

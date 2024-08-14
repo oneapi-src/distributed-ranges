@@ -11,7 +11,12 @@
 #include <dr/detail/index.hpp>
 
 namespace dr::sp {
-
+template<typename T>
+  concept getable = requires(T x)
+  {
+    std::get<0>(x); 
+    std::get<1>(x);
+  };
 template <typename T, typename I = std::size_t> class matrix_entry {
 public:
   using index_type = I;
@@ -28,6 +33,7 @@ public:
       : index_(index), value_(std::forward<U>(value)) {}
 
   template <typename Entry>
+    requires(getable<Entry>)
   matrix_entry(Entry &&entry)
       : index_(std::get<0>(entry)), value_(std::get<1>(entry)) {}
 
