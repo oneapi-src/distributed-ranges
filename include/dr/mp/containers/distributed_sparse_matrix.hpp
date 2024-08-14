@@ -147,12 +147,7 @@ private:
 
   friend dsm_segment_iterator<distributed_sparse_matrix>;
   std::size_t get_row_size(std::size_t rank) {
-    std::size_t start_index = row_offsets_[rank];
-    std::size_t end_index = nnz_;
-    if (rank + 1 < row_offsets_.size()) {
-      end_index = row_offsets_[rank + 1];
-    }
-    return end_index - start_index;
+    return row_sizes_[rank];
   }
 
   void init(dr::sp::csr_matrix_view<T, I> csr_view, auto dist) {
@@ -178,18 +173,21 @@ private:
     assert(*csr_view.rowptr_data() == 0);
     for (int i = 0; i < default_comm().size(); i++) {
       auto first_index = vals_data_->get_segment_offset(i);
+      auto last_index = vals_data_->get_segment_offset(i + 1) - 1;
       auto lower_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], first_index)) - 1;
+      auto higher_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], last_index));
       row_offsets_.push_back(lower_limit);
+      row_sizes_.push_back(higher_limit - lower_limit);
     }
 
-    auto last_index = vals_data_->get_segment_offset(rank + 1) - 1;
-
     auto lower_limit = row_offsets_[rank];
-    auto higher_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], last_index));
-    row_size_ = higher_limit - lower_limit;
+    row_size_ = row_sizes_[rank];
+    if (row_size_ != get_row_size(rank)) {
+      fmt::print("hmmmm? {} {} {} {}\n", rank, lower_limit, row_size_, get_row_size(rank));
+    }
     
     rows_data_ = static_cast<I *>(rows_backend_.allocate(row_size_ * sizeof(I)));
-    std::copy(csr_view.rowptr_data() + lower_limit, csr_view.rowptr_data() + higher_limit, rows_data_);
+    std::copy(csr_view.rowptr_data() + lower_limit, csr_view.rowptr_data() + lower_limit + row_size_, rows_data_);
     std::size_t segment_index = 0;
     segment_size_ = vals_data_->segment_size();
     assert(segment_size_ == cols_data_->segment_size());
@@ -205,6 +203,8 @@ private:
   std::size_t segment_size_ = 0;
   std::size_t row_size_ = 0;
   std::vector<std::size_t> row_offsets_;
+  std::vector<std::size_t> row_sizes_;
+
 
   index_type *rows_data_ = nullptr;
   BackendT rows_backend_;
