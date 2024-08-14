@@ -26,7 +26,7 @@ nodeenv==1.9.1
 packaging==24.1
 platformdirs==4.2.2
 pre-commit==3.8.0
-pydata-sphinx-theme==0.15.3
+pydata-sphinx-theme==0.15.4
 pyenchant==3.2.2
 Pygments==2.18.0
 python-debian==0.1.49
