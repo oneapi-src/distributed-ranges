@@ -222,3 +222,72 @@ TYPED_TEST(Halo3, dv_halos_prev_0) {
     EXPECT_EQ(*(dv.begin() + 5).local(), 6);
   }
 }
+
+TYPED_TEST(Halo3, halo_wide) {
+  TypeParam dv(9, dr::mp::distribution().halo(3));
+  fill(dv, 7);
+  dv.halo().exchange();
+
+  fill(dv, 13);
+  switch (dr::mp::default_comm().rank()) {
+    case 0:
+      EXPECT_EQ(*(dv.begin() + 0).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 2).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 3).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 4).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 5).local(), 7);
+      break;
+    case 1:
+      EXPECT_EQ(*(dv.begin() + 0).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 1).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 2).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 3).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 4).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 5).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 6).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 7).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 8).local(), 7);
+      break;
+    case 2:
+      EXPECT_EQ(*(dv.begin() + 3).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 4).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 5).local(), 7);
+      EXPECT_EQ(*(dv.begin() + 6).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 7).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 8).local(), 13);
+      break;
+  }
+
+  dv.halo().exchange();
+
+  switch (dr::mp::default_comm().rank()) {
+    case 0:
+      EXPECT_EQ(*(dv.begin() + 0).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 2).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 3).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 4).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 5).local(), 13);
+      break;
+    case 1:
+      EXPECT_EQ(*(dv.begin() + 0).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 2).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 3).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 4).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 5).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 6).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 7).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 8).local(), 13);
+      break;
+    case 2:
+      EXPECT_EQ(*(dv.begin() + 3).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 4).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 5).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 6).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 7).local(), 13);
+      EXPECT_EQ(*(dv.begin() + 8).local(), 13);
+      break;
+  }
+}

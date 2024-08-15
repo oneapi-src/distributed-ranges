@@ -17,6 +17,7 @@ namespace dr::mp {
   };
 
   struct halo_bounds {
+    // How many values before and after the data segment are in halo
     std::size_t prev = 0, next = 0;
     bool periodic = false;
   };
@@ -157,6 +158,7 @@ namespace dr::mp {
         g.pack();
         g.receive = false;
         DRLOG("sending: {}", g.request_index);
+//        std::cout << "send(" << g.data_pointer() << ", " << g.data_size() << ", " << g.rank() << ", <tag>, " << &requests_[g.request_index] << ")\n";
         comm_.isend(g.data_pointer(), g.data_size(), g.rank(), g.tag(),
                     &requests_[g.request_index]);
       }
@@ -166,6 +168,7 @@ namespace dr::mp {
       for (auto &g: receives) {
         g.receive = true;
         DRLOG("receiving: {}", g.request_index);
+//        std::cout << "recv(" << g.data_pointer() << ", " << g.data_size() << ", " << g.rank() << ", <tag>, " << &requests_[g.request_index] << ")\n";
         comm_.irecv(g.data_pointer(), g.data_size(), g.rank(), g.tag(),
                     &requests_[g.request_index]);
       }

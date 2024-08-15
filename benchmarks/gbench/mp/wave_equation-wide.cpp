@@ -72,18 +72,17 @@ double initial_elev(double x, double y, double lx, double ly) {
 }
 
 void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
-         double g, double h, double dx_inv, double dy_inv, double dt) {
+         double g, double h, double dx_inv, double dy_inv, double dt, unsigned long redundancy) {
   /**
    * Evaluate right hand side of the equations
    */
-  dr::mp::halo(e).exchange_finalize();
   auto rhs_dedx = [dt, g, dx_inv](auto v) {
     auto [in, out] = v;
     out(0, 0) = -dt * g * (in(1, 0) - in(0, 0)) * dx_inv;
   };
   {
-    std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{e.extent(0) - 1, e.extent(1)};
+    std::array<std::size_t, 2> start{1 + redundancy, 0};
+    std::array<std::size_t, 2> end{e.extent(0) - 1 - redundancy, e.extent(1)};
     auto e_view = dr::mp::views::submdspan(e.view(), start, end);
     auto dudt_view = dr::mp::views::submdspan(dudt.view(), start, end);
     dr::mp::stencil_for_each(rhs_dedx, e_view, dudt_view);
@@ -94,15 +93,13 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * g * (in(0, 0) - in(0, -1)) * dy_inv;
   };
   {
-    std::array<std::size_t, 2> start{0, 1};
-    std::array<std::size_t, 2> end{e.extent(0), e.extent(1)};
+    std::array<std::size_t, 2> start{0 + redundancy, 1};
+    std::array<std::size_t, 2> end{e.extent(0) - redundancy, e.extent(1)};
     auto e_view = dr::mp::views::submdspan(e.view(), start, end);
     auto dvdt_view = dr::mp::views::submdspan(dvdt.view(), start, end);
     dr::mp::stencil_for_each(rhs_dedy, e_view, dvdt_view);
   }
 
-  dr::mp::halo(u).exchange_finalize();
-  dr::mp::halo(v).exchange_finalize();
   auto rhs_div = [dt, h, dx_inv, dy_inv](auto args) {
     auto [u, v, out] = args;
     auto dudx = (u(0, 0) - u(-1, 0)) * dx_inv;
@@ -110,8 +107,8 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * h * (dudx + dvdy);
   };
   {
-    std::array<std::size_t, 2> start{1, 0};
-    std::array<std::size_t, 2> end{u.extent(0), u.extent(1)};
+    std::array<std::size_t, 2> start{1 + redundancy, 0};
+    std::array<std::size_t, 2> end{u.extent(0) - redundancy, u.extent(1)};
     auto u_view = dr::mp::views::submdspan(u.view(), start, end);
     auto v_view = dr::mp::views::submdspan(v.view(), start, end);
     auto dedt_view = dr::mp::views::submdspan(dedt.view(), start, end);
@@ -316,7 +313,7 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
 //#define DEBUG
 
 #ifdef DEBUG
-  void debug_print_arr(std::size_t n, std::size_t m, const Array& arr, const std::string& str) {
+void debug_print_arr(std::size_t n, std::size_t m, const Array& arr, const std::string& str) {
   std::cout << "Array " << str << ":\n";
   std::cout << arr << "\n";
 }
@@ -333,7 +330,7 @@ int run(
   const double ymin = -1, ymax = 1;
   ArakawaCGrid grid(xmin, xmax, ymin, ymax, nx, ny);
 
-  std::size_t halo_radius = 1;
+  std::size_t halo_radius = 1 * 2; // 1 - halo size, 2 - redundancy
   auto dist = dr::mp::distribution().halo(halo_radius);
 
   // statistics
@@ -400,6 +397,28 @@ int run(
   Array dudt({nx + 1, ny}, dist);
   Array dvdt({nx + 1, ny + 1}, dist);
 
+  // TODO: figure out smaller views for each of arrays from above
+  // First phase runs on normal arrays
+  // Second phase runs on smaller arrays (smaller only by 1 (redundancy)), but only on smaller in first dimension
+  std::array<std::size_t, 2> smaller_view_start_e{1, 0};
+  std::array<std::size_t, 2> smaller_view_end_e{e.extent(0) - 1, e.extent(1)};
+  std::array<std::size_t, 2> smaller_view_start_u{1, 0};
+  std::array<std::size_t, 2> smaller_view_end_u{u.extent(0) - 1, u.extent(1)};
+  std::array<std::size_t, 2> smaller_view_start_v{1, 0};
+  std::array<std::size_t, 2> smaller_view_end_v{v.extent(0) - 1, v.extent(1)};
+  auto e_smaller_view = dr::mp::views::submdspan(e.view(), smaller_view_start_e, smaller_view_end_e);
+  auto u_smaller_view = dr::mp::views::submdspan(u.view(), smaller_view_start_u, smaller_view_end_u);
+  auto v_smaller_view = dr::mp::views::submdspan(v.view(), smaller_view_start_v, smaller_view_end_v);
+  auto e1_smaller_view = dr::mp::views::submdspan(e1.view(), smaller_view_start_e, smaller_view_end_e);
+  auto u1_smaller_view = dr::mp::views::submdspan(u1.view(), smaller_view_start_u, smaller_view_end_u);
+  auto v1_smaller_view = dr::mp::views::submdspan(v1.view(), smaller_view_start_v, smaller_view_end_v);
+  auto e2_smaller_view = dr::mp::views::submdspan(e2.view(), smaller_view_start_e, smaller_view_end_e);
+  auto u2_smaller_view = dr::mp::views::submdspan(u2.view(), smaller_view_start_u, smaller_view_end_u);
+  auto v2_smaller_view = dr::mp::views::submdspan(v2.view(), smaller_view_start_v, smaller_view_end_v);
+  auto dedt_smaller_view = dr::mp::views::submdspan(dedt.view(), smaller_view_start_e, smaller_view_end_e);
+  auto dudt_smaller_view = dr::mp::views::submdspan(dudt.view(), smaller_view_start_u, smaller_view_end_u);
+  auto dvdt_smaller_view = dr::mp::views::submdspan(dvdt.view(), smaller_view_start_v, smaller_view_end_v);
+
   dr::mp::fill(dedt, 0);
   dr::mp::fill(dudt, 0);
   dr::mp::fill(dvdt, 0);
@@ -423,6 +442,15 @@ int run(
   dr::mp::halo(e).exchange_begin();
   dr::mp::halo(u).exchange_begin();
   dr::mp::halo(v).exchange_begin();
+
+//  if (!fused_kernels) {
+//    dr::mp::halo(e1).exchange_begin();
+//    dr::mp::halo(u1).exchange_begin();
+//    dr::mp::halo(v1).exchange_begin();
+//    dr::mp::halo(e2).exchange_begin();
+//    dr::mp::halo(u2).exchange_begin();
+//    dr::mp::halo(v2).exchange_begin();
+//  }
 
   auto add = [](auto ops) { return ops.first + ops.second; };
   auto max = [](double x, double y) { return std::max(x, y); };
@@ -483,35 +511,87 @@ int run(
              dt);
       stage3(u, v, e, u2, v2, e2, g, h, grid.dx_inv, grid.dy_inv, dt);
     } else {
-      // RK stage 1: u1 = u + dt*rhs(u)
-      rhs(u, v, e, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt);
-      dr::mp::transform(dr::mp::views::zip(u, dudt), u1.begin(), add);
-      dr::mp::halo(u1).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(v, dvdt), v1.begin(), add);
-      dr::mp::halo(v1).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(e, dedt), e1.begin(), add);
-      dr::mp::halo(e1).exchange_begin();
+      // First phase without communication
+      if (i % 2 == 1) {
+        // RK stage 1: u1 = u + dt*rhs(u)
+        rhs(u, v, e, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt, 0);
+        dr::mp::transform(dr::mp::views::zip(u, dudt), u1.begin(), add);
+        dr::mp::transform(dr::mp::views::zip(v, dvdt), v1.begin(), add);
+        dr::mp::transform(dr::mp::views::zip(e, dedt), e1.begin(), add);
+//        dr::mp::transform(dr::mp::views::zip(u_smaller_view, dudt_smaller_view), u1_smaller_view.begin(), add);
+//        dr::mp::transform(dr::mp::views::zip(v_smaller_view, dvdt_smaller_view), v1_smaller_view.begin(), add);
+//        dr::mp::transform(dr::mp::views::zip(e_smaller_view, dedt_smaller_view), e1_smaller_view.begin(), add);
 
-      // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
-      rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt);
-      dr::mp::transform(dr::mp::views::zip(u, u1, dudt), u2.begin(),
-                        rk_update2);
-      dr::mp::halo(u2).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(v, v1, dvdt), v2.begin(),
-                        rk_update2);
-      dr::mp::halo(v2).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(e, e1, dedt), e2.begin(),
-                        rk_update2);
-      dr::mp::halo(e2).exchange_begin();
+        // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
+        rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt, 0);
+        dr::mp::transform(dr::mp::views::zip(u, u1, dudt), u2.begin(), rk_update2);
+        dr::mp::transform(dr::mp::views::zip(v, v1, dvdt), v2.begin(), rk_update2);
+        dr::mp::transform(dr::mp::views::zip(e, e1, dedt), e2.begin(), rk_update2);
+//        dr::mp::transform(dr::mp::views::zip(u_smaller_view, u1_smaller_view, dudt_smaller_view),u2_smaller_view.begin(), rk_update2);
+//        dr::mp::transform(dr::mp::views::zip(v_smaller_view, v1_smaller_view, dvdt_smaller_view),v2_smaller_view.begin(), rk_update2);
+//        dr::mp::transform(dr::mp::views::zip(e_smaller_view, e1_smaller_view, dedt_smaller_view),e2_smaller_view.begin(), rk_update2);
 
-      // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
-      rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt);
-      dr::mp::transform(dr::mp::views::zip(u, u2, dudt), u.begin(), rk_update3);
-      dr::mp::halo(u).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
-      dr::mp::halo(v).exchange_begin();
-      dr::mp::transform(dr::mp::views::zip(e, e2, dedt), e.begin(), rk_update3);
-      dr::mp::halo(e).exchange_begin();
+        // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
+        rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt, 0);
+        dr::mp::transform(dr::mp::views::zip(u, u2, dudt), u.begin(), rk_update3);
+        dr::mp::transform(dr::mp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
+        dr::mp::transform(dr::mp::views::zip(e, e2, dedt), e.begin(), rk_update3);
+//        dr::mp::transform(dr::mp::views::zip(u_smaller_view, u2_smaller_view, dudt_smaller_view),u_smaller_view.begin(), rk_update3);
+//        dr::mp::transform(dr::mp::views::zip(v_smaller_view, v2_smaller_view, dvdt_smaller_view),v_smaller_view.begin(), rk_update3);
+//        dr::mp::transform(dr::mp::views::zip(e_smaller_view, e2_smaller_view, dedt_smaller_view),e_smaller_view.begin(), rk_update3);
+      } else {
+        dr::mp::halo(e).exchange_finalize();
+        dr::mp::halo(u).exchange_finalize();
+        dr::mp::halo(v).exchange_finalize();
+        // Second phase with communication
+        // RK stage 1: u1 = u + dt*rhs(u)
+        rhs(u, v, e, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt, 0);
+//        dr::mp::transform(dr::mp::views::zip(u, dudt), u1.begin(), add);
+//        dr::mp::transform(dr::mp::views::zip(v, dvdt), v1.begin(), add);
+//        dr::mp::transform(dr::mp::views::zip(e, dedt), e1.begin(), add);
+        dr::mp::transform(dr::mp::views::zip(u_smaller_view, dudt_smaller_view), u1_smaller_view.begin(), add);
+        dr::mp::transform(dr::mp::views::zip(v_smaller_view, dvdt_smaller_view), v1_smaller_view.begin(), add);
+        dr::mp::transform(dr::mp::views::zip(e_smaller_view, dedt_smaller_view), e1_smaller_view.begin(), add);
+
+        dr::mp::halo(u1).exchange_begin();
+        dr::mp::halo(v1).exchange_begin();
+        dr::mp::halo(e1).exchange_begin();
+
+        dr::mp::halo(u1).exchange_finalize();
+        dr::mp::halo(v1).exchange_finalize();
+        dr::mp::halo(e1).exchange_finalize();
+
+        // RK stage 2: u2 = 0.75*u + 0.25*(u1 + dt*rhs(u1))
+        rhs(u1, v1, e1, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt, 0);
+//        dr::mp::transform(dr::mp::views::zip(u, u1, dudt), u2.begin(), rk_update2);
+//        dr::mp::transform(dr::mp::views::zip(v, v1, dvdt), v2.begin(), rk_update2);
+//        dr::mp::transform(dr::mp::views::zip(e, e1, dedt), e2.begin(), rk_update2);
+        dr::mp::transform(dr::mp::views::zip(u_smaller_view, u1_smaller_view, dudt_smaller_view),u2_smaller_view.begin(), rk_update2);
+        dr::mp::transform(dr::mp::views::zip(v_smaller_view, v1_smaller_view, dvdt_smaller_view),v2_smaller_view.begin(), rk_update2);
+        dr::mp::transform(dr::mp::views::zip(e_smaller_view, e1_smaller_view, dedt_smaller_view),e2_smaller_view.begin(), rk_update2);
+
+        dr::mp::halo(u2).exchange_begin();
+        dr::mp::halo(v2).exchange_begin();
+        dr::mp::halo(e2).exchange_begin();
+
+        dr::mp::halo(u2).exchange_finalize();
+        dr::mp::halo(v2).exchange_finalize();
+        dr::mp::halo(e2).exchange_finalize();
+
+        // RK stage 3: u3 = 1/3*u + 2/3*(u2 + dt*rhs(u2))
+        rhs(u2, v2, e2, dudt, dvdt, dedt, g, h, grid.dx_inv, grid.dy_inv, dt, 0);
+//        dr::mp::transform(dr::mp::views::zip(u, u2, dudt), u.begin(), rk_update3);
+//        dr::mp::transform(dr::mp::views::zip(v, v2, dvdt), v.begin(), rk_update3);
+//        dr::mp::transform(dr::mp::views::zip(e, e2, dedt), e.begin(), rk_update3);
+        dr::mp::transform(dr::mp::views::zip(u_smaller_view, u2_smaller_view, dudt_smaller_view),u_smaller_view.begin(), rk_update3);
+        dr::mp::transform(dr::mp::views::zip(v_smaller_view, v2_smaller_view, dvdt_smaller_view),v_smaller_view.begin(), rk_update3);
+        dr::mp::transform(dr::mp::views::zip(e_smaller_view, e2_smaller_view, dedt_smaller_view),e_smaller_view.begin(), rk_update3);
+
+        dr::mp::halo(u).exchange_begin();
+        dr::mp::halo(v).exchange_begin();
+        dr::mp::halo(e).exchange_begin();
+
+      }
 #ifdef DEBUG
       std::cout << "Iter " << i << "\n";
       debug_print_arr(nx + 1, ny, e, "e");
