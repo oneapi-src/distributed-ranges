@@ -4,8 +4,8 @@
 
 FetchContent_Declare(
   dpl
-  GIT_REPOSITORY https://github.com/lslusarczyk/oneDPL.git
-  GIT_TAG fix-unused)
+  GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
+  GIT_TAG main)
 FetchContent_MakeAvailable(dpl)
 
 # mpi:  multi-process
