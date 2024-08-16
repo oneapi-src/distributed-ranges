@@ -68,7 +68,7 @@ jobs:
   pvc_unit_tests:
     # runs-on: gkpvc
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 120
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -98,12 +98,14 @@ jobs:
           cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
           printenv > build/envdump.txt
       # change this step to building just tests once unittest job is back
-      - name: Build everything
+#     - name: Build everything
+#       run: |
+#         . /opt/intel/oneapi/setvars.sh
+#         make -C build -j
+      - name: Build tests
         run: |
           . /opt/intel/oneapi/setvars.sh
-          make -C build -j
-#      - name: Build tests
-#        run: cmake --build build --target all-tests -- -j
+          cmake --build build --target all-tests -- -j
       - name: Unit tests
         # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
         run: |
