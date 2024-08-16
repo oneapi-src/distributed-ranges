@@ -95,8 +95,8 @@ jobs:
       - name: Generate
         run: |
           . /opt/intel/oneapi/setvars.sh
-          printenv > build/envdump.txt
           cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+          printenv > build/envdump.txt
       # change this step to building just tests once unittest job is back
       - name: Build everything
         run: |
