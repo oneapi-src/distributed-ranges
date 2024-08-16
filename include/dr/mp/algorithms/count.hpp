@@ -39,39 +39,29 @@ auto count_if(std::size_t root, bool root_provided, DR &&dr, auto &&pred) {
     return count_type{};
   }
 
-  if (aligned(dr)) {
-    dr::drlog.debug("Parallel count\n");
+  dr::drlog.debug("Parallel count\n");
 
-    // Count within the local segments
-    auto count = [=](auto &&r) {
-      assert(rng::size(r) > 0);
-      return count_if_local(r, pred);
-    };
-    auto locals = rng::views::transform(local_segments(dr), count);
-    auto local = add_counts(locals);
+  // Count within the local segments
+  auto count = [=](auto &&r) {
+    assert(rng::size(r) > 0);
+    return count_if_local(r, pred);
+  };
+  auto locals = rng::views::transform(local_segments(dr), count);
+  auto local = add_counts(locals);
 
-    std::vector<count_type> all(comm.size());
-    if (root_provided) {
-      // Everyone gathers to root, only root adds up the counts
-      comm.gather(local, std::span{all}, root);
-      if (root == comm.rank()) {
-        return add_counts(all);
-      } else {
-        return count_type{};
-      }
-    } else {
-      // Everyone gathers and everyone adds up the counts
-      comm.all_gather(local, all);
+  std::vector<count_type> all(comm.size());
+  if (root_provided) {
+    // Everyone gathers to root, only root adds up the counts
+    comm.gather(local, std::span{all}, root);
+    if (root == comm.rank()) {
       return add_counts(all);
+    } else {
+      return count_type{};
     }
   } else {
-    dr::drlog.debug("Serial count\n");
-    count_type result{};
-    if (!root_provided || root == comm.rank()) {
-      result = add_counts(dr);
-    }
-    mp::barrier();
-    return result;
+    // Everyone gathers and everyone adds up the counts
+    comm.all_gather(local, all);
+    return add_counts(all);
   }
 }
 
