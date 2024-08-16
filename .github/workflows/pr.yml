@@ -91,7 +91,7 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt-get update -y
       - name: Install oneAPI
-        run: sudo apt-get install intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel -y
+        run: sudo apt-get install intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-hpckit -y
       - name: Generate
         run: |
           . /opt/intel/oneapi/setvars.sh
