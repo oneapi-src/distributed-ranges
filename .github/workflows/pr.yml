@@ -105,7 +105,7 @@ jobs:
       - name: Build tests
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake --build build --target all-tests -- -j
+          cmake --build build --target all-tests -- -j 4
       - name: Unit tests
         # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
         run: |
