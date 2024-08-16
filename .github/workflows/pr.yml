@@ -66,7 +66,8 @@ jobs:
 #          build/examples/mp/*.log
 
   pvc_unit_tests:
-    runs-on: gkpvc
+    # runs-on: gkpvc
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       # test everything, even if one fails
@@ -82,18 +83,25 @@ jobs:
       FI_PROVIDER: tcp
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Install oneAPI
+        run: sudo apt-get install intel-oneapi-compiler-dpcpp-cpp -y
       - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
-      - name: Save environment dump
-        run: printenv > build/envdump.txt
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          printenv > build/envdump.txt
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
       # change this step to building just tests once unittest job is back
       - name: Build everything
-        run: make -C build -j
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          make -C build -j
 #      - name: Build tests
 #        run: cmake --build build --target all-tests -- -j
       - name: Unit tests
         # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
-        run: ctest --test-dir build -L TESTLABEL -j 4
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          ctest --test-dir build -L TESTLABEL -j 4
       - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         if: always()
         with:
