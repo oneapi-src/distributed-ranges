@@ -25,11 +25,12 @@ int main(int argc, char **argv) {
 
   {
     mp::distributed_sparse_matrix<float, long> m(local_data);
+    fmt::print("{}\n", m.size());
     for (int i = 0; i < dr::mp::default_comm().size(); i++) {
       if (dr::mp::default_comm().rank() == i) {
         auto csr_iter = local_data.begin();
         int j = 0;
-        fmt::print("{}\n", i);
+        // fmt::print("{}\n", i);
         for (auto [index, val]: m) {
           auto [m, n] = index;
           

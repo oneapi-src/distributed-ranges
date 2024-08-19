@@ -2,15 +2,28 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
-#include <dr/mp/containers/sparse_matrix_segment.hpp>
+#include <dr/mp/containers/matrix_formats/csr_matrix_distribution.hpp>
 #include<dr/sp/containers/matrix_entry.hpp>
 #include<dr/sp/views/csr_matrix_view.hpp>
 
 
 namespace dr::mp {
+template <typename T>
+concept matrix_distibution =
+    requires(T t) {
+      {t.fence()} -> std::same_as<void>;
+      { t.segments() } -> rng::random_access_range;
+      {t.shape().first} -> std::convertible_to<std::size_t>;
+      {t.shape().second} -> std::convertible_to<std::size_t>;
+      {t.nnz()} -> std::same_as<std::size_t>;
+      {t.get_segment_from_offset(int())} -> std::same_as<std::size_t>;
+      {t.get_id_in_segment(int())} -> std::same_as<std::size_t>;
+      T(dr::sp::csr_matrix_view<typename T::elem_type, typename T::index_type>(), distribution());
+    };
 
-
-template <typename T, typename I, class BackendT = MpiBackend> class distributed_sparse_matrix {
+template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_matrix_distribution<T, I, BackendT>>
+requires(matrix_distibution<MatrixDistrT>)
+class distributed_sparse_matrix {
 
 public:
   using value_type = dr::sp::matrix_entry<T, I>;
@@ -82,17 +95,16 @@ public:
     }
 
     auto operator*() const {
-      auto segment_size = parent_->segment_size_;
-      return parent_
-          ->segments()[offset_ / segment_size][offset_ % segment_size];
+      auto segment_id = parent_->distribution_.get_segment_from_offset(offset_);
+      auto id_in_segment = parent_->distribution_.get_id_in_segment(offset_);
+      return parent_->segments()[segment_id][id_in_segment];
     }
     auto operator[](difference_type n) const { return *(*this + n); }
 
     auto local() {
-      auto segment_size = parent_->segment_size_;
-      return (parent_->segments()[offset_ / segment_size].begin() +
-              offset_ % segment_size)
-          .local();
+      auto segment_id = parent_->distribution_.get_segment_from_offset(offset_);
+      auto id_in_segment = parent_->distribution_.get_id_in_segment(offset_);
+      return (parent_->segments()[segment_id].begin() + id_in_segment).local();
     }
 
     auto segments() {
@@ -109,111 +121,29 @@ public:
   distributed_sparse_matrix(distributed_sparse_matrix &&) { assert(false); }
 
   /// Constructor
-  distributed_sparse_matrix(dr::sp::csr_matrix_view<T, I> csr_view, distribution dist = distribution()) {
-    init(csr_view, dist);
-  }
-
-  ~distributed_sparse_matrix() {
-    if (!finalized()) {
-      fence();
-      if (rows_data_ != nullptr) {
-        rows_backend_.deallocate(rows_data_, row_size_ * sizeof(index_type));
-      }
-
-    //   delete halo_; TODO
-    }
-  }
+  distributed_sparse_matrix(dr::sp::csr_matrix_view<T, I> csr_view, distribution dist = distribution()): distribution_(csr_view, dist) {}
 
   /// Returns iterator to beginning
   auto begin() const { return iterator(this, 0); }
   /// Returns iterator to end
-  auto end() const { return begin() + nnz_; }
+  auto end() const { return begin() + distribution_.nnz(); }
 
   /// Returns size
-  auto size() const { return nnz_; }
+  auto size() const { return distribution_.nnz(); }
 
-  auto shape() const { return shape_; }
+  auto shape() const { return distribution_.shape(); }
   /// Returns reference using index
   auto operator[](difference_type n) const { return *(begin() + n); }
 //   auto &halo() const { return *halo_; } TODO
 
-  auto segments() const { return rng::views::all(segments_); }
+  auto segments() const { return distribution_.segments(); }
 
   void fence() { 
-    rows_backend_.fence(); // it does not matter which backend we choose, since all of them share comm
+    distribution_.fence();
    }
 
 private:
+  MatrixDistrT distribution_;
 
-  friend dsm_segment_iterator<distributed_sparse_matrix>;
-  std::size_t get_row_size(std::size_t rank) {
-    return row_sizes_[rank];
-  }
-
-  void init(dr::sp::csr_matrix_view<T, I> csr_view, auto dist) {
-    nnz_ = csr_view.size();
-    distribution_ = dist;
-    shape_ = csr_view.shape();
-    // determine the distribution of data
-    // auto hb = dist.halo();
-    std::size_t gran = dist.granularity();
-    // TODO: make this an error that is reported back to user
-    assert(nnz_ % gran == 0 && "size must be a multiple of the granularity");
-    // assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
-    // assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
-
-
-    auto rank = rows_backend_.getrank();
-    vals_data_ = std::make_shared<distributed_vector<T>>(nnz_);
-    cols_data_ = std::make_shared<distributed_vector<I>>(nnz_);
-
-    dr::mp::copy(std::ranges::subrange(csr_view.values_data(), csr_view.values_data() + nnz_), vals_data_->begin());
-    dr::mp::copy(std::ranges::subrange(csr_view.colind_data(), csr_view.colind_data() + nnz_), cols_data_->begin());
-    
-    assert(*csr_view.rowptr_data() == 0);
-    for (int i = 0; i < default_comm().size(); i++) {
-      auto first_index = vals_data_->get_segment_offset(i);
-      auto last_index = vals_data_->get_segment_offset(i + 1) - 1;
-      auto lower_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], first_index)) - 1;
-      auto higher_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], last_index));
-      row_offsets_.push_back(lower_limit);
-      row_sizes_.push_back(higher_limit - lower_limit);
-    }
-
-    auto lower_limit = row_offsets_[rank];
-    row_size_ = row_sizes_[rank];
-    if (row_size_ != get_row_size(rank)) {
-      fmt::print("hmmmm? {} {} {} {}\n", rank, lower_limit, row_size_, get_row_size(rank));
-    }
-    
-    rows_data_ = static_cast<I *>(rows_backend_.allocate(row_size_ * sizeof(I)));
-    std::copy(csr_view.rowptr_data() + lower_limit, csr_view.rowptr_data() + lower_limit + row_size_, rows_data_);
-    std::size_t segment_index = 0;
-    segment_size_ = vals_data_->segment_size();
-    assert(segment_size_ == cols_data_->segment_size());
-    for (std::size_t i = 0; i < nnz_; i += segment_size_) {
-      segments_.emplace_back(this, segment_index++,
-                             std::min(segment_size_, nnz_ - i), segment_size_);
-    }
-      
-    fence();
-  }
-
-
-  std::size_t segment_size_ = 0;
-  std::size_t row_size_ = 0;
-  std::vector<std::size_t> row_offsets_;
-  std::vector<std::size_t> row_sizes_;
-
-
-  index_type *rows_data_ = nullptr;
-  BackendT rows_backend_;
-
-  distribution distribution_;
-  dr::index<I> shape_;
-  std::size_t nnz_;
-  std::vector<dsm_segment<distributed_sparse_matrix>> segments_;
-  std::shared_ptr<distributed_vector<T>> vals_data_;
-  std::shared_ptr<distributed_vector<I>> cols_data_;
 };
 }

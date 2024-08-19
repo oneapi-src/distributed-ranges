@@ -138,7 +138,7 @@ public:
   using map_type = T;
 
   using iterator = csr_matrix_view_iterator<T, I, TIter, IIter>;
-
+  csr_matrix_view() = default;
   csr_matrix_view(TIter values, IIter rowptr, IIter colind, key_type shape,
                   size_type nnz, size_type rank)
       : values_(values), rowptr_(rowptr), colind_(colind), shape_(shape),
