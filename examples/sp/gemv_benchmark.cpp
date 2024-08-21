@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
     sp::vector<T, sp::device_allocator<T>> y(local_mat.shape()[1], 0,
                                              allocator);
 
-    sp::__detail::destroy_csr_matrix_view(local_mat, std::allocator<T>{});
+    dr::__detail::destroy_csr_matrix_view(local_mat, std::allocator<T>{});
 
     sp::csr_matrix_view a_view(values, rowptr, colind, shape, nnz, 0);
 

@@ -19,7 +19,7 @@ namespace __detail {
 template <typename T, typename I, std::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
-auto custom_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
+auto custom_gemv(sycl::queue &q, dr::views::csr_matrix_view<T, I, Args...> a, Iter b,
                  Iter c, const std::vector<sycl::event> &dependencies = {}) {
   std::size_t wg = 32;
 
@@ -55,7 +55,7 @@ auto custom_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
 template <typename T, typename I, std::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
-auto mkl_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
+auto mkl_gemv(sycl::queue &q, dr::views::csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
               const std::vector<sycl::event> &dependencies = {}) {
 
   oneapi::mkl::sparse::matrix_handle_t a_handle;
@@ -78,7 +78,7 @@ auto mkl_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b, Iter c,
 template <typename T, typename I, std::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
-auto local_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
+auto local_gemv(sycl::queue &q, dr::views::csr_matrix_view<T, I, Args...> a, Iter b,
                 Iter c, const std::vector<sycl::event> &dependencies = {}) {
   return mkl_gemv(q, a, b, c, dependencies);
 }
@@ -88,7 +88,7 @@ auto local_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
 template <typename T, typename I, std::random_access_iterator Iter,
           typename... Args>
   requires(std::is_same_v<std::iter_value_t<Iter>, T>)
-auto local_gemv(sycl::queue &q, csr_matrix_view<T, I, Args...> a, Iter b,
+auto local_gemv(sycl::queue &q, dr::views::csr_matrix_view<T, I, Args...> a, Iter b,
                 Iter c, const std::vector<sycl::event> &dependencies = {}) {
   return custom_gemv(q, a, b, c, dependencies);
 }

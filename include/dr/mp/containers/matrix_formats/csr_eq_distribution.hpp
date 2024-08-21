@@ -2,30 +2,30 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
-#include <dr/mp/containers/matrix_formats/csr_matrix_segment.hpp>
-#include<dr/sp/containers/matrix_entry.hpp>
-#include<dr/sp/views/csr_matrix_view.hpp>
+#include <dr/mp/containers/matrix_formats/csr_eq_segment.hpp>
+#include<dr/detail/matrix_entry.hpp>
+#include<dr/views/csr_matrix_view.hpp>
 
 namespace dr::mp {
 
 template <typename T, typename I, class BackendT = MpiBackend> 
-class csr_matrix_distribution {
+class csr_eq_distribution {
 public:
-    using value_type = dr::sp::matrix_entry<T, I>;
+    using value_type = dr::matrix_entry<T, I>;
     using elem_type = T;
     using index_type = I;
     using difference_type = std::ptrdiff_t;
 
-    csr_matrix_distribution(const csr_matrix_distribution &) = delete;
-    csr_matrix_distribution &operator=(const csr_matrix_distribution &) = delete;
-    csr_matrix_distribution(csr_matrix_distribution &&) { assert(false); }
+    csr_eq_distribution(const csr_eq_distribution &) = delete;
+    csr_eq_distribution &operator=(const csr_eq_distribution &) = delete;
+    csr_eq_distribution(csr_eq_distribution &&) { assert(false); }
 
     /// Constructor
-    csr_matrix_distribution(dr::sp::csr_matrix_view<T, I> csr_view, distribution dist = distribution()) {
+    csr_eq_distribution(dr::views::csr_matrix_view<T, I> csr_view, distribution dist = distribution()) {
         init(csr_view, dist);
     }
 
-    ~csr_matrix_distribution() {
+    ~csr_eq_distribution() {
         if (!finalized()) {
         fence();
         if (rows_data_ != nullptr) {
@@ -80,12 +80,12 @@ public:
       return std::pair<std::size_t, std::size_t>(row_offsets_[rank], row_offsets_[rank] + row_sizes_[rank]);
     }
 private:
-  friend csr_segment_iterator<csr_matrix_distribution>;
+  friend csr_eq_segment_iterator<csr_eq_distribution>;
   std::size_t get_row_size(std::size_t rank) {
     return row_sizes_[rank];
   }
 
-  void init(dr::sp::csr_matrix_view<T, I> csr_view, auto dist) {
+  void init(dr::views::csr_matrix_view<T, I> csr_view, auto dist) {
     nnz_ = csr_view.size();
     distribution_ = dist;
     shape_ = csr_view.shape();
@@ -155,7 +155,7 @@ private:
   distribution distribution_;
   dr::index<size_t> shape_;
   std::size_t nnz_;
-  std::vector<csr_segment<csr_matrix_distribution>> segments_;
+  std::vector<csr_eq_segment<csr_eq_distribution>> segments_;
   std::shared_ptr<distributed_vector<T>> vals_data_;
   std::shared_ptr<distributed_vector<I>> cols_data_;
 };

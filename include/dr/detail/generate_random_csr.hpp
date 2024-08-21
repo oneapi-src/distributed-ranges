@@ -5,11 +5,11 @@
 #pragma once
 
 #include <concepts>
-#include <dr/sp/views/csr_matrix_view.hpp>
+#include <dr/views/csr_matrix_view.hpp>
 #include <map>
 #include <random>
 
-namespace dr::sp {
+namespace dr {
 
 namespace {
 
@@ -86,7 +86,7 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
     rowptr[r + 1] = nnz;
   }
 
-  return csr_matrix_view(values, rowptr, colind, shape, nnz, 0);
+  return dr::views::csr_matrix_view(values, rowptr, colind, shape, nnz, 0);
 }
 
 } // namespace dr::sp

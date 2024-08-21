@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
-#include <dr/mp/containers/matrix_formats/csr_matrix_distribution.hpp>
-#include<dr/sp/containers/matrix_entry.hpp>
-#include<dr/sp/views/csr_matrix_view.hpp>
+#include <dr/mp/containers/matrix_formats/csr_eq_distribution.hpp>
+#include<dr/detail/matrix_entry.hpp>
+#include<dr/views/csr_matrix_view.hpp>
 
 
 namespace dr::mp {
@@ -18,15 +18,15 @@ concept matrix_distibution =
       {t.nnz()} -> std::same_as<std::size_t>;
       {t.get_segment_from_offset(int())} -> std::same_as<std::size_t>;
       {t.get_id_in_segment(int())} -> std::same_as<std::size_t>;
-      T(dr::sp::csr_matrix_view<typename T::elem_type, typename T::index_type>(), distribution());
+      T(dr::views::csr_matrix_view<typename T::elem_type, typename T::index_type>(), distribution());
     };
 
-template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_matrix_distribution<T, I, BackendT>>
+template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_eq_distribution<T, I, BackendT>>
 requires(matrix_distibution<MatrixDistrT>)
 class distributed_sparse_matrix {
 
 public:
-  using value_type = dr::sp::matrix_entry<T, I>;
+  using value_type = dr::matrix_entry<T, I>;
   using elem_type = T;
   using index_type = I;
   using key_type = dr::index<I>;
@@ -121,7 +121,7 @@ public:
   distributed_sparse_matrix(distributed_sparse_matrix &&) { assert(false); }
 
   /// Constructor
-  distributed_sparse_matrix(dr::sp::csr_matrix_view<T, I> csr_view, distribution dist = distribution()): distribution_(csr_view, dist) {}
+  distributed_sparse_matrix(dr::views::csr_matrix_view<T, I> csr_view, distribution dist = distribution()): distribution_(csr_view, dist) {}
 
   /// Returns iterator to beginning
   auto begin() const { return iterator(this, 0); }

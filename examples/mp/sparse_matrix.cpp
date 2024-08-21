@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   }
 
   std::string fname(argv[1]);
-  auto local_data = dr::sp::read_csr<float, long>(fname);
+  auto local_data = dr::read_csr<double, long>(fname);
 #ifdef SYCL_LANGUAGE_VERSION
   mp::init(sycl::default_selector_v);
 #else
@@ -24,41 +24,45 @@ int main(int argc, char **argv) {
 #endif
 
   {
-    mp::distributed_sparse_matrix<float, long> m(local_data);
+    mp::distributed_sparse_matrix<double, long> m(local_data);
     fmt::print("{}\n", m.size());
-    for (int i = 0; i < dr::mp::default_comm().size(); i++) {
-      if (dr::mp::default_comm().rank() == i) {
-        auto csr_iter = local_data.begin();
-        int j = 0;
-        // fmt::print("{}\n", i);
-        for (auto [index, val]: m) {
-          auto [m, n] = index;
+    // for (int i = 0; i < dr::mp::default_comm().size(); i++) {
+    //   if (dr::mp::default_comm().rank() == i) {
+    //     auto csr_iter = local_data.begin();
+    //     int j = 0;
+    //     // fmt::print("{}\n", i);
+    //     for (auto [index, val]: m) {
+    //       auto [m, n] = index;
           
-          auto [index_csr, val_csr] = *csr_iter;
-          auto [m_csr, n_csr] = index_csr;
-          auto check = m == m_csr && n_csr == n && val == val_csr;
-          if (!check) {
-            fmt::print("{} {} {} {} {} {} {}\n", j, m, m_csr, n, n_csr, val, val_csr);
-          }
-          assert(check);
-          csr_iter++;
-          j++;
-        }
-      }
-      m.fence();
-    }
-    dr::sp::__detail::destroy_csr_matrix_view(local_data, std::allocator<float>{});
+    //       auto [index_csr, val_csr] = *csr_iter;
+    //       auto [m_csr, n_csr] = index_csr;
+    //       auto check = m == m_csr && n_csr == n && val == val_csr;
+    //       if (!check) {
+    //         fmt::print("{} {} {} {} {} {} {}\n", j, m, m_csr, n, n_csr, val, val_csr);
+    //       }
+    //       assert(check);
+    //       csr_iter++;
+    //       j++;
+    //     }
+    //   }
+    //   m.fence();
+    // }
 
-    std::vector<float> res(m.shape().first);
-    std::vector<float> a(m.shape().second);
+    std::vector<double> res(m.shape().first);
+    std::vector<double> a(m.shape().second);
     for (int i = 0; i < a.size(); i++) {
       a[i] = i;
     }
+    m.fence();
+    fmt::print("gemv started\n");
     gemv(0, res, m, a);
+    m.fence();
+    fmt::print("gemv finished\n");
 
-    std::vector<float> ref(m.shape().first);
+    std::vector<double> ref(m.shape().first);
     if (dr::mp::default_comm().rank() == 0) {
-       for (auto [index, val]: m) {
+       for (auto a : local_data) {
+          auto [index, val] = a;
           auto [m, n] = index;
           ref[m] += n * val;
        }
@@ -69,6 +73,7 @@ int main(int argc, char **argv) {
        }
     }
   }
+  dr::__detail::destroy_csr_matrix_view(local_data, std::allocator<double>{});
   mp::finalize();
 
   return 0;

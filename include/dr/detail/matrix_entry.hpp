@@ -10,7 +10,7 @@
 
 #include <dr/detail/index.hpp>
 
-namespace dr::sp {
+namespace dr {
 template<typename T>
   concept getable = requires(T x)
   {
@@ -91,28 +91,28 @@ private:
   map_type value_;
 };
 
-} // namespace dr::sp
+} // namespace dr
 
 namespace std {
 
 template <typename T, typename I>
   requires(!std::is_const_v<T>)
-void swap(dr::sp::matrix_entry<T, I> a, dr::sp::matrix_entry<T, I> b) {
-  dr::sp::matrix_entry<T, I> other = a;
+void swap(dr::matrix_entry<T, I> a, dr::matrix_entry<T, I> b) {
+  dr::matrix_entry<T, I> other = a;
   a = b;
   b = other;
 }
 
 template <std::size_t Index, typename T, typename I>
-struct tuple_element<Index, dr::sp::matrix_entry<T, I>>
+struct tuple_element<Index, dr::matrix_entry<T, I>>
     : tuple_element<Index, std::tuple<dr::index<I>, T>> {};
 
 template <typename T, typename I>
-struct tuple_size<dr::sp::matrix_entry<T, I>> : integral_constant<size_t, 2> {};
+struct tuple_size<dr::matrix_entry<T, I>> : integral_constant<size_t, 2> {};
 
 } // namespace std
 
-namespace dr::sp {
+namespace dr {
 
 template <typename T, typename I = std::size_t, typename TRef = T &>
 class matrix_ref {
@@ -125,7 +125,7 @@ public:
 
   using scalar_reference = TRef;
 
-  using value_type = dr::sp::matrix_entry<T, I>;
+  using value_type = dr::matrix_entry<T, I>;
 
   matrix_ref(dr::index<I> index, scalar_reference value)
       : index_(index), value_(value) {}
@@ -189,28 +189,28 @@ private:
   scalar_reference value_;
 };
 
-} // namespace dr::sp
+} // namespace dr
 
 namespace std {
 
 template <typename T, typename I, typename TRef>
   requires(!std::is_const_v<T>)
-void swap(dr::sp::matrix_ref<T, I, TRef> a, dr::sp::matrix_ref<T, I, TRef> b) {
-  dr::sp::matrix_entry<T, I> other = a;
+void swap(dr::matrix_ref<T, I, TRef> a, dr::matrix_ref<T, I, TRef> b) {
+  dr::matrix_entry<T, I> other = a;
   a = b;
   b = other;
 }
 
 template <std::size_t Index, typename T, typename I, typename TRef>
-struct tuple_element<Index, dr::sp::matrix_ref<T, I, TRef>>
+struct tuple_element<Index, dr::matrix_ref<T, I, TRef>>
     : tuple_element<Index, std::tuple<dr::index<I>, TRef>> {};
 
 template <typename T, typename I, typename TRef>
-struct tuple_size<dr::sp::matrix_ref<T, I, TRef>>
+struct tuple_size<dr::matrix_ref<T, I, TRef>>
     : integral_constant<std::size_t, 2> {};
 
 template <std::size_t Index, typename T, typename I, typename TRef>
-inline decltype(auto) get(dr::sp::matrix_ref<T, I, TRef> ref)
+inline decltype(auto) get(dr::matrix_ref<T, I, TRef> ref)
   requires(Index <= 1)
 {
   if constexpr (Index == 0) {
@@ -222,7 +222,7 @@ inline decltype(auto) get(dr::sp::matrix_ref<T, I, TRef> ref)
 }
 
 template <std::size_t Index, typename T, typename I, typename TRef>
-inline decltype(auto) get(dr::sp::matrix_entry<T, I> entry)
+inline decltype(auto) get(dr::matrix_entry<T, I> entry)
   requires(Index <= 1)
 {
   if constexpr (Index == 0) {

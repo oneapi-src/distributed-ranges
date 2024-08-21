@@ -8,7 +8,7 @@
 
 #include <dr/detail/index.hpp>
 #include <dr/detail/owning_view.hpp>
-#include <dr/sp/containers/matrix_entry.hpp>
+#include <dr/detail/matrix_entry.hpp>
 #include <dr/sp/containers/matrix_partition.hpp>
 #include <dr/sp/containers/sequential/dense_matrix.hpp>
 #include <dr/sp/device_vector.hpp>
@@ -25,9 +25,9 @@ public:
   using scalar_value_type = rng::range_value_t<L>;
   using scalar_reference = rng::range_reference_t<L>;
 
-  using value_type = dr::sp::matrix_entry<scalar_value_type, std::size_t>;
+  using value_type = dr::matrix_entry<scalar_value_type, std::size_t>;
 
-  using reference = dr::sp::matrix_ref<T, std::size_t, scalar_reference>;
+  using reference = dr::matrix_ref<T, std::size_t, scalar_reference>;
 
   using iterator_category = std::random_access_iterator_tag;
 
@@ -138,15 +138,15 @@ public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  using value_type = dr::sp::matrix_entry<T>;
+  using value_type = dr::matrix_entry<T>;
 
   using scalar_reference = rng::range_reference_t<
       dr::sp::device_vector<T, dr::sp::device_allocator<T>>>;
   using const_scalar_reference = rng::range_reference_t<
       const dr::sp::device_vector<T, dr::sp::device_allocator<T>>>;
 
-  using reference = dr::sp::matrix_ref<T, scalar_reference>;
-  using const_reference = dr::sp::matrix_ref<const T, const_scalar_reference>;
+  using reference = dr::matrix_ref<T, scalar_reference>;
+  using const_reference = dr::matrix_ref<const T, const_scalar_reference>;
 
   using key_type = dr::index<>;
 

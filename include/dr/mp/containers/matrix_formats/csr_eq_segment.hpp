@@ -6,17 +6,17 @@
 
 namespace dr::mp {
 
-template <typename DSM> class csr_segment_iterator;
+template <typename DSM> class csr_eq_segment_iterator;
 
-template <typename DSM> class csr_segment_reference {
-  using iterator = csr_segment_iterator<DSM>;
+template <typename DSM> class csr_eq_segment_reference {
+  using iterator = csr_eq_segment_iterator<DSM>;
 
 public:
   using value_type = typename DSM::value_type;
   using index_type = typename  DSM::index_type;
   using elem_type = typename  DSM::elem_type;
 
-  csr_segment_reference(const iterator it) : iterator_(it) {}
+  csr_eq_segment_reference(const iterator it) : iterator_(it) {}
 
   operator value_type() const { return iterator_.get(); }
   operator std::pair<std::pair<index_type, index_type>, elem_type>() const {
@@ -36,7 +36,7 @@ public:
     iterator_.put(value);
     return *this;
   }
-  auto operator=(const csr_segment_reference &other) const {
+  auto operator=(const csr_eq_segment_reference &other) const {
     *this = value_type(other);
     return *this;
   }
@@ -44,23 +44,23 @@ public:
 
 private:
   const iterator iterator_;
-}; // csr_segment_reference
+}; // csr_eq_segment_reference
 
-template <typename DSM> class csr_segment_iterator {
+template <typename DSM> class csr_eq_segment_iterator {
 public:
   using value_type = typename DSM::value_type;
   using index_type = typename  DSM::index_type;
   using elem_type = typename  DSM::elem_type;
   using difference_type = typename DSM::difference_type;
 
-  csr_segment_iterator() = default;
-  csr_segment_iterator(DSM *dsm, std::size_t segment_index, std::size_t index) {
+  csr_eq_segment_iterator() = default;
+  csr_eq_segment_iterator(DSM *dsm, std::size_t segment_index, std::size_t index) {
     dsm_ = dsm;
     segment_index_ = segment_index;
     index_ = index;
   }
 
-  auto operator<=>(const csr_segment_iterator &other) const noexcept {
+  auto operator<=>(const csr_eq_segment_iterator &other) const noexcept {
     // assertion below checks against compare dereferenceable iterator to a
     // singular iterator and against attempt to compare iterators from different
     // sequences like _Safe_iterator<gnu_cxx::normal_iterator> does
@@ -71,7 +71,7 @@ public:
   }
 
   // Comparison
-  bool operator==(const csr_segment_iterator &other) const noexcept {
+  bool operator==(const csr_eq_segment_iterator &other) const noexcept {
     return (*this <=> other) == 0;
   }
 
@@ -85,7 +85,7 @@ public:
 
   auto &operator-=(difference_type n) { return *this += (-n); }
 
-  difference_type operator-(const csr_segment_iterator &other) const noexcept {
+  difference_type operator-(const csr_eq_segment_iterator &other) const noexcept {
     assert(dsm_ != nullptr && dsm_ == other.dsm_);
     assert(index_ >= other.index_);
     return index_ - other.index_;
@@ -125,14 +125,14 @@ public:
   }
 
   // When *this is not first in the expression
-  friend auto operator+(difference_type n, const csr_segment_iterator &other) {
+  friend auto operator+(difference_type n, const csr_eq_segment_iterator &other) {
     return other + n;
   }
 
   // dereference
   auto operator*() const {
     assert(dsm_ != nullptr);
-    return csr_segment_reference<DSM>{*this};
+    return csr_eq_segment_reference<DSM>{*this};
   }
   auto operator[](difference_type n) const {
     assert(dsm_ != nullptr);
@@ -235,16 +235,16 @@ private:
   DSM *dsm_ = nullptr;
   std::size_t segment_index_ = 0;
   std::size_t index_ = 0;
-}; // csr_segment_iterator
+}; // csr_eq_segment_iterator
 
-template <typename DSM> class csr_segment {
+template <typename DSM> class csr_eq_segment {
 private:
-  using iterator = csr_segment_iterator<DSM>;
+  using iterator = csr_eq_segment_iterator<DSM>;
 
 public:
   using difference_type = std::ptrdiff_t;
-  csr_segment() = default;
-  csr_segment(DSM *dsm, std::size_t segment_index, std::size_t size,
+  csr_eq_segment() = default;
+  csr_eq_segment(DSM *dsm, std::size_t segment_index, std::size_t size,
              std::size_t reserved) {
     dsm_ = dsm;
     segment_index_ = segment_index;
@@ -271,16 +271,16 @@ private:
   std::size_t segment_index_;
   std::size_t size_;
   std::size_t reserved_;
-}; // csr_segment
+}; // csr_eq_segment
 
 } // namespace dr::mp
 
 namespace std {
     template<typename DSM>
-    struct tuple_size<dr::mp::csr_segment_reference<DSM>> : std::integral_constant<std::size_t, 2> {};
+    struct tuple_size<dr::mp::csr_eq_segment_reference<DSM>> : std::integral_constant<std::size_t, 2> {};
 
     template <std::size_t Index, typename DSM>
-    struct tuple_element<Index, dr::mp::csr_segment_reference<DSM>>
+    struct tuple_element<Index, dr::mp::csr_eq_segment_reference<DSM>>
         : tuple_element<Index, std::tuple<dr::index<typename DSM::index_type>, typename DSM::elem_type>> {};
 
 } // namespace std
