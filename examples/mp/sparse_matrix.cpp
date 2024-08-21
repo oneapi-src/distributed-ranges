@@ -48,6 +48,26 @@ int main(int argc, char **argv) {
       m.fence();
     }
     dr::sp::__detail::destroy_csr_matrix_view(local_data, std::allocator<float>{});
+
+    std::vector<float> res(m.shape().first);
+    std::vector<float> a(m.shape().second);
+    for (int i = 0; i < a.size(); i++) {
+      a[i] = i;
+    }
+    gemv(0, res, m, a);
+
+    std::vector<float> ref(m.shape().first);
+    if (dr::mp::default_comm().rank() == 0) {
+       for (auto [index, val]: m) {
+          auto [m, n] = index;
+          ref[m] += n * val;
+       }
+       for (int i = 0; i < m.shape().first; i++) {
+          if (res[i] != ref[i]) {
+            fmt::print("mismatching outcome {} {}\n", res[i], ref[i]);
+          }
+       }
+    }
   }
   mp::finalize();
 

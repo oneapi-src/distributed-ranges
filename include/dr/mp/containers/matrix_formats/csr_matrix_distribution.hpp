@@ -47,6 +47,38 @@ public:
     void fence() {
       rows_backend_.fence();
     }
+
+    template<typename C, typename A>
+    auto local_gemv(C &res, A &vals) const {
+      // if (dr::mp::use_sycl()) {
+
+      // }
+      // else {
+        auto rank = rows_backend_.getrank();
+        auto size = row_sizes_[rank];
+        auto row_i = -1;
+        auto position = segment_size_ * rank;
+        auto current_row_position = rows_data_[0];
+        auto local_vals = dr::mp::local_segment(*vals_data_);
+        auto local_cols = dr::mp::local_segment(*cols_data_);
+
+        for (int i = 0; i < segment_size_; i++) {
+          while (row_i + 1 < size && position + i >= current_row_position) {
+            row_i++;
+            current_row_position = rows_data_[row_i + 1];
+          }
+          res[row_i] += local_vals[i] * vals[local_cols[i]];
+        }
+
+        // fmt::print("offset, rank {} {}\n", row_offsets_[ rows_backend_.getrank()],  rows_backend_.getrank());
+        // for (int i = 0; i < size; i++) {
+        //   fmt::print("ledata, rank, i {} {} {}\n", res[i], rows_backend_.getrank(), i);
+        // }
+      // }
+    }
+    auto local_row_bounds(std::size_t rank) const {
+      return std::pair<std::size_t, std::size_t>(row_offsets_[rank], row_offsets_[rank] + row_sizes_[rank]);
+    }
 private:
   friend csr_segment_iterator<csr_matrix_distribution>;
   std::size_t get_row_size(std::size_t rank) {
@@ -98,7 +130,15 @@ private:
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, nnz_ - i), segment_size_);
     }
-      
+    
+    // for (int i = 0; i < row_size_; i++) {
+    //   fmt::print("row, i, rank {} {} {}\n", rows_data_[i], i, rank);
+    // }
+    // fence();
+    // for (int i = 0; i < vals_data_->segments()[rank].size(); i++) {
+    //   fmt::print("val, col, i, rank {} {} {} {}\n", vals_data_->segments()[rank][i], cols_data_->segments()[rank][i],i, rank);
+    // }
+
     fence();
   }
 

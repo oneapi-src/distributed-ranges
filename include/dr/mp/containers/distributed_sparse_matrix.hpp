@@ -142,6 +142,14 @@ public:
     distribution_.fence();
    }
 
+  template<typename C, typename A>
+  auto local_gemv(C &res, A &vals) const {
+    distribution_.local_gemv(res, vals);
+  }
+
+  auto local_row_bounds(std::size_t rank) const {
+    return distribution_.local_row_bounds(rank);
+  }
 private:
   MatrixDistrT distribution_;
 

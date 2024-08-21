@@ -61,9 +61,10 @@ public:
                  mpi_comm_);
   }
 
-  void gather(const void *src, void *dst, std::size_t count,
+  template <typename T>
+  void gather(const T *src, T *dst, std::size_t count,
               std::size_t root) const {
-    MPI_Gather_c(src, count, MPI_BYTE, dst, count, MPI_BYTE, root, mpi_comm_);
+    MPI_Gather_c(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T), MPI_BYTE, root, mpi_comm_);
   }
 
   template <typename T>
