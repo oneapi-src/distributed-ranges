@@ -24,7 +24,7 @@ TYPED_TEST(Count, EmptyIf) {
 }
 
 TYPED_TEST(Count, BasicFirstElem) {
-  std::vector<int> vec { 1, 2, 3, 1, 1, 3, 4, 1, 5, 6, 7 };
+  std::vector<int> vec{1, 2, 3, 1, 1, 3, 4, 1, 5, 6, 7};
 
   Ops1<TypeParam> ops(vec.size());
   ops.vec = vec;
@@ -38,7 +38,7 @@ TYPED_TEST(Count, BasicFirstElem) {
 }
 
 TYPED_TEST(Count, BasicFirstElemIf) {
-  std::vector<int> vec { 1, 2, 3, 1, 1, 3, 4, 1, 5, 6, 7 };
+  std::vector<int> vec{1, 2, 3, 1, 1, 3, 4, 1, 5, 6, 7};
 
   Ops1<TypeParam> ops(vec.size());
   ops.vec = vec;

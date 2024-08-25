@@ -71,13 +71,13 @@ namespace dr::mp {
 
 class count_fn_ {
 public:
-  template <typename T, dr::distributed_range DR> 
+  template <typename T, dr::distributed_range DR>
   auto operator()(std::size_t root, DR &&dr, const T &value) const {
     auto pred = [=](auto &&v) { return v == value; };
     return __detail::count_if(root, true, dr, pred);
   }
 
-  template <typename T, dr::distributed_range DR> 
+  template <typename T, dr::distributed_range DR>
   auto operator()(DR &&dr, const T &value) const {
     auto pred = [=](auto &&v) { return v == value; };
     return __detail::count_if(0, false, dr, pred);
@@ -105,7 +105,7 @@ public:
     return __detail::count_if(root, true, dr, pred);
   }
 
-  template <dr::distributed_range DR> 
+  template <dr::distributed_range DR>
   auto operator()(DR &&dr, auto &&pred) const {
     return __detail::count_if(0, false, dr, pred);
   }
