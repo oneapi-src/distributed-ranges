@@ -101,10 +101,10 @@ jobs:
             'deb [arch=amd64] https://repositories.intel.com/graphics/ubuntu focal main'
           sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
       - name: Generate
-      run: |
-        . /opt/intel/oneapi/setvars.sh
-        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
-        printenv > build/envdump.txt
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+          printenv > build/envdump.txt
       # change this step to building just tests once unittest job is back
 #     - name: Build everything
 #       run: |
