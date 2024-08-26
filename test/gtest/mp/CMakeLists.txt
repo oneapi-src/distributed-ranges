@@ -116,7 +116,7 @@ if(ENABLE_SYCL)
     --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mp_ctest(
+    add_mp_disabled_ctest(
       NAME mp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
   endif()
   # TODO: fix sycl Slide issues, see
