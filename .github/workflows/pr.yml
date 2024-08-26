@@ -92,6 +92,8 @@ jobs:
           sudo apt-get update -y
       - name: Install oneAPI
         run: sudo apt-get install intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-hpckit -y
+      - name: Install level zero library
+        run: sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
       - name: Generate
         run: |
           . /opt/intel/oneapi/setvars.sh
