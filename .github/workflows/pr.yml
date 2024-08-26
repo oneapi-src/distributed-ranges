@@ -92,18 +92,19 @@ jobs:
           sudo apt-get update -y
       - name: Install oneAPI
         run: sudo apt-get install intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-hpckit -y
-      - name: Install level zero library
+      - name: Add intell graphics repository
         run: sudo apt install -y gpg-agent wget
              wget -qO - https://repositories.intel.com/graphics/intel-graphics.key |
-              sudo apt-key add -
+               sudo apt-key add -
              sudo apt-add-repository \
-              'deb [arch=amd64] https://repositories.intel.com/graphics/ubuntu focal main'sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
-             sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
+               'deb [arch=amd64] https://repositories.intel.com/graphics/ubuntu focal main'
+      - name: Install level zero API
+        run: sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
       - name: Generate
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
-          printenv > build/envdump.txt
+      run: |
+        . /opt/intel/oneapi/setvars.sh
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+        printenv > build/envdump.txt
       # change this step to building just tests once unittest job is back
 #     - name: Build everything
 #       run: |
