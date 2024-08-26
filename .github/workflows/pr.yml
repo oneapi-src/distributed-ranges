@@ -93,7 +93,12 @@ jobs:
       - name: Install oneAPI
         run: sudo apt-get install intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-hpckit -y
       - name: Install level zero library
-        run: sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
+        run: sudo apt install -y gpg-agent wget
+             wget -qO - https://repositories.intel.com/graphics/intel-graphics.key |
+              sudo apt-key add -
+             sudo apt-add-repository \
+              'deb [arch=amd64] https://repositories.intel.com/graphics/ubuntu focal main'sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
+             sudo apt-get install intel-level-zero-gpu level-zero level-zero-dev
       - name: Generate
         run: |
           . /opt/intel/oneapi/setvars.sh
