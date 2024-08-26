@@ -25,7 +25,7 @@ add_executable(
   gemm.cpp
   ../common/distributed_vector.cpp
   ../common/dot_product.cpp
-  ../common/inclusive_exclusive_scan.cpp
+#  ../common/inclusive_exclusive_scan.cpp
   ../common/sort.cpp
   ../common/stream.cpp)
 # cmake-format: on

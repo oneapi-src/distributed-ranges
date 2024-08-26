@@ -16,10 +16,10 @@ add_executable(
   ../common/drop.cpp
   ../common/enumerate.cpp
   ../common/equal.cpp
-  ../common/exclusive_scan.cpp
+#  ../common/exclusive_scan.cpp
   ../common/fill.cpp
   ../common/for_each.cpp
-  ../common/inclusive_scan.cpp
+#  ../common/inclusive_scan.cpp
   ../common/iota.cpp
   ../common/iota_view.cpp
   ../common/reduce.cpp
