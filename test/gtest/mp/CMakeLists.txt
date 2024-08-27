@@ -107,16 +107,16 @@ if(ENABLE_SYCL)
 
   foreach(nproc RANGE 1 4)
     add_mp_ctest(NAME mp-quick-test NPROC ${nproc} SYCL)
-    add_mp_disabled_ctest(
+    add_mp_pvc_ctest(
       NAME mp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory)
   endforeach()
 
-  add_mp_disabled_ctest(
+  add_mp_pvc_ctest(
     NAME mp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory
     --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
-    add_mp_disabled_ctest(
+    add_mp_pvc_ctest(
       NAME mp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
   endif()
   # TODO: fix sycl Slide issues, see
