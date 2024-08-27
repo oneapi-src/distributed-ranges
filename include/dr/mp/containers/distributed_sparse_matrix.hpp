@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 #include <dr/mp/containers/matrix_formats/csr_eq_distribution.hpp>
+#include <dr/mp/containers/matrix_formats/csr_row_distribution.hpp>
 #include<dr/detail/matrix_entry.hpp>
 #include<dr/views/csr_matrix_view.hpp>
 
@@ -21,7 +22,7 @@ concept matrix_distibution =
       T(dr::views::csr_matrix_view<typename T::elem_type, typename T::index_type>(), distribution());
     };
 
-template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_eq_distribution<T, I, BackendT>>
+template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_row_distribution<T, I, BackendT>>
 requires(matrix_distibution<MatrixDistrT>)
 class distributed_sparse_matrix {
 
@@ -143,13 +144,10 @@ public:
    }
 
   template<typename C, typename A>
-  auto local_gemv(C &res, A &vals) const {
-    distribution_.local_gemv(res, vals);
+  auto local_gemv_and_collect(std::size_t root, C &res, A &vals) const {
+    distribution_.local_gemv_and_collect(root, res, vals);
   }
 
-  auto local_row_bounds(std::size_t rank) const {
-    return distribution_.local_row_bounds(rank);
-  }
 private:
   MatrixDistrT distribution_;
 

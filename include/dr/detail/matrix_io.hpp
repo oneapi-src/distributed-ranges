@@ -185,16 +185,13 @@ inline coo_matrix<T, I> read_coo_matrix(std::string file_path, bool one_indexed 
                                "file, file has more nonzeros than reported.");
     }
   }
-
   auto sort_fn = [](const auto &a, const auto &b) {
-    auto &&[a_index, a_value] = a;
-    auto &&[b_index, b_value] = b;
-    auto &&[a_i, a_j] = a_index;
-    auto &&[b_i, b_j] = b_index;
-    if (a_i < b_i) {
+    auto a_index = a.index();
+    auto b_index = b.index();
+    if (a_index.first < b_index.first) {
       return true;
-    } else if (a_i == b_i) {
-      if (a_j < b_j) {
+    } else if (a_index.first == b_index.first) {
+      if (a_index.second < b_index.second) {
         return true;
       }
     }

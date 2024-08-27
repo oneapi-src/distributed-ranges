@@ -50,19 +50,23 @@ public:
 
     template<typename C, typename A>
     auto local_gemv(C &res, A &vals) const {
+      auto rank = rows_backend_.getrank();
+      if (nnz_ <= segment_size_ * rank) {
+        return;
+      }
       // if (dr::mp::use_sycl()) {
 
       // }
       // else {
-        auto rank = rows_backend_.getrank();
         auto size = row_sizes_[rank];
         auto row_i = -1;
         auto position = segment_size_ * rank;
+        auto elem_count = std::min(segment_size_, nnz_ - segment_size_ * rank);
         auto current_row_position = rows_data_[0];
         auto local_vals = dr::mp::local_segment(*vals_data_);
         auto local_cols = dr::mp::local_segment(*cols_data_);
 
-        for (int i = 0; i < segment_size_; i++) {
+        for (int i = 0; i < elem_count; i++) {
           while (row_i + 1 < size && position + i >= current_row_position) {
             row_i++;
             current_row_position = rows_data_[row_i + 1];
@@ -76,11 +80,42 @@ public:
         // }
       // }
     }
-    auto local_row_bounds(std::size_t rank) const {
-      return std::pair<std::size_t, std::size_t>(row_offsets_[rank], row_offsets_[rank] + row_sizes_[rank]);
+ 
+    template<typename C, typename A>
+    auto local_gemv_and_collect(std::size_t root, C &res, A &vals) const {
+      assert(res.size() == shape_.first);
+      __detail::allocator<T> alloc;
+      auto res_alloc = alloc.allocate(shape_.first);
+      local_gemv(res_alloc, vals);
+
+      gather_gemv_vector(root, res, res_alloc);
+      alloc.deallocate(res_alloc, shape_.first);
     }
 private:
   friend csr_eq_segment_iterator<csr_eq_distribution>;
+  
+  template<typename C, typename A>
+  void gather_gemv_vector(std::size_t root, C &res, A &partial_res) const {
+      auto communicator = default_comm();
+      __detail::allocator<T> alloc;
+      if (communicator.rank() == root) {
+          auto gathered_res = alloc.allocate(shape_.first * communicator.size());
+          communicator.gather(partial_res, gathered_res, shape_.first, root);
+          rng::fill(res, 0);
+          for (auto i = 0; i < communicator.size(); i++) {
+              auto first_row = row_offsets_[i];
+              auto last_row = row_offsets_[i] + row_sizes_[i];
+              for (auto j = first_row; j < last_row; j++) {
+                  res[j] += gathered_res[shape_.first * i + j - first_row];
+              }
+          }
+          alloc.deallocate(gathered_res, shape_.first * communicator.size());
+      }
+      else {
+          communicator.gather(partial_res, static_cast<T*>(nullptr), shape_.first, root);
+      }
+  }
+
   std::size_t get_row_size(std::size_t rank) {
     return row_sizes_[rank];
   }
@@ -121,8 +156,10 @@ private:
       fmt::print("hmmmm? {} {} {} {}\n", rank, lower_limit, row_size_, get_row_size(rank));
     }
     
-    rows_data_ = static_cast<I *>(rows_backend_.allocate(row_size_ * sizeof(I)));
-    std::copy(csr_view.rowptr_data() + lower_limit, csr_view.rowptr_data() + lower_limit + row_size_, rows_data_);
+    if (row_size_ > 0) {
+      rows_data_ = static_cast<I *>(rows_backend_.allocate(row_size_ * sizeof(I)));
+      std::copy(csr_view.rowptr_data() + lower_limit, csr_view.rowptr_data() + lower_limit + row_size_, rows_data_);
+    }
     std::size_t segment_index = 0;
     segment_size_ = vals_data_->segment_size();
     assert(segment_size_ == cols_data_->segment_size());

@@ -26,27 +26,27 @@ int main(int argc, char **argv) {
   {
     mp::distributed_sparse_matrix<double, long> m(local_data);
     fmt::print("{}\n", m.size());
-    // for (int i = 0; i < dr::mp::default_comm().size(); i++) {
-    //   if (dr::mp::default_comm().rank() == i) {
-    //     auto csr_iter = local_data.begin();
-    //     int j = 0;
-    //     // fmt::print("{}\n", i);
-    //     for (auto [index, val]: m) {
-    //       auto [m, n] = index;
+    for (int i = 0; i < dr::mp::default_comm().size(); i++) {
+      if (dr::mp::default_comm().rank() == i) {
+        auto csr_iter = local_data.begin();
+        int j = 0;
+        // fmt::print("{}\n", i);
+        for (auto [index, val]: m) {
+          auto [m, n] = index;
           
-    //       auto [index_csr, val_csr] = *csr_iter;
-    //       auto [m_csr, n_csr] = index_csr;
-    //       auto check = m == m_csr && n_csr == n && val == val_csr;
-    //       if (!check) {
-    //         fmt::print("{} {} {} {} {} {} {}\n", j, m, m_csr, n, n_csr, val, val_csr);
-    //       }
-    //       assert(check);
-    //       csr_iter++;
-    //       j++;
-    //     }
-    //   }
-    //   m.fence();
-    // }
+          auto [index_csr, val_csr] = *csr_iter;
+          auto [m_csr, n_csr] = index_csr;
+          auto check = m == m_csr && n_csr == n && val == val_csr;
+          if (!check) {
+            fmt::print("{} {} {} {} {} {} {}\n", j, m, m_csr, n, n_csr, val, val_csr);
+          }
+          // assert(check);
+          csr_iter++;
+          j++;
+        }
+      }
+      m.fence();
+    }
 
     std::vector<double> res(m.shape().first);
     std::vector<double> a(m.shape().second);
