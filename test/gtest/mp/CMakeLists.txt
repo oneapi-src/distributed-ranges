@@ -16,10 +16,10 @@ add_executable(
   ../common/drop.cpp
   ../common/enumerate.cpp
   ../common/equal.cpp
-#  ../common/exclusive_scan.cpp
+#  ../common/exclusive_scan.cpp disabled due to deadlock - DRA-213
   ../common/fill.cpp
   ../common/for_each.cpp
-#  ../common/inclusive_scan.cpp
+#  ../common/inclusive_scan.cpp disabled due to deadlock - DRA-213
   ../common/iota.cpp
   ../common/iota_view.cpp
   ../common/reduce.cpp
@@ -116,6 +116,7 @@ if(ENABLE_SYCL)
     --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
     # MPI_Win_create fails for communicator with size 1
+    # this should be add_mp_ctest - DRA-215
     add_mp_pvc_ctest(
       NAME mp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
   endif()
