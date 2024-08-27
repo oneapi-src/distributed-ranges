@@ -115,8 +115,8 @@ if(ENABLE_SYCL)
     NAME mp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory
     --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
-    # MPI_Win_create fails for communicator with size 1
-    # this should be add_mp_ctest - DRA-215
+    # MPI_Win_create fails for communicator with size 1 this should be
+    # add_mp_ctest - DRA-215
     add_mp_pvc_ctest(
       NAME mp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
   endif()
