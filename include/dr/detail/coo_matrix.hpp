@@ -4,18 +4,18 @@
 
 #pragma once
 
-#include <dr/sp/containers/matrix_entry.hpp>
+#include <dr/detail/matrix_entry.hpp>
 #include <memory>
 #include <vector>
 
-namespace dr::sp {
+namespace dr {
 
 namespace __detail {
 
 template <typename T, typename I, typename Allocator = std::allocator<T>>
 class coo_matrix {
 public:
-  using value_type = dr::sp::matrix_entry<T, I>;
+  using value_type = dr::matrix_entry<T, I>;
   using scalar_type = T;
   using index_type = I;
   using size_type = std::size_t;
@@ -33,8 +33,8 @@ public:
   using iterator = typename backend_type::iterator;
   using const_iterator = typename backend_type::const_iterator;
 
-  using reference = dr::sp::matrix_ref<T, I>;
-  using const_reference = dr::sp::matrix_ref<std::add_const_t<T>, I>;
+  using reference = dr::matrix_ref<T, I>;
+  using const_reference = dr::matrix_ref<std::add_const_t<T>, I>;
 
   using scalar_reference = T &;
 
@@ -167,4 +167,4 @@ private:
 
 } // namespace __detail
 
-} // namespace dr::sp
+} // namespace dr

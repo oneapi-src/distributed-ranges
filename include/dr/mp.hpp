@@ -48,6 +48,10 @@
 #include <dr/detail/memory.hpp>
 #include <dr/detail/communicator.hpp>
 #include <dr/detail/index.hpp>
+#include <dr/detail/matrix_io.hpp>
+#include <dr/detail/matrix_entry.hpp>
+#include <dr/detail/generate_random_csr.hpp>
+#include <dr/detail/coo_matrix.hpp>
 
 #include <dr/views/views.hpp>
 #include <dr/views/transform.hpp>
@@ -76,5 +80,7 @@
 #include <dr/mp/algorithms/md_for_each.hpp>
 #include <dr/mp/algorithms/transform.hpp>
 #include <dr/mp/algorithms/transpose.hpp>
+#include <dr/mp/algorithms/matrix/gemv.hpp>
 #include <dr/mp/containers/distributed_vector.hpp>
+#include <dr/mp/containers/distributed_sparse_matrix.hpp>
 #include <dr/mp/containers/distributed_mdarray.hpp>

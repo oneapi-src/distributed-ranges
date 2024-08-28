@@ -77,7 +77,7 @@ public:
 #endif
   }
 
-  std::size_t getrank() { return win_.communicator().rank(); }
+  std::size_t getrank() const { return win_.communicator().rank(); }
 
   void fence() { win_.fence(); }
 };
@@ -121,7 +121,7 @@ public:
     ishmem_putmem(dst, src, datalen, segment_index);
   }
 
-  std::size_t getrank() {
+  std::size_t getrank() const {
     auto my_process_segment_index = ishmem_my_pe();
     DRLOG("called ishmem_my_pe() -> {}", my_process_segment_index);
     return my_process_segment_index;
@@ -275,6 +275,14 @@ public:
   auto segments() const { return rng::views::all(segments_); }
 
   void fence() { backend.fence(); }
+
+  auto segment_size() const {
+    return segment_size_;
+  }
+
+  auto get_segment_offset(std::size_t segment_id) const {
+    return segment_id * segment_size_;
+  }
 
 private:
   void init(auto size, auto dist) {
