@@ -16,10 +16,10 @@ add_executable(
   ../common/drop.cpp
   ../common/enumerate.cpp
   ../common/equal.cpp
-  ../common/exclusive_scan.cpp
+#  ../common/exclusive_scan.cpp disabled due to deadlock - DRA-213
   ../common/fill.cpp
   ../common/for_each.cpp
-  ../common/inclusive_scan.cpp
+#  ../common/inclusive_scan.cpp disabled due to deadlock - DRA-213
   ../common/iota.cpp
   ../common/iota_view.cpp
   ../common/reduce.cpp
@@ -107,16 +107,17 @@ if(ENABLE_SYCL)
 
   foreach(nproc RANGE 1 4)
     add_mp_ctest(NAME mp-quick-test NPROC ${nproc} SYCL)
-    add_mp_ctest(
+    add_mp_pvc_ctest(
       NAME mp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory)
   endforeach()
 
-  add_mp_ctest(
+  add_mp_pvc_ctest(
     NAME mp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory
     --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
-    # MPI_Win_create fails for communicator with size 1
-    add_mp_ctest(
+    # MPI_Win_create fails for communicator with size 1 this should be
+    # add_mp_ctest - DRA-215
+    add_mp_pvc_ctest(
       NAME mp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
   endif()
   # TODO: fix sycl Slide issues, see
