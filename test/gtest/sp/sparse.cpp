@@ -11,7 +11,7 @@ TEST(SparseMatrix, IterationForward) {
   std::vector<std::pair<std::pair<I, I>, T>> base;
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < k; j++) {
-      base.push_back({{i, j}, i + j});
+      base.push_back({{i, j}, static_cast<float>(i + j)});
     }
   }
   std::vector<std::pair<std::pair<I, I>, T>> reference(base.size());
