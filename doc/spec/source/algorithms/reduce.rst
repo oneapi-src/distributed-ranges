@@ -13,60 +13,60 @@
 Interface
 =========
 
-MHP
+MP
 ---
 
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DR &&dr, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DR &&dr, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DR &&dr, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(DR &&dr, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DR &&dr, T init)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DR &&dr, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DR &&dr, T init)
+.. doxygenfunction:: dr::mp::reduce(DR &&dr, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DR &&dr)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DR &&dr)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DR &&dr)
+.. doxygenfunction:: dr::mp::reduce(DR &&dr)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DI first, DI last, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DI first, DI last, T init, auto &&binary_op)
+.. doxygenfunction:: dr::mp::reduce(DI first, DI last, T init, auto &&binary_op)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last, T init)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DI first, DI last, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DI first, DI last, T init)
+.. doxygenfunction:: dr::mp::reduce(DI first, DI last, T init)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(std::size_t root, DI first, DI last)
+.. doxygenfunction:: dr::mp::reduce(std::size_t root, DI first, DI last)
   :outline:
-.. doxygenfunction:: dr::mhp::reduce(DI first, DI last)
+.. doxygenfunction:: dr::mp::reduce(DI first, DI last)
   :outline:
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, R &&r, T init, BinaryOp &&binary_op)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, R &&r, T init)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, R &&r, T init)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, R &&r)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, R &&r)
   :outline:
 
 Iterator versions
 
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, Iter first, Iter last)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, Iter first, Iter last)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::reduce(ExecutionPolicy &&policy, Iter first, Iter last, T init, BinaryOp &&binary_op)
   :outline:
 
 Execution policy-less algorithms
 
-.. doxygenfunction:: dr::shp::reduce(R &&r)
+.. doxygenfunction:: dr::sp::reduce(R &&r)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(R &&r, T init)
+.. doxygenfunction:: dr::sp::reduce(R &&r, T init)
   :outline:
-.. doxygenfunction:: dr::shp::reduce(R &&r, T init, BinaryOp &&binary_op)
+.. doxygenfunction:: dr::sp::reduce(R &&r, T init, BinaryOp &&binary_op)
   :outline:
 
 Description

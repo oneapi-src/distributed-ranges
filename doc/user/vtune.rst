@@ -21,7 +21,7 @@ needed.
 Command line collection and vtune-gui inside Linux VM.  Generate a
 profile in a directory called ``vtune``::
 
-  rm -rf vtune && vtune -collect hotspots -knob sampling-mode=hw -result-dir vtune ./mhp-bench --benchmark_filter=^Mdspan_ --reps 10
+  rm -rf vtune && vtune -collect hotspots -knob sampling-mode=hw -result-dir vtune ./mp-bench --benchmark_filter=^Mdspan_ --reps 10
 
 View it in VTune::
 
@@ -36,7 +36,7 @@ following example, ``~/windows`` is a symlink from linux to my Windows
 home directory. I put the profile in a directory called
 ``vtune``. Collect a profile::
 
-  rm -rf vtune ~/windows/Downloads/vtune && vtune -collect hotspots -knob sampling-mode=hw -result-dir vtune ./mhp-bench --benchmark_filter=^Mdspan_ --reps 10 && cp -r vtune ~/windows/Downloads/
+  rm -rf vtune ~/windows/Downloads/vtune && vtune -collect hotspots -knob sampling-mode=hw -result-dir vtune ./mp-bench --benchmark_filter=^Mdspan_ --reps 10 && cp -r vtune ~/windows/Downloads/
 
 View in GUI::
 
@@ -52,7 +52,7 @@ profile, source files, and binary from Linux to Windows.
 Examining Results
 =================
 
-When looking at ``mhp-bench``, I start with the *Top-down Tree*
+When looking at ``mp-bench``, I start with the *Top-down Tree*
 tab. Click on *Total*. Double click on the benchmark you want to
 examine. Click on *Assembly* to see source and assembly code.
 

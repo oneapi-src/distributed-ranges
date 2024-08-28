@@ -24,11 +24,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_compile_options(-Wno-error=cuda-compat)
   endif()
 
-  # mhp is not under ENABLE_SYCL to check benchmarks also compilation in gcc
-  add_subdirectory(mhp)
+  # mp is not under ENABLE_SYCL to check benchmarks also compilation in gcc
+  add_subdirectory(mp)
 
   if(ENABLE_SYCL)
-    add_subdirectory(shp)
-    add_custom_target(xhp-bench DEPENDS mhp-bench shp-bench)
+    add_subdirectory(sp)
+    add_custom_target(xp-bench DEPENDS mp-bench sp-bench)
   endif()
 endif()

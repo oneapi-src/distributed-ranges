@@ -14,9 +14,9 @@ processes and can be accessed by any process in the team.
 .. toctree::
    :maxdepth: 1
 
-   mhp_distributed_vector
-   mhp_distributed_dense_matrix
+   mp_distributed_vector
+   mp_distributed_dense_matrix
 
-   shp_distributed_vector
-   shp_dense_matrix
-   shp_sparse_matrix
+   sp_distributed_vector
+   sp_dense_matrix
+   sp_sparse_matrix

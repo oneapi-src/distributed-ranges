@@ -13,20 +13,20 @@
 Interface
 =========
 
-MHP
+MP
 ---
 
-.. doxygenfunction:: dr::mhp::iota(R &&r, T value)
+.. doxygenfunction:: dr::mp::iota(R &&r, T value)
   :outline:
-.. doxygenfunction:: dr::mhp::iota(Iter begin, Iter end, T value)
+.. doxygenfunction:: dr::mp::iota(Iter begin, Iter end, T value)
   :outline:
 
-SHP
+SP
 ---
 
-.. doxygenfunction:: dr::shp::iota(R &&r, T value)
+.. doxygenfunction:: dr::sp::iota(R &&r, T value)
   :outline:
-.. doxygenfunction:: dr::shp::iota(Iter begin, Iter end, T value)
+.. doxygenfunction:: dr::sp::iota(Iter begin, Iter end, T value)
   :outline:
 
 

@@ -148,12 +148,12 @@ FetchContent_Declare(
   GIT_TAG mdspan-0.6.0)
 FetchContent_MakeAvailable(mdspan)
 
-add_custom_target(mhp-all-tests)
-add_custom_target(shp-all-tests)
-add_custom_target(all-tests DEPENDS mhp-all-tests shp-all-tests)
+add_custom_target(mp-all-tests)
+add_custom_target(sp-all-tests)
+add_custom_target(all-tests DEPENDS mp-all-tests sp-all-tests)
 
-function(add_mhp_ctest_impl)
-  set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL)
+function(add_mp_ctest_impl)
+  set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL PVCLABEL)
   set(oneValueArgs NAME TEST_NAME NPROC TIMEOUT)
   set(multiValueArgs TARGS) # Test ARGumentS
 
@@ -234,25 +234,33 @@ function(add_mhp_ctest_impl)
   endif()
 
   if(AMC_TESTLABEL)
-    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MHP)
+    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL PVCLABEL MP)
   endif()
-  add_dependencies(mhp-all-tests ${AMC_NAME})
+  if(AMC_PVCLABEL)
+    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS PVCLABEL MP)
+  endif()
+  add_dependencies(mp-all-tests ${AMC_NAME})
 endfunction()
 
-function(add_mhp_auxiliary_ctests)
-  add_mhp_ctest_impl(${ARGN} GDB)
-  add_mhp_ctest_impl(${ARGN} GDB DRLOGS)
-  add_mhp_ctest_impl(${ARGN} DRLOGS)
+function(add_mp_auxiliary_ctests)
+  add_mp_ctest_impl(${ARGN} GDB)
+  add_mp_ctest_impl(${ARGN} GDB DRLOGS)
+  add_mp_ctest_impl(${ARGN} DRLOGS)
 endfunction()
 
-function(add_mhp_ctest)
-  add_mhp_ctest_impl(${ARGN} TESTLABEL)
-  add_mhp_auxiliary_ctests(${ARGN})
+function(add_mp_ctest)
+  add_mp_ctest_impl(${ARGN} TESTLABEL)
+  add_mp_auxiliary_ctests(${ARGN})
 endfunction()
 
-function(add_mhp_disabled_ctest)
-  add_mhp_ctest_impl(${ARGN})
-  add_mhp_auxiliary_ctests(${ARGN})
+function(add_mp_pvc_ctest)
+  add_mp_ctest_impl(${ARGN} PVCLABEL)
+  add_mp_auxiliary_ctests(${ARGN})
+endfunction()
+
+function(add_mp_disabled_ctest)
+  add_mp_ctest_impl(${ARGN})
+  add_mp_auxiliary_ctests(${ARGN})
 endfunction()
 
 if(ENABLE_ISHMEM)
@@ -291,7 +299,7 @@ if(ENABLE_ISHMEM)
   if(ENABLE_OFI)
     ExternalProject_Add(
       ofi
-      GIT_REPOSITORY git@github.com:ofiwg/libfabric.git
+      GIT_REPOSITORY https://github.com/ofiwg/libfabric.git
       GIT_TAG v1.18.0
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ofisrc
       DEPENDS ${SOS_DEPS}
@@ -320,7 +328,7 @@ if(ENABLE_ISHMEM)
 
   ExternalProject_Add(
     sos
-    GIT_REPOSITORY git@github.com:Sandia-OpenSHMEM/SOS.git
+    GIT_REPOSITORY https://github.com/Sandia-OpenSHMEM/SOS.git
     GIT_TAG main
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/sossrc
     DEPENDS ${SOS_DEPS}
@@ -334,17 +342,24 @@ if(ENABLE_ISHMEM)
     BUILD_COMMAND make
     INSTALL_COMMAND make install)
 
+  # use this if using Intel Data Center GPU Max 1100
+  if(ONETILE_PVC)
+    set(ISHM_PARAMS "-DUSE_REDUCED_LINK_ENGINE_SET")
+  else()
+    set(ISHM_PARAMS "")
+  endif()
+
   ExternalProject_Add(
     ishmem
-    GIT_REPOSITORY
-      git@github.com:intel-innersource/libraries.runtimes.hpc.shmem.ishmem.git
+    GIT_REPOSITORY https://github.com/oneapi-src/ishmem.git
     GIT_TAG main
     INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS sos
     CMAKE_ARGS -DCMAKE_BUILD_TYPE=STRING:${CMAKE_BUILD_TYPE}
     CMAKE_CACHE_ARGS
       "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}"
-      "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}" ${SOS_L0_PARAM})
+      "-DSHMEM_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}" ${SOS_L0_PARAM}
+      ${ISHM_PARAMS})
 
   add_custom_target(shmem DEPENDS ishmem)
 
@@ -356,14 +371,14 @@ if(ENABLE_ISHMEM)
 
 endif()
 
-function(add_shp_disabled_ctest test_name name)
+function(add_sp_disabled_ctest test_name name)
   add_test(NAME ${test_name} COMMAND ./${name} ${ARGN})
-  add_dependencies(shp-all-tests ${name})
+  add_dependencies(sp-all-tests ${name})
 endfunction()
 
-function(add_shp_ctest test_name name)
-  add_shp_disabled_ctest(${test_name} ${name} ${ARGN})
-  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SHP)
+function(add_sp_ctest test_name name)
+  add_sp_disabled_ctest(${test_name} ${name} ${ARGN})
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL PVCLABEL SP)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -404,20 +419,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     endif()
   endif()
 
-  add_subdirectory(test/gtest/mhp)
+  add_subdirectory(test/gtest/mp)
 
   if(ENABLE_SYCL)
     # disables rng::detail::box_compress::coalesce which causes rng::box to use
     # global non-const variable, which can not be used in SYCL kernels
     add_compile_definitions(RANGES_WORKAROUND_MSVC_249830)
 
-    add_subdirectory(examples/shp)
-    add_subdirectory(test/gtest/shp)
+    add_subdirectory(examples/sp)
+    add_subdirectory(test/gtest/sp)
   endif()
 
   add_subdirectory(examples/serial)
   add_subdirectory(test/gtest/serial)
-  add_subdirectory(examples/mhp)
+  add_subdirectory(examples/mp)
   add_subdirectory(benchmarks/gbench)
 
   # Requires clang, icpx/llvm nightly do not support the tools

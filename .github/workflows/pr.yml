@@ -33,42 +33,42 @@ jobs:
     - name: Run checkers
       run: pre-commit run --all
 
-  unit_tests:
-    runs-on: pvc
-    timeout-minutes: 30
-    strategy:
-      # test everything, even if one fails
-      fail-fast: false
-      matrix:
-        include:
-        - cxx: icpx
-        - cxx: g++-11
-    name: ${{ matrix.cxx }}
-    env:
-      CXX: ${{ matrix.cxx }}
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - name: Generate
-      run: cmake -B build
-    - name: Build
-      run: make -C build -j
-    - name: MHP unit tests
-      run: ctest --test-dir build -L MHP -j 4
-    - name: SHP unit tests
-      run: ctest --test-dir build -L SHP -j 4
-    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-      if: always()
-      with:
-        name: log-gcc-${{ env.CXX }}
-        path: |
-          build/Testing
-          build/test/gtest/mhp/*.log
-          build/benchmarks/gbench/mhp/*.log
-          build/examples/mhp/*.log
+# disabled due to DRA-163
+#  unit_tests:
+#    runs-on: gkpvc
+#    timeout-minutes: 30
+#    strategy:
+#      # test everything, even if one fails
+#      fail-fast: false
+#      matrix:
+#        include:
+#        # - cxx: icpx
+#        - cxx: g++
+#    name: ${{ matrix.cxx }}
+#    env:
+#      CXX: ${{ matrix.cxx }}
+#    steps:
+#    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+#    - name: Generate
+#      run: cmake -B build
+#    - name: Build
+#      run: make -C build -j
+#    - name: Unit tests
+#      run: ctest --test-dir build -L TESTLABEL -j 4
+#    - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+#      if: always()
+#      with:
+#        name: log-gcc-${{ env.CXX }}
+#        path: |
+#          build/Testing
+#          build/test/gtest/mp/*.log
+#          build/benchmarks/gbench/mp/*.log
+#          build/examples/mp/*.log
 
   pvc_unit_tests:
-    runs-on: pvc
-    timeout-minutes: 30
+    # runs-on: gkpvc
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
     strategy:
       # test everything, even if one fails
       fail-fast: false
@@ -83,15 +83,35 @@ jobs:
       FI_PROVIDER: tcp
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Set up Intel APT repository
+        run: |
+          # https://www.intel.com/content/www/us/en/docs/oneapi/installation-guide-linux/2024-0/apt.html
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+          | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update -y
+      - name: Install oneAPI
+        run: sudo apt-get install intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-hpckit -y
       - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
-      - name: Save environment dump
-        run: printenv > build/envdump.txt
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+          printenv > build/envdump.txt
+      # change this step to building just tests once unittest job is back
+#     - name: Build everything
+#       run: |
+#         . /opt/intel/oneapi/setvars.sh
+#         make -C build -j
       - name: Build tests
-        run: cmake --build build --target all-tests -- -j
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake --build build --target all-tests -- -j 4
       - name: Unit tests
-        run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/tests.outerr.txt ctest --test-dir build -L TESTLABEL -j 4
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          ctest --test-dir build --output-on-failure -L TESTLABEL -j 4
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         if: always()
         with:
           name: log-pvc-impi-icpx-${{ matrix.config }}
@@ -99,49 +119,65 @@ jobs:
             build/CMakeCache.txt
             build/envdump.txt
             build/Testing
-            build/test/gtest/mhp/*.log
-            build/benchmarks/gbench/mhp/*.log
-            build/examples/mhp/*.log
-            build/test/gtest/shp/*.log
-            build/benchmarks/gbench/shp/*.log
-            build/examples/shp/*.log
+            build/test/gtest/mp/*.log
+            build/benchmarks/gbench/mp/*.log
+            build/examples/mp/*.log
+            build/test/gtest/sp/*.log
+            build/benchmarks/gbench/sp/*.log
+            build/examples/sp/*.log
 
-  ishmem_unit_tests:
-    runs-on: pvc
-    timeout-minutes: 30
-    strategy:
-      # test everything, even if one fails
-      fail-fast: false
-      matrix:
-        include:
-          # Disabled because also gets a timeout
-          # - config: Debug
-          - config: Release
-    name: ishmem-impi-icpx-${{ matrix.config }}
+# disabled due to DRA-164
+#  ishmem_unit_tests:
+#    runs-on: gkpvc
+#    timeout-minutes: 30
+#    strategy:
+#      # test everything, even if one fails
+#      fail-fast: false
+#      matrix:
+#        include:
+#          # Disabled because also gets a timeout
+#          # - config: Debug
+#          - config: Release
+#    name: ishmem-impi-icpx-${{ matrix.config }}
+#    env:
+#      CXX: icpx
+#    steps:
+#      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+#      - name: Generate
+#        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3 -DONETILE_PVC=on
+#      - name: Build ISHMEM
+#        run: cmake --build build --target shmem -- -j
+#      - name: Build MP tests
+#        run: cmake --build build --target mp-tests mp-tests-3 -- -j
+#      - name: MP unit tests
+#        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mptests.outerr.txt ctest --test-dir build -R ^mp-tests-sycl -L MP -j 4
+#        run: ctest --test-dir build -R ^mp-tests-sycl -L MP -j 4
+#      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+#        if: always()
+#        with:
+#          name: log-ishmem-impi-icpx-${{ matrix.config }}
+#          path: |
+#            build/Testing
+#            build/test/gtest/mp/*.log
+#            build/benchmarks/gbench/mp/*.log
+#            build/examples/mp/*.log
+
+  package:
+    needs: []
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
     env:
-      CXX: icpx
+      CXX: g++-13
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Generate
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3
-      - name: Build ISHMEM
-        run: cmake --build build --target shmem -- -j
-      - name: Build MHP tests
-        run: cmake --build build --target mhp-tests mhp-tests-3 -- -j
-      - name: MHP unit tests
-        run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mhptests.outerr.txt ctest --test-dir build -R ^mhp-tests-sycl -L MHP -j 4
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        if: always()
-        with:
-          name: log-ishmem-impi-icpx-${{ matrix.config }}
-          path: |
-            build/Testing
-            build/test/gtest/mhp/*.log
-            build/benchmarks/gbench/mhp/*.log
-            build/examples/mhp/*.log
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - run: |
+        echo "creating DEB package is going to be here"
 
   publish:
-    needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
+    # needs: [checks, unit_tests, pvc_unit_tests, ishmem_unit_tests]
+    needs: [checks, pvc_unit_tests]
     runs-on: intel-ubuntu-latest
     timeout-minutes: 10
     permissions:

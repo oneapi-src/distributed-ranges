@@ -7,17 +7,17 @@
 using T = float;
 
 void Inclusive_Exclusive_Scan_DR(benchmark::State &state, bool is_inclusive) {
-  xhp::distributed_vector<T> a(default_vector_size, 3);
-  xhp::distributed_vector<T> b(default_vector_size, 0);
+  xp::distributed_vector<T> a(default_vector_size, 3);
+  xp::distributed_vector<T> b(default_vector_size, 0);
   Stats stats(state, sizeof(T) * a.size(), sizeof(T) * b.size());
 
   for (auto _ : state) {
     for (std::size_t i = 0; i < default_repetitions; i++) {
       stats.rep();
       if (is_inclusive) {
-        xhp::inclusive_scan(a, b);
+        xp::inclusive_scan(a, b);
       } else {
-        xhp::exclusive_scan(a, b, 0);
+        xp::exclusive_scan(a, b, 0);
       }
     }
   }
