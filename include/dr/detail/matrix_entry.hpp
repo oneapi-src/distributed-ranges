@@ -68,14 +68,11 @@ public:
     return matrix_entry<std::add_const_t<T>, U>(index_, value_);
   }
 
-  bool operator<(const matrix_entry &other) const noexcept {
-    if (index()[0] < other.index()[0]) {
-      return true;
-    } else if (index()[0] == other.index()[0] &&
-               index()[1] < other.index()[1]) {
-      return true;
+  inline bool operator<(const matrix_entry &other) const noexcept {
+    if (index_.first != other.index_.first) {
+      return index_.first < other.index_.first;
     }
-    return false;
+    return index_.second < other.index_.second;
   }
 
   matrix_entry() = default;

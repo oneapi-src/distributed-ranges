@@ -11,6 +11,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <fmt/core.h>
 
 #include <dr/detail/coo_matrix.hpp>
 #include <dr/views/csr_matrix_view.hpp>
@@ -185,21 +186,7 @@ inline coo_matrix<T, I> read_coo_matrix(std::string file_path, bool one_indexed 
                                "file, file has more nonzeros than reported.");
     }
   }
-  auto sort_fn = [](const auto &a, const auto &b) {
-    auto a_index = a.index();
-    auto b_index = b.index();
-    if (a_index.first < b_index.first) {
-      return true;
-    } else if (a_index.first == b_index.first) {
-      if (a_index.second < b_index.second) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  std::sort(matrix.begin(), matrix.end(), sort_fn);
-
+  std::sort(matrix.begin(), matrix.end());
   f.close();
 
   return matrix;
