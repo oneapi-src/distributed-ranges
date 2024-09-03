@@ -153,7 +153,7 @@ add_custom_target(sp-all-tests)
 add_custom_target(all-tests DEPENDS mp-all-tests sp-all-tests)
 
 function(add_mp_ctest_impl)
-  set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL)
+  set(options OFFLOAD GDB SYCL DRLOGS TESTLABEL PVCLABEL)
   set(oneValueArgs NAME TEST_NAME NPROC TIMEOUT)
   set(multiValueArgs TARGS) # Test ARGumentS
 
@@ -234,7 +234,10 @@ function(add_mp_ctest_impl)
   endif()
 
   if(AMC_TESTLABEL)
-    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL MP)
+    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS TESTLABEL PVCLABEL MP)
+  endif()
+  if(AMC_PVCLABEL)
+    set_property(TEST ${AMC_TEST_NAME} PROPERTY LABELS PVCLABEL MP)
   endif()
   add_dependencies(mp-all-tests ${AMC_NAME})
 endfunction()
@@ -247,6 +250,11 @@ endfunction()
 
 function(add_mp_ctest)
   add_mp_ctest_impl(${ARGN} TESTLABEL)
+  add_mp_auxiliary_ctests(${ARGN})
+endfunction()
+
+function(add_mp_pvc_ctest)
+  add_mp_ctest_impl(${ARGN} PVCLABEL)
   add_mp_auxiliary_ctests(${ARGN})
 endfunction()
 
@@ -370,7 +378,7 @@ endfunction()
 
 function(add_sp_ctest test_name name)
   add_sp_disabled_ctest(${test_name} ${name} ${ARGN})
-  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL SP)
+  set_property(TEST ${test_name} PROPERTY LABELS TESTLABEL PVCLABEL SP)
 endfunction()
 
 install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
