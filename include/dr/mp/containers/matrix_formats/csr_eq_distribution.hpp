@@ -54,11 +54,57 @@ public:
       if (nnz_ <= segment_size_ * rank) {
         return;
       }
-      // if (dr::mp::use_sycl()) {
-
-      // }
-      // else {
-        auto size = row_sizes_[rank];
+      auto size = row_sizes_[rank];
+      if (dr::mp::use_sycl()) {
+        auto localVals = dr::__detail::direct_iterator(dr::mp::local_segment(*vals_data_).begin());
+        auto localCols = dr::__detail::direct_iterator(dr::mp::local_segment(*cols_data_).begin());
+        auto offset = rank * segment_size_;
+        auto real_segment_size = std::min(nnz_ - rank * segment_size_, segment_size_);
+        auto local_data = rows_data_;
+        // dr::mp::sycl_queue().submit([&](auto& cgh) {
+        //   cgh.parallel_for(sycl::range<1> { real_segment_size },
+        //                   [=](auto idx) {
+        //                     auto colNum = localCols[idx];
+        //                     auto matrixVal = vals[colNum];
+        //                     auto vectorVal = localVals[idx];
+        //                     auto row = std::distance(std::upper_bound(local_data, local_data + row_size, offset + idx), local_data) - 1;
+        //                     *(res + row) += matrixVal * vectorVal;
+        //                   });
+        // }).wait();
+        auto one_computation_size = (real_segment_size + max_row_size_ - 1) / max_row_size_;
+        auto row_size = row_size_;
+        dr::mp::sycl_queue().submit([&](auto& cgh) {
+          cgh.parallel_for(sycl::range<1> { max_row_size_ },
+                          [=](auto idx) {
+                            std::size_t lower_bound = one_computation_size * idx;
+                            std::size_t upper_bound = std::min(one_computation_size * (idx + 1), real_segment_size);
+                            std::size_t position = lower_bound + offset;
+                            std::size_t first_row = std::distance(local_data, std::upper_bound(local_data, local_data + row_size, position) - 1);
+                            auto row = first_row;
+                            T sum = 0;
+                            for (auto i = lower_bound; i < upper_bound; i++) {
+                              while (row + 1 < row_size && local_data[row + 1] <= offset + i) {
+                                sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                                                sycl::memory_scope::device>
+                                    c_ref(res[row]);
+                                c_ref += sum;
+                                row++;
+                                sum = 0;
+                              }
+                              auto colNum = localCols[i];
+                              auto matrixVal = vals[colNum];
+                              auto vectorVal = localVals[i];
+                              
+                              sum += matrixVal * vectorVal;
+                            }
+                            sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                                            sycl::memory_scope::device>
+                                c_ref(res[row]);
+                            c_ref += sum;
+                          });
+        }).wait();
+      }
+      else {
         auto row_i = -1;
         auto position = segment_size_ * rank;
         auto elem_count = std::min(segment_size_, nnz_ - segment_size_ * rank);
@@ -78,18 +124,25 @@ public:
         // for (int i = 0; i < size; i++) {
         //   fmt::print("ledata, rank, i {} {} {}\n", res[i], rows_backend_.getrank(), i);
         // }
-      // }
+      }
     }
  
     template<typename C, typename A>
     auto local_gemv_and_collect(std::size_t root, C &res, A &vals) const {
       assert(res.size() == shape_.first);
       __detail::allocator<T> alloc;
-      auto res_alloc = alloc.allocate(shape_.first);
+      auto res_alloc = alloc.allocate(max_row_size_);
+      for (auto i = 0; i < max_row_size_; i++) {
+        res_alloc[i] = 0;
+      }
+      auto begin = std::chrono::high_resolution_clock::now();
       local_gemv(res_alloc, vals);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+      fmt::print("eq gemv time {}\n", duration * 1000);
 
       gather_gemv_vector(root, res, res_alloc);
-      alloc.deallocate(res_alloc, shape_.first);
+      alloc.deallocate(res_alloc, max_row_size_);
     }
 private:
   friend csr_eq_segment_iterator<csr_eq_distribution>;
@@ -99,20 +152,25 @@ private:
       auto communicator = default_comm();
       __detail::allocator<T> alloc;
       if (communicator.rank() == root) {
-          auto gathered_res = alloc.allocate(shape_.first * communicator.size());
-          communicator.gather(partial_res, gathered_res, shape_.first, root);
+          auto gathered_res = alloc.allocate(max_row_size_ * communicator.size());
+          communicator.gather(partial_res, gathered_res, max_row_size_, root);
           rng::fill(res, 0);
+          
+        // auto begin = std::chrono::high_resolution_clock::now();
           for (auto i = 0; i < communicator.size(); i++) {
               auto first_row = row_offsets_[i];
               auto last_row = row_offsets_[i] + row_sizes_[i];
               for (auto j = first_row; j < last_row; j++) {
-                  res[j] += gathered_res[shape_.first * i + j - first_row];
+                  res[j] += gathered_res[max_row_size_ * i + j - first_row];
               }
           }
-          alloc.deallocate(gathered_res, shape_.first * communicator.size());
+        // auto end = std::chrono::high_resolution_clock::now();
+        // double duration = std::chrono::duration<double>(end - begin).count();
+        // fmt::print("gather time {}\n", duration);
+          alloc.deallocate(gathered_res, max_row_size_ * communicator.size());
       }
       else {
-          communicator.gather(partial_res, static_cast<T*>(nullptr), shape_.first, root);
+          communicator.gather(partial_res, static_cast<T*>(nullptr), max_row_size_, root);
       }
   }
 
@@ -148,6 +206,7 @@ private:
       auto higher_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], last_index));
       row_offsets_.push_back(lower_limit);
       row_sizes_.push_back(higher_limit - lower_limit);
+      max_row_size_ = std::max(max_row_size_, row_sizes_.back());
     }
 
     auto lower_limit = row_offsets_[rank];
@@ -182,6 +241,7 @@ private:
 
   std::size_t segment_size_ = 0;
   std::size_t row_size_ = 0;
+  std::size_t max_row_size_ = 0;
   std::vector<std::size_t> row_offsets_;
   std::vector<std::size_t> row_sizes_;
 

@@ -11,7 +11,7 @@
 namespace dr::mp {
 template <typename T>
 concept matrix_distibution =
-    requires(T t) {
+    requires(T t, std::vector<int> res, int* input) {
       {t.fence()} -> std::same_as<void>;
       { t.segments() } -> rng::random_access_range;
       {t.shape().first} -> std::convertible_to<std::size_t>;
@@ -20,9 +20,10 @@ concept matrix_distibution =
       {t.get_segment_from_offset(int())} -> std::same_as<std::size_t>;
       {t.get_id_in_segment(int())} -> std::same_as<std::size_t>;
       T(dr::views::csr_matrix_view<typename T::elem_type, typename T::index_type>(), distribution());
+      t.local_gemv_and_collect(int(), res, input);
     };
 
-template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_row_distribution<T, I, BackendT>>
+template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_eq_distribution<T, I, BackendT>>
 requires(matrix_distibution<MatrixDistrT>)
 class distributed_sparse_matrix {
 

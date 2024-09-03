@@ -24,40 +24,42 @@ int main(int argc, char **argv) {
 #endif
 
   {
-    mp::distributed_sparse_matrix<double, long> m(local_data);
+    mp::distributed_sparse_matrix<double, long, dr::mp::MpiBackend, dr::mp::csr_eq_distribution<double, long, dr::mp::MpiBackend>> m(local_data);
+    mp::distributed_sparse_matrix<double, long, dr::mp::MpiBackend, dr::mp::csr_row_distribution<double, long, dr::mp::MpiBackend>> m_row(local_data);
     fmt::print("{}\n", m.size());
-    for (int i = 0; i < dr::mp::default_comm().size(); i++) {
-      if (dr::mp::default_comm().rank() == i) {
-        auto csr_iter = local_data.begin();
-        int j = 0;
-        // fmt::print("{}\n", i);
-        for (auto [index, val]: m) {
-          auto [m, n] = index;
+    // for (int i = 0; i < dr::mp::default_comm().size(); i++) {
+    //   if (dr::mp::default_comm().rank() == i) {
+    //     auto csr_iter = local_data.begin();
+    //     int j = 0;
+    //     // fmt::print("{}\n", i);
+    //     for (auto [index, val]: m) {
+    //       auto [m, n] = index;
           
-          auto [index_csr, val_csr] = *csr_iter;
-          auto [m_csr, n_csr] = index_csr;
-          auto check = m == m_csr && n_csr == n && val == val_csr;
-          if (!check) {
-            fmt::print("{} {} {} {} {} {} {}\n", j, m, m_csr, n, n_csr, val, val_csr);
-          }
-          // assert(check);
-          csr_iter++;
-          j++;
-        }
-      }
-      m.fence();
-    }
+    //       auto [index_csr, val_csr] = *csr_iter;
+    //       auto [m_csr, n_csr] = index_csr;
+    //       auto check = m == m_csr && n_csr == n && val == val_csr;
+    //       if (!check) {
+    //         fmt::print("{} {} {} {} {} {} {}\n", j, m, m_csr, n, n_csr, val, val_csr);
+    //       }
+    //       // assert(check);
+    //       csr_iter++;
+    //       j++;
+    //     }
+    //   }
+    //   m.fence();
+    // }
 
     std::vector<double> res(m.shape().first);
+    std::vector<double> res_row(m.shape().first);
     std::vector<double> a(m.shape().second);
     for (int i = 0; i < a.size(); i++) {
       a[i] = i;
     }
     m.fence();
-    fmt::print("gemv started\n");
     gemv(0, res, m, a);
     m.fence();
-    fmt::print("gemv finished\n");
+    gemv(0, res_row, m_row, a);
+    m_row.fence();
 
     std::vector<double> ref(m.shape().first);
     if (dr::mp::default_comm().rank() == 0) {
@@ -69,6 +71,11 @@ int main(int argc, char **argv) {
        for (int i = 0; i < m.shape().first; i++) {
           if (res[i] != ref[i]) {
             fmt::print("mismatching outcome {} {}\n", res[i], ref[i]);
+          }
+       }
+       for (int i = 0; i < m.shape().first; i++) {
+          if (res_row[i] != ref[i]) {
+            fmt::print("mismatching outcome row {} {}\n", res_row[i], ref[i]);
           }
        }
     }

@@ -11,8 +11,8 @@
 
 namespace dr::mp {
 
-template <typename T, typename I, rng::output_range<T> C, rng::input_range B, typename Backend> //TODO?:, typename MatDistr>
-void gemv(int root, C &res, distributed_sparse_matrix<T, I, Backend> &a, B &b) {
+template <typename T, typename I, rng::output_range<T> C, rng::input_range B, typename Backend, typename MatDistr>
+void gemv(int root, C &res, distributed_sparse_matrix<T, I, Backend, MatDistr> &a, B &b) {
     if (default_comm().rank() == root) {
         assert(a.shape().first == res.size());
         assert(a.shape().second == b.size());
@@ -25,7 +25,6 @@ void gemv(int root, C &res, distributed_sparse_matrix<T, I, Backend> &a, B &b) {
         rng::copy(b.begin(), b.end(), broadcasted_b);
     }
     communicator.bcast(broadcasted_b, a.shape().second * sizeof(T), root);
-
     a.local_gemv_and_collect(root, res, broadcasted_b);
     alloc.deallocate(broadcasted_b, a.shape().second);
     // a.fence();

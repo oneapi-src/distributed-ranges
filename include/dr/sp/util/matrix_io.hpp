@@ -59,6 +59,13 @@ auto create_distributed(dr::views::csr_matrix_view<T, I> local_mat,
 }
 
 
+template <typename T, typename I>
+auto create_distributed(dr::views::csr_matrix_view<T, I> local_mat) {
+  return create_distributed(local_mat, 
+      dr::sp::block_cyclic({dr::sp::tile::div, dr::sp::tile::div},
+                           {dr::sp::nprocs(), 1}));
+}
+
 template <typename T, typename I = std::size_t>
 auto mmread(std::string file_path, const matrix_partition &partition,
             bool one_indexed = true) {

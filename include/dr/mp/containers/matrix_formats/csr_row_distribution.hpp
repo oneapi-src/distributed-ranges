@@ -58,12 +58,35 @@ template<typename C, typename A>
     auto local_gemv(C &res, A &vals) const {
       auto rank = cols_backend_.getrank();
       if (shape_[0] <= segment_size_ * rank) return;
-      // if (dr::mp::use_sycl()) {
-
-      // }
-      // else {
+      auto size = std::min(segment_size_, shape_[0] - segment_size_ * rank);
+      if (dr::mp::use_sycl()) {
+        auto local_vals = vals_data_;
+        auto local_cols = cols_data_;
+        auto offset = val_offsets_[rank];
+        auto real_segment_size = std::min(nnz_ - offset, val_sizes_[rank]);
+        auto rows_data = dr::__detail::direct_iterator(dr::mp::local_segment(*rows_data_).begin());
+        dr::mp::sycl_queue().submit([&](auto& cgh) {
+          cgh.parallel_for(sycl::range<1> { size },
+                          [=](auto idx) {
+                            std::size_t lower_bound = 0;
+                            if (rows_data[idx] > offset) {
+                              lower_bound = rows_data[idx] - offset;
+                            }
+                            std::size_t upper_bound = real_segment_size;
+                            if (idx < size - 1) {
+                              upper_bound = rows_data[idx + 1] - offset;
+                            }
+                            for (auto i = lower_bound; i < upper_bound; i++) {
+                              auto colNum = local_cols[i];
+                              auto matrixVal = vals[colNum];
+                              auto vectorVal = local_vals[i];
+                              *(res + idx) += matrixVal * vectorVal;
+                            }
+                          });
+        }).wait();
+      }
+      else {
         auto local_rows = dr::mp::local_segment(*rows_data_);
-        auto size = std::min(segment_size_, shape_[0] - segment_size_ * rank);
         auto val_count = val_sizes_[rank];
         auto row_i = 0;
         auto position = val_offsets_[rank];
@@ -76,7 +99,7 @@ template<typename C, typename A>
           }
           res[row_i] += vals_data_[i] * vals[cols_data_[i]];
         }
-      // }
+      }
     }
  
     template<typename C, typename A>
@@ -84,7 +107,15 @@ template<typename C, typename A>
       assert(res.size() == shape_.first);
       __detail::allocator<T> alloc;
       auto res_alloc = alloc.allocate(segment_size_);
+      for (auto i = 0; i < segment_size_; i++) {
+        res_alloc[i] = 0;
+      }
+      
+      auto begin = std::chrono::high_resolution_clock::now();
       local_gemv(res_alloc, vals);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+      fmt::print("rows gemv time {}\n", duration * 1000);
 
       gather_gemv_vector(root, res, res_alloc);
       alloc.deallocate(res_alloc, segment_size_);
