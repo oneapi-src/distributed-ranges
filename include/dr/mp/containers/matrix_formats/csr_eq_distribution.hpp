@@ -21,8 +21,8 @@ public:
     csr_eq_distribution(csr_eq_distribution &&) { assert(false); }
 
     /// Constructor
-    csr_eq_distribution(dr::views::csr_matrix_view<T, I> csr_view, distribution dist = distribution()) {
-        init(csr_view, dist);
+    csr_eq_distribution(dr::views::csr_matrix_view<T, I> csr_view, distribution dist = distribution(), std::size_t root = 0) {
+        init(csr_view, dist, root);
     }
 
     ~csr_eq_distribution() {
@@ -178,47 +178,71 @@ private:
     return row_sizes_[rank];
   }
 
-  void init(dr::views::csr_matrix_view<T, I> csr_view, auto dist) {
-    nnz_ = csr_view.size();
+  void init(dr::views::csr_matrix_view<T, I> csr_view, auto dist, std::size_t root) {
     distribution_ = dist;
-    shape_ = csr_view.shape();
-    // determine the distribution of data
-    // auto hb = dist.halo();
-    std::size_t gran = dist.granularity();
-    // TODO: make this an error that is reported back to user
-    assert(nnz_ % gran == 0 && "size must be a multiple of the granularity");
-    // assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
-    // assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
-
-
     auto rank = rows_backend_.getrank();
+
+    std::size_t initial_data[3];
+    if (root == rank) {
+      initial_data[0] = csr_view.size();
+      initial_data[1] = csr_view.shape().first;
+      initial_data[2] = csr_view.shape().second;
+      default_comm().bcast(initial_data, sizeof(std::size_t) * 3, root);
+    }
+    else {
+      default_comm().bcast(initial_data, sizeof(std::size_t) * 3, root);
+    }
+
+    nnz_ = initial_data[0];
+    shape_ = {initial_data[1], initial_data[2]};
     vals_data_ = std::make_shared<distributed_vector<T>>(nnz_);
     cols_data_ = std::make_shared<distributed_vector<I>>(nnz_);
+    dr::mp::copy(root, std::ranges::subrange(csr_view.values_data(), csr_view.values_data() + nnz_), vals_data_->begin());
+    dr::mp::copy(root, std::ranges::subrange(csr_view.colind_data(), csr_view.colind_data() + nnz_), cols_data_->begin());
 
-    dr::mp::copy(std::ranges::subrange(csr_view.values_data(), csr_view.values_data() + nnz_), vals_data_->begin());
-    dr::mp::copy(std::ranges::subrange(csr_view.colind_data(), csr_view.colind_data() + nnz_), cols_data_->begin());
-    
-    assert(*csr_view.rowptr_data() == 0);
-    for (int i = 0; i < default_comm().size(); i++) {
-      auto first_index = vals_data_->get_segment_offset(i);
-      auto last_index = vals_data_->get_segment_offset(i + 1) - 1;
-      auto lower_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], first_index)) - 1;
-      auto higher_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], last_index));
-      row_offsets_.push_back(lower_limit);
-      row_sizes_.push_back(higher_limit - lower_limit);
-      max_row_size_ = std::max(max_row_size_, row_sizes_.back());
+    auto row_info_size = default_comm().size() * 2 + 1;
+    __detail::allocator<size_t> alloc;
+    std::size_t* row_information = new std::size_t[row_info_size];
+    row_offsets_.reserve(default_comm().size());
+    row_sizes_.reserve(default_comm().size());
+    if (root == default_comm().rank()) {
+      for (int i = 0; i < default_comm().size(); i++) {
+        auto first_index = vals_data_->get_segment_offset(i);
+        auto last_index = vals_data_->get_segment_offset(i + 1) - 1;
+        auto lower_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], first_index)) - 1;
+        auto higher_limit = std::distance(csr_view.rowptr_data(), std::upper_bound(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_[0], last_index));
+        row_offsets_.push_back(lower_limit);
+        row_sizes_.push_back(higher_limit - lower_limit);
+        row_information[i] = lower_limit;
+        row_information[default_comm().size() + i] = higher_limit - lower_limit;
+        max_row_size_ = std::max(max_row_size_, row_sizes_.back());
+      }
+      row_information[default_comm().size() * 2] = max_row_size_;
+      default_comm().bcast(row_information, sizeof(std::size_t) * row_info_size, root);
+    }
+    else {
+      default_comm().bcast(row_information, sizeof(std::size_t) * row_info_size, root);
+      for (int i = 0; i < default_comm().size(); i++) {
+        row_offsets_.push_back(row_information[i]);
+        row_sizes_.push_back(row_information[default_comm().size() + i]);
+      }
+      max_row_size_ = row_information[default_comm().size() * 2];
+    }
+    delete[] row_information;
+    row_size_ = std::max(row_sizes_[rank], static_cast<std::size_t>(1));
+    rows_data_ = static_cast<I *>(rows_backend_.allocate(row_size_ * sizeof(I)));
+
+    fence();
+    if (rank == root) {
+      for (std::size_t i = 0; i < default_comm().size(); i++) {
+        auto lower_limit = row_offsets_[i];
+        auto row_size = row_sizes_[i];
+        if (row_size > 0) {
+        rows_backend_.putmem(csr_view.rowptr_data() + lower_limit, 0, row_size * sizeof(I), i);
+        }
+      }
     }
 
-    auto lower_limit = row_offsets_[rank];
-    row_size_ = row_sizes_[rank];
-    if (row_size_ != get_row_size(rank)) {
-      fmt::print("hmmmm? {} {} {} {}\n", rank, lower_limit, row_size_, get_row_size(rank));
-    }
-    
-    if (row_size_ > 0) {
-      rows_data_ = static_cast<I *>(rows_backend_.allocate(row_size_ * sizeof(I)));
-      std::copy(csr_view.rowptr_data() + lower_limit, csr_view.rowptr_data() + lower_limit + row_size_, rows_data_);
-    }
     std::size_t segment_index = 0;
     segment_size_ = vals_data_->segment_size();
     assert(segment_size_ == cols_data_->segment_size());
@@ -226,7 +250,7 @@ private:
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, nnz_ - i), segment_size_);
     }
-    
+    fence();
     // for (int i = 0; i < row_size_; i++) {
     //   fmt::print("row, i, rank {} {} {}\n", rows_data_[i], i, rank);
     // }
@@ -235,7 +259,6 @@ private:
     //   fmt::print("val, col, i, rank {} {} {} {}\n", vals_data_->segments()[rank][i], cols_data_->segments()[rank][i],i, rank);
     // }
 
-    fence();
   }
 
 

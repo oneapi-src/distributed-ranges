@@ -22,8 +22,8 @@ public:
     csr_row_distribution(csr_row_distribution &&) { assert(false); }
 
     /// Constructor
-    csr_row_distribution(dr::views::csr_matrix_view<T, I> csr_view, distribution dist = distribution()) {
-        init(csr_view, dist);
+    csr_row_distribution(dr::views::csr_matrix_view<T, I> csr_view, distribution dist = distribution(), std::size_t root = 0) {
+        init(csr_view, dist, root);
     }
 
     ~csr_row_distribution() {
@@ -69,6 +69,7 @@ template<typename C, typename A>
           cgh.parallel_for(sycl::range<1> { size },
                           [=](auto idx) {
                             std::size_t lower_bound = 0;
+                            T sum = 0;
                             if (rows_data[idx] > offset) {
                               lower_bound = rows_data[idx] - offset;
                             }
@@ -80,8 +81,9 @@ template<typename C, typename A>
                               auto colNum = local_cols[i];
                               auto matrixVal = vals[colNum];
                               auto vectorVal = local_vals[i];
-                              *(res + idx) += matrixVal * vectorVal;
+                              sum += matrixVal * vectorVal;
                             }
+                            *(res + idx) += sum;
                           });
         }).wait();
       }
@@ -137,50 +139,78 @@ private:
           communicator.gather(partial_res, static_cast<T*>(nullptr), segment_size_, root);
       }
   }
-  void init(dr::views::csr_matrix_view<T, I> csr_view, auto dist) {
-    nnz_ = csr_view.size();
+  void init(dr::views::csr_matrix_view<T, I> csr_view, auto dist, std::size_t root) {
     distribution_ = dist;
-    shape_ = csr_view.shape();
-    // determine the distribution of data
-    // auto hb = dist.halo();
-    std::size_t gran = dist.granularity();
-    // TODO: make this an error that is reported back to user
-    assert(nnz_ % gran == 0 && "size must be a multiple of the granularity");
-    // assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
-    // assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
-
-
     auto rank = vals_backend_.getrank();
-    rows_data_ = std::make_shared<distributed_vector<I>>(shape_.first);
 
-    dr::mp::copy(std::ranges::subrange(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_.first), rows_data_->begin());
- 
-    assert(*csr_view.rowptr_data() == 0);
-    for (int i = 0; i < default_comm().size(); i++) {
-      auto first_index = rows_data_->get_segment_offset(i);
-      if (first_index > shape_.first) {
-        val_offsets_.push_back(nnz_);
-        val_sizes_.push_back(0);
-        continue;
-      }
-      std::size_t lower_limit = csr_view.rowptr_data()[first_index];
-      std::size_t higher_limit = nnz_;
-      if (rows_data_->get_segment_offset(i + 1) < shape_.first) {
-        auto last_index = rows_data_->get_segment_offset(i + 1);
-        higher_limit = csr_view.rowptr_data()[last_index];
-      }
-      val_offsets_.push_back(lower_limit);
-      val_sizes_.push_back(higher_limit - lower_limit);
+    std::size_t initial_data[3];
+    if (root == rank) {
+      initial_data[0] = csr_view.size();
+      initial_data[1] = csr_view.shape().first;
+      initial_data[2] = csr_view.shape().second;
+      default_comm().bcast(initial_data, sizeof(std::size_t) * 3, root);
+    }
+    else {
+      default_comm().bcast(initial_data, sizeof(std::size_t) * 3, root);
     }
 
-    auto lower_limit = val_offsets_[rank];
+    nnz_ = initial_data[0];
+    shape_ = {initial_data[1], initial_data[2]};
+
+    rows_data_ = std::make_shared<distributed_vector<I>>(shape_.first);
+
+    dr::mp::copy(root, std::ranges::subrange(csr_view.rowptr_data(), csr_view.rowptr_data() + shape_.first), rows_data_->begin());
+ 
+    auto row_info_size = default_comm().size() * 2;
+    std::size_t* val_information = new std::size_t[row_info_size];
+    val_offsets_.reserve(row_info_size);
+    val_sizes_.reserve(row_info_size);
+    if (rank == root) {
+      for (int i = 0; i < default_comm().size(); i++) {
+        auto first_index = rows_data_->get_segment_offset(i);
+        if (first_index > shape_.first) {
+          val_offsets_.push_back(nnz_);
+          val_sizes_.push_back(0);
+          continue;
+        }
+        std::size_t lower_limit = csr_view.rowptr_data()[first_index];
+        std::size_t higher_limit = nnz_;
+        if (rows_data_->get_segment_offset(i + 1) < shape_.first) {
+          auto last_index = rows_data_->get_segment_offset(i + 1);
+          higher_limit = csr_view.rowptr_data()[last_index];
+        }
+        val_offsets_.push_back(lower_limit);
+        val_sizes_.push_back(higher_limit - lower_limit);
+        val_information[i] = lower_limit;
+        val_information[i + default_comm().size()] = higher_limit - lower_limit;
+      }
+      default_comm().bcast(val_information, sizeof(std::size_t) * row_info_size, root);
+    }
+    else {
+      default_comm().bcast(val_information, sizeof(std::size_t) * row_info_size, root);
+      for (int i = 0; i < default_comm().size(); i++) {
+        val_offsets_.push_back(val_information[i]);
+        val_sizes_.push_back(val_information[default_comm().size() + i]);
+      }
+    }
+    delete[] val_information;
     vals_size_ = std::max(val_sizes_[rank], static_cast<std::size_t>(1));
     // fmt::print("dfsa {} {} {} {}\n", vals_size_, val_sizes_[rank],lower_limit, rank);
     
     cols_data_ = static_cast<I *>(cols_backend_.allocate(vals_size_ * sizeof(I)));
     vals_data_ = static_cast<T *>(vals_backend_.allocate(vals_size_ * sizeof(T)));
-    std::copy(csr_view.values_data() + lower_limit, csr_view.values_data() + lower_limit + vals_size_, vals_data_);
-    std::copy(csr_view.colind_data() + lower_limit, csr_view.colind_data() + lower_limit + vals_size_, cols_data_);
+
+    fence();
+    if (rank == root) {
+      for (std::size_t i = 0; i < default_comm().size(); i++) {
+        auto lower_limit = val_offsets_[i];
+        auto row_size = val_sizes_[i];
+        if (row_size > 0) {
+          vals_backend_.putmem(csr_view.values_data() + lower_limit, 0, row_size * sizeof(T), i);
+          cols_backend_.putmem(csr_view.colind_data() + lower_limit, 0, row_size * sizeof(I), i);
+        }
+      }
+    }
 
     std::size_t segment_index = 0;
     segment_size_ = rows_data_->segment_size();

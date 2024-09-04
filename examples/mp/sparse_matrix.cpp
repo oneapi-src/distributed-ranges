@@ -16,16 +16,22 @@ int main(int argc, char **argv) {
   }
 
   std::string fname(argv[1]);
-  auto local_data = dr::read_csr<double, long>(fname);
 #ifdef SYCL_LANGUAGE_VERSION
   mp::init(sycl::default_selector_v);
 #else
   mp::init();
 #endif
 
+  dr::views::csr_matrix_view<double, long> local_data;
+  auto root = 0;
+  if (root == dr::mp::default_comm().rank()) {
+    local_data = dr::read_csr<double, long>(fname);
+  }
   {
-    mp::distributed_sparse_matrix<double, long, dr::mp::MpiBackend, dr::mp::csr_eq_distribution<double, long, dr::mp::MpiBackend>> m(local_data);
-    mp::distributed_sparse_matrix<double, long, dr::mp::MpiBackend, dr::mp::csr_row_distribution<double, long, dr::mp::MpiBackend>> m_row(local_data);
+    fmt::print("started\n");
+    mp::distributed_sparse_matrix<double, long, dr::mp::MpiBackend, dr::mp::csr_eq_distribution<double, long, dr::mp::MpiBackend>> m(local_data, root);
+    fmt::print("hihihih\n");
+    mp::distributed_sparse_matrix<double, long, dr::mp::MpiBackend, dr::mp::csr_row_distribution<double, long, dr::mp::MpiBackend>> m_row(local_data, root);
     fmt::print("{}\n", m.size());
     // for (int i = 0; i < dr::mp::default_comm().size(); i++) {
     //   if (dr::mp::default_comm().rank() == i) {
@@ -56,9 +62,34 @@ int main(int argc, char **argv) {
       a[i] = i;
     }
     m.fence();
-    gemv(0, res, m, a);
+    double total_time = 0;
+    auto N = 10;
+    gemv(0, res, m, a); // it is here to prepare sycl for work
+    for (int i = 0; i < N; i++) {
+      auto begin = std::chrono::high_resolution_clock::now();
+      gemv(0, res, m, a);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+      total_time += duration;
+      if (i % 10 == 0 && dr::mp::default_comm().rank() == 0) {
+        fmt::print("eq canary {}\n", duration);
+      }
+    }
+    fmt::print("eq gemv time {}\n", total_time * 1000 / N);
     m.fence();
+    total_time = 0;
     gemv(0, res_row, m_row, a);
+    for (int i = 0; i < N; i++) {
+      auto begin = std::chrono::high_resolution_clock::now();
+      gemv(0, res_row, m_row, a);
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count();
+      total_time += duration;
+      if (i % 10 == 0 && dr::mp::default_comm().rank() == 0) {
+        fmt::print("row canary {}\n", duration);
+      }
+    }
+    fmt::print("row gemv time {}\n", total_time * 1000 / N);
     m_row.fence();
 
     std::vector<double> ref(m.shape().first);
@@ -80,7 +111,10 @@ int main(int argc, char **argv) {
        }
     }
   }
-  dr::__detail::destroy_csr_matrix_view(local_data, std::allocator<double>{});
+  
+  if (root == dr::mp::default_comm().rank()) {
+    dr::__detail::destroy_csr_matrix_view(local_data, std::allocator<double>{});
+  }
   mp::finalize();
 
   return 0;

@@ -69,7 +69,7 @@ auto create_distributed(dr::views::csr_matrix_view<T, I> local_mat) {
 template <typename T, typename I = std::size_t>
 auto mmread(std::string file_path, const matrix_partition &partition,
             bool one_indexed = true) {
-  auto local_mat = read_csr<T>(file_path, one_indexed);
+  auto local_mat = read_csr<T, I>(file_path, one_indexed);
 
   auto a = create_distributed(local_mat, partition);
 

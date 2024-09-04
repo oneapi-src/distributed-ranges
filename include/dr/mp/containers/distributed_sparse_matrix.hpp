@@ -123,7 +123,7 @@ public:
   distributed_sparse_matrix(distributed_sparse_matrix &&) { assert(false); }
 
   /// Constructor
-  distributed_sparse_matrix(dr::views::csr_matrix_view<T, I> csr_view, distribution dist = distribution()): distribution_(csr_view, dist) {}
+  distributed_sparse_matrix(dr::views::csr_matrix_view<T, I> csr_view,  std::size_t root = 0, distribution dist = distribution()): distribution_(csr_view, dist, root) {}
 
   /// Returns iterator to beginning
   auto begin() const { return iterator(this, 0); }
