@@ -13,7 +13,7 @@
 #include <vector>
 #include <fmt/core.h>
 
-#include <dr/detail/coo_matrix.hpp>
+#include <dr/detail/local_csr_matrix.hpp>
 #include <dr/views/csr_matrix_view.hpp>
 
 namespace dr {
@@ -27,7 +27,7 @@ namespace __detail {
 template <typename Tuples, typename Allocator>
 auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
                     Allocator &&allocator) {
-  auto &&[index, v] = *tuples.begin();
+  auto &&[index, v] = *tuples.begin()->begin();
   auto &&[i, j] = index;
 
   using T = std::remove_reference_t<decltype(v)>;
@@ -45,19 +45,21 @@ auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
   std::size_t r = 0;
   std::size_t c = 0;
   for (auto iter = tuples.begin(); iter != tuples.end(); ++iter) {
-    auto &&[index, value] = *iter;
-    auto &&[i, j] = index;
+    for (auto iter2 = iter->begin(); iter2 != iter->end(); ++iter2) {
+      auto &&[index, value] = *iter2;
+      auto &&[i, j] = index;
 
-    values[c] = value;
-    colind[c] = j;
+      values[c] = value;
+      colind[c] = j;
 
-    while (r < i) {
-      assert(r + 1 <= shape[0]);
-      // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
-      rowptr[r + 1] = c;
-      r++;
+      while (r < i) {
+        assert(r + 1 <= shape[0]);
+        // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
+        rowptr[r + 1] = c;
+        r++;
+      }
+      c++;
     }
-    c++;
 
     assert(c <= nnz);
     // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
@@ -74,9 +76,10 @@ auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
 /// Read in the Matrix Market file at location `file_path` and a return
 /// a coo_matrix data structure with its contents.
 template <typename T, typename I = std::size_t>
-inline coo_matrix<T, I> read_coo_matrix(std::string file_path, bool one_indexed = true) {
+inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path, bool one_indexed = true) {
   using size_type = std::size_t;
 
+  auto begin = std::chrono::high_resolution_clock::now();
   std::ifstream f;
 
   f.open(file_path.c_str());
@@ -146,12 +149,7 @@ inline coo_matrix<T, I> read_coo_matrix(std::string file_path, bool one_indexed 
   // NOTE for symmetric matrices: `nnz` holds the number of stored values in
   // the matrix market file, while `matrix.nnz_` will hold the total number of
   // stored values (including "mirrored" symmetric values).
-  coo_matrix<T, I> matrix({m, n});
-  if (symmetric) {
-    matrix.reserve(2 * nnz);
-  } else {
-    matrix.reserve(nnz);
-  }
+  local_csr_matrix<T, I> matrix({m, n});
 
   size_type c = 0;
   while (std::getline(f, buf)) {
@@ -186,7 +184,16 @@ inline coo_matrix<T, I> read_coo_matrix(std::string file_path, bool one_indexed 
                                "file, file has more nonzeros than reported.");
     }
   }
-  std::sort(matrix.begin(), matrix.end());
+  
+  auto end = std::chrono::high_resolution_clock::now();
+  double duration = std::chrono::duration<double>(end - begin).count();
+  fmt::print("No sort read time {}\n", duration * 1000);
+  
+  begin = std::chrono::high_resolution_clock::now();
+  matrix.sort();
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration<double>(end - begin).count();
+  fmt::print("Sort time {}\n", duration * 1000);
   f.close();
 
   return matrix;
@@ -206,10 +213,21 @@ void destroy_csr_matrix_view(dr::views::csr_matrix_view<T, I, Args...> view,
 
 template <typename T, typename I = std::size_t>
 auto read_csr(std::string file_path, bool one_indexed = true) {
+  auto begin = std::chrono::high_resolution_clock::now();
   auto m = __detail::read_coo_matrix<T, I>(file_path, one_indexed);
+  auto end = std::chrono::high_resolution_clock::now();
+  double duration = std::chrono::duration<double>(end - begin).count();
+  fmt::print("Read time {}\n", duration * 1000);
+
   auto shape = m.shape();
   auto nnz = m.size();
 
-  return __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
+  begin = std::chrono::high_resolution_clock::now();
+  auto t = __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration<double>(end - begin).count();
+  fmt::print("Conversion time {}\n", duration * 1000);
+
+  return t;
 }
 }

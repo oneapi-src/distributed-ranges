@@ -135,11 +135,11 @@ public:
       for (auto i = 0; i < max_row_size_; i++) {
         res_alloc[i] = 0;
       }
-      auto begin = std::chrono::high_resolution_clock::now();
+      // auto begin = std::chrono::high_resolution_clock::now();
       local_gemv(res_alloc, vals);
-      auto end = std::chrono::high_resolution_clock::now();
-      double duration = std::chrono::duration<double>(end - begin).count();
-      fmt::print("eq gemv time {}\n", duration * 1000);
+      // auto end = std::chrono::high_resolution_clock::now();
+      // double duration = std::chrono::duration<double>(end - begin).count();
+      // fmt::print("eq gemv time {}\n", duration * 1000);
 
       gather_gemv_vector(root, res, res_alloc);
       alloc.deallocate(res_alloc, max_row_size_);
