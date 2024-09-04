@@ -12,6 +12,7 @@
 namespace dr::mp {
 
 template <typename T, typename I, rng::output_range<T> C, rng::input_range B, typename Backend, typename MatDistr>
+requires(vector_multiplicable<MatDistr>)
 void gemv(int root, C &res, distributed_sparse_matrix<T, I, Backend, MatDistr> &a, B &b) {
     if (default_comm().rank() == root) {
         assert(a.shape().first == res.size());

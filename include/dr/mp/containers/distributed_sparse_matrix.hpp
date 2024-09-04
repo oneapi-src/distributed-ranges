@@ -20,6 +20,11 @@ concept matrix_distibution =
       {t.get_segment_from_offset(int())} -> std::same_as<std::size_t>;
       {t.get_id_in_segment(int())} -> std::same_as<std::size_t>;
       T(dr::views::csr_matrix_view<typename T::elem_type, typename T::index_type>(), distribution());
+    };
+
+template <typename T>
+concept vector_multiplicable =
+    requires(T t, std::vector<int> res, int* input) {
       t.local_gemv_and_collect(int(), res, input);
     };
 
@@ -145,6 +150,7 @@ public:
    }
 
   template<typename C, typename A>
+  requires(vector_multiplicable<MatrixDistrT>)
   auto local_gemv_and_collect(std::size_t root, C &res, A &vals) const {
     distribution_.local_gemv_and_collect(root, res, vals);
   }
