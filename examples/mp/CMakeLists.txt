@@ -28,7 +28,6 @@ add_mp_example(stencil-1d-pointer)
 add_mp_example(hello_world)
 add_mp_example(sparse_matrix)
 
-
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)
   target_link_libraries(vector-add-ref PRIVATE MPI::MPI_CXX OpenMP::OpenMP_CXX

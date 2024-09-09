@@ -11,12 +11,11 @@
 #include <dr/detail/index.hpp>
 
 namespace dr {
-template<typename T>
-  concept getable = requires(T x)
-  {
-    std::get<0>(x); 
-    std::get<1>(x);
-  };
+template <typename T>
+concept getable = requires(T x) {
+  std::get<0>(x);
+  std::get<1>(x);
+};
 template <typename T, typename I = std::size_t> class matrix_entry {
 public:
   using index_type = I;

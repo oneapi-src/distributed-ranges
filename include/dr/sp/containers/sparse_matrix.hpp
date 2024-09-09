@@ -4,15 +4,15 @@
 
 #pragma once
 
+#include <dr/detail/generate_random_csr.hpp>
 #include <dr/detail/index.hpp>
-#include <dr/sp/algorithms/copy.hpp>
 #include <dr/detail/matrix_entry.hpp>
+#include <dr/sp/algorithms/copy.hpp>
 #include <dr/sp/containers/matrix_partition.hpp>
 #include <dr/sp/device_vector.hpp>
 #include <dr/sp/distributed_span.hpp>
 #include <dr/sp/init.hpp>
 #include <dr/views/csr_matrix_view.hpp>
-#include <dr/detail/generate_random_csr.hpp>
 #include <iterator>
 
 namespace dr::sp {

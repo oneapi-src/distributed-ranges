@@ -2,34 +2,33 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
+#include <dr/detail/matrix_entry.hpp>
 #include <dr/mp/containers/matrix_formats/csr_eq_distribution.hpp>
 #include <dr/mp/containers/matrix_formats/csr_row_distribution.hpp>
-#include<dr/detail/matrix_entry.hpp>
-#include<dr/views/csr_matrix_view.hpp>
-
+#include <dr/views/csr_matrix_view.hpp>
 
 namespace dr::mp {
 template <typename T>
-concept matrix_distibution =
-    requires(T t, std::vector<int> res, int* input) {
-      {t.fence()} -> std::same_as<void>;
-      { t.segments() } -> rng::random_access_range;
-      {t.shape().first} -> std::convertible_to<std::size_t>;
-      {t.shape().second} -> std::convertible_to<std::size_t>;
-      {t.nnz()} -> std::same_as<std::size_t>;
-      {t.get_segment_from_offset(int())} -> std::same_as<std::size_t>;
-      {t.get_id_in_segment(int())} -> std::same_as<std::size_t>;
-      T(dr::views::csr_matrix_view<typename T::elem_type, typename T::index_type>(), distribution());
-    };
+concept matrix_distibution = requires(T t, std::vector<int> res, int *input) {
+  { t.fence() } -> std::same_as<void>;
+  { t.segments() } -> rng::random_access_range;
+  { t.shape().first } -> std::convertible_to<std::size_t>;
+  { t.shape().second } -> std::convertible_to<std::size_t>;
+  { t.nnz() } -> std::same_as<std::size_t>;
+  { t.get_segment_from_offset(int()) } -> std::same_as<std::size_t>;
+  { t.get_id_in_segment(int()) } -> std::same_as<std::size_t>;
+  T(dr::views::csr_matrix_view<typename T::elem_type, typename T::index_type>(),
+    distribution());
+};
 
 template <typename T>
-concept vector_multiplicable =
-    requires(T t, std::vector<int> res, int* input) {
-      t.local_gemv_and_collect(int(), res, input);
-    };
+concept vector_multiplicable = requires(T t, std::vector<int> res, int *input) {
+  t.local_gemv_and_collect(int(), res, input);
+};
 
-template <typename T, typename I, class BackendT = MpiBackend, class MatrixDistrT = csr_eq_distribution<T, I, BackendT>>
-requires(matrix_distibution<MatrixDistrT>)
+template <typename T, typename I, class BackendT = MpiBackend,
+          class MatrixDistrT = csr_eq_distribution<T, I, BackendT>>
+  requires(matrix_distibution<MatrixDistrT>)
 class distributed_sparse_matrix {
 
 public:
@@ -124,11 +123,15 @@ public:
   };
 
   distributed_sparse_matrix(const distributed_sparse_matrix &) = delete;
-  distributed_sparse_matrix &operator=(const distributed_sparse_matrix &) = delete;
+  distributed_sparse_matrix &
+  operator=(const distributed_sparse_matrix &) = delete;
   distributed_sparse_matrix(distributed_sparse_matrix &&) { assert(false); }
 
   /// Constructor
-  distributed_sparse_matrix(dr::views::csr_matrix_view<T, I> csr_view,  std::size_t root = 0, distribution dist = distribution()): distribution_(csr_view, dist, root) {}
+  distributed_sparse_matrix(dr::views::csr_matrix_view<T, I> csr_view,
+                            std::size_t root = 0,
+                            distribution dist = distribution())
+      : distribution_(csr_view, dist, root) {}
 
   /// Returns iterator to beginning
   auto begin() const { return iterator(this, 0); }
@@ -141,22 +144,19 @@ public:
   auto shape() const { return distribution_.shape(); }
   /// Returns reference using index
   auto operator[](difference_type n) const { return *(begin() + n); }
-//   auto &halo() const { return *halo_; } TODO
+  //   auto &halo() const { return *halo_; } TODO
 
   auto segments() const { return distribution_.segments(); }
 
-  void fence() { 
-    distribution_.fence();
-   }
+  void fence() { distribution_.fence(); }
 
-  template<typename C, typename A>
-  requires(vector_multiplicable<MatrixDistrT>)
+  template <typename C, typename A>
+    requires(vector_multiplicable<MatrixDistrT>)
   auto local_gemv_and_collect(std::size_t root, C &res, A &vals) const {
     distribution_.local_gemv_and_collect(root, res, vals);
   }
 
 private:
   MatrixDistrT distribution_;
-
 };
-}
+} // namespace dr::mp

@@ -12,8 +12,8 @@
 #include <tuple>
 #include <vector>
 
-#include <dr/views/csr_matrix_view.hpp>
 #include <dr/detail/matrix_io.hpp>
+#include <dr/views/csr_matrix_view.hpp>
 
 namespace dr::sp {
 
@@ -58,12 +58,11 @@ auto create_distributed(dr::views::csr_matrix_view<T, I> local_mat,
   return a;
 }
 
-
 template <typename T, typename I>
 auto create_distributed(dr::views::csr_matrix_view<T, I> local_mat) {
-  return create_distributed(local_mat, 
-      dr::sp::block_cyclic({dr::sp::tile::div, dr::sp::tile::div},
-                           {dr::sp::nprocs(), 1}));
+  return create_distributed(
+      local_mat, dr::sp::block_cyclic({dr::sp::tile::div, dr::sp::tile::div},
+                                      {dr::sp::nprocs(), 1}));
 }
 
 template <typename T, typename I = std::size_t>

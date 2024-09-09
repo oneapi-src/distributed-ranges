@@ -6,12 +6,12 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fmt/core.h>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <vector>
-#include <fmt/core.h>
 
 #include <dr/detail/local_csr_matrix.hpp>
 #include <dr/views/csr_matrix_view.hpp>
@@ -64,13 +64,14 @@ auto convert_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t nnz,
   }
 
   return dr::views::csr_matrix_view(values, rowptr, colind,
-                         dr::index<I>(shape[0], shape[1]), nnz, 0);
+                                    dr::index<I>(shape[0], shape[1]), nnz, 0);
 }
 
 /// Read in the Matrix Market file at location `file_path` and a return
 /// a coo_matrix data structure with its contents.
 template <typename T, typename I = std::size_t>
-inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path, bool one_indexed = true) {
+inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path,
+                                              bool one_indexed = true) {
   using size_type = std::size_t;
 
   auto begin = std::chrono::high_resolution_clock::now();
@@ -178,11 +179,11 @@ inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path, bool one_in
                                "file, file has more nonzeros than reported.");
     }
   }
-  
+
   auto end = std::chrono::high_resolution_clock::now();
   double duration = std::chrono::duration<double>(end - begin).count();
   fmt::print("No sort read time {}\n", duration * 1000);
-  
+
   begin = std::chrono::high_resolution_clock::now();
   matrix.sort();
   end = std::chrono::high_resolution_clock::now();
@@ -224,4 +225,4 @@ auto read_csr(std::string file_path, bool one_indexed = true) {
 
   return t;
 }
-}
+} // namespace dr

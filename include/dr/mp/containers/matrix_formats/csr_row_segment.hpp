@@ -13,8 +13,8 @@ template <typename DSM> class csr_row_segment_reference {
 
 public:
   using value_type = typename DSM::value_type;
-  using index_type = typename  DSM::index_type;
-  using elem_type = typename  DSM::elem_type;
+  using index_type = typename DSM::index_type;
+  using elem_type = typename DSM::elem_type;
 
   csr_row_segment_reference(const iterator it) : iterator_(it) {}
 
@@ -45,12 +45,13 @@ private:
 template <typename DSM> class csr_row_segment_iterator {
 public:
   using value_type = typename DSM::value_type;
-  using index_type = typename  DSM::index_type;
-  using elem_type = typename  DSM::elem_type;
+  using index_type = typename DSM::index_type;
+  using elem_type = typename DSM::elem_type;
   using difference_type = typename DSM::difference_type;
 
   csr_row_segment_iterator() = default;
-  csr_row_segment_iterator(DSM *dsm, std::size_t segment_index, std::size_t index) {
+  csr_row_segment_iterator(DSM *dsm, std::size_t segment_index,
+                           std::size_t index) {
     dsm_ = dsm;
     segment_index_ = segment_index;
     index_ = index;
@@ -81,7 +82,8 @@ public:
 
   auto &operator-=(difference_type n) { return *this += (-n); }
 
-  difference_type operator-(const csr_row_segment_iterator &other) const noexcept {
+  difference_type
+  operator-(const csr_row_segment_iterator &other) const noexcept {
     assert(dsm_ != nullptr && dsm_ == other.dsm_);
     assert(index_ >= other.index_);
     return index_ - other.index_;
@@ -121,7 +123,8 @@ public:
   }
 
   // When *this is not first in the expression
-  friend auto operator+(difference_type n, const csr_row_segment_iterator &other) {
+  friend auto operator+(difference_type n,
+                        const csr_row_segment_iterator &other) {
     return other + n;
   }
 
@@ -154,9 +157,10 @@ public:
   void get_value(elem_type *dst, std::size_t size) const {
     assert(dsm_ != nullptr);
     assert(segment_index_ * dsm_->segment_size_ + index_ < dsm_->nnz_);
-    dsm_->vals_backend_.getmem(dst, index_ * sizeof(elem_type), size * sizeof(elem_type), segment_index_);
+    dsm_->vals_backend_.getmem(dst, index_ * sizeof(elem_type),
+                               size * sizeof(elem_type), segment_index_);
   }
-  
+
   elem_type get_value() const {
     elem_type val;
     get_value(&val, 1);
@@ -169,25 +173,27 @@ public:
     index_type *col_data;
     if (rank() == dsm_->cols_backend_.getrank()) {
       col_data = dsm_->cols_data_ + index_;
-    }
-    else {
+    } else {
       col_data = new index_type[size];
-      dsm_->cols_backend_.getmem(col_data, index_ * sizeof(index_type), size * sizeof(index_type), segment_index_);
+      dsm_->cols_backend_.getmem(col_data, index_ * sizeof(index_type),
+                                 size * sizeof(index_type), segment_index_);
     }
     index_type *rows;
     std::size_t rows_length = dsm_->segment_size_;
     rows = new index_type[rows_length];
-    (dsm_->rows_data_->segments()[segment_index_].begin()).get(rows, rows_length);
-    
+    (dsm_->rows_data_->segments()[segment_index_].begin())
+        .get(rows, rows_length);
+
     auto position = dsm_->val_offsets_[segment_index_] + index_;
     auto rows_iter = rows + 1;
     index_type *cols_iter = col_data;
     auto iter = dst;
     std::size_t current_row = dsm_->segment_size_ * segment_index_;
-    std::size_t last_row = std::min(current_row + rows_length - 1, dsm_->shape_[0] - 1);
+    std::size_t last_row =
+        std::min(current_row + rows_length - 1, dsm_->shape_[0] - 1);
 
     for (int i = 0; i < size; i++) {
-      while (current_row < last_row && *rows_iter <= position + i ) {
+      while (current_row < last_row && *rows_iter <= position + i) {
         rows_iter++;
         current_row++;
       }
@@ -200,7 +206,6 @@ public:
       delete[] col_data;
     }
     delete[] rows;
-
   }
 
   dr::index<index_type> get_index() const {
@@ -216,7 +221,8 @@ public:
 
   auto segments() const {
     assert(dsm_ != nullptr);
-    return dr::__detail::drop_segments(dsm_->segments(), segment_index_, index_);
+    return dr::__detail::drop_segments(dsm_->segments(), segment_index_,
+                                       index_);
   }
 
 private:
@@ -235,7 +241,7 @@ public:
   using difference_type = std::ptrdiff_t;
   csr_row_segment() = default;
   csr_row_segment(DSM *dsm, std::size_t segment_index, std::size_t size,
-             std::size_t reserved) {
+                  std::size_t reserved) {
     dsm_ = dsm;
     segment_index_ = segment_index;
     size_ = size;
@@ -266,11 +272,13 @@ private:
 } // namespace dr::mp
 
 namespace std {
-    template<typename DSM>
-    struct tuple_size<dr::mp::csr_row_segment_reference<DSM>> : std::integral_constant<std::size_t, 2> {};
+template <typename DSM>
+struct tuple_size<dr::mp::csr_row_segment_reference<DSM>>
+    : std::integral_constant<std::size_t, 2> {};
 
-    template <std::size_t Index, typename DSM>
-    struct tuple_element<Index, dr::mp::csr_row_segment_reference<DSM>>
-        : tuple_element<Index, std::tuple<dr::index<typename DSM::index_type>, typename DSM::elem_type>> {};
+template <std::size_t Index, typename DSM>
+struct tuple_element<Index, dr::mp::csr_row_segment_reference<DSM>>
+    : tuple_element<Index, std::tuple<dr::index<typename DSM::index_type>,
+                                      typename DSM::elem_type>> {};
 
 } // namespace std

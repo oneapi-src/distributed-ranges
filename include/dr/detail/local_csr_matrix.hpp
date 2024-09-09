@@ -5,9 +5,9 @@
 #pragma once
 
 #include <dr/detail/matrix_entry.hpp>
+#include <future>
 #include <memory>
 #include <vector>
-#include <future>
 
 namespace dr {
 
@@ -63,17 +63,16 @@ public:
     }
   }
 
-  void push_back(index_type row, const value_type &value) { 
-    tuples_[row].push_back(value); 
+  void push_back(index_type row, const value_type &value) {
+    tuples_[row].push_back(value);
     size_++;
   }
 
-
   void sort() {
-    auto comparator = [](auto &one, auto& two) {
+    auto comparator = [](auto &one, auto &two) {
       return one.second < two.second;
     };
-    for (auto &elem: tuples_) {
+    for (auto &elem : tuples_) {
       std::sort(elem.begin(), elem.end(), comparator);
     }
   }
