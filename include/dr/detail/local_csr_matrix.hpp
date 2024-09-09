@@ -7,6 +7,7 @@
 #include <dr/detail/matrix_entry.hpp>
 #include <memory>
 #include <vector>
+#include <future>
 
 namespace dr {
 
@@ -15,7 +16,7 @@ namespace __detail {
 template <typename T, typename I, typename Allocator = std::allocator<T>>
 class local_csr_matrix {
 public:
-  using value_type = dr::matrix_entry<T, I>;
+  using value_type = std::pair<T, I>;
   using scalar_type = T;
   using index_type = I;
   using size_type = std::size_t;
@@ -36,9 +37,11 @@ public:
   using iterator = typename backend_type::iterator;
   using const_iterator = typename backend_type::const_iterator;
 
-  local_csr_matrix(dr::index<I> shape) : shape_(shape) {
+  local_csr_matrix(dr::index<I> shape, std::size_t nnz) : shape_(shape) {
+    auto average_size = nnz / shape.first / 2;
     for (std::size_t i = 0; i < shape.first; i++) {
       tuples_.push_back(row_type());
+      tuples_.back().reserve(average_size);
     }
   }
 
@@ -60,15 +63,18 @@ public:
     }
   }
 
-  void push_back(const value_type &value) { 
+  void push_back(index_type row, const value_type &value) { 
+    tuples_[row].push_back(value); 
     size_++;
-    tuples_[value.index().first].push_back(value); 
-    }
+  }
 
 
   void sort() {
+    auto comparator = [](auto &one, auto& two) {
+      return one.second < two.second;
+    };
     for (auto &elem: tuples_) {
-      std::sort(elem.begin(), elem.end());
+      std::sort(elem.begin(), elem.end(), comparator);
     }
   }
 

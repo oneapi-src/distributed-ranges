@@ -25,13 +25,12 @@ namespace __detail {
 // 2) `tuples` has shape `shape`
 // 3) `tuples` has `nnz` elements
 template <typename Tuples, typename Allocator>
-auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
+auto convert_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t nnz,
                     Allocator &&allocator) {
-  auto &&[index, v] = *tuples.begin()->begin();
-  auto &&[i, j] = index;
+  auto &&[v, j] = *csr_matrix.begin()->begin();
 
   using T = std::remove_reference_t<decltype(v)>;
-  using I = std::remove_reference_t<decltype(i)>;
+  using I = std::remove_reference_t<decltype(j)>;
 
   typename std::allocator_traits<Allocator>::template rebind_alloc<I>
       i_allocator(allocator);
@@ -44,22 +43,17 @@ auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
 
   std::size_t r = 0;
   std::size_t c = 0;
-  for (auto iter = tuples.begin(); iter != tuples.end(); ++iter) {
+  for (auto iter = csr_matrix.begin(); iter != csr_matrix.end(); ++iter) {
     for (auto iter2 = iter->begin(); iter2 != iter->end(); ++iter2) {
-      auto &&[index, value] = *iter2;
-      auto &&[i, j] = index;
+      auto &&[value, j] = *iter2;
 
       values[c] = value;
       colind[c] = j;
-
-      while (r < i) {
-        assert(r + 1 <= shape[0]);
-        // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
-        rowptr[r + 1] = c;
-        r++;
-      }
       c++;
     }
+    assert(r + 1 <= shape[0]);
+    rowptr[r + 1] = c;
+    r++;
 
     assert(c <= nnz);
     // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
@@ -149,7 +143,7 @@ inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path, bool one_in
   // NOTE for symmetric matrices: `nnz` holds the number of stored values in
   // the matrix market file, while `matrix.nnz_` will hold the total number of
   // stored values (including "mirrored" symmetric values).
-  local_csr_matrix<T, I> matrix({m, n});
+  local_csr_matrix<T, I> matrix({m, n}, nnz);
 
   size_type c = 0;
   while (std::getline(f, buf)) {
@@ -172,10 +166,10 @@ inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path, bool one_in
           "read_MatrixMarket: file has nonzero out of bounds.");
     }
 
-    matrix.push_back({{i, j}, v});
+    matrix.push_back(i, {v, j});
 
     if (symmetric && i != j) {
-      matrix.push_back({{j, i}, v});
+      matrix.push_back(j, {v, i});
     }
 
     c++;
