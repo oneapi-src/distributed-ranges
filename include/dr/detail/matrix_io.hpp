@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <fmt/core.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -25,7 +24,55 @@ namespace __detail {
 // 2) `tuples` has shape `shape`
 // 3) `tuples` has `nnz` elements
 template <typename Tuples, typename Allocator>
-auto convert_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t nnz,
+auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
+                    Allocator &&allocator) {
+  auto &&[index, v] = *tuples.begin();
+  auto &&[i, j] = index;
+
+  using T = std::remove_reference_t<decltype(v)>;
+  using I = std::remove_reference_t<decltype(i)>;
+
+  typename std::allocator_traits<Allocator>::template rebind_alloc<I>
+      i_allocator(allocator);
+
+  T *values = allocator.allocate(nnz);
+  I *rowptr = i_allocator.allocate(shape[0] + 1);
+  I *colind = i_allocator.allocate(nnz);
+
+  rowptr[0] = 0;
+
+  std::size_t r = 0;
+  std::size_t c = 0;
+  for (auto iter = tuples.begin(); iter != tuples.end(); ++iter) {
+     auto &&[index, value] = *iter;
+
+      auto &&[i, j] = index;
+
+      values[c] = value;
+      colind[c] = j;
+
+      while (r < i) {
+        assert(r + 1 <= shape[0]);
+        // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
+        rowptr[r + 1] = c;
+        r++;
+      }
+      c++;
+
+    assert(c <= nnz);
+    // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
+  }
+
+  for (; r < shape[0]; r++) {
+    rowptr[r + 1] = nnz;
+  }
+
+  return dr::views::csr_matrix_view(values, rowptr, colind,
+                         dr::index<I>(shape[0], shape[1]), nnz, 0);
+}
+
+template <typename Tuples, typename Allocator>
+auto convert_local_csr_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t nnz,
                     Allocator &&allocator) {
   auto &&[v, j] = *csr_matrix.begin()->begin();
 
@@ -74,7 +121,6 @@ inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path,
                                               bool one_indexed = true) {
   using size_type = std::size_t;
 
-  auto begin = std::chrono::high_resolution_clock::now();
   std::ifstream f;
 
   f.open(file_path.c_str());
@@ -180,15 +226,7 @@ inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path,
     }
   }
 
-  auto end = std::chrono::high_resolution_clock::now();
-  double duration = std::chrono::duration<double>(end - begin).count();
-  fmt::print("No sort read time {}\n", duration * 1000);
-
-  begin = std::chrono::high_resolution_clock::now();
   matrix.sort();
-  end = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration<double>(end - begin).count();
-  fmt::print("Sort time {}\n", duration * 1000);
   f.close();
 
   return matrix;
@@ -208,20 +246,10 @@ void destroy_csr_matrix_view(dr::views::csr_matrix_view<T, I, Args...> view,
 
 template <typename T, typename I = std::size_t>
 auto read_csr(std::string file_path, bool one_indexed = true) {
-  auto begin = std::chrono::high_resolution_clock::now();
   auto m = __detail::read_coo_matrix<T, I>(file_path, one_indexed);
-  auto end = std::chrono::high_resolution_clock::now();
-  double duration = std::chrono::duration<double>(end - begin).count();
-  fmt::print("Read time {}\n", duration * 1000);
-
   auto shape = m.shape();
   auto nnz = m.size();
-
-  begin = std::chrono::high_resolution_clock::now();
-  auto t = __detail::convert_to_csr(m, shape, nnz, std::allocator<T>{});
-  end = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration<double>(end - begin).count();
-  fmt::print("Conversion time {}\n", duration * 1000);
+  auto t = __detail::convert_local_csr_to_csr(m, shape, nnz, std::allocator<T>{});
 
   return t;
 }

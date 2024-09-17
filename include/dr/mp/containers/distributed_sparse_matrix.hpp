@@ -22,7 +22,7 @@ concept matrix_distibution = requires(T t, std::vector<int> res, int *input) {
 };
 
 template <typename T>
-concept vector_multiplicable = requires(T t, std::vector<int> res, int *input) {
+concept vector_multiplicable = requires(T t, std::vector<typename T::elem_type> res, T::elem_type *input) {
   t.local_gemv_and_collect(int(), res, input);
 };
 
@@ -150,9 +150,9 @@ public:
 
   void fence() { distribution_.fence(); }
 
-  template <typename C, typename A>
+  template <typename C>
     requires(vector_multiplicable<MatrixDistrT>)
-  auto local_gemv_and_collect(std::size_t root, C &res, A &vals) const {
+  auto local_gemv_and_collect(std::size_t root, C &res, T* vals) const {
     distribution_.local_gemv_and_collect(root, res, vals);
   }
 

@@ -83,4 +83,5 @@
 #include <dr/mp/algorithms/matrix/gemv.hpp>
 #include <dr/mp/containers/distributed_vector.hpp>
 #include <dr/mp/containers/distributed_sparse_matrix.hpp>
+#include <dr/mp/containers/broadcasted_vector.hpp>
 #include <dr/mp/containers/distributed_mdarray.hpp>

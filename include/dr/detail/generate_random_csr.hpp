@@ -6,8 +6,9 @@
 
 #include <concepts>
 #include <dr/views/csr_matrix_view.hpp>
-#include <map>
+#include <unordered_set>
 #include <random>
+#include <fmt/core.h>
 
 namespace dr {
 
@@ -24,7 +25,15 @@ template <std::floating_point T> struct uniform_distribution<T> {
 template <typename T>
 using uniform_distribution_t = typename uniform_distribution<T>::type;
 
+struct pair_hash {
+    template <std::integral I>
+    inline std::size_t operator()(const std::pair<I,I> & v) const {
+        return v.first*31+v.second;
+    }
+};
+
 } // namespace
+
 
 template <typename T = float, std::integral I = std::size_t>
 auto generate_random_csr(dr::index<I> shape, double density = 0.01,
@@ -32,9 +41,10 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
 
   assert(density >= 0.0 && density < 1.0);
 
-  std::map<std::pair<I, I>, T> tuples;
-
+  std::unordered_set<std::pair<I, I>, pair_hash> tuples{};
+  std::vector<std::pair<std::pair<I,I>, T>> entries;
   std::size_t nnz = density * shape[0] * shape[1];
+  entries.reserve(nnz);
 
   std::mt19937 gen(seed);
   std::uniform_int_distribution<I> row(0, shape[0] - 1);
@@ -47,10 +57,10 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
     auto j = column(gen);
     if (tuples.find({i, j}) == tuples.end()) {
       T value = value_gen(gen);
-      tuples.insert({{i, j}, value});
+      tuples.insert({i, j});
+      entries.push_back({{i, j}, value});
     }
   }
-
   T *values = new T[nnz];
   I *rowptr = new I[shape[0] + 1];
   I *colind = new I[nnz];
@@ -59,7 +69,8 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
 
   std::size_t r = 0;
   std::size_t c = 0;
-  for (auto iter = tuples.begin(); iter != tuples.end(); ++iter) {
+  std::sort(entries.begin(), entries.end());
+  for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
     auto &&[index, value] = *iter;
     auto &&[i, j] = index;
 
@@ -87,6 +98,51 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
   }
 
   return dr::views::csr_matrix_view(values, rowptr, colind, shape, nnz, 0);
+}
+
+template <typename T = float, std::integral I = std::size_t>
+auto generate_band_csr(I size, std::size_t up_band = 3,
+                         std::size_t down_band = 3) {
+  std::size_t nnz = (1 + up_band + down_band) * size - (up_band * (up_band - 1) / 2) - (down_band * (down_band - 1) / 2);
+
+  T *values = new T[nnz];
+  I *rowptr = new I[size + 1];
+  I *colind = new I[nnz];
+
+  rowptr[0] = 0;
+
+  std::size_t r = 0;
+  std::size_t c = 0;
+  for (auto i = 0; i < size; i++) {
+    for (auto j = i - down_band; j < i ; j++) {
+        if (j < 0) {
+          continue;
+        }
+        values[c] = 1;
+        colind[c] = j;
+        c++;
+    }
+    values[c] = 1;
+    colind[c] = i;
+    c++;
+    for (auto j = i + 1; j <= i + up_band ; j++) {
+        if (j >= size) {
+          continue;
+        }
+        values[c] = 1;
+        colind[c] = j;
+        c++;
+    }
+    rowptr[r + 1] = c + 1;
+    r++;
+
+  }
+
+  for (; r < size; r++) {
+    rowptr[r + 1] = nnz;
+  }
+
+  return dr::views::csr_matrix_view<T,I>(values, rowptr, colind, {size, size}, nnz, 0);
 }
 
 } // namespace dr

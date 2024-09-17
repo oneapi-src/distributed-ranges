@@ -58,7 +58,7 @@ public:
     vals_backend_.fence();
     cols_backend_.fence();
   }
-  template <typename C, typename A> auto local_gemv(C &res, A &vals) const {
+  template <typename C> auto local_gemv(C &res, T* vals) const {
     auto rank = cols_backend_.getrank();
     if (shape_[0] <= segment_size_ * rank)
       return;
@@ -109,8 +109,8 @@ public:
     }
   }
 
-  template <typename C, typename A>
-  auto local_gemv_and_collect(std::size_t root, C &res, A &vals) const {
+  template <typename C>
+  auto local_gemv_and_collect(std::size_t root, C &res, T* &vals) const {
     assert(res.size() == shape_.first);
     __detail::allocator<T> alloc;
     auto res_alloc = alloc.allocate(segment_size_);
@@ -122,7 +122,8 @@ public:
     local_gemv(res_alloc, vals);
     // auto end = std::chrono::high_resolution_clock::now();
     // double duration = std::chrono::duration<double>(end - begin).count();
-    // fmt::print("rows gemv time {}\n", duration * 1000);
+    // auto size = std::min(segment_size_, shape_[0] - segment_size_ * default_comm().rank());
+    // fmt::print("rows gemv time {} {} {}\n", duration * 1000, size, default_comm().rank());
 
     gather_gemv_vector(root, res, res_alloc);
     alloc.deallocate(res_alloc, segment_size_);
