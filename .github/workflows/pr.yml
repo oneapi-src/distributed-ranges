@@ -55,7 +55,7 @@ jobs:
 #      run: make -C build -j
 #    - name: Unit tests
 #      run: ctest --test-dir build -L TESTLABEL -j 4
-#    - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+#    - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
 #      if: always()
 #      with:
 #        name: log-gcc-${{ env.CXX }}
@@ -111,7 +111,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           ctest --test-dir build --output-on-failure -L TESTLABEL -j 4
-      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         if: always()
         with:
           name: log-pvc-impi-icpx-${{ matrix.config }}
@@ -152,7 +152,7 @@ jobs:
 #      - name: MP unit tests
 #        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mptests.outerr.txt ctest --test-dir build -R ^mp-tests-sycl -L MP -j 4
 #        run: ctest --test-dir build -R ^mp-tests-sycl -L MP -j 4
-#      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+#      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
 #        if: always()
 #        with:
 #          name: log-ishmem-impi-icpx-${{ matrix.config }}
