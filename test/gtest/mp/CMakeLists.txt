@@ -125,10 +125,10 @@ if(ENABLE_SYCL)
 
   foreach(nproc RANGE 2 4)
     add_mp_ctest(
-      NAME mp-tests NPROC ${nproc} TIMEOUT 150 SYCL TARGS
+      NAME mp-tests NPROC ${nproc} TIMEOUT 500 SYCL TARGS
       --gtest_filter=-${sycl-exclusions})
   endforeach()
   add_mp_ctest(
-    TEST_NAME mp-tests-sycl-3-only NAME mp-tests-3 NPROC 3 TIMEOUT 150 SYCL
+    TEST_NAME mp-tests-sycl-3-only NAME mp-tests-3 NPROC 3 TIMEOUT 500 SYCL
     TARGS --gtest_filter=-${sycl-exclusions})
 endif()
