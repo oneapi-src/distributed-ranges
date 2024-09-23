@@ -182,4 +182,12 @@ namespace dr::mp {
     std::vector<Group *> map_;
     Memory memory_;
   };
+
+  template <typename T, typename... Ts>
+  void halo_exchange(auto&& f, T &dv, Ts &...dvs) {
+    for (std::size_t step = 0; step < dv.dist().redundancy(); step++) {
+      f(dv, dvs...);
+    }
+    halo(dv).exchange();
+  }
 }

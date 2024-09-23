@@ -42,14 +42,20 @@ add_executable(
         stencil.cpp
         segments.cpp
         slide_view.cpp
-        wave_kernel.cpp)
+        wave_kernel.cpp
+        wide-halo-1d-3.cpp
+        wide-halo-2d-3.cpp
+)
 
 add_executable(
         mp-tests-3
         mp-tests.cpp
         communicator-3.cpp
         halo-3.cpp
-        slide_view-3.cpp)
+        slide_view-3.cpp
+        wide-halo-1d-3.cpp
+        wide-halo-2d-3.cpp
+)
 
 # mp-quick-test and mp-quick-test-3-only is for development. By reducing the number of source files, it
 # builds much faster. Change the source files to match what you need to test. It
@@ -61,7 +67,7 @@ add_executable(mp-quick-test
 )
 add_executable(mp-quick-test-3-only
         mp-tests.cpp
-        halo-3.cpp
+        wide-halo-1d-3.cpp
 )
 # cmake-format: on
 

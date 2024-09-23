@@ -22,7 +22,19 @@ public:
     return *this;
   }
 
-  auto halo() const { return halo_bounds_; }
+  auto halo() const {
+    halo_bounds halo_bounds_resized = halo_bounds_;
+    halo_bounds_resized.prev *= redundancy_;
+    halo_bounds_resized.next *= redundancy_;
+    return halo_bounds_resized;
+  }
+
+  distribution &redundancy(std::size_t redundancy) {
+    redundancy_ = redundancy;
+    return *this;
+  }
+
+  auto redundancy() const { return redundancy_; }
 
   distribution &periodic(bool periodic) {
     halo_bounds_.periodic = periodic;
@@ -40,6 +52,7 @@ public:
 
 private:
   halo_bounds halo_bounds_;
+  std::size_t redundancy_ = 1;
   std::size_t granularity_ = 1;
 };
 
