@@ -199,8 +199,7 @@ DR_BENCHMARK(GemvRow_DR);
 
 
 
-static void Gemv_reference(benchmark::State &state) {
-  T actual{};
+static void Gemv_Reference(benchmark::State &state) {
   std::size_t n = default_vector_size;
   std::size_t up = default_vector_size / 10;
   std::size_t down = default_vector_size / 10;
@@ -221,23 +220,23 @@ static void Gemv_reference(benchmark::State &state) {
   auto input = sycl::malloc_device<double>(band_shape[1], q);
   auto output = sycl::malloc_device<double>(band_shape[0], q);
 
-  std::copy(policy, local_src.values_data(), local_src.values_data() + nnz_count, val_ptr);
-  std::copy(policy, local_src.colind_data(), local_src.colind_data() + nnz_count, col_ptr);
-  std::copy(policy, local_src.rowptr_data(), local_src.rowptr_data() + band_shape[0], row_ptr);
+  std::copy(policy, local_data.values_data(), local_data.values_data() + nnz_count, val_ptr);
+  std::copy(policy, local_data.colind_data(), local_data.colind_data() + nnz_count, col_ptr);
+  std::copy(policy, local_data.rowptr_data(), local_data.rowptr_data() + band_shape[0], row_ptr);
   std::copy(policy, b.begin(), b.end(), input);
   
   for (auto _ : state) {
     q.fill(output, 0, band_shape[0]).wait();
     q.submit([&](auto &cgh) {
-            cgh.parallel_for(sycl::range<1>{band_shape[0]}, [=](auto idx) {
+            cgh.parallel_for(sycl::range<1>{static_cast<size_t>(band_shape[0])}, [=](auto idx) {
               double sum = 0;
-              for (auto i = rows_data[idx]; i < rows_data[idx + 1]; i++) {
-                auto colNum = local_cols[i];
-                auto matrixVal = vals[colNum];
-                auto vectorVal = local_vals[i];
+              for (auto i = row_ptr[idx]; i < row_ptr[idx + 1]; i++) {
+                auto colNum = col_ptr[i];
+                auto matrixVal = input[colNum];
+                auto vectorVal = val_ptr[i];
                 sum += matrixVal * vectorVal;
               }
-              *(res + idx) += sum;
+              *(output + idx) += sum;
             });
           })
           .wait();
@@ -249,6 +248,13 @@ static void Gemv_reference(benchmark::State &state) {
   sycl::free(output, q);
 }
 
+static void GemvEq_Reference(benchmark::State &state) {
+    Gemv_Reference(state);
+}
+
+static void GemvRow_Reference(benchmark::State &state) {
+    Gemv_Reference(state);
+}
 
 DR_BENCHMARK(GemvEq_Reference);
 
