@@ -135,7 +135,7 @@ mp::distributed_sparse_matrix<
 #else
 
 
-static void GEMV_EQ_DR(benchmark::State &state) {
+static void GemvEq_DR(benchmark::State &state) {
   // fft requires usm shared allocation
   std::size_t n = default_vector_size;
   std::size_t up = default_vector_size / 10;
@@ -164,13 +164,13 @@ mp::distributed_sparse_matrix<
   }
 }
 
-DR_BENCHMARK(GEMV_EQ_DR);
+DR_BENCHMARK(GemvEq_DR);
 
-static void GEMV_ROW_DR(benchmark::State &state) {
+static void GemvRow_DR(benchmark::State &state) {
   // fft requires usm shared allocation
-  std::size_t n = 100000;
-  std::size_t up = 10000;
-  std::size_t down = 10000;
+  std::size_t n = default_vector_size;
+  std::size_t up = default_vector_size / 10;
+  std::size_t down = default_vector_size / 10;
   assert(dr::mp::use_sycl());
   dr::views::csr_matrix_view<double, long> local_data;
   local_data = dr::generate_band_csr<double,long>(n, up, down);
@@ -195,6 +195,63 @@ mp::distributed_sparse_matrix<
   }
 }
 
-DR_BENCHMARK(GEMV_ROW_DR);
+DR_BENCHMARK(GemvRow_DR);
+
+
+
+static void Gemv_reference(benchmark::State &state) {
+  T actual{};
+  std::size_t n = default_vector_size;
+  std::size_t up = default_vector_size / 10;
+  std::size_t down = default_vector_size / 10;
+  assert(dr::mp::use_sycl());
+  dr::views::csr_matrix_view<double, long> local_data;
+  local_data = dr::generate_band_csr<double,long>(n, up, down);
+  auto nnz_count = local_data.size();
+  auto band_shape = local_data.shape();
+  auto q = get_queue();
+  auto policy = oneapi::dpl::execution::make_device_policy(q);
+  auto val_ptr = sycl::malloc_device<double>(nnz_count, q);
+  auto col_ptr = sycl::malloc_device<long>(nnz_count, q);
+  auto row_ptr = sycl::malloc_device<long>(band_shape[0], q);
+  std::vector<double> b(band_shape[1]);
+  for (auto i = 0; i < band_shape[1]; i++) {
+      b.push_back(i);
+  }
+  auto input = sycl::malloc_device<double>(band_shape[1], q);
+  auto output = sycl::malloc_device<double>(band_shape[0], q);
+
+  std::copy(policy, local_src.values_data(), local_src.values_data() + nnz_count, val_ptr);
+  std::copy(policy, local_src.colind_data(), local_src.colind_data() + nnz_count, col_ptr);
+  std::copy(policy, local_src.rowptr_data(), local_src.rowptr_data() + band_shape[0], row_ptr);
+  std::copy(policy, b.begin(), b.end(), input);
+  
+  for (auto _ : state) {
+    q.fill(output, 0, band_shape[0]).wait();
+    q.submit([&](auto &cgh) {
+            cgh.parallel_for(sycl::range<1>{band_shape[0]}, [=](auto idx) {
+              double sum = 0;
+              for (auto i = rows_data[idx]; i < rows_data[idx + 1]; i++) {
+                auto colNum = local_cols[i];
+                auto matrixVal = vals[colNum];
+                auto vectorVal = local_vals[i];
+                sum += matrixVal * vectorVal;
+              }
+              *(res + idx) += sum;
+            });
+          })
+          .wait();
+  }
+  sycl::free(val_ptr, q);
+  sycl::free(col_ptr, q);
+  sycl::free(row_ptr, q);
+  sycl::free(input, q);
+  sycl::free(output, q);
+}
+
+
+DR_BENCHMARK(GemvEq_Reference);
+
+DR_BENCHMARK(GemvRow_Reference);
 
 #endif
