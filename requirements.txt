@@ -15,7 +15,7 @@ chardet==5.2.0
 charset-normalizer==3.3.2
 distlib==0.3.8
 docutils==0.21.2
-filelock==3.15.4
+filelock==3.16.1
 identify==2.6.1
 idna==3.10
 imagesize==1.4.1
@@ -24,7 +24,7 @@ license-expression==30.3.1
 MarkupSafe==2.1.5
 nodeenv==1.9.1
 packaging==24.1
-platformdirs==4.2.2
+platformdirs==4.3.6
 pre-commit==3.8.0
 pydata-sphinx-theme==0.15.4
 pyenchant==3.2.2
@@ -46,4 +46,4 @@ sphinxcontrib-serializinghtml==2.0.0
 sphinxcontrib-spelling==8.0.0
 typing_extensions==4.12.2
 urllib3==2.2.2
-virtualenv==20.26.3
+virtualenv==20.26.5
