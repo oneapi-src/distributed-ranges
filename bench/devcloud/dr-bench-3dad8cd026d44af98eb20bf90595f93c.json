@@ -1,0 +1,117 @@
+{
+  "context": {
+    "date": "2023-12-01T02:52:17-08:00",
+    "host_name": "idc-beta-batch-pvc-node-13",
+    "executable": "shp/shp-bench",
+    "num_cpus": 224,
+    "mhz_per_cpu": 3800,
+    "cpu_scaling_enabled": false,
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 49152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 32768,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 2097152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 3,
+        "size": 110100480,
+        "num_sharing": 112
+      }
+    ],
+    "load_avg": [4.90234,3.4458,19.8945],
+    "library_build_type": "debug",
+    "default_repetitions": "50",
+    "default_vector_size": "2000000000",
+    "device": "GPU",
+    "device_info0": "Intel(R) Data Center GPU Max 1100, max_compute_units: 448",
+    "hostname": "idc-beta-batch-pvc-node-13\n",
+    "lscpu": "Architecture:                       x86_64\nCPU op-mode(s):                     32-bit, 64-bit\nAddress sizes:                      52 bits physical, 57 bits virtual\nByte Order:                         Little Endian\nCPU(s):                             224\nOn-line CPU(s) list:                0-223\nVendor ID:                          GenuineIntel\nModel name:                         Intel(R) Xeon(R) Platinum 8480+\nCPU family:                         6\nModel:                              143\nThread(s) per core:                 2\nCore(s) per socket:                 56\nSocket(s):                          2\nStepping:                           8\nCPU max MHz:                        3800.0000\nCPU min MHz:                        800.0000\nBogoMIPS:                           4000.00\nFlags:                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l3 cat_l2 cdp_l3 invpcid_single intel_ppin cdp_l2 ssbd mba ibrs ibpb stibp ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local split_lock_detect avx_vnni avx512_bf16 wbnoinvd dtherm ida arat pln pts hwp hwp_act_window hwp_epp hwp_pkg_req avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq la57 rdpid bus_lock_detect cldemote movdiri movdir64b enqcmd fsrm md_clear serialize tsxldtrk pconfig arch_lbr amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\nVirtualization:                     VT-x\nL1d cache:                          5.3 MiB (112 instances)\nL1i cache:                          3.5 MiB (112 instances)\nL2 cache:                           224 MiB (112 instances)\nL3 cache:                           210 MiB (2 instances)\nNUMA node(s):                       2\nNUMA node0 CPU(s):                  0-55,112-167\nNUMA node1 CPU(s):                  56-111,168-223\nVulnerability Gather data sampling: Not affected\nVulnerability Itlb multihit:        Not affected\nVulnerability L1tf:                 Not affected\nVulnerability Mds:                  Not affected\nVulnerability Meltdown:             Not affected\nVulnerability Mmio stale data:      Not affected\nVulnerability Retbleed:             Not affected\nVulnerability Spec rstack overflow: Not affected\nVulnerability Spec store bypass:    Mitigation; Speculative Store Bypass disabled via prctl and seccomp\nVulnerability Spectre v1:           Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:           Mitigation; Enhanced IBRS, IBPB conditional, RSB filling, PBRSB-eIBRS SW sequence\nVulnerability Srbds:                Not affected\nVulnerability Tsx async abort:      Not affected\n",
+    "model": "SHP",
+    "numactl": "",
+    "rank": "0",
+    "ranks": "1",
+    "runtime": "SYCL",
+    "target": "SHP_SYCL_GPU",
+    "weak-scaling": "0"
+  },
+  "benchmarks": [
+    {
+      "name": "Reduce_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "Reduce_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1,
+      "real_time": 5.5441771891002475e+02,
+      "cpu_time": 5.5434709100000032e+02,
+      "time_unit": "ms",
+      "bytes_per_second": 7.2147766270239844e+11,
+      "footprint": 8.0000000000000000e+09
+    },
+    {
+      "name": "DotProduct_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "family_index": 1,
+      "per_family_instance_index": 0,
+      "run_name": "DotProduct_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1,
+      "real_time": 2.3062339069814975e+03,
+      "cpu_time": 2.3054007839999995e+03,
+      "time_unit": "ms",
+      "bytes_per_second": 6.9377177881065491e+11,
+      "footprint": 3.2000000000000000e+10
+    },
+    {
+      "name": "Inclusive_Scan_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "family_index": 2,
+      "per_family_instance_index": 0,
+      "run_name": "Inclusive_Scan_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1,
+      "real_time": 4.1594624510100275e+03,
+      "cpu_time": 4.1581149100000021e+03,
+      "time_unit": "ms",
+      "bytes_per_second": 1.9233254523207413e+11,
+      "footprint": 1.6000000000000000e+10
+    },
+    {
+      "name": "BlackScholes_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "family_index": 3,
+      "per_family_instance_index": 0,
+      "run_name": "BlackScholes_Reference/min_time:0.100/min_warmup_time:0.100/real_time",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1,
+      "real_time": 2.6197639669901782e+03,
+      "cpu_time": 2.6190965850000011e+03,
+      "time_unit": "ms",
+      "bytes_per_second": 7.6342755500136938e+11,
+      "footprint": 4.0000000000000000e+10
+    }
+  ]
+}
