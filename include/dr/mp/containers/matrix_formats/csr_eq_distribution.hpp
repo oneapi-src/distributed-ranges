@@ -63,19 +63,6 @@ public:
       auto real_segment_size =
           std::min(nnz_ - rank * segment_size_, segment_size_);
       auto local_data = rows_data_;
-      // dr::mp::sycl_queue().submit([&](auto& cgh) {
-      //   cgh.parallel_for(sycl::range<1> { real_segment_size },
-      //                   [=](auto idx) {
-      //                     auto colNum = localCols[idx];
-      //                     auto matrixVal = vals[colNum];
-      //                     auto vectorVal = localVals[idx];
-      //                     auto row =
-      //                     rng::distance(std::upper_bound(local_data,
-      //                     local_data + row_size, offset + idx), local_data) -
-      //                     1;
-      //                     *(res + row) += matrixVal * vectorVal;
-      //                   });
-      // }).wait();
       auto one_computation_size =
           (real_segment_size + max_row_size_ - 1) / max_row_size_;
       auto row_size = row_size_;
