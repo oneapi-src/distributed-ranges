@@ -31,6 +31,10 @@ class broadcasted_vector {
         _data = nullptr;
     }
 
+    T& operator[](std::size_t index) {
+        return _data[index];
+    }
+    
     T* broadcasted_data() {
         return _data;
     }

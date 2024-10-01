@@ -28,6 +28,7 @@ add_mp_example(stencil-1d-pointer)
 add_mp_example(hello_world)
 add_mp_example(sparse_matrix)
 add_mp_example(sparse_benchmark)
+add_mp_example(sparse_matrix_matrix_mul)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)

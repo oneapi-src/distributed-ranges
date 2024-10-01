@@ -58,11 +58,12 @@ public:
     vals_backend_.fence();
     cols_backend_.fence();
   }
-  template <typename C> auto local_gemv(C &res, T* vals) const {
+  template <typename C> auto local_gemv(C &res, T* vals, std::size_t vals_width) const {
     auto rank = cols_backend_.getrank();
     if (shape_[0] <= segment_size_ * rank)
       return;
     auto size = std::min(segment_size_, shape_[0] - segment_size_ * rank);
+    auto vals_len = shape_[1];
     if (dr::mp::use_sycl()) {
       auto local_vals = vals_data_;
       auto local_cols = cols_data_;
@@ -70,11 +71,11 @@ public:
       auto real_segment_size = std::min(nnz_ - offset, val_sizes_[rank]);
       auto rows_data = dr::__detail::direct_iterator(
           dr::mp::local_segment(*rows_data_).begin());
+      auto res_col_len = segment_size_;
       dr::mp::sycl_queue()
           .submit([&](auto &cgh) {
             cgh.parallel_for(sycl::range<1>{size}, [=](auto idx) {
               std::size_t lower_bound = 0;
-              T sum = 0;
               if (rows_data[idx] > offset) {
                 lower_bound = rows_data[idx] - offset;
               }
@@ -82,13 +83,16 @@ public:
               if (idx < size - 1) {
                 upper_bound = rows_data[idx + 1] - offset;
               }
-              for (auto i = lower_bound; i < upper_bound; i++) {
-                auto colNum = local_cols[i];
-                auto matrixVal = vals[colNum];
-                auto vectorVal = local_vals[i];
-                sum += matrixVal * vectorVal;
+              for (auto j = 0; j < vals_width; j++) {
+                T sum = 0;
+                for (auto i = lower_bound; i < upper_bound; i++) {
+                  auto colNum = local_cols[i];
+                  auto matrixVal = vals[colNum + j * vals_len];
+                  auto vectorVal = local_vals[i];
+                  sum += matrixVal * vectorVal;
+                }
+                *(res + idx + j * res_col_len) += sum;
               }
-              *(res + idx) += sum;
             });
           })
           .wait();
@@ -104,45 +108,64 @@ public:
           row_i++;
           current_row_position = local_rows[row_i + 1];
         }
-        res[row_i] += vals_data_[i] * vals[cols_data_[i]];
+        for (auto j = 0; j < vals_width; j++) {
+          res[row_i + j * segment_size_] += vals_data_[i] * vals[cols_data_[i] + j * vals_len];
+        }
       }
     }
   }
 
   template <typename C>
-  auto local_gemv_and_collect(std::size_t root, C &res, T* &vals) const {
-    assert(res.size() == shape_.first);
+  auto local_gemv_and_collect(std::size_t root, C &res, T* &vals, std::size_t vals_width) const {
+    assert(res.size() == shape_.first * vals_width);
     __detail::allocator<T> alloc;
-    auto res_alloc = alloc.allocate(segment_size_);
-    for (auto i = 0; i < segment_size_; i++) {
+    auto res_alloc = alloc.allocate(segment_size_ * vals_width);
+    for (auto i = 0; i < segment_size_ * vals_width; i++) {
       res_alloc[i] = 0;
     }
 
     // auto begin = std::chrono::high_resolution_clock::now();
-    local_gemv(res_alloc, vals);
+    local_gemv(res_alloc, vals, vals_width);
     // auto end = std::chrono::high_resolution_clock::now();
     // double duration = std::chrono::duration<double>(end - begin).count();
     // auto size = std::min(segment_size_, shape_[0] - segment_size_ * default_comm().rank());
     // fmt::print("rows gemv time {} {} {}\n", duration * 1000, size, default_comm().rank());
 
-    gather_gemv_vector(root, res, res_alloc);
-    alloc.deallocate(res_alloc, segment_size_);
+    gather_gemv_vector(root, res, res_alloc, vals_width);
+    alloc.deallocate(res_alloc, segment_size_ * vals_width);
   }
 
 private:
   friend csr_row_segment_iterator<csr_row_distribution>;
 
   template <typename C, typename A>
-  void gather_gemv_vector(std::size_t root, C &res, A &partial_res) const {
+  void gather_gemv_vector(std::size_t root, C &res, A &partial_res, std::size_t vals_width) const {
     auto communicator = default_comm();
     __detail::allocator<T> alloc;
+
     if (communicator.rank() == root) {
-      auto scratch = alloc.allocate(segment_size_ * default_comm().size());
-      communicator.gather(partial_res, scratch, segment_size_, root);
-      std::copy(scratch, scratch + shape_.first, res.begin());
-      alloc.deallocate(scratch, segment_size_ * communicator.size());
+      auto scratch = alloc.allocate(segment_size_ * communicator.size() * vals_width);
+      communicator.gather(partial_res, scratch, segment_size_ * vals_width, root);
+
+      for (auto j = 0; j < communicator.size(); j++) {
+        if (j * segment_size_ >= shape_.second) {
+          break;
+        }
+        auto comm_segment_size = std::min(segment_size_, shape_.second - j * segment_size_);
+        for (auto i = 0; i < vals_width; i++) {
+          auto piece_start = scratch + j * vals_width * segment_size_ + i * segment_size_;
+          std::copy(piece_start, piece_start + comm_segment_size, res.begin() + shape_.first * i + j * segment_size_);
+        }
+      }
+      // for (auto i = 0; i < segment_size_ * communicator.size() * vals_width; i++) {
+      //   fmt::print("{} {} {}\n", i, scratch[i], segment_size_);
+      // }
+      // for (auto i = 0; i < vals_width * shape_.first; i++) {
+      //   fmt::print("{} {} {}\n", i, res[i], segment_size_);
+      // }
+      alloc.deallocate(scratch, segment_size_ * communicator.size()* vals_width);
     } else {
-      communicator.gather(partial_res, static_cast<T *>(nullptr), segment_size_,
+      communicator.gather(partial_res, static_cast<T *>(nullptr), segment_size_ * vals_width,
                           root);
     }
   }

@@ -48,12 +48,14 @@ public:
   auto shape() const { return shape_; }
   void fence() { rows_backend_.fence(); }
 
-  template <typename C> auto local_gemv(C &res, T* vals) const {
+  template <typename C> auto local_gemv(C &res, T* vals, std::size_t vals_width) const {
     auto rank = rows_backend_.getrank();
     if (nnz_ <= segment_size_ * rank) {
       return;
     }
+    auto vals_len = shape_[1];
     auto size = row_sizes_[rank];
+    auto res_col_len = max_row_size_;
     if (dr::mp::use_sycl()) {
       auto localVals = dr::__detail::direct_iterator(
           dr::mp::local_segment(*vals_data_).begin());
@@ -66,6 +68,7 @@ public:
       auto one_computation_size =
           (real_segment_size + max_row_size_ - 1) / max_row_size_;
       auto row_size = row_size_;
+      
       dr::mp::sycl_queue()
           .submit([&](auto &cgh) {
             cgh.parallel_for(sycl::range<1>{max_row_size_}, [=](auto idx) {
@@ -77,28 +80,31 @@ public:
                   local_data, std::upper_bound(
                                   local_data, local_data + row_size, position) -
                                   1);
-              auto row = first_row;
-              T sum = 0;
-              for (auto i = lower_bound; i < upper_bound; i++) {
-                while (row + 1 < row_size &&
-                       local_data[row + 1] <= offset + i) {
-                  sycl::atomic_ref<T, sycl::memory_order::relaxed,
-                                   sycl::memory_scope::device>
-                      c_ref(res[row]);
-                  c_ref += sum;
-                  row++;
-                  sum = 0;
-                }
-                auto colNum = localCols[i];
-                auto matrixVal = vals[colNum];
-                auto vectorVal = localVals[i];
+              for (auto j = 0; j < vals_width; j++) {
+                auto row = first_row;
+                T sum = 0;
 
-                sum += matrixVal * vectorVal;
+                for (auto i = lower_bound; i < upper_bound; i++) {
+                  while (row + 1 < row_size &&
+                        local_data[row + 1] <= offset + i) {
+                    sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                                    sycl::memory_scope::device>
+                        c_ref(res[row + j * res_col_len]);
+                    c_ref += sum;
+                    row++;
+                    sum = 0;
+                  }
+                  auto colNum = localCols[i] + j * vals_len;
+                  auto matrixVal = vals[colNum];
+                  auto vectorVal = localVals[i];
+
+                  sum += matrixVal * vectorVal;
+                }
+                sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                                sycl::memory_scope::device>
+                    c_ref(res[row + j * res_col_len]);
+                c_ref += sum;
               }
-              sycl::atomic_ref<T, sycl::memory_order::relaxed,
-                               sycl::memory_scope::device>
-                  c_ref(res[row]);
-              c_ref += sum;
             });
           })
           .wait();
@@ -115,7 +121,9 @@ public:
           row_i++;
           current_row_position = rows_data_[row_i + 1];
         }
-        res[row_i] += local_vals[i] * vals[local_cols[i]];
+        for (int j = 0; j < vals_width; j++) {
+          res[row_i + j * res_col_len] += local_vals[i] * vals[local_cols[i] + j * vals_len];
+        }
       }
 
       // fmt::print("offset, rank {} {}\n", row_offsets_[
@@ -128,46 +136,49 @@ public:
   }
 
   template <typename C>
-  auto local_gemv_and_collect(std::size_t root, C &res, T* vals) const {
-    assert(res.size() == shape_.first);
+  auto local_gemv_and_collect(std::size_t root, C &res, T* vals, std::size_t vals_width) const {
+    assert(res.size() == shape_.first * vals_width);
     __detail::allocator<T> alloc;
-    auto res_alloc = alloc.allocate(max_row_size_);
-    for (auto i = 0; i < max_row_size_; i++) {
+    auto res_alloc = alloc.allocate(max_row_size_ * vals_width);
+    for (auto i = 0; i < max_row_size_ * vals_width; i++) {
       res_alloc[i] = 0;
     }
     
-    local_gemv(res_alloc, vals);
+    local_gemv(res_alloc, vals, vals_width);
     
-    gather_gemv_vector(root, res, res_alloc);
-    alloc.deallocate(res_alloc, max_row_size_);
+    gather_gemv_vector(root, res, res_alloc, vals_width);
+    alloc.deallocate(res_alloc, max_row_size_ * vals_width);
   }
 
 private:
   friend csr_eq_segment_iterator<csr_eq_distribution>;
 
   template <typename C, typename A>
-  void gather_gemv_vector(std::size_t root, C &res, A &partial_res) const {
+  void gather_gemv_vector(std::size_t root, C &res, A &partial_res, std::size_t vals_width) const {
     auto communicator = default_comm();
     __detail::allocator<T> alloc;
     if (communicator.rank() == root) {
-      auto gathered_res = alloc.allocate(max_row_size_ * communicator.size());
-      communicator.gather(partial_res, gathered_res, max_row_size_, root);
+      auto gathered_res = alloc.allocate(max_row_size_ * communicator.size() * vals_width);
+      communicator.gather(partial_res, gathered_res, max_row_size_ * vals_width, root);
       rng::fill(res, 0);
 
       // auto begin = std::chrono::high_resolution_clock::now();
-      for (auto i = 0; i < communicator.size(); i++) {
-        auto first_row = row_offsets_[i];
-        auto last_row = row_offsets_[i] + row_sizes_[i];
-        for (auto j = first_row; j < last_row; j++) {
-          res[j] += gathered_res[max_row_size_ * i + j - first_row];
+      for (auto k = 0; k < vals_width; k++) {
+        for (auto i = 0; i < communicator.size(); i++) {
+          auto first_row = row_offsets_[i];
+          auto last_row = row_offsets_[i] + row_sizes_[i];
+          for (auto j = first_row; j < last_row; j++) {
+            res[j + k * shape_[1]] += gathered_res[vals_width * max_row_size_ * i + k * max_row_size_ + j - first_row];
+          }
         }
       }
+
       // auto end = std::chrono::high_resolution_clock::now();
       // double duration = std::chrono::duration<double>(end - begin).count();
       // fmt::print("gather time {}\n", duration);
-      alloc.deallocate(gathered_res, max_row_size_ * communicator.size());
+      alloc.deallocate(gathered_res, max_row_size_ * communicator.size() * vals_width);
     } else {
-      communicator.gather(partial_res, static_cast<T *>(nullptr), max_row_size_,
+      communicator.gather(partial_res, static_cast<T *>(nullptr), max_row_size_ * vals_width,
                           root);
     }
   }

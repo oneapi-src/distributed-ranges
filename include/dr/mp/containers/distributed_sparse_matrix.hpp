@@ -23,7 +23,7 @@ concept matrix_distibution = requires(T t, std::vector<int> res, int *input) {
 
 template <typename T>
 concept vector_multiplicable = requires(T t, std::vector<typename T::elem_type> res, T::elem_type *input) {
-  t.local_gemv_and_collect(int(), res, input);
+  t.local_gemv_and_collect(int(), res, input, 1);
 };
 
 template <typename T, typename I, class BackendT = MpiBackend,
@@ -152,8 +152,8 @@ public:
 
   template <typename C>
     requires(vector_multiplicable<MatrixDistrT>)
-  auto local_gemv_and_collect(std::size_t root, C &res, T* vals) const {
-    distribution_.local_gemv_and_collect(root, res, vals);
+  auto local_gemv_and_collect(std::size_t root, C &res, T* vals, std::size_t val_width) const {
+    distribution_.local_gemv_and_collect(root, res, vals, val_width);
   }
 
 private:

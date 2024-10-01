@@ -9,6 +9,7 @@
 #include <fmt/core.h>
 #include <ranges>
 #include <dr/mp/containers/broadcasted_vector.hpp>
+#include <dr/mp/containers/broadcasted_slim_matrix.hpp>
 
 
 namespace dr::mp {
@@ -30,7 +31,7 @@ void gemv(int root, C &res,
   // }
   
   // communicator.bcast(broadcasted_b, a.shape().second * sizeof(T), root);
-  a.local_gemv_and_collect(root, res, b.broadcasted_data());
+  a.local_gemv_and_collect(root, res, b.broadcasted_data(), 1);
   
   // alloc.deallocate(broadcasted_b, a.shape().second);
   // a.fence();
@@ -39,6 +40,17 @@ void gemv(int root, C &res,
   //         fmt::print("Result {} {}\n", i, res[i]);
   //     }
   // }
+}
+
+template <typename T, typename I, rng::output_range<T> C, typename Alloc,
+          typename Backend, typename MatDistr>
+  requires(vector_multiplicable<MatDistr>)
+void gemv(int root, C &res,
+          distributed_sparse_matrix<T, I, Backend, MatDistr> &a, broadcasted_slim_matrix<T,Alloc> b) {
+  if (default_comm().rank() == root) {
+    assert(a.shape().first * b.width() == res.size());
+  }
+  a.local_gemv_and_collect(root, res, b.broadcasted_data(), b.width());
 }
 
 } // namespace dr::mp
