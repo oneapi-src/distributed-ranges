@@ -138,8 +138,8 @@ mp::distributed_sparse_matrix<
 static void GemvEq_DR(benchmark::State &state) {
   // fft requires usm shared allocation
   std::size_t n = default_vector_size;
-  std::size_t up = default_vector_size / 10;
-  std::size_t down = default_vector_size / 10;
+  std::size_t up = n / 10;
+  std::size_t down = n / 10;
   assert(dr::mp::use_sycl());
   dr::views::csr_matrix_view<double, long> local_data;
   local_data = dr::generate_band_csr<double,long>(n, up, down);
@@ -159,6 +159,7 @@ mp::distributed_sparse_matrix<
     dr::mp::broadcasted_vector<double> allocated_b;
     allocated_b.broadcast_data(m.shape().second, 0, b, dr::mp::default_comm());
 
+    gemv(0, res, m, allocated_b);
   for (auto _ : state) {
     gemv(0, res, m, allocated_b);
   }
@@ -169,8 +170,8 @@ DR_BENCHMARK(GemvEq_DR);
 static void GemvRow_DR(benchmark::State &state) {
   // fft requires usm shared allocation
   std::size_t n = default_vector_size;
-  std::size_t up = default_vector_size / 10;
-  std::size_t down = default_vector_size / 10;
+  std::size_t up = n / 10;
+  std::size_t down = n / 10;
   assert(dr::mp::use_sycl());
   dr::views::csr_matrix_view<double, long> local_data;
   local_data = dr::generate_band_csr<double,long>(n, up, down);
@@ -190,6 +191,7 @@ mp::distributed_sparse_matrix<
     dr::mp::broadcasted_vector<double> allocated_b;
     allocated_b.broadcast_data(m.shape().second, 0, b, dr::mp::default_comm());
 
+  gemv(0, res, m, allocated_b);
   for (auto _ : state) {
     gemv(0, res, m, allocated_b);
   }
@@ -201,8 +203,8 @@ DR_BENCHMARK(GemvRow_DR);
 
 static void Gemv_Reference(benchmark::State &state) {
   std::size_t n = default_vector_size;
-  std::size_t up = default_vector_size / 10;
-  std::size_t down = default_vector_size / 10;
+  std::size_t up = n / 10;
+  std::size_t down = n / 10;
   assert(dr::mp::use_sycl());
   dr::views::csr_matrix_view<double, long> local_data;
   local_data = dr::generate_band_csr<double,long>(n, up, down);
@@ -212,35 +214,49 @@ static void Gemv_Reference(benchmark::State &state) {
   auto policy = oneapi::dpl::execution::make_device_policy(q);
   auto val_ptr = sycl::malloc_device<double>(nnz_count, q);
   auto col_ptr = sycl::malloc_device<long>(nnz_count, q);
-  auto row_ptr = sycl::malloc_device<long>(band_shape[0], q);
-  std::vector<double> b(band_shape[1]);
+  auto row_ptr = sycl::malloc_device<long>((band_shape[0] + 1), q);
+  std::vector<double> b;
   for (auto i = 0; i < band_shape[1]; i++) {
       b.push_back(i);
   }
+  double* elems = new double[band_shape[0]];
   auto input = sycl::malloc_device<double>(band_shape[1], q);
   auto output = sycl::malloc_device<double>(band_shape[0], q);
+  //   for (int i = 0; i < band_shape[0]; i++) {
+  //   fmt::print("{} {}\n", i, local_data.rowptr_data()[i]);
+  // }
+  q.memcpy(val_ptr, local_data.values_data(), nnz_count * sizeof(double)).wait();
+  q.memcpy(col_ptr, local_data.colind_data(), nnz_count * sizeof(long)).wait();
+  q.memcpy(row_ptr, local_data.rowptr_data(), (band_shape[0] + 1) * sizeof(long)).wait();
+  // std::copy(policy, local_data.values_data(), local_data.values_data() + nnz_count, val_ptr);
+  // std::copy(policy, local_data.colind_data(), local_data.colind_data() + nnz_count, col_ptr);
+  // std::copy(policy, local_data.rowptr_data(), local_data.rowptr_data() + band_shape[0], row_ptr);
 
-  std::copy(policy, local_data.values_data(), local_data.values_data() + nnz_count, val_ptr);
-  std::copy(policy, local_data.colind_data(), local_data.colind_data() + nnz_count, col_ptr);
-  std::copy(policy, local_data.rowptr_data(), local_data.rowptr_data() + band_shape[0], row_ptr);
   std::copy(policy, b.begin(), b.end(), input);
+  // for (int i = 0; i < band_shape[0]; i++) {
+  //   fmt::print("{} {}\n", i, local_data.rowptr_data()[i + 1] - local_data.rowptr_data()[i]);
+  // }
+
   
   for (auto _ : state) {
-    q.fill(output, 0, band_shape[0]).wait();
     q.submit([&](auto &cgh) {
             cgh.parallel_for(sycl::range<1>{static_cast<size_t>(band_shape[0])}, [=](auto idx) {
               double sum = 0;
-              for (auto i = row_ptr[idx]; i < row_ptr[idx + 1]; i++) {
+              auto start = row_ptr[idx];
+              auto end = row_ptr[idx + 1];
+              for (auto i = start; i < end; i++) {
                 auto colNum = col_ptr[i];
                 auto matrixVal = input[colNum];
                 auto vectorVal = val_ptr[i];
                 sum += matrixVal * vectorVal;
               }
-              *(output + idx) += sum;
+              *(output + idx) = sum;
             });
           })
           .wait();
+    q.memcpy(elems, output, band_shape[0] * sizeof(double)).wait();
   }
+  delete[] elems;
   sycl::free(val_ptr, q);
   sycl::free(col_ptr, q);
   sycl::free(row_ptr, q);
