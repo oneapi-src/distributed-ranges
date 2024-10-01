@@ -159,6 +159,7 @@ mp::distributed_sparse_matrix<
     dr::mp::broadcasted_vector<double> allocated_b;
     allocated_b.broadcast_data(m.shape().second, 0, b, dr::mp::default_comm());
 
+    gemv(0, res, m, allocated_b);
   for (auto _ : state) {
     gemv(0, res, m, allocated_b);
   }
@@ -190,6 +191,7 @@ mp::distributed_sparse_matrix<
     dr::mp::broadcasted_vector<double> allocated_b;
     allocated_b.broadcast_data(m.shape().second, 0, b, dr::mp::default_comm());
 
+  gemv(0, res, m, allocated_b);
   for (auto _ : state) {
     gemv(0, res, m, allocated_b);
   }

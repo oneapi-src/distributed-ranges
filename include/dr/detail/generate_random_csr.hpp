@@ -103,7 +103,7 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
 template <typename T = float, std::integral I = std::size_t>
 auto generate_band_csr(I size, std::size_t up_band = 3,
                          std::size_t down_band = 3) {
-  std::size_t nnz = (1 + up_band + down_band) * size - (up_band * (up_band - 1) / 2) - (down_band * (down_band - 1) / 2);
+  std::size_t nnz = (1 + up_band + down_band) * size - (up_band * (up_band + 1) / 2) - (down_band * (down_band + 1) / 2);
 
   T *values = new T[nnz];
   I *rowptr = new I[size + 1];
@@ -114,12 +114,9 @@ auto generate_band_csr(I size, std::size_t up_band = 3,
   std::size_t r = 0;
   std::size_t c = 0;
   for (auto i = 0; i < size; i++) {
-    for (auto j = i - down_band; j < i ; j++) {
-        if (j < 0) {
-          continue;
-        }
+    for (auto j = std::max(static_cast<long long>(i) - static_cast<long long>(down_band), static_cast<long long>(0)); j < i ; j++) {
         values[c] = 1;
-        colind[c] = j;
+        colind[c] = static_cast<I>(j);
         c++;
     }
     values[c] = 1;
@@ -133,7 +130,7 @@ auto generate_band_csr(I size, std::size_t up_band = 3,
         colind[c] = j;
         c++;
     }
-    rowptr[r + 1] = c + 1;
+    rowptr[r + 1] = c;
     r++;
 
   }
