@@ -71,6 +71,8 @@ double initial_elev(double x, double y, double lx, double ly) {
   return exact_elev(x, y, 0.0, lx, ly);
 }
 
+//#define DEBUG
+
 void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
          double g, double h, double dx_inv, double dy_inv, double dt) {
   /**
@@ -82,6 +84,9 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * g * (in(1, 0) - in(0, 0)) * dx_inv;
   };
   {
+#ifdef DEBUG
+    std::cout << "stage1\n";
+#endif
     std::array<std::size_t, 2> start{1, 0};
     std::array<std::size_t, 2> end{e.extent(0) - 1, e.extent(1)};
     auto e_view = dr::mp::views::submdspan(e.view(), start, end);
@@ -94,6 +99,9 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * g * (in(0, 0) - in(0, -1)) * dy_inv;
   };
   {
+#ifdef DEBUG
+    std::cout << "stage2\n";
+#endif
     std::array<std::size_t, 2> start{0, 1};
     std::array<std::size_t, 2> end{e.extent(0), e.extent(1)};
     auto e_view = dr::mp::views::submdspan(e.view(), start, end);
@@ -110,6 +118,9 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * h * (dudx + dvdy);
   };
   {
+#ifdef DEBUG
+    std::cout << "stage3\n";
+#endif
     std::array<std::size_t, 2> start{1, 0};
     std::array<std::size_t, 2> end{u.extent(0), u.extent(1)};
     auto u_view = dr::mp::views::submdspan(u.view(), start, end);
@@ -117,6 +128,9 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     auto dedt_view = dr::mp::views::submdspan(dedt.view(), start, end);
     dr::mp::stencil_for_each(rhs_div, u_view, v_view, dedt_view);
   }
+#ifdef DEBUG
+  std::cout << "after\n";
+#endif
 };
 
 void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
@@ -312,8 +326,6 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   }
   dr::mp::halo(e).exchange_begin();
 };
-
-//#define DEBUG
 
 #ifdef DEBUG
   void debug_print_arr(std::size_t n, std::size_t m, const Array& arr, const std::string& str) {

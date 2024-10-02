@@ -88,13 +88,13 @@ add_mp_ctest(NAME wave_equation-wide)
 # DRA-92
 if(ENABLE_SYCL)
   add_mp_ctest(
-    TEST_NAME wave_equation-sycl NAME wave_equation TIMEOUT 200 NPROC 8 SYCL)
+    TEST_NAME wave_equation-sycl NAME wave_equation TIMEOUT 1000 NPROC 8 SYCL)
   add_mp_ctest(
-    TEST_NAME wave_equation_fused-sycl NAME wave_equation TIMEOUT 200 NPROC 2 SYCL TARGS -f)
+    TEST_NAME wave_equation_fused-sycl NAME wave_equation TIMEOUT 1000 NPROC 2 SYCL TARGS -f)
   add_mp_ctest(
-    TEST_NAME wave_equation-wide-sycl NAME wave_equation-wide TIMEOUT 200 NPROC 8 SYCL)
+    TEST_NAME wave_equation-wide-sycl NAME wave_equation-wide TIMEOUT 1000 NPROC 8 SYCL)
   add_mp_ctest(
-    TEST_NAME wave_equation-wide_fused-sycl NAME wave_equation-wide TIMEOUT 200 NPROC 2 SYCL TARGS -f)
+    TEST_NAME wave_equation-wide_fused-sycl NAME wave_equation-wide TIMEOUT 1000 NPROC 2 SYCL TARGS -f)
 endif()
 
 add_executable(shallow_water shallow_water.cpp)

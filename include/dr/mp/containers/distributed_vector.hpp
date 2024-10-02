@@ -276,7 +276,7 @@ public:
 
   void fence() { backend.fence(); }
 
-  auto &dist() const {
+  const auto &dist() const {
     return distribution_;
   }
 private:
@@ -295,13 +295,7 @@ private:
     segment_size_ = gran * std::max({(size / gran + comm_size - 1) / comm_size,
                                      hb.prev / gran, hb.next / gran});
 
-    __detail::extended_local_data_distribution ext_dist;
-    if (default_comm().rank() * segment_size_ >= hb.prev)
-      ext_dist.begin = default_comm().rank() * segment_size_ - hb.prev;
-    else
-      ext_dist.begin = 0;
-    ext_dist.end = std::min((default_comm().rank() + 1) * segment_size_ + hb.next, size_);
-    ext_dist.segment_size = segment_size_;
+    extended_local_data_distribution ext_dist(segment_size_, size_, hb);
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 

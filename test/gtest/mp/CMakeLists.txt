@@ -67,7 +67,7 @@ add_executable(mp-quick-test
 )
 add_executable(mp-quick-test-3-only
         mp-tests.cpp
-        wide-halo-1d-3.cpp
+        wide-halo-2d-3.cpp
 )
 # cmake-format: on
 

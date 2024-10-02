@@ -6,14 +6,6 @@
 
 namespace dr::mp {
 
-namespace __detail {
-  struct extended_local_data_distribution {
-    std::size_t begin;
-    std::size_t end;
-    std::size_t segment_size;
-  };
-} // __detail
-
 template <typename DV> class dv_segment_iterator;
 
 template <typename DV> class dv_segment_reference {
@@ -228,7 +220,7 @@ public:
   using difference_type = std::ptrdiff_t;
   dv_segment() = default;
   dv_segment(DV *dv, std::size_t segment_index, std::size_t size,
-             std::size_t reserved, const __detail::extended_local_data_distribution& ext_dist) {
+             std::size_t reserved, const extended_local_data_distribution& ext_dist) {
     dv_ = dv;
     segment_index_ = segment_index;
     size_ = size;
@@ -236,7 +228,7 @@ public:
     ext_dist_ = ext_dist;
 
     begin_index_ = segment_index * ext_dist.segment_size;
-    end_index_ = segment_index * ext_dist.segment_size + size_;
+    end_index_ = begin_index_ + size_;
 
     assert(dv_ != nullptr);
   }
@@ -272,7 +264,7 @@ private:
 
   std::size_t begin_index_;
   std::size_t end_index_;
-  __detail::extended_local_data_distribution ext_dist_;
+  extended_local_data_distribution ext_dist_;
 }; // dv_segment
 
 //

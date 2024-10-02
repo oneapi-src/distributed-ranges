@@ -92,7 +92,7 @@ namespace __detail {
                 seg_info.second
             );
           });
-      op(stencils, index);
+      op(stencils);
     };
     if (mp::use_sycl()) {
       dr::drlog.debug("  using sycl\n");
@@ -113,10 +113,14 @@ namespace __detail {
     }
   }
 
-  void stencil_for_each_extended_2(auto op, stencil_index_type<1> begin, stencil_index_type<1> end, const auto& segs) {
+  void stencil_for_each_extended_2(auto op, stencil_index_type<2>& begin, stencil_index_type<2> end, const auto& segs) {
     auto [seg0_begin, seg0_end] = std::get<0>(segs).stencil(begin, end);
 
-    auto sub = [](auto a) { return std::get<1>(a) - std::get<0>(a); };
+    auto sub = [](auto a) {
+      auto x = std::get<0>(a);
+      auto y = std::get<1>(a);
+      return y > x ? y - x : 0;
+    };
     auto is_zero = [](auto a) { return a != 0; };
 
     auto zipped = zip_view(seg0_begin, seg0_end);
@@ -125,39 +129,50 @@ namespace __detail {
     if ((distance | std::views::filter(is_zero)).empty())
       return;
 
-    auto seg_infos = dr::__detail::tuple_transform(segs, [begin](auto &&seg) {
-      return std::make_pair(seg.begin() + seg.begin_stencil(begin)[0], seg.extents());
+    auto seg_infos = dr::__detail::tuple_transform(segs, [&begin](auto &&seg) {
+      auto ext = seg.root_mdspan().extents();
+      auto begin_stencil = seg.begin_stencil(begin);
+      return std::make_pair(
+          md::mdspan(
+              std::to_address(&seg.mdspan_extended()(begin_stencil[0], begin_stencil[1])),
+              ext
+          ), ext);
     });
 
     auto do_point = [seg_infos, op](auto index) {
       auto stencils =
           dr::__detail::tuple_transform(seg_infos, [index](auto seg_info) {
             return md::mdspan(
-                std::to_address(dr::ranges::local(seg_info.first + index)),
-                seg_info.second
-            );
+                std::to_address(&seg_info.first(index[0], index[1])),
+                seg_info.second);
           });
-      op(stencils, index);
+      op(stencils);
     };
-    if (mp::use_sycl()) {
-      dr::drlog.debug("  using sycl\n");
-
-#ifdef SYCL_LANGUAGE_VERSION
-      dr::__detail::parallel_for(
-          dr::mp::sycl_queue(), sycl::range<2>(distance[0], distance[1]),
-          do_point)
-          .wait();
-#else
-      assert(false);
-#endif
-    } else {
-      dr::drlog.debug("  using cpu\n");
+//    if (mp::use_sycl()) {
+//
+//#ifdef SYCL_LANGUAGE_VERSION
+//      dr::__detail::parallel_for(
+//          dr::mp::sycl_queue(), sycl::range<2>(distance[0], distance[1]),
+//          do_point)
+//          .wait();
+//#else
+//      assert(false);
+//#endif
+//    } else {
       for (std::size_t i = 0; i < distance[0]; i++) {
-        for (std::size_t i = 0; i < distance[1]; i++) {
-          do_point(i);
+        for (std::size_t j = 0; j < distance[1]; j++) {
+          auto seg0 = std::get<0>(segs);
+          auto origin0 = seg0.origin();
+          auto begin0 = seg0_begin;
+          std::cout << origin0[0] + i + begin0[0] << " " << origin0[1] + j + begin0[1] << "\n";
+//          auto seg1 = std::get<1>(segs);
+//          auto origin1 = seg1.origin();
+//          auto begin1 = seg1.begin_stencil(begin);
+//          std::cout << "snd " << origin1[0] + i + begin1[0] << " " << origin1[1] + j + begin1[1] << "\n";
+          do_point(stencil_index_type<2>{i, j});
         }
       }
-    }
+//    }
   }
 }
 

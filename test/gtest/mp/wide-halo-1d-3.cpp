@@ -46,11 +46,11 @@ TEST(WideHalo3, halo_is_visible_after_exchange_not_earlier) {
   };
 
   auto transform = [&]{
-    stencil_for_each_extended<1>([](auto stencils, auto id){
+    stencil_for_each_extended<1>([](auto stencils){
       auto [x, x_out] = stencils;
       x_out(0) = x(-1) + x(0) + x(1);
     }, {1}, {1}, dv, dv_out);
-    stencil_for_each_extended<1>([](auto stencils, auto id){
+    stencil_for_each_extended<1>([](auto stencils){
       auto [x, x_out] = stencils;
       x(0) = x_out(0);
     }, {0}, {0}, dv, dv_out);
@@ -150,11 +150,11 @@ TEST(WideHalo3, halo_api_works) {
   dv_out.halo().exchange();
 
   halo_exchange([](Array& dv, Array& dv_out){
-    stencil_for_each_extended<1>([](auto stencils, auto id){
+    stencil_for_each_extended<1>([](auto stencils){
       auto [x, x_out] = stencils;
       x_out(0) = x(-1) + x(0) + x(1);
     }, {1}, {1}, dv, dv_out);
-    stencil_for_each_extended<1>([](auto stencils, auto id){
+    stencil_for_each_extended<1>([](auto stencils){
       auto [x, x_out] = stencils;
       x(0) = x_out(0);
     }, {0}, {0}, dv, dv_out);
