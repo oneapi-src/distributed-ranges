@@ -22,7 +22,12 @@ class broadcasted_slim_matrix {
         _data = alloc.allocate(_data_size);
         if (comm.rank() == root) {
             for (auto i = 0; i < width; i++) {
-              rng::copy(root_data[i], root_data[i] + height, _data);
+                if (use_sycl()) {
+                    __detail::sycl_copy(root_data[i], root_data[i] + height, _data + height * i);
+                }
+                else {
+                    rng::copy(root_data[i], root_data[i] + height, _data + height * i);
+                }
             }
         }
         comm.bcast(_data, sizeof(T) * _data_size, root);
@@ -38,7 +43,12 @@ class broadcasted_slim_matrix {
         _width = width;
         _data = alloc.allocate(_data_size);
         if (comm.rank() == root) {
-            rng::copy(root_data.begin(), root_data.end(), _data);
+            if (use_sycl()) {
+                __detail::sycl_copy(std::to_address(root_data.begin()), std::to_address(root_data.end()), _data);
+            }
+            else {
+                rng::copy(root_data.begin(), root_data.end(), _data);
+            }
         }
         comm.bcast(_data, sizeof(T) * _data_size, root);
     }
