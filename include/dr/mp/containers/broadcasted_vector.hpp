@@ -20,7 +20,12 @@ class broadcasted_vector {
         _data_size = data_size;
         _data = alloc.allocate(_data_size);
         if (comm.rank() == root) {
-          rng::copy(root_data.begin(), root_data.end(), _data);
+            if (use_sycl()) {
+                __detail::sycl_copy(std::to_address(root_data.begin()), std::to_address(root_data.end()), _data);
+            }
+            else {
+                rng::copy(root_data.begin(), root_data.end(), _data);
+            }
         }
         comm.bcast(_data, sizeof(T) * _data_size, root);
     }

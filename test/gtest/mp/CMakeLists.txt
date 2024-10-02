@@ -57,7 +57,7 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  ../common/equal.cpp
+  copy.cpp
   )
 # cmake-format: on
 

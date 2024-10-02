@@ -140,12 +140,14 @@ public:
     assert(res.size() == shape_.first * vals_width);
     __detail::allocator<T> alloc;
     auto res_alloc = alloc.allocate(max_row_size_ * vals_width);
-    for (auto i = 0; i < max_row_size_ * vals_width; i++) {
-      res_alloc[i] = 0;
+    if (use_sycl()) {
+      sycl_queue().fill(res_alloc, 0, max_row_size_ * vals_width);
+    }
+    else {
+      std::fill(res_alloc, res_alloc + max_row_size_ * vals_width, 0);
     }
     
     local_gemv(res_alloc, vals, vals_width);
-    
     gather_gemv_vector(root, res, res_alloc, vals_width);
     alloc.deallocate(res_alloc, max_row_size_ * vals_width);
   }
@@ -160,7 +162,17 @@ private:
     if (communicator.rank() == root) {
       auto gathered_res = alloc.allocate(max_row_size_ * communicator.size() * vals_width);
       communicator.gather(partial_res, gathered_res, max_row_size_ * vals_width, root);
+      T* gathered_res_host;
+      
+      if (use_sycl()) {
+        gathered_res_host = new T[max_row_size_ * communicator.size() * vals_width];
+        __detail::sycl_copy(gathered_res, gathered_res_host, max_row_size_ * communicator.size() * vals_width);
+      } 
+      else {
+        gathered_res_host = gathered_res;
+      }
       rng::fill(res, 0);
+      
 
       // auto begin = std::chrono::high_resolution_clock::now();
       for (auto k = 0; k < vals_width; k++) {
@@ -168,7 +180,7 @@ private:
           auto first_row = row_offsets_[i];
           auto last_row = row_offsets_[i] + row_sizes_[i];
           for (auto j = first_row; j < last_row; j++) {
-            res[j + k * shape_[1]] += gathered_res[vals_width * max_row_size_ * i + k * max_row_size_ + j - first_row];
+            res[j + k * shape_[1]] += gathered_res_host[vals_width * max_row_size_ * i + k * max_row_size_ + j - first_row];
           }
         }
       }
@@ -176,6 +188,9 @@ private:
       // auto end = std::chrono::high_resolution_clock::now();
       // double duration = std::chrono::duration<double>(end - begin).count();
       // fmt::print("gather time {}\n", duration);
+      if (use_sycl()) {
+        delete[] gathered_res_host;
+      }
       alloc.deallocate(gathered_res, max_row_size_ * communicator.size() * vals_width);
     } else {
       communicator.gather(partial_res, static_cast<T *>(nullptr), max_row_size_ * vals_width,

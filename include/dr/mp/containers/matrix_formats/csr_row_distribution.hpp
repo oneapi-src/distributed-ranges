@@ -72,6 +72,8 @@ public:
       auto rows_data = dr::__detail::direct_iterator(
           dr::mp::local_segment(*rows_data_).begin());
       auto res_col_len = segment_size_;
+      
+      auto begin = std::chrono::high_resolution_clock::now();
       dr::mp::sycl_queue()
           .submit([&](auto &cgh) {
             cgh.parallel_for(sycl::range<1>{size}, [=](auto idx) {
@@ -96,6 +98,9 @@ public:
             });
           })
           .wait();
+      auto end = std::chrono::high_resolution_clock::now();
+      double duration = std::chrono::duration<double>(end - begin).count() * 1000;
+      fmt::print("timeDuration b: {} {} {}\n", duration, size, real_segment_size * vals_width);
     } else {
       auto local_rows = dr::mp::local_segment(*rows_data_);
       auto val_count = val_sizes_[rank];
@@ -120,10 +125,13 @@ public:
     assert(res.size() == shape_.first * vals_width);
     __detail::allocator<T> alloc;
     auto res_alloc = alloc.allocate(segment_size_ * vals_width);
-    for (auto i = 0; i < segment_size_ * vals_width; i++) {
-      res_alloc[i] = 0;
+    if (use_sycl()) {
+      sycl_queue().fill(res_alloc, 0, segment_size_ * vals_width);
     }
-
+    else {
+      std::fill(res_alloc, res_alloc + segment_size_ * vals_width, 0);
+    }
+    
     // auto begin = std::chrono::high_resolution_clock::now();
     local_gemv(res_alloc, vals, vals_width);
     // auto end = std::chrono::high_resolution_clock::now();
@@ -152,9 +160,23 @@ private:
           break;
         }
         auto comm_segment_size = std::min(segment_size_, shape_.second - j * segment_size_);
+        T* temp = nullptr;
+        if (use_sycl()) {
+          temp = new T[res.size()];
+        }
         for (auto i = 0; i < vals_width; i++) {
           auto piece_start = scratch + j * vals_width * segment_size_ + i * segment_size_;
-          std::copy(piece_start, piece_start + comm_segment_size, res.begin() + shape_.first * i + j * segment_size_);
+          
+          if (use_sycl()) {
+            __detail::sycl_copy(piece_start, temp + shape_.first * i + j * segment_size_, comm_segment_size);
+          }
+          else {
+            std::copy(piece_start, piece_start + comm_segment_size, res.begin() + shape_.first * i + j * segment_size_);
+          }
+        }
+        if (use_sycl()) {
+          std::copy(temp, temp + res.size(), res.begin());
+          delete[] temp;
         }
       }
       // for (auto i = 0; i < segment_size_ * communicator.size() * vals_width; i++) {
@@ -301,5 +323,6 @@ private:
   std::size_t nnz_;
   std::vector<csr_row_segment<csr_row_distribution>> segments_;
   std::shared_ptr<distributed_vector<I>> rows_data_;
+  
 };
 } // namespace dr::mp
