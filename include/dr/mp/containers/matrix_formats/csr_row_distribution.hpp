@@ -73,7 +73,7 @@ public:
           dr::mp::local_segment(*rows_data_).begin());
       auto res_col_len = segment_size_;
       
-      auto begin = std::chrono::high_resolution_clock::now();
+      // auto begin = std::chrono::high_resolution_clock::now();
       dr::mp::sycl_queue()
           .submit([&](auto &cgh) {
             cgh.parallel_for(sycl::range<1>{size}, [=](auto idx) {
@@ -98,9 +98,9 @@ public:
             });
           })
           .wait();
-      auto end = std::chrono::high_resolution_clock::now();
-      double duration = std::chrono::duration<double>(end - begin).count() * 1000;
-      fmt::print("timeDuration b: {} {} {}\n", duration, size, real_segment_size * vals_width);
+      // auto end = std::chrono::high_resolution_clock::now();
+      // double duration = std::chrono::duration<double>(end - begin).count() * 1000;
+      // fmt::print("timeDuration row: {} {} {} {}\n", duration, size, real_segment_size * vals_width, rank);
     } else {
       auto local_rows = dr::mp::local_segment(*rows_data_);
       auto val_count = val_sizes_[rank];
@@ -126,7 +126,7 @@ public:
     __detail::allocator<T> alloc;
     auto res_alloc = alloc.allocate(segment_size_ * vals_width);
     if (use_sycl()) {
-      sycl_queue().fill(res_alloc, 0, segment_size_ * vals_width);
+      sycl_queue().fill(res_alloc, 0, segment_size_ * vals_width).wait();
     }
     else {
       std::fill(res_alloc, res_alloc + segment_size_ * vals_width, 0);

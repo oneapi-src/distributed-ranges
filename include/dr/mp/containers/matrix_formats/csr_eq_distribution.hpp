@@ -69,6 +69,7 @@ public:
           (real_segment_size + max_row_size_ - 1) / max_row_size_;
       auto row_size = row_size_;
       
+      // auto begin = std::chrono::high_resolution_clock::now();
       dr::mp::sycl_queue()
           .submit([&](auto &cgh) {
             cgh.parallel_for(sycl::range<1>{max_row_size_}, [=](auto idx) {
@@ -108,6 +109,9 @@ public:
             });
           })
           .wait();
+      // auto end = std::chrono::high_resolution_clock::now();
+      // double duration = std::chrono::duration<double>(end - begin).count() * 1000;
+      // fmt::print("timeDuration eq: {} {} {} {}\n", duration, size, real_segment_size * vals_width, rank);
     } else {
       auto row_i = -1;
       auto position = segment_size_ * rank;
@@ -141,7 +145,7 @@ public:
     __detail::allocator<T> alloc;
     auto res_alloc = alloc.allocate(max_row_size_ * vals_width);
     if (use_sycl()) {
-      sycl_queue().fill(res_alloc, 0, max_row_size_ * vals_width);
+      sycl_queue().fill(res_alloc, 0, max_row_size_ * vals_width).wait();
     }
     else {
       std::fill(res_alloc, res_alloc + max_row_size_ * vals_width, 0);
