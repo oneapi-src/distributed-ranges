@@ -46,7 +46,7 @@ public:
   auto segments() const { return rng::views::all(segments_); }
   auto nnz() const { return nnz_; }
   auto shape() const { return shape_; }
-  void fence() { rows_backend_.fence(); }
+  void fence() const { rows_backend_.fence(); }
 
   template <typename C> auto local_gemv(C &res, T* vals, std::size_t vals_width) const {
     auto rank = rows_backend_.getrank();
@@ -68,11 +68,9 @@ public:
       auto one_computation_size =
           (real_segment_size + max_row_size_ - 1) / max_row_size_;
       auto row_size = row_size_;
-      
       // auto begin = std::chrono::high_resolution_clock::now();
-      dr::mp::sycl_queue()
-          .submit([&](auto &cgh) {
-            cgh.parallel_for(sycl::range<1>{max_row_size_}, [=](auto idx) {
+      dr::__detail::parallel_for_workaround(dr::mp::sycl_queue(), sycl::range<1>{max_row_size_},
+      [=](auto idx) {
               std::size_t lower_bound = one_computation_size * idx;
               std::size_t upper_bound =
                   std::min(one_computation_size * (idx + 1), real_segment_size);
@@ -106,9 +104,7 @@ public:
                     c_ref(res[row + j * res_col_len]);
                 c_ref += sum;
               }
-            });
-          })
-          .wait();
+            }).wait();
       // auto end = std::chrono::high_resolution_clock::now();
       // double duration = std::chrono::duration<double>(end - begin).count() * 1000;
       // fmt::print("timeDuration eq: {} {} {} {}\n", duration, size, real_segment_size * vals_width, rank);
@@ -153,6 +149,7 @@ public:
     
     local_gemv(res_alloc, vals, vals_width);
     gather_gemv_vector(root, res, res_alloc, vals_width);
+    fence();
     alloc.deallocate(res_alloc, max_row_size_ * vals_width);
   }
 

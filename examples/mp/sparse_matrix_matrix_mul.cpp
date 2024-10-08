@@ -23,6 +23,10 @@ int main(int argc, char **argv) {
 
   dr::views::csr_matrix_view<double, long> local_data;
   auto root = 0;
+  // auto n = 50000;
+  // std::size_t up = n / 10;
+  // std::size_t down = n / 10;
+  // local_data = dr::generate_band_csr<double,long>(n, up, down);
   // if (root == dr::mp::default_comm().rank()) {
   local_data = dr::read_csr<double, long>(fname);
   // }
@@ -37,7 +41,7 @@ int main(int argc, char **argv) {
         m_row(local_data, root);
     fmt::print("{}\n", m.size());
 
-    auto width = 10;
+    auto width = 8;
     std::vector<double> res(m.shape().first * width);
     std::vector<double> res_row(m.shape().first * width);
     std::vector<double> base_a(m.shape().second * width);

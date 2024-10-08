@@ -114,12 +114,12 @@ int main(int argc, char **argv) {
       }
       for (int i = 0; i < m.shape().first; i++) {
         if (res[i] != ref[i]) {
-          fmt::print("mismatching outcome {} {}\n", res[i], ref[i]);
+          fmt::print("mismatching outcome {} {} {}\n", i, res[i], ref[i]);
         }
       }
       for (int i = 0; i < m.shape().first; i++) {
         if (res_row[i] != ref[i]) {
-          fmt::print("mismatching outcome row {} {}\n", res_row[i], ref[i]);
+          fmt::print("mismatching outcome row {} {} {}\n", i, res_row[i], ref[i]);
         }
       }
     }

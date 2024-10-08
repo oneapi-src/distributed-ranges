@@ -54,7 +54,7 @@ public:
   auto segments() const { return rng::views::all(segments_); }
   auto nnz() const { return nnz_; }
   auto shape() const { return shape_; }
-  void fence() {
+  void fence() const {
     vals_backend_.fence();
     cols_backend_.fence();
   }
@@ -74,9 +74,8 @@ public:
       auto res_col_len = segment_size_;
       
       // auto begin = std::chrono::high_resolution_clock::now();
-      dr::mp::sycl_queue()
-          .submit([&](auto &cgh) {
-            cgh.parallel_for(sycl::range<1>{size}, [=](auto idx) {
+      dr::__detail::parallel_for_workaround(dr::mp::sycl_queue(), sycl::range<1>{size},
+      [=](auto idx) {
               std::size_t lower_bound = 0;
               if (rows_data[idx] > offset) {
                 lower_bound = rows_data[idx] - offset;
@@ -95,12 +94,11 @@ public:
                 }
                 *(res + idx + j * res_col_len) += sum;
               }
-            });
-          })
-          .wait();
+            }
+      ).wait();
       // auto end = std::chrono::high_resolution_clock::now();
       // double duration = std::chrono::duration<double>(end - begin).count() * 1000;
-      // fmt::print("timeDuration row: {} {} {} {}\n", duration, size, real_segment_size * vals_width, rank);
+      // fmt::print("timeDuration b: {} {} {}\n", duration, size, real_segment_size * vals_width);
     } else {
       auto local_rows = dr::mp::local_segment(*rows_data_);
       auto val_count = val_sizes_[rank];
@@ -140,6 +138,7 @@ public:
     // fmt::print("rows gemv time {} {} {}\n", duration * 1000, size, default_comm().rank());
 
     gather_gemv_vector(root, res, res_alloc, vals_width);
+    fence();
     alloc.deallocate(res_alloc, segment_size_ * vals_width);
   }
 
@@ -154,16 +153,16 @@ private:
     if (communicator.rank() == root) {
       auto scratch = alloc.allocate(segment_size_ * communicator.size() * vals_width);
       communicator.gather(partial_res, scratch, segment_size_ * vals_width, root);
-
+      T* temp = nullptr;
+      if (use_sycl()) {
+        temp = new T[res.size()];
+      }
       for (auto j = 0; j < communicator.size(); j++) {
         if (j * segment_size_ >= shape_.second) {
           break;
         }
         auto comm_segment_size = std::min(segment_size_, shape_.second - j * segment_size_);
-        T* temp = nullptr;
-        if (use_sycl()) {
-          temp = new T[res.size()];
-        }
+
         for (auto i = 0; i < vals_width; i++) {
           auto piece_start = scratch + j * vals_width * segment_size_ + i * segment_size_;
           
@@ -174,10 +173,10 @@ private:
             std::copy(piece_start, piece_start + comm_segment_size, res.begin() + shape_.first * i + j * segment_size_);
           }
         }
-        if (use_sycl()) {
-          std::copy(temp, temp + res.size(), res.begin());
-          delete[] temp;
-        }
+      }
+      if (use_sycl()) {
+        std::copy(temp, temp + res.size(), res.begin());
+        delete[] temp;
       }
       // for (auto i = 0; i < segment_size_ * communicator.size() * vals_width; i++) {
       //   fmt::print("{} {} {}\n", i, scratch[i], segment_size_);

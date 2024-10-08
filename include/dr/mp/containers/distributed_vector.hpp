@@ -79,7 +79,7 @@ public:
 
   std::size_t getrank() const { return win_.communicator().rank(); }
 
-  void fence() { win_.fence(); }
+  void fence() const { win_.fence(); }
 };
 
 #ifdef DRISHMEM
@@ -127,7 +127,7 @@ public:
     return my_process_segment_index;
   }
 
-  void fence() {
+  void fence() const {
     // TODO: to have locality use ishmemx_fence_work_group
     ishmem_fence();
   }

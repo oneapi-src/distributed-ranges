@@ -137,10 +137,12 @@ mp::distributed_sparse_matrix<
 
 static void GemvEq_DR(benchmark::State &state) {
   // fft requires usm shared allocation
-  std::size_t n = default_vector_size;
+  std::size_t n = default_vector_size / 2;
   std::size_t up = n / 10;
   std::size_t down = n / 10;
+  std::size_t width = 8;
   assert(dr::mp::use_sycl());
+  assert(dr::mp::sycl_mem_kind() == sycl::usm::alloc::device);
   dr::views::csr_matrix_view<double, long> local_data;
   local_data = dr::generate_band_csr<double,long>(n, up, down);
 
@@ -148,20 +150,20 @@ static void GemvEq_DR(benchmark::State &state) {
 mp::distributed_sparse_matrix<
     double, long, dr::mp::MpiBackend,
     dr::mp::csr_eq_distribution<double, long, dr::mp::MpiBackend>>
-    m(local_data, 0);
-   std::vector<double> b;
-    b.reserve(m.shape().second);
-    std::vector<double> res(m.shape().first);
-    for (auto i = 0; i < m.shape().second; i++) {
-        b.push_back(i);
-    }
+  m(local_data, 0);
+  std::vector<double> base_a(n * width);
+  for (int j = 0; j < width; j++) {
+      for (int i = 0; i < n; i++) {
+        base_a[i + j * n] = i*j + 1;
+      }
+  }
+  dr::mp::broadcasted_slim_matrix<double> allocated_a;
+  allocated_a.broadcast_data(n, width, 0, base_a, dr::mp::default_comm());
 
-    dr::mp::broadcasted_vector<double> allocated_b;
-    allocated_b.broadcast_data(m.shape().second, 0, b, dr::mp::default_comm());
-
-    gemv(0, res, m, allocated_b);
+  std::vector<double> res(m.shape().first * width);
+  gemv(0, res, m, allocated_a);
   for (auto _ : state) {
-    gemv(0, res, m, allocated_b);
+    gemv(0, res, m, allocated_a);
   }
 }
 
@@ -169,31 +171,33 @@ DR_BENCHMARK(GemvEq_DR);
 
 static void GemvRow_DR(benchmark::State &state) {
   // fft requires usm shared allocation
-  std::size_t n = default_vector_size;
+  std::size_t n = default_vector_size / 2;
   std::size_t up = n / 10;
   std::size_t down = n / 10;
+  std::size_t width = 8;
   assert(dr::mp::use_sycl());
+  assert(dr::mp::sycl_mem_kind() == sycl::usm::alloc::device);
   dr::views::csr_matrix_view<double, long> local_data;
   local_data = dr::generate_band_csr<double,long>(n, up, down);
 
 
-mp::distributed_sparse_matrix<
+  mp::distributed_sparse_matrix<
     double, long, dr::mp::MpiBackend,
     dr::mp::csr_row_distribution<double, long, dr::mp::MpiBackend>>
-    m(local_data, 0);
-   std::vector<double> b;
-    b.reserve(m.shape().second);
-    std::vector<double> res(m.shape().first);
-    for (auto i = 0; i < m.shape().second; i++) {
-        b.push_back(i);
-    }
+  m(local_data, 0);
+  std::vector<double> base_a(n * width);
+  for (int j = 0; j < width; j++) {
+      for (int i = 0; i < n; i++) {
+        base_a[i + j * n] = i*j + 1;
+      }
+  }
+  dr::mp::broadcasted_slim_matrix<double> allocated_a;
+  allocated_a.broadcast_data(n, width, 0, base_a, dr::mp::default_comm());
 
-    dr::mp::broadcasted_vector<double> allocated_b;
-    allocated_b.broadcast_data(m.shape().second, 0, b, dr::mp::default_comm());
-
-  gemv(0, res, m, allocated_b);
+  std::vector<double> res(m.shape().first * width);
+  gemv(0, res, m, allocated_a);
   for (auto _ : state) {
-    gemv(0, res, m, allocated_b);
+    gemv(0, res, m, allocated_a);
   }
 }
 
@@ -202,10 +206,12 @@ DR_BENCHMARK(GemvRow_DR);
 
 
 static void Gemv_Reference(benchmark::State &state) {
-  std::size_t n = default_vector_size;
+  std::size_t n = default_vector_size / 2;
   std::size_t up = n / 10;
   std::size_t down = n / 10;
+  std::size_t width = 8;
   assert(dr::mp::use_sycl());
+  assert(dr::mp::sycl_mem_kind() == sycl::usm::alloc::device);
   dr::views::csr_matrix_view<double, long> local_data;
   local_data = dr::generate_band_csr<double,long>(n, up, down);
   auto nnz_count = local_data.size();
@@ -216,11 +222,11 @@ static void Gemv_Reference(benchmark::State &state) {
   auto col_ptr = sycl::malloc_device<long>(nnz_count, q);
   auto row_ptr = sycl::malloc_device<long>((band_shape[0] + 1), q);
   std::vector<double> b;
-  for (auto i = 0; i < band_shape[1]; i++) {
+  for (auto i = 0; i < band_shape[1] * width; i++) {
       b.push_back(i);
   }
   double* elems = new double[band_shape[0]];
-  auto input = sycl::malloc_device<double>(band_shape[1], q);
+  auto input = sycl::malloc_device<double>(band_shape[1] * width, q);
   auto output = sycl::malloc_device<double>(band_shape[0], q);
   //   for (int i = 0; i < band_shape[0]; i++) {
   //   fmt::print("{} {}\n", i, local_data.rowptr_data()[i]);
@@ -239,21 +245,20 @@ static void Gemv_Reference(benchmark::State &state) {
 
   
   for (auto _ : state) {
-    q.submit([&](auto &cgh) {
-            cgh.parallel_for(sycl::range<1>{static_cast<size_t>(band_shape[0])}, [=](auto idx) {
-              double sum = 0;
-              auto start = row_ptr[idx];
-              auto end = row_ptr[idx + 1];
-              for (auto i = start; i < end; i++) {
-                auto colNum = col_ptr[i];
-                auto matrixVal = input[colNum];
-                auto vectorVal = val_ptr[i];
-                sum += matrixVal * vectorVal;
+    dr::__detail::parallel_for_workaround(q, sycl::range<1>{static_cast<size_t>(band_shape[0])}, [=](auto idx) {
+              for (auto j = 0; j < width; j++) {
+                double sum = 0;
+                auto start = row_ptr[idx];
+                auto end = row_ptr[idx + 1];
+                for (auto i = start; i < end; i++) {
+                  auto colNum = col_ptr[i];
+                  auto vectorVal = input[colNum + j * band_shape[1]];
+                  auto matrixVal = val_ptr[i];
+                  sum += matrixVal * vectorVal;
+                }
+                *(output + idx) = sum;
               }
-              *(output + idx) = sum;
-            });
-          })
-          .wait();
+            }).wait();
     q.memcpy(elems, output, band_shape[0] * sizeof(double)).wait();
   }
   delete[] elems;
