@@ -65,11 +65,12 @@ public:
       auto real_segment_size =
           std::min(nnz_ - rank * segment_size_, segment_size_);
       auto local_data = rows_data_;
+      auto division = std::max(real_segment_size / 100, max_row_size_ * 10);
       auto one_computation_size =
-          (real_segment_size + max_row_size_ - 1) / max_row_size_;
+          (real_segment_size + division - 1) / division;
       auto row_size = row_size_;
       // auto begin = std::chrono::high_resolution_clock::now();
-      dr::__detail::parallel_for_workaround(dr::mp::sycl_queue(), sycl::range<1>{max_row_size_},
+      dr::__detail::parallel_for_workaround(dr::mp::sycl_queue(), sycl::range<1>{division},
       [=](auto idx) {
               std::size_t lower_bound = one_computation_size * idx;
               std::size_t upper_bound =
