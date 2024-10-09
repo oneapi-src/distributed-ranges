@@ -6,8 +6,8 @@
 
 #ifdef SYCL_LANGUAGE_VERSION
 #include <oneapi/dpl/algorithm>
-#include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
+#include <oneapi/dpl/execution>
 #endif
 
 #ifdef DRISHMEM
