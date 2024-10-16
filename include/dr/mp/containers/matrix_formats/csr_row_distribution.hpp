@@ -72,10 +72,19 @@ public:
       auto rows_data = dr::__detail::direct_iterator(
           dr::mp::local_segment(*rows_data_).begin());
       auto res_col_len = segment_size_;
-      
+      std::size_t wg = 32;
+      while (vals_width * size * wg > INT_MAX) {
+        // this check is necessary, because sycl does not permit ranges exceeding integer limit 
+        wg /= 2;
+      }
+      assert(wg > 0);
       // auto begin = std::chrono::high_resolution_clock::now();
-      dr::__detail::parallel_for_workaround(dr::mp::sycl_queue(), sycl::range<1>{size},
-      [=](auto idx) {
+      dr::mp::sycl_queue().submit([&](auto &&h) { 
+        h.parallel_for(sycl::nd_range<1>(vals_width * size * wg, wg), [=](auto item) {
+              auto input_j = item.get_group(0) / size;
+              auto idx = item.get_group(0) % size;
+              auto local_id = item.get_local_id();
+              auto group_size = item.get_local_range(0);
               std::size_t lower_bound = 0;
               if (rows_data[idx] > offset) {
                 lower_bound = rows_data[idx] - offset;
@@ -84,18 +93,21 @@ public:
               if (idx < size - 1) {
                 upper_bound = rows_data[idx + 1] - offset;
               }
-              for (auto j = 0; j < vals_width; j++) {
-                T sum = 0;
-                for (auto i = lower_bound; i < upper_bound; i++) {
-                  auto colNum = local_cols[i];
-                  auto matrixVal = vals[colNum + j * vals_len];
-                  auto vectorVal = local_vals[i];
-                  sum += matrixVal * vectorVal;
-                }
-                *(res + idx + j * res_col_len) += sum;
+              T sum = 0;
+              for (auto i = lower_bound + local_id; i < upper_bound; i += group_size) {
+                auto colNum = local_cols[i];
+                auto matrixVal = vals[colNum + input_j * vals_len];
+                auto vectorVal = local_vals[i];
+                sum += matrixVal * vectorVal;
               }
-            }
-      ).wait();
+              
+              sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                              sycl::memory_scope::device>
+                  c_ref(res[idx + input_j * res_col_len]);
+              c_ref += sum;
+        });
+
+      }).wait();
       // auto end = std::chrono::high_resolution_clock::now();
       // double duration = std::chrono::duration<double>(end - begin).count() * 1000;
       // fmt::print("timeDuration b: {} {} {}\n", duration, size, real_segment_size * vals_width);

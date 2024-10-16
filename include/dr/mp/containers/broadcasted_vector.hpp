@@ -43,6 +43,10 @@ class broadcasted_vector {
     T* broadcasted_data() {
         return _data;
     }
+
+    auto size() {
+        return _data_size;
+    }
     private:
     T* _data = nullptr;
     std::size_t _data_size = 0;

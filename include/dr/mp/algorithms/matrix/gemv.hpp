@@ -21,6 +21,7 @@ void gemv(int root, C &res,
           distributed_sparse_matrix<T, I, Backend, MatDistr> &a, broadcasted_vector<T,Alloc> b) {
   if (default_comm().rank() == root) {
     assert(a.shape().first == res.size());
+    assert(a.shape().second == b.size());
   }
   // copy b to all machines
   // auto communicator = default_comm();

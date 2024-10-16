@@ -69,6 +69,7 @@ public:
       auto one_computation_size =
           (real_segment_size + division - 1) / division;
       auto row_size = row_size_;
+      // fmt::print("{} {} {}\n", division, real_segment_size / 100, max_row_size_ * 10);
       // auto begin = std::chrono::high_resolution_clock::now();
       dr::__detail::parallel_for_workaround(dr::mp::sycl_queue(), sycl::range<1>{division},
       [=](auto idx) {
