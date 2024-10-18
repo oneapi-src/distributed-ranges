@@ -55,7 +55,7 @@ public:
     }
     auto vals_len = shape_[1];
     auto size = row_sizes_[rank];
-    auto res_col_len = size;
+    auto res_col_len = max_row_size_;
     if (dr::mp::use_sycl()) {
       auto localVals = dr::__detail::direct_iterator(
           dr::mp::local_segment(*vals_data_).begin());
@@ -65,7 +65,7 @@ public:
       auto real_segment_size =
           std::min(nnz_ - rank * segment_size_, segment_size_);
       auto local_data = rows_data_;
-      auto division = std::max(real_segment_size / 100, total_row_size_);
+      auto division = std::max(real_segment_size / 100, max_row_size_ * 10);
       auto one_computation_size =
           (real_segment_size + division - 1) / division;
       auto row_size = row_size_;
@@ -141,18 +141,18 @@ public:
   auto local_gemv_and_collect(std::size_t root, C &res, T* vals, std::size_t vals_width) const {
     assert(res.size() == shape_.first * vals_width);
     __detail::allocator<T> alloc;
-    auto res_alloc = alloc.allocate(row_size_ * vals_width);
+    auto res_alloc = alloc.allocate(max_row_size_ * vals_width);
     if (use_sycl()) {
-      sycl_queue().fill(res_alloc, 0, row_size_ * vals_width).wait();
+      sycl_queue().fill(res_alloc, 0, max_row_size_ * vals_width).wait();
     }
     else {
-      std::fill(res_alloc, res_alloc + row_size_ * vals_width, 0);
+      std::fill(res_alloc, res_alloc + max_row_size_ * vals_width, 0);
     }
     
     local_gemv(res_alloc, vals, vals_width);
     gather_gemv_vector(root, res, res_alloc, vals_width);
     fence();
-    alloc.deallocate(res_alloc, row_size_ * vals_width);
+    alloc.deallocate(res_alloc, max_row_size_ * vals_width);
   }
 
 private:
@@ -163,48 +163,28 @@ private:
     auto communicator = default_comm();
     __detail::allocator<T> alloc;
     if (communicator.rank() == root) {
-      auto requests = new MPI_Request[communicator.size() - 1];
-      auto gathered_res = alloc.allocate(total_row_size_ * vals_width);
-      auto current_row = 0;
-      auto req_iter = 0;
-      for (auto i = 0; i < communicator.size(); i++) {
-        if (i == root) {
-          if (use_sycl()) {
-            __detail::sycl_copy(partial_res, gathered_res + current_row * vals_width, row_size_ * vals_width);
-          } 
-          else {
-            std::copy(partial_res, partial_res + row_size_ * vals_width, gathered_res + current_row * vals_width);
-          }
-        }
-
-        else {
-          communicator.irecv(gathered_res + current_row * vals_width, row_sizes_[i] * vals_width, i, requests + req_iter);
-          req_iter++;
-        }
-        current_row += row_sizes_[i];
-      }
-
-      communicator.waitall(communicator.size() - 1, requests);
+      auto gathered_res = alloc.allocate(max_row_size_ * communicator.size() * vals_width);
+      communicator.gather(partial_res, gathered_res, max_row_size_ * vals_width, root);
       T* gathered_res_host;
+      
       if (use_sycl()) {
-        gathered_res_host = new T[total_row_size_ * vals_width];
-        __detail::sycl_copy(gathered_res, gathered_res_host, total_row_size_ * vals_width);
+        gathered_res_host = new T[max_row_size_ * communicator.size() * vals_width];
+        __detail::sycl_copy(gathered_res, gathered_res_host, max_row_size_ * communicator.size() * vals_width);
       } 
       else {
         gathered_res_host = gathered_res;
       }
       rng::fill(res, 0);
+      
+
       // auto begin = std::chrono::high_resolution_clock::now();
       for (auto k = 0; k < vals_width; k++) {
-        current_row = 0;
         for (auto i = 0; i < communicator.size(); i++) {
           auto first_row = row_offsets_[i];
           auto last_row = row_offsets_[i] + row_sizes_[i];
-          auto current_row_size = row_sizes_[i];
           for (auto j = first_row; j < last_row; j++) {
-            res[j + k * shape_[1]] += gathered_res_host[vals_width * current_row + k * current_row_size + j - first_row];
+            res[j + k * shape_[1]] += gathered_res_host[vals_width * max_row_size_ * i + k * max_row_size_ + j - first_row];
           }
-          current_row += current_row_size;
         }
       }
 
@@ -214,11 +194,10 @@ private:
       if (use_sycl()) {
         delete[] gathered_res_host;
       }
-      alloc.deallocate(gathered_res, total_row_size_ * communicator.size() * vals_width);
+      alloc.deallocate(gathered_res, max_row_size_ * communicator.size() * vals_width);
     } else {
-      MPI_Request req;
-      communicator.isend(partial_res, row_size_ * vals_width, root, &req);
-      communicator.wait(req);
+      communicator.gather(partial_res, static_cast<T *>(nullptr), max_row_size_ * vals_width,
+                          root);
     }
   }
 
@@ -275,9 +254,9 @@ private:
         row_sizes_.push_back(higher_limit - lower_limit);
         row_information[i] = lower_limit;
         row_information[default_comm().size() + i] = higher_limit - lower_limit;
-        total_row_size_ = total_row_size_ + row_sizes_.back();
+        max_row_size_ = std::max(max_row_size_, row_sizes_.back());
       }
-      row_information[default_comm().size() * 2] = total_row_size_;
+      row_information[default_comm().size() * 2] = max_row_size_;
       default_comm().bcast(row_information, sizeof(std::size_t) * row_info_size,
                            root);
     } else {
@@ -287,7 +266,7 @@ private:
         row_offsets_.push_back(row_information[i]);
         row_sizes_.push_back(row_information[default_comm().size() + i]);
       }
-      total_row_size_ = row_information[default_comm().size() * 2];
+      max_row_size_ = row_information[default_comm().size() * 2];
     }
     delete[] row_information;
     row_size_ = std::max(row_sizes_[rank], static_cast<std::size_t>(1));
@@ -327,7 +306,7 @@ private:
 
   std::size_t segment_size_ = 0;
   std::size_t row_size_ = 0;
-  std::size_t total_row_size_ = 0;
+  std::size_t max_row_size_ = 0;
   std::vector<std::size_t> row_offsets_;
   std::vector<std::size_t> row_sizes_;
 
