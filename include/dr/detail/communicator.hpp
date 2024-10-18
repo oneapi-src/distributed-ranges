@@ -168,6 +168,13 @@ public:
     irecv(data, src_rank, 0, request);
   }
 
+  void wait(MPI_Request request) const {
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+  }
+  void waitall(std::size_t count, MPI_Request *requests) const {
+    MPI_Waitall(count, requests, MPI_STATUS_IGNORE);
+  }
+
   template <rng::contiguous_range R>
   void alltoall(const R &sendr, R &recvr, std::size_t count) {
     alltoall(rng::data(sendr), rng::data(recvr), count);

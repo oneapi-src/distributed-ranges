@@ -50,7 +50,15 @@ class broadcasted_slim_matrix {
                 rng::copy(root_data.begin(), root_data.end(), _data);
             }
         }
-        comm.bcast(_data, sizeof(T) * _data_size, root);
+        auto position = 0;
+        auto reminder = sizeof(T) * _data_size;
+        while (reminder > INT_MAX) {
+            comm.bcast(((uint8_t*)_data) + position, INT_MAX, root);
+            position += INT_MAX;
+            reminder -= INT_MAX;
+        }
+        comm.bcast(((uint8_t*)_data) + position, reminder, root);
+
     }
 
     void destroy_data() {
