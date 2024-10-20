@@ -18,13 +18,9 @@ dr::mp::distribution get_distribution() {
       .redundancy(redundancy);
 }
 
-//int& get(Array& v, std::size_t i, std::size_t j) {
-//  return *(v.begin() + i * 6 + j).local();
-//}
-//
-//const int& get(const Array& v, std::size_t i, std::size_t j) {
-//  return *(v.begin() + i * 6 + j).local();
-//}
+int& get(Array& v, std::size_t i, std::size_t j) {
+  return *(v.begin() + i * size[0] + j).local();
+}
 
 TEST(WideHalo3, suite_works_for_3_processes_only) {
   EXPECT_EQ(dr::mp::default_comm().size(), 3);
@@ -70,13 +66,113 @@ TEST(WideHalo3, halo2d_is_visible_after_exchange_not_earlier) {
   };
 
   print("dv", dv);
+
   transform();
   print("dv", dv);
+  // after first step, only actually stored values and their neighbours are guaranteed to be correct
+  switch (dr::mp::default_comm().rank()) {
+    case 0:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 9);
+      EXPECT_EQ(get(dv, 2, 1), 9);
+      EXPECT_EQ(get(dv, 3, 1), 1);
+      break;
+    case 1:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 9);
+      EXPECT_EQ(get(dv, 2, 1), 9);
+      EXPECT_EQ(get(dv, 3, 1), 9);
+      EXPECT_EQ(get(dv, 4, 1), 9);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      break;
+    case 2:
+      EXPECT_EQ(get(dv, 2, 1), 1);
+      EXPECT_EQ(get(dv, 3, 1), 9);
+      EXPECT_EQ(get(dv, 4, 1), 9);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      break;
+  }
+
   transform();
   print("dv", dv);
+  // after second step, only actually stored values are guaranteed to be correct
+  switch (dr::mp::default_comm().rank()) {
+    case 0:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 41);
+      EXPECT_EQ(get(dv, 2, 1), 41);
+      EXPECT_EQ(get(dv, 3, 1), 1);
+      EXPECT_EQ(get(dv, 0, 2), 1);
+      EXPECT_EQ(get(dv, 1, 2), 57);
+      EXPECT_EQ(get(dv, 2, 2), 57);
+      EXPECT_EQ(get(dv, 3, 2), 1);
+      break;
+    case 1:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 41);
+      EXPECT_EQ(get(dv, 2, 1), 57);
+      EXPECT_EQ(get(dv, 3, 1), 57);
+      EXPECT_EQ(get(dv, 4, 1), 41);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      EXPECT_EQ(get(dv, 0, 2), 1);
+      EXPECT_EQ(get(dv, 1, 2), 57);
+      EXPECT_EQ(get(dv, 2, 2), 81);
+      EXPECT_EQ(get(dv, 3, 2), 81);
+      EXPECT_EQ(get(dv, 4, 2), 57);
+      EXPECT_EQ(get(dv, 5, 2), 1);
+      break;
+    case 2:
+      EXPECT_EQ(get(dv, 2, 1), 1);
+      EXPECT_EQ(get(dv, 3, 1), 41);
+      EXPECT_EQ(get(dv, 4, 1), 41);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      EXPECT_EQ(get(dv, 2, 2), 1);
+      EXPECT_EQ(get(dv, 3, 2), 57);
+      EXPECT_EQ(get(dv, 4, 2), 57);
+      EXPECT_EQ(get(dv, 5, 2), 1);
+      break;
+  }
+
   dv.halo().exchange();
   dv_out.halo().exchange();
   print("dv", dv);
+  // after exchange all are correct
+  switch (dr::mp::default_comm().rank()) {
+    case 0:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 41);
+      EXPECT_EQ(get(dv, 2, 1), 57);
+      EXPECT_EQ(get(dv, 3, 1), 57);
+      EXPECT_EQ(get(dv, 0, 2), 1);
+      EXPECT_EQ(get(dv, 1, 2), 57);
+      EXPECT_EQ(get(dv, 2, 2), 81);
+      EXPECT_EQ(get(dv, 3, 2), 81);
+      break;
+    case 1:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 41);
+      EXPECT_EQ(get(dv, 2, 1), 57);
+      EXPECT_EQ(get(dv, 3, 1), 57);
+      EXPECT_EQ(get(dv, 4, 1), 41);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      EXPECT_EQ(get(dv, 0, 2), 1);
+      EXPECT_EQ(get(dv, 1, 2), 57);
+      EXPECT_EQ(get(dv, 2, 2), 81);
+      EXPECT_EQ(get(dv, 3, 2), 81);
+      EXPECT_EQ(get(dv, 4, 2), 57);
+      EXPECT_EQ(get(dv, 5, 2), 1);
+      break;
+    case 2:
+      EXPECT_EQ(get(dv, 2, 1), 57);
+      EXPECT_EQ(get(dv, 3, 1), 57);
+      EXPECT_EQ(get(dv, 4, 1), 41);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      EXPECT_EQ(get(dv, 2, 2), 81);
+      EXPECT_EQ(get(dv, 3, 2), 81);
+      EXPECT_EQ(get(dv, 4, 2), 57);
+      EXPECT_EQ(get(dv, 5, 2), 1);
+      break;
+  }
 }
 
 TEST(WideHalo3, halo2d_api_works) {
@@ -122,4 +218,41 @@ TEST(WideHalo3, halo2d_api_works) {
   }, dv, dv_out);
 
   print("dv", dv);
+  // after exchange all are correct
+  switch (dr::mp::default_comm().rank()) {
+    case 0:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 41);
+      EXPECT_EQ(get(dv, 2, 1), 57);
+      EXPECT_EQ(get(dv, 3, 1), 57);
+      EXPECT_EQ(get(dv, 0, 2), 1);
+      EXPECT_EQ(get(dv, 1, 2), 57);
+      EXPECT_EQ(get(dv, 2, 2), 81);
+      EXPECT_EQ(get(dv, 3, 2), 81);
+      break;
+    case 1:
+      EXPECT_EQ(get(dv, 0, 1), 1);
+      EXPECT_EQ(get(dv, 1, 1), 41);
+      EXPECT_EQ(get(dv, 2, 1), 57);
+      EXPECT_EQ(get(dv, 3, 1), 57);
+      EXPECT_EQ(get(dv, 4, 1), 41);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      EXPECT_EQ(get(dv, 0, 2), 1);
+      EXPECT_EQ(get(dv, 1, 2), 57);
+      EXPECT_EQ(get(dv, 2, 2), 81);
+      EXPECT_EQ(get(dv, 3, 2), 81);
+      EXPECT_EQ(get(dv, 4, 2), 57);
+      EXPECT_EQ(get(dv, 5, 2), 1);
+      break;
+    case 2:
+      EXPECT_EQ(get(dv, 2, 1), 57);
+      EXPECT_EQ(get(dv, 3, 1), 57);
+      EXPECT_EQ(get(dv, 4, 1), 41);
+      EXPECT_EQ(get(dv, 5, 1), 1);
+      EXPECT_EQ(get(dv, 2, 2), 81);
+      EXPECT_EQ(get(dv, 3, 2), 81);
+      EXPECT_EQ(get(dv, 4, 2), 57);
+      EXPECT_EQ(get(dv, 5, 2), 1);
+      break;
+  }
 }

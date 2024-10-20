@@ -95,8 +95,6 @@ namespace __detail {
       op(stencils);
     };
     if (mp::use_sycl()) {
-      dr::drlog.debug("  using sycl\n");
-
 #ifdef SYCL_LANGUAGE_VERSION
       dr::__detail::parallel_for(
           dr::mp::sycl_queue(), sycl::range<1>(distance[0]),
@@ -106,7 +104,6 @@ namespace __detail {
       assert(false);
 #endif
     } else {
-      dr::drlog.debug("  using cpu\n");
       for (std::size_t i = 0; i < distance[0]; i++) {
         do_point(i);
       }
@@ -148,38 +145,28 @@ namespace __detail {
           });
       op(stencils);
     };
-//    if (mp::use_sycl()) {
-//
-//#ifdef SYCL_LANGUAGE_VERSION
-//      dr::__detail::parallel_for(
-//          dr::mp::sycl_queue(), sycl::range<2>(distance[0], distance[1]),
-//          do_point)
-//          .wait();
-//#else
-//      assert(false);
-//#endif
-//    } else {
+    if (mp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+      dr::__detail::parallel_for(
+          dr::mp::sycl_queue(), sycl::range<2>(distance[0], distance[1]),
+          do_point)
+          .wait();
+#else
+      assert(false);
+#endif
+    } else {
       for (std::size_t i = 0; i < distance[0]; i++) {
         for (std::size_t j = 0; j < distance[1]; j++) {
-          auto seg0 = std::get<0>(segs);
-          auto origin0 = seg0.origin();
-          auto begin0 = seg0_begin;
-          std::cout << origin0[0] + i + begin0[0] << " " << origin0[1] + j + begin0[1] << "\n";
-//          auto seg1 = std::get<1>(segs);
-//          auto origin1 = seg1.origin();
-//          auto begin1 = seg1.begin_stencil(begin);
-//          std::cout << "snd " << origin1[0] + i + begin1[0] << " " << origin1[1] + j + begin1[1] << "\n";
           do_point(stencil_index_type<2>{i, j});
         }
       }
-//    }
+    }
   }
 }
 
 template <std::size_t Rank, typename... Ts>
 requires (1 <= Rank && Rank <= 3)
 void stencil_for_each_extended(auto op, __detail::stencil_index_type<Rank> begin, __detail::stencil_index_type<Rank> end, dr::distributed_range auto &&...drs) {
-  dr::drlog.debug(dr::logger::for_each, "for_each_extended: parallel execution\n");
   auto ranges = std::tie(drs...);
   auto &&dr0 = std::get<0>(ranges);
   if (rng::empty(dr0)) {
@@ -194,7 +181,12 @@ void stencil_for_each_extended(auto op, __detail::stencil_index_type<Rank> begin
     else if constexpr (Rank == 2) {
       __detail::stencil_for_each_extended_2(op, begin, end, segs);
     }
-    else if constexpr (Rank == 3) {}
+    else if constexpr (Rank == 3) {
+      static_assert(false, "Not implemented");
+    }
+    else {
+      static_assert(false, "Not supported"); // sycl for_each does not support more than 3 dimensions
+    }
   }
   barrier();
 }

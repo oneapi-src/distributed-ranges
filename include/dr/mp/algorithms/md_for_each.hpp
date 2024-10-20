@@ -103,7 +103,6 @@ void stencil_for_each(auto op, is_mdspan_view auto &&...drs) {
 #else
         for (std::size_t i = 0; i < mdspan0.extents().extent(0); i++) {
           for (std::size_t j = 0; j < mdspan0.extents().extent(1); j++) {
-//            std::cout << seg0.origin()[0] + i << " " << seg0.origin()[1] + j << "\n";
             invoke_index(std::array<std::size_t, 2>{i, j});
           }
         }

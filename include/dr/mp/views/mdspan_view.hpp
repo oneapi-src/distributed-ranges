@@ -90,7 +90,6 @@ private:
   }
 
   static auto local_tile_extended(BaseSegment segment, const index_type &tile_shape) {
-    // Undefined behavior if the segments is not local
     T *ptr = std::to_address(dr::ranges::local(rng::begin(segment)));
     return md::mdspan(ptr, tile_shape);
   }

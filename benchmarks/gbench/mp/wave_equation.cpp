@@ -71,8 +71,6 @@ double initial_elev(double x, double y, double lx, double ly) {
   return exact_elev(x, y, 0.0, lx, ly);
 }
 
-//#define DEBUG
-
 void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
          double g, double h, double dx_inv, double dy_inv, double dt) {
   /**
@@ -84,9 +82,6 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * g * (in(1, 0) - in(0, 0)) * dx_inv;
   };
   {
-#ifdef DEBUG
-    std::cout << "stage1\n";
-#endif
     std::array<std::size_t, 2> start{1, 0};
     std::array<std::size_t, 2> end{e.extent(0) - 1, e.extent(1)};
     auto e_view = dr::mp::views::submdspan(e.view(), start, end);
@@ -99,9 +94,6 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * g * (in(0, 0) - in(0, -1)) * dy_inv;
   };
   {
-#ifdef DEBUG
-    std::cout << "stage2\n";
-#endif
     std::array<std::size_t, 2> start{0, 1};
     std::array<std::size_t, 2> end{e.extent(0), e.extent(1)};
     auto e_view = dr::mp::views::submdspan(e.view(), start, end);
@@ -118,9 +110,6 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     out(0, 0) = -dt * h * (dudx + dvdy);
   };
   {
-#ifdef DEBUG
-    std::cout << "stage3\n";
-#endif
     std::array<std::size_t, 2> start{1, 0};
     std::array<std::size_t, 2> end{u.extent(0), u.extent(1)};
     auto u_view = dr::mp::views::submdspan(u.view(), start, end);
@@ -128,9 +117,6 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
     auto dedt_view = dr::mp::views::submdspan(dedt.view(), start, end);
     dr::mp::stencil_for_each(rhs_div, u_view, v_view, dedt_view);
   }
-#ifdef DEBUG
-  std::cout << "after\n";
-#endif
 };
 
 void stage1(Array &u, Array &v, Array &e, Array &u1, Array &v1, Array &e1,
@@ -327,13 +313,6 @@ void stage3(Array &u, Array &v, Array &e, Array &u2, Array &v2, Array &e2,
   dr::mp::halo(e).exchange_begin();
 };
 
-#ifdef DEBUG
-  void debug_print_arr(std::size_t n, std::size_t m, const Array& arr, const std::string& str) {
-  std::cout << "Array " << str << ":\n";
-  std::cout << arr << "\n";
-}
-#endif
-
 int run(
     int n, bool benchmark_mode, bool fused_kernels,
     std::function<void()> iter_callback = []() {}) {
@@ -452,9 +431,6 @@ int run(
   double t = 0.0;
   double initial_v = 0.0;
   auto tic = std::chrono::steady_clock::now();
-#ifdef DEBUG
-  nt = 5;
-#endif
   for (std::size_t i = 0; i < nt + 1; i++) {
     t = i * dt;
 
@@ -524,21 +500,6 @@ int run(
       dr::mp::halo(v).exchange_begin();
       dr::mp::transform(dr::mp::views::zip(e, e2, dedt), e.begin(), rk_update3);
       dr::mp::halo(e).exchange_begin();
-#ifdef DEBUG
-      std::cout << "Iter " << i << "\n";
-      debug_print_arr(nx + 1, ny, e, "e");
-      debug_print_arr(nx + 1, ny, u, "u");
-      debug_print_arr(nx + 1, ny + 1, v, "v");
-      debug_print_arr(nx + 1, ny, e1, "e1");
-      debug_print_arr(nx + 1, ny, u1, "u1");
-      debug_print_arr(nx + 1, ny + 1, v1, "v1");
-      debug_print_arr(nx + 1, ny, e2, "e2");
-      debug_print_arr(nx + 1, ny, u2, "u2");
-      debug_print_arr(nx + 1, ny + 1, v2, "v2");
-      debug_print_arr(nx + 1, ny, dedt, "dedt");
-      debug_print_arr(nx + 1, ny, dudt, "dudt");
-      debug_print_arr(nx + 1, ny + 1, dvdt, "dvdt");
-#endif
     }
   }
   dr::mp::halo(u).exchange_finalize();
@@ -650,11 +611,7 @@ int main(int argc, char *argv[]) {
   cxxopts::Options options_spec(argv[0], "wave equation");
   // clang-format off
   options_spec.add_options()
-#ifndef DEBUG
     ("n", "Grid size", cxxopts::value<std::size_t>()->default_value("128"))
-#else
-    ("n", "Grid size", cxxopts::value<std::size_t>()->default_value("16"))
-#endif
     ("t,benchmark-mode", "Run a fixed number of time steps.", cxxopts::value<bool>()->default_value("false"))
     ("sycl", "Execute on SYCL device")
     ("l,log", "enable logging")
