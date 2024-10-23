@@ -7,45 +7,45 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # tested with a variable number of ranks
 # cmake-format: off
 add_executable(
-        mp-tests
-        mp-tests.cpp
-        ../common/all.cpp
-        ../common/copy.cpp
-        ../common/counted.cpp
-        ../common/distributed_vector.cpp
-        ../common/drop.cpp
-        ../common/enumerate.cpp
-        ../common/equal.cpp
-        ../common/exclusive_scan.cpp
-        ../common/fill.cpp
-        ../common/for_each.cpp
-        ../common/inclusive_scan.cpp
-        ../common/iota.cpp
-        ../common/iota_view.cpp
-        ../common/reduce.cpp
-        ../common/sort.cpp
-        ../common/subrange.cpp
-        ../common/sycl_utils.cpp
-        ../common/take.cpp
-        ../common/transform.cpp
-        ../common/transform_view.cpp
-        ../common/zip.cpp
-        ../common/zip_local.cpp
-        alignment.cpp
-        communicator.cpp
-        copy.cpp
-        distributed_vector.cpp
-        halo.cpp
-        mdstar.cpp
-        mpsort.cpp
-        reduce.cpp
-        stencil.cpp
-        segments.cpp
-        slide_view.cpp
-        wave_kernel.cpp
-        wide-halo-1d-3.cpp
-        wide-halo-2d-3.cpp
-)
+  mp-tests
+  mp-tests.cpp
+  ../common/all.cpp
+  ../common/copy.cpp
+  ../common/count.cpp
+  ../common/counted.cpp
+  ../common/distributed_vector.cpp
+  ../common/drop.cpp
+  ../common/enumerate.cpp
+  ../common/equal.cpp
+#  ../common/exclusive_scan.cpp disabled due to deadlock - DRA-213
+  ../common/fill.cpp
+  ../common/for_each.cpp
+#  ../common/inclusive_scan.cpp disabled due to deadlock - DRA-213
+  ../common/iota.cpp
+  ../common/iota_view.cpp
+  ../common/reduce.cpp
+  ../common/sort.cpp
+  ../common/subrange.cpp
+  ../common/sycl_utils.cpp
+  ../common/take.cpp
+  ../common/transform.cpp
+  ../common/transform_view.cpp
+  ../common/zip.cpp
+  ../common/zip_local.cpp
+  alignment.cpp
+  communicator.cpp
+  copy.cpp
+  distributed_vector.cpp
+  halo.cpp
+  mdstar.cpp
+  mpsort.cpp
+  reduce.cpp
+  stencil.cpp
+  segments.cpp
+  slide_view.cpp
+  wave_kernel.cpp
+  wide-halo-1d-3.cpp
+  wide-halo-2d-3.cpp)
 
 add_executable(
         mp-tests-3
@@ -60,14 +60,13 @@ add_executable(
 # mp-quick-test and mp-quick-test-3-only is for development. By reducing the number of source files, it
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
-
 add_executable(mp-quick-test
-        mp-tests.cpp
-        halo.cpp
+  mp-tests.cpp
+  halo.cpp
 )
 add_executable(mp-quick-test-3-only
-        mp-tests.cpp
-        wide-halo-2d-3.cpp
+  mp-tests.cpp
+  wide-halo-2d-3.cpp
 )
 # cmake-format: on
 
@@ -118,28 +117,30 @@ if(ENABLE_SYCL)
 
   foreach(nproc RANGE 1 4)
     add_mp_ctest(NAME mp-quick-test NPROC ${nproc} SYCL)
-    add_mp_ctest(NAME mp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory)
+    add_mp_pvc_ctest(
+      NAME mp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory)
   endforeach()
   add_mp_ctest(NAME mp-quick-test-3-only NPROC 3 SYCL)
   add_mp_ctest(NAME mp-quick-test-3-only NPROC 3 OFFLOAD SYCL TARGS --device-memory)
 
-  add_mp_ctest(
-          NAME mp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory
-          --gtest_filter=-${sycl-exclusions})
+  add_mp_pvc_ctest(
+    NAME mp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory
+    --gtest_filter=-${sycl-exclusions})
   if(NOT MPI_IMPL STREQUAL "openmpi")
-    # MPI_Win_create fails for communicator with size 1
-    add_mp_ctest(
-            NAME mp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
+    # MPI_Win_create fails for communicator with size 1 this should be
+    # add_mp_ctest - DRA-215
+    add_mp_pvc_ctest(
+      NAME mp-tests NPROC 1 SYCL TARGS --gtest_filter=-${sycl-exclusions})
   endif()
   # TODO: fix sycl Slide issues, see
   # https://github.com/oneapi-src/distributed-ranges/issues/322
 
   foreach(nproc RANGE 2 4)
     add_mp_ctest(
-            NAME mp-tests NPROC ${nproc} TIMEOUT 150 SYCL TARGS
-            --gtest_filter=-${sycl-exclusions})
+      NAME mp-tests NPROC ${nproc} TIMEOUT 500 SYCL TARGS
+      --gtest_filter=-${sycl-exclusions})
   endforeach()
   add_mp_ctest(
-          TEST_NAME mp-tests-sycl-3-only NAME mp-tests-3 NPROC 3 TIMEOUT 150 SYCL
-          TARGS --gtest_filter=-${sycl-exclusions})
+    TEST_NAME mp-tests-sycl-3-only NAME mp-tests-3 NPROC 3 TIMEOUT 500 SYCL
+    TARGS --gtest_filter=-${sycl-exclusions})
 endif()

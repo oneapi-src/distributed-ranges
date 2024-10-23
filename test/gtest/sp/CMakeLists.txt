@@ -14,12 +14,12 @@ add_executable(
   ../common/reduce.cpp ../common/sort.cpp ../common/subrange.cpp
   ../common/take.cpp ../common/transform.cpp ../common/transform_view.cpp
   ../common/zip.cpp ../common/zip_local.cpp containers.cpp algorithms.cpp
-  copy.cpp detail.cpp fill.cpp gemv.cpp transform.cpp)
+  copy.cpp detail.cpp fill.cpp gemv.cpp sparse.cpp transform.cpp)
 
 add_executable(sp-tests-3 sp-tests.cpp containers-3.cpp copy-3.cpp)
 
 # skeleton for rapid builds of individual tests, feel free to change this
-add_executable(sp-quick-test sp-tests.cpp ../common/equal.cpp)
+add_executable(sp-quick-test sp-tests.cpp sparse.cpp)
 target_compile_definitions(sp-quick-test PRIVATE QUICK_TEST)
 
 foreach(test-exec IN ITEMS sp-tests sp-tests-3 sp-quick-test)
