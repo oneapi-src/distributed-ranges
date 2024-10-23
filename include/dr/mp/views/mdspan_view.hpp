@@ -25,16 +25,22 @@ namespace dr::mp::__detail {
 template <typename BaseSegment, std::size_t Rank>
 class md_segment : public rng::view_interface<md_segment<BaseSegment, Rank>> {
 private:
+  using stencil_index_type = dr::__detail::dr_extents<Rank>;
 public:
   using index_type = dr::__detail::dr_extents<Rank>;
 
   md_segment() {}
-  md_segment(index_type origin, BaseSegment segment, index_type tile_shape)
+  md_segment(index_type origin, BaseSegment segment, index_type tile_shape, extended_local_data_distribution ext_dist)
       : base_(segment), origin_(origin),
-        mdspan_(local_tile(segment, tile_shape)) {
+        mdspan_(local_tile(segment, tile_shape)),
+        mdspan_extended_(local_tile_extended(segment, tile_shape)),
+        ext_dist_(ext_dist) {
     dr::drlog.debug(dr::logger::mdspan_view,
                     "md_segment\n  origin: {}\n  tile shape: {}\n", origin,
                     tile_shape);
+
+    for (std::size_t i = 0; i < Rank; i++)
+      end_[i] = origin_[i] + tile_shape[i];
   }
 
   // view_interface uses below to define everything else
@@ -45,8 +51,29 @@ public:
 
   auto halo() const { return dr::mp::halo(base_); }
 
+  [[nodiscard]] stencil_index_type begin_stencil(stencil_index_type stencil) const {
+    stencil_index_type out;
+    // Supports only 1d distribution
+    for (std::size_t i = 0; i < Rank; i++) {
+      out[i] = std::min(std::max(origin_[i], (i == 0 ? ext_dist_.begin : origin_[i]) + stencil[i]), end_[i]) - origin_[i];
+    }
+    return out;
+  }
+  [[nodiscard]] stencil_index_type end_stencil(stencil_index_type stencil) const {
+    stencil_index_type out;
+    // Supports only 1d distribution
+    for (std::size_t i = 0; i < Rank; i++) {
+      out[i] = std::max(std::min(end_[i], (i == 0 ? ext_dist_.end : end_[i]) - stencil[i]), origin_[i]) - origin_[i];
+    }
+    return out;
+  }
+  [[nodiscard]] std::pair<stencil_index_type, stencil_index_type> stencil(stencil_index_type begin, stencil_index_type end) const {
+    return {begin_stencil(begin), end_stencil(end)};
+  }
+
   // mdspan-specific methods
   auto mdspan() const { return mdspan_; }
+  auto mdspan_extended() const { return mdspan_extended_; }
   auto origin() const { return origin_; }
   // for slices, this would be the underlying mdspan
   auto root_mdspan() const { return mdspan(); }
@@ -62,9 +89,18 @@ private:
     return md::mdspan(ptr, tile_shape);
   }
 
+  static auto local_tile_extended(BaseSegment segment, const index_type &tile_shape) {
+    T *ptr = std::to_address(dr::ranges::local(rng::begin(segment)));
+    return md::mdspan(ptr, tile_shape);
+  }
+
   BaseSegment base_;
   index_type origin_;
+  index_type end_;
   md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> mdspan_;
+  md::mdspan<T, dr::__detail::md_extents<Rank>, md::layout_stride> mdspan_extended_;
+
+  extended_local_data_distribution ext_dist_;
 };
 
 } // namespace dr::mp::__detail
@@ -107,7 +143,9 @@ private:
     return origin;
   }
 
-  static auto make_segments(auto base, auto full_shape, auto tile_shape) {
+  static auto make_segments(auto base, auto full_shape, auto tile_shape, auto dist) {
+    extended_local_data_distribution ext_dist(tile_shape[0], full_shape[0], dist.halo());
+
     auto make_md = [=](auto v) {
       auto clipped = tile_shape;
       std::size_t segment_index = std::get<0>(v);
@@ -117,7 +155,7 @@ private:
       }
       return __detail::md_segment(
           segment_index_to_global_origin(segment_index, full_shape, tile_shape),
-          std::get<1>(v), clipped);
+          std::get<1>(v), clipped, ext_dist);
     };
 
     dr::drlog.debug(dr::logger::mdspan_view,
@@ -128,10 +166,10 @@ private:
            rng::views::transform(make_md);
   }
   using segments_type = decltype(make_segments(std::declval<base_type>(),
-                                               full_shape_, tile_shape_));
+                                               full_shape_, tile_shape_, std::declval<distribution>()));
 
 public:
-  mdspan_view(R r, dr::__detail::dr_extents<Rank> full_shape)
+  mdspan_view(R r, dr::__detail::dr_extents<Rank> full_shape, distribution dist)
       : base_(rng::views::all(std::forward<R>(r))) {
     full_shape_ = full_shape;
 
@@ -140,15 +178,15 @@ public:
     tile_shape_[0] = decomp::div;
 
     replace_decomp();
-    segments_ = make_segments(base_, full_shape_, tile_shape_);
+    segments_ = make_segments(base_, full_shape_, tile_shape_, dist);
   }
 
   mdspan_view(R r, dr::__detail::dr_extents<Rank> full_shape,
-              dr::__detail::dr_extents<Rank> tile_shape)
+              dr::__detail::dr_extents<Rank> tile_shape, distribution dist)
       : base_(rng::views::all(std::forward<R>(r))), full_shape_(full_shape),
         tile_shape_(tile_shape) {
     replace_decomp();
-    segments_ = make_segments(base_, full_shape_, tile_shape_);
+    segments_ = make_segments(base_, full_shape_, tile_shape_, dist);
   }
 
   // Base implements random access range
@@ -194,12 +232,12 @@ private:
 };
 
 template <typename R, std::size_t Rank>
-mdspan_view(R &&r, dr::__detail::dr_extents<Rank> extents)
+mdspan_view(R &&r, dr::__detail::dr_extents<Rank> extents, distribution dist)
     -> mdspan_view<rng::views::all_t<R>, Rank>;
 
 template <typename R, std::size_t Rank>
 mdspan_view(R &&r, dr::__detail::dr_extents<Rank> full_shape,
-            dr::__detail::dr_extents<Rank> tile_shape)
+            dr::__detail::dr_extents<Rank> tile_shape, distribution dist)
     -> mdspan_view<rng::views::all_t<R>, Rank>;
 
 template <typename R>
@@ -213,17 +251,19 @@ namespace dr::mp::views {
 template <std::size_t Rank> class mdspan_adapter_closure {
 public:
   mdspan_adapter_closure(dr::__detail::dr_extents<Rank> full_shape,
-                         dr::__detail::dr_extents<Rank> tile_shape)
-      : full_shape_(full_shape), tile_shape_(tile_shape), tile_valid_(true) {}
+                         dr::__detail::dr_extents<Rank> tile_shape,
+                         distribution dist)
+      : full_shape_(full_shape), tile_shape_(tile_shape), tile_valid_(true), dist_(dist) {}
 
-  mdspan_adapter_closure(dr::__detail::dr_extents<Rank> full_shape)
-      : full_shape_(full_shape) {}
+  mdspan_adapter_closure(dr::__detail::dr_extents<Rank> full_shape,
+                         distribution dist)
+      : full_shape_(full_shape), dist_(dist) {}
 
   template <rng::viewable_range R> auto operator()(R &&r) const {
     if (tile_valid_) {
-      return mdspan_view(std::forward<R>(r), full_shape_, tile_shape_);
+      return mdspan_view(std::forward<R>(r), full_shape_, tile_shape_, dist_);
     } else {
-      return mdspan_view(std::forward<R>(r), full_shape_);
+      return mdspan_view(std::forward<R>(r), full_shape_, dist_);
     }
   }
 
@@ -236,31 +276,34 @@ private:
   dr::__detail::dr_extents<Rank> full_shape_;
   dr::__detail::dr_extents<Rank> tile_shape_;
   bool tile_valid_ = false;
+  distribution dist_;
 };
 
 class mdspan_fn_ {
 public:
   template <rng::viewable_range R, typename Shape>
-  auto operator()(R &&r, Shape &&full_shape, Shape &&tile_shape) const {
+  auto operator()(R &&r, Shape &&full_shape, Shape &&tile_shape, distribution dist) const {
     return mdspan_adapter_closure(std::forward<Shape>(full_shape),
-                                  std::forward<Shape>(tile_shape))(
+                                  std::forward<Shape>(tile_shape),
+                                  dist)(
         std::forward<R>(r));
   }
 
   template <rng::viewable_range R, typename Shape>
-  auto operator()(R &&r, Shape &&full_shape) const {
-    return mdspan_adapter_closure(std::forward<Shape>(full_shape))(
+  auto operator()(R &&r, Shape &&full_shape, distribution dist) const {
+    return mdspan_adapter_closure(std::forward<Shape>(full_shape), dist)(
         std::forward<R>(r));
   }
 
   template <typename Shape>
-  auto operator()(Shape &&full_shape, Shape &&tile_shape) const {
+  auto operator()(Shape &&full_shape, Shape &&tile_shape, distribution dist) const {
     return mdspan_adapter_closure(std::forward<Shape>(full_shape),
-                                  std::forward<Shape>(tile_shape));
+                                  std::forward<Shape>(tile_shape),
+                                  dist);
   }
 
-  template <typename Shape> auto operator()(Shape &&full_shape) const {
-    return mdspan_adapter_closure(std::forward<Shape>(full_shape));
+  template <typename Shape> auto operator()(Shape &&full_shape, distribution dist) const {
+    return mdspan_adapter_closure(std::forward<Shape>(full_shape), dist);
   }
 };
 
