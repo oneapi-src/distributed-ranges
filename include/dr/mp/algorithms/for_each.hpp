@@ -162,6 +162,61 @@ namespace __detail {
       }
     }
   }
+
+  void stencil_for_each_extended_3(auto op, stencil_index_type<3>& begin, stencil_index_type<3> end, const auto& segs) {
+    auto [seg0_begin, seg0_end] = std::get<0>(segs).stencil(begin, end);
+
+    auto sub = [](auto a) {
+      auto x = std::get<0>(a);
+      auto y = std::get<1>(a);
+      return y > x ? y - x : 0;
+    };
+    auto is_zero = [](auto a) { return a != 0; };
+
+    auto zipped = zip_view(seg0_begin, seg0_end);
+    auto distance = zipped | std::views::transform(sub);
+
+    if ((distance | std::views::filter(is_zero)).empty())
+      return;
+
+    auto seg_infos = dr::__detail::tuple_transform(segs, [&begin](auto &&seg) {
+      auto ext = seg.root_mdspan().extents();
+      auto begin_stencil = seg.begin_stencil(begin);
+      return std::make_pair(
+          md::mdspan(
+              std::to_address(&seg.mdspan_extended()(begin_stencil[0], begin_stencil[1], begin_stencil[2])),
+              ext
+          ), ext);
+    });
+
+    auto do_point = [seg_infos, op](auto index) {
+      auto stencils =
+          dr::__detail::tuple_transform(seg_infos, [index](auto seg_info) {
+            return md::mdspan(
+                std::to_address(&seg_info.first(index[0], index[1], index[2])),
+                seg_info.second);
+          });
+      op(stencils);
+    };
+    if (mp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+      dr::__detail::parallel_for(
+          dr::mp::sycl_queue(), sycl::range<3>(distance[0], distance[1], distance[2]),
+          do_point)
+          .wait();
+#else
+      assert(false);
+#endif
+    } else {
+      for (std::size_t i = 0; i < distance[0]; i++) {
+        for (std::size_t j = 0; j < distance[1]; j++) {
+          for (std::size_t k = 0; k < distance[3]; k++) {
+            do_point(stencil_index_type<3>{i, j, k});
+          }
+        }
+      }
+    }
+  }
 }
 
 template <std::size_t Rank, typename... Ts>
@@ -182,7 +237,7 @@ void stencil_for_each_extended(auto op, __detail::stencil_index_type<Rank> begin
       __detail::stencil_for_each_extended_2(op, begin, end, segs);
     }
     else if constexpr (Rank == 3) {
-      static_assert(false, "Not implemented");
+      __detail::stencil_for_each_extended_3(op, begin, end, segs);
     }
     else {
       static_assert(false, "Not supported"); // sycl for_each does not support more than 3 dimensions
