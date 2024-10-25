@@ -149,7 +149,13 @@ public:
       std::fill(res_alloc, res_alloc + max_row_size_ * vals_width, 0);
     }
     
+    // auto begin = std::chrono::high_resolution_clock::now();
     local_gemv(res_alloc, vals, vals_width);
+    // auto end = std::chrono::high_resolution_clock::now();
+    // double duration = std::chrono::duration<double>(end - begin).count();
+    // auto size = std::min(segment_size_, shape_[0] - segment_size_ * default_comm().rank());
+    // fmt::print("rows gemv time {} {} {}\n", duration * 1000, size, default_comm().rank());
+
     gather_gemv_vector(root, res, res_alloc, vals_width);
     fence();
     alloc.deallocate(res_alloc, max_row_size_ * vals_width);

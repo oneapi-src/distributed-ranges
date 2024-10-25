@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         m_row(local_data, root);
     fmt::print("{}\n", m.size());
 
-    auto width = 8;
+    auto width = 6;
     std::vector<double> res(m.shape().first * width);
     std::vector<double> res_row(m.shape().first * width);
     std::vector<double> base_a(m.shape().second * width);
@@ -58,19 +58,19 @@ int main(int argc, char **argv) {
     double total_time = 0;
     auto N = 1;
     gemv(0, res, m, allocated_a); // it is here to prepare sycl for work
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < 100; i++) {
       auto begin = std::chrono::high_resolution_clock::now();
       gemv(0, res, m, allocated_a);
       auto end = std::chrono::high_resolution_clock::now();
       double duration = std::chrono::duration<double>(end - begin).count();
       total_time += duration;
-      if (i % 10 == 0 && dr::mp::default_comm().rank() == 0) {
-        fmt::print("eq canary {}\n", duration * 1000);
+      if (root == dr::mp::default_comm().rank()) {
+        fmt::print("eq canary {}\n\n", duration * 1000);
       }
     }
-    if (root == dr::mp::default_comm().rank()) {
-      fmt::print("eq gemv time total {}\n", total_time * 1000 / N);
-    }
+    // if (root == dr::mp::default_comm().rank()) {
+    //   fmt::print("eq gemv time total {}\n", total_time * 1000 / N);
+    // }
     m.fence();
     total_time = 0;
     gemv(0, res_row, m_row, allocated_a);
