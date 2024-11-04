@@ -106,9 +106,9 @@ public:
     i_all_gather(&src, rng::data(dst), 1, req);
   }
 
-  void gatherv(const void *src, int *counts, int *offsets, void *dst,
+  void gatherv(const void *src, long long *counts, long *offsets, void *dst,
                std::size_t root) const {
-    MPI_Gatherv(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
+    MPI_Gatherv_c(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
                 root, mpi_comm_);
   }
 
