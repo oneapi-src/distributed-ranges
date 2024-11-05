@@ -136,20 +136,21 @@ mp::distributed_sparse_matrix<
 
 namespace {
   std::size_t getWidth() {
-    // return 8;
-    return default_vector_size / 100000;
+    return 8;//default_vector_size / 100000;
   }
 }
 static auto getMatrix() {
-  // std::size_t n = std::sqrt(default_vector_size / 100000) * 50000;
-  // // std::size_t n = default_vector_size / 2;
-  // std::size_t up = n / 10;
-  // std::size_t down = n / 10;
-  // // assert(dr::mp::use_sycl());
-  // // assert(dr::mp::sycl_mem_kind() == sycl::usm::alloc::device);
-  // return dr::generate_band_csr<double,long>(n, up, down);
+  std::size_t n = std::sqrt(default_vector_size / 100000) * 50000;
+  // std::size_t n = default_vector_size / 2;
+  std::size_t up = n / 50;
+  std::size_t down = n / 50;
+  // assert(dr::mp::use_sycl());
+  // assert(dr::mp::sycl_mem_kind() == sycl::usm::alloc::device);
+  return dr::generate_band_csr<double,long>(n, up, down);
 
-  return dr::read_csr<double, long>("/home/komarmik/examples/mawi_201512020030.mtx");
+  // return dr::read_csr<double, long>("/home/komarmik/examples/soc-LiveJournal1.mtx");
+  // return dr::read_csr<double, long>("/home/komarmik/examples/mycielskian18.mtx");
+  // return dr::read_csr<double, long>("/home/komarmik/examples/mawi_201512020030.mtx");
 }
 
 static void GemvEq_DR(benchmark::State &state) {

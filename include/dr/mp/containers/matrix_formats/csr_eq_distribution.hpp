@@ -65,7 +65,7 @@ public:
       auto real_segment_size =
           std::min(nnz_ - rank * segment_size_, segment_size_);
       auto local_data = rows_data_;
-      auto division = std::max(real_segment_size / 100, row_sizes_[default_comm().rank()] * 10);
+      auto division = real_segment_size / 50;
       auto one_computation_size =
           (real_segment_size + division - 1) / division;
       auto row_size = row_size_;
