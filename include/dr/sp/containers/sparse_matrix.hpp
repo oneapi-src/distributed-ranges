@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <dr/detail/generate_random_csr.hpp>
+#include <dr/detail/generate_csr.hpp>
 #include <dr/detail/index.hpp>
 #include <dr/detail/matrix_entry.hpp>
 #include <dr/sp/algorithms/copy.hpp>

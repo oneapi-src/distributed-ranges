@@ -12,7 +12,7 @@
 #include <tuple>
 #include <vector>
 
-#include <dr/detail/local_csr_matrix.hpp>
+#include <dr/detail/csr_matrix_base.hpp>
 #include <dr/views/csr_matrix_view.hpp>
 
 namespace dr {
@@ -72,7 +72,7 @@ auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
 }
 
 template <typename Tuples, typename Allocator>
-auto convert_local_csr_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t nnz,
+auto convert_csr_base_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t nnz,
                     Allocator &&allocator) {
   auto &&[v, j] = *csr_matrix.begin()->begin();
 
@@ -117,7 +117,7 @@ auto convert_local_csr_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_
 /// Read in the Matrix Market file at location `file_path` and a return
 /// a coo_matrix data structure with its contents.
 template <typename T, typename I = std::size_t>
-inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path,
+inline csr_matrix_base<T, I> read_csr_matrix_base(std::string file_path,
                                               bool one_indexed = true) {
   using size_type = std::size_t;
 
@@ -190,7 +190,7 @@ inline local_csr_matrix<T, I> read_coo_matrix(std::string file_path,
   // NOTE for symmetric matrices: `nnz` holds the number of stored values in
   // the matrix market file, while `matrix.nnz_` will hold the total number of
   // stored values (including "mirrored" symmetric values).
-  local_csr_matrix<T, I> matrix({m, n}, nnz);
+  csr_matrix_base<T, I> matrix({m, n}, nnz);
 
   size_type c = 0;
   while (std::getline(f, buf)) {
@@ -246,10 +246,10 @@ void destroy_csr_matrix_view(dr::views::csr_matrix_view<T, I, Args...> view,
 
 template <typename T, typename I = std::size_t>
 auto read_csr(std::string file_path, bool one_indexed = true) {
-  auto m = __detail::read_coo_matrix<T, I>(file_path, one_indexed);
+  auto m = __detail::read_csr_matrix_base<T, I>(file_path, one_indexed);
   auto shape = m.shape();
   auto nnz = m.size();
-  auto t = __detail::convert_local_csr_to_csr(m, shape, nnz, std::allocator<T>{});
+  auto t = __detail::convert_csr_base_to_csr(m, shape, nnz, std::allocator<T>{});
 
   return t;
 }

@@ -14,7 +14,7 @@ namespace dr {
 namespace __detail {
 
 template <typename T, typename I, typename Allocator = std::allocator<T>>
-class local_csr_matrix {
+class csr_matrix_base {
 public:
   using value_type = std::pair<T, I>;
   using scalar_type = T;
@@ -37,7 +37,7 @@ public:
   using iterator = typename backend_type::iterator;
   using const_iterator = typename backend_type::const_iterator;
 
-  local_csr_matrix(dr::index<I> shape, std::size_t nnz) : shape_(shape) {
+  csr_matrix_base(dr::index<I> shape, std::size_t nnz) : shape_(shape) {
     auto average_size = nnz / shape.first / 2;
     for (std::size_t i = 0; i < shape.first; i++) {
       tuples_.push_back(row_type());
@@ -77,12 +77,12 @@ public:
     }
   }
 
-  local_csr_matrix() = default;
-  ~local_csr_matrix() = default;
-  local_csr_matrix(const local_csr_matrix &) = default;
-  local_csr_matrix(local_csr_matrix &&) = default;
-  local_csr_matrix &operator=(const local_csr_matrix &) = default;
-  local_csr_matrix &operator=(local_csr_matrix &&) = default;
+  csr_matrix_base() = default;
+  ~csr_matrix_base() = default;
+  csr_matrix_base(const csr_matrix_base &) = default;
+  csr_matrix_base(csr_matrix_base &&) = default;
+  csr_matrix_base &operator=(const csr_matrix_base &) = default;
+  csr_matrix_base &operator=(csr_matrix_base &&) = default;
 
 private:
   std::size_t size_ = 0;

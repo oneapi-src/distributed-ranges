@@ -50,7 +50,7 @@
 #include <dr/detail/index.hpp>
 #include <dr/detail/matrix_io.hpp>
 #include <dr/detail/matrix_entry.hpp>
-#include <dr/detail/generate_random_csr.hpp>
+#include <dr/detail/generate_csr.hpp>
 #include <dr/detail/coo_matrix.hpp>
 
 #include <dr/views/views.hpp>
