@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "halo/halo.hpp"
-#include "halo/group.hpp"
-#include "halo/instance.hpp"
-#include "halo/format.hpp"
+#include <dr/mp/halo/halo.hpp>
+#include <dr/mp/halo/group.hpp>
+#include <dr/mp/halo/instance.hpp>
+#include <dr/mp/halo/format.hpp>

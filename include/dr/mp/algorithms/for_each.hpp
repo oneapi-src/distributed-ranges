@@ -77,7 +77,7 @@ namespace __detail {
     auto zipped = zip_view(seg0_begin, seg0_end);
     auto distance = zipped | std::views::transform(sub);
 
-    if ((distance | std::views::filter(is_zero)).empty())
+    if (rng::empty(distance | std::views::filter(is_zero)))
       return;
 
     auto seg_infos = dr::__detail::tuple_transform(segs, [begin](auto &&seg) {
@@ -123,7 +123,7 @@ namespace __detail {
     auto zipped = zip_view(seg0_begin, seg0_end);
     auto distance = zipped | std::views::transform(sub);
 
-    if ((distance | std::views::filter(is_zero)).empty())
+    if (rng::empty(distance | std::views::filter(is_zero)))
       return;
 
     auto seg_infos = dr::__detail::tuple_transform(segs, [&begin](auto &&seg) {
@@ -176,7 +176,7 @@ namespace __detail {
     auto zipped = zip_view(seg0_begin, seg0_end);
     auto distance = zipped | std::views::transform(sub);
 
-    if ((distance | std::views::filter(is_zero)).empty())
+    if (rng::empty(distance | std::views::filter(is_zero)))
       return;
 
     auto seg_infos = dr::__detail::tuple_transform(segs, [&begin](auto &&seg) {

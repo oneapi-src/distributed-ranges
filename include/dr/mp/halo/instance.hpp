@@ -6,8 +6,8 @@
 
 #include <dr/mp/global.hpp>
 #include <dr/mp/sycl_support.hpp>
-#include "halo.hpp"
-#include "group.hpp"
+#include <dr/mp/halo/halo.hpp>
+#include <dr/mp/halo/group.hpp>
 
 namespace dr::mp {
 template<typename T, typename Memory>
