@@ -156,11 +156,11 @@ public:
   std::size_t rank() const { return rank_; }
 
   iterator begin() const {
-    return iterator(values_, rowptr_, colind_, 0, 0, shape()[1], idx_offset_);
+    return iterator(values_, rowptr_, colind_, 0, 0, shape()[0], idx_offset_);
   }
 
   iterator end() const {
-    return iterator(values_, rowptr_, colind_, nnz_, shape()[1], shape()[1],
+    return iterator(values_, rowptr_, colind_, nnz_, shape()[0], shape()[0],
                     idx_offset_);
   }
 
