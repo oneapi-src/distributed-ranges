@@ -5,7 +5,8 @@
 #include "cxxopts.hpp"
 #include "fmt/core.h"
 #include "mpi.h"
-#include "oneapi/mkl/dfti.hpp"
+#include "oneapi/mkl/dft.hpp"
+#include <complex>
 
 #include "dr/mp.hpp"
 
