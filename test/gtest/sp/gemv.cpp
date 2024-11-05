@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "xp-tests.hpp"
-
+#include "dr/detail/coo_matrix.hpp"
 TEST(SparseMatrix, Gemv) {
   std::size_t m = 100;
   std::size_t k = 100;
@@ -40,8 +40,8 @@ TEST(SparseMatrix, EmptyGemv) {
   using T = float;
   using I = int;
 
-  dr::sp::__detail::coo_matrix<T, I> base;
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
+  dr::__detail::coo_matrix<T, I> base;
+  auto csr = dr::__detail::convert_to_csr(base, {m, k}, base.size(),
                                               std::allocator<T>{});
   dr::sp::sparse_matrix<T, I> a =
       dr::sp::create_distributed(csr, dr::sp::row_cyclic());
@@ -73,7 +73,7 @@ TEST(SparseMatrix, ZeroVector) {
     }
   }
 
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
+  auto csr = dr::__detail::convert_to_csr(base, {m, k}, base.size(),
                                               std::allocator<T>{});
   dr::sp::sparse_matrix<T, I> a =
       dr::sp::create_distributed(csr, dr::sp::row_cyclic());

@@ -16,7 +16,7 @@ TEST(SparseMatrix, IterationForward) {
   }
   std::vector<std::pair<std::pair<I, I>, T>> reference(base.size());
   std::copy(base.begin(), base.end(), reference.begin());
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
+  auto csr = dr::__detail::convert_to_csr(base, {m, k}, base.size(),
                                               std::allocator<T>{});
   dr::sp::sparse_matrix<T, I> a =
       dr::sp::create_distributed(csr, dr::sp::row_cyclic());
@@ -48,7 +48,7 @@ TEST(SparseMatrix, IterationReverse) {
   }
   std::vector<std::pair<std::pair<I, I>, T>> reference(base.size());
   std::copy(base.begin(), base.end(), reference.begin());
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
+  auto csr = dr::__detail::convert_to_csr(base, {m, k}, base.size(),
                                               std::allocator<T>{});
   dr::sp::sparse_matrix<T, I> a =
       dr::sp::create_distributed(csr, dr::sp::row_cyclic());
