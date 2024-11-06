@@ -216,11 +216,13 @@ private:
   using iterator = dv_segment_iterator<DV>;
 
   using stencil_index_type = dr::__detail::dr_extents<1>;
+
 public:
   using difference_type = std::ptrdiff_t;
   dv_segment() = default;
   dv_segment(DV *dv, std::size_t segment_index, std::size_t size,
-             std::size_t reserved, const extended_local_data_distribution& ext_dist) {
+             std::size_t reserved,
+             const extended_local_data_distribution &ext_dist) {
     dv_ = dv;
     segment_index_ = segment_index;
     size_ = size;
@@ -242,13 +244,20 @@ public:
   auto end() const { return begin() + size(); }
   auto reserved() const { return reserved_; }
 
-  [[nodiscard]] stencil_index_type begin_stencil(stencil_index_type stencil) const {
-    return {std::min(std::max(begin_index_, ext_dist_.begin + stencil[0]), end_index_) - begin_index_};
+  [[nodiscard]] stencil_index_type
+  begin_stencil(stencil_index_type stencil) const {
+    return {std::min(std::max(begin_index_, ext_dist_.begin + stencil[0]),
+                     end_index_) -
+            begin_index_};
   }
-  [[nodiscard]] stencil_index_type end_stencil(stencil_index_type stencil) const {
-    return {std::max(std::min(end_index_, ext_dist_.end - stencil[0]), begin_index_) - begin_index_};
+  [[nodiscard]] stencil_index_type
+  end_stencil(stencil_index_type stencil) const {
+    return {std::max(std::min(end_index_, ext_dist_.end - stencil[0]),
+                     begin_index_) -
+            begin_index_};
   }
-  [[nodiscard]] std::pair<stencil_index_type, stencil_index_type> stencil(stencil_index_type begin, stencil_index_type end) const {
+  [[nodiscard]] std::pair<stencil_index_type, stencil_index_type>
+  stencil(stencil_index_type begin, stencil_index_type end) const {
     return {begin_stencil(begin), end_stencil(end)};
   }
   auto extents() const { return md::extents(reserved_); }
@@ -256,6 +265,7 @@ public:
   auto operator[](difference_type n) const { return *(begin() + n); }
 
   bool is_local() const { return segment_index_ == default_comm().rank(); }
+
 private:
   DV *dv_ = nullptr;
   std::size_t segment_index_;
@@ -273,7 +283,7 @@ private:
 //
 template <typename DR>
 concept has_halo_method = dr::distributed_range<DR> && requires(DR &&dr) {
-  { rng::begin(dr::ranges::segments(dr)[0]).halo() };
+  {rng::begin(dr::ranges::segments(dr)[0]).halo()};
 };
 
 auto &halo(has_halo_method auto &&dr) {

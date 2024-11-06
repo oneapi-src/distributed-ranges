@@ -70,7 +70,8 @@ double initial_elev(double x, double y, double lx, double ly) {
   return exact_elev(x, y, 0.0, lx, ly);
 }
 
-void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt, double dx_inv, double dy_inv, double dt) {
+void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt,
+         double dx_inv, double dy_inv, double dt) {
   /**
    * Evaluate right hand side of the equations
    */
@@ -95,7 +96,9 @@ void rhs(Array &u, Array &v, Array &e, Array &dudt, Array &dvdt, Array &dedt, do
   stencil_for_each_extended<2>(rhs_div, {1, 0}, {0, 0}, u, v, dedt);
 }
 
-int run(std::size_t n, std::size_t redundancy, std::size_t steps, std::function<void()> iter_callback = []() {}) {
+int run(
+    std::size_t n, std::size_t redundancy, std::size_t steps,
+    std::function<void()> iter_callback = []() {}) {
   // construct grid
   // number of cells in x, y direction
   std::size_t nx = n;
@@ -104,9 +107,7 @@ int run(std::size_t n, std::size_t redundancy, std::size_t steps, std::function<
   const double ymin = -1, ymax = 1;
   ArakawaCGrid grid(xmin, xmax, ymin, ymax, nx, ny);
 
-  auto dist = dr::mp::distribution()
-      .halo(1)
-      .redundancy(redundancy);
+  auto dist = dr::mp::distribution().halo(1).redundancy(redundancy);
 
   // statistics
   std::size_t nread, nwrite, nflop;
@@ -257,8 +258,9 @@ int run(std::size_t n, std::size_t redundancy, std::size_t steps, std::function<
 
     // step
     iter_callback();
-    if ((i + 1) % redundancy == 0){
-      // phase with communication - once after (redundancy - 1) steps without communication
+    if ((i + 1) % redundancy == 0) {
+      // phase with communication - once after (redundancy - 1) steps without
+      // communication
       dr::mp::halo(e).exchange();
       dr::mp::halo(u).exchange();
       dr::mp::halo(v).exchange();
@@ -290,7 +292,6 @@ int run(std::size_t n, std::size_t redundancy, std::size_t steps, std::function<
   dr::mp::halo(u2).exchange();
   dr::mp::halo(v2).exchange();
   dr::mp::halo(e2).exchange();
-
 
   auto toc = std::chrono::steady_clock::now();
   std::chrono::duration<double> duration = toc - tic;
@@ -383,8 +384,9 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<std::ofstream> logfile;
   if (options.count("log")) {
-    logfile = std::make_unique<std::ofstream>(options["logprefix"].as<std::string>() +
-                                    fmt::format(".{}.log", comm_rank));
+    logfile =
+        std::make_unique<std::ofstream>(options["logprefix"].as<std::string>() +
+                                        fmt::format(".{}.log", comm_rank));
     dr::drlog.set_file(*logfile);
   }
 

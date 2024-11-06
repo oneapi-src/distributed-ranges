@@ -62,8 +62,7 @@ struct extended_local_data_distribution {
   std::size_t segment_size;
 
   extended_local_data_distribution() = default;
-  extended_local_data_distribution(std::size_t segment_size,
-                                   std::size_t size,
+  extended_local_data_distribution(std::size_t segment_size, std::size_t size,
                                    halo_bounds hb)
       : segment_size(segment_size) {
     if (default_comm().rank() * segment_size >= hb.prev)

@@ -77,9 +77,9 @@ private:
 
   shape_type tile_shape_;
   DV dv_;
-  using mdspan_type =
-      decltype(make_md_view(std::declval<DV>(), std::declval<shape_type>(),
-                            std::declval<shape_type>(), std::declval<distribution>()));
+  using mdspan_type = decltype(make_md_view(
+      std::declval<DV>(), std::declval<shape_type>(),
+      std::declval<shape_type>(), std::declval<distribution>()));
   mdspan_type md_view_;
   distribution dist_;
 };

@@ -276,9 +276,8 @@ public:
 
   void fence() { backend.fence(); }
 
-  const auto &dist() const {
-    return distribution_;
-  }
+  const auto &dist() const { return distribution_; }
+
 private:
   void init(auto size, auto dist) {
     size_ = size;
@@ -307,12 +306,9 @@ private:
 
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
-      segments_.emplace_back(
-          this,
-          segment_index++,
-          std::min(segment_size_, size - i),
-          data_size_,
-          ext_dist);
+      segments_.emplace_back(this, segment_index++,
+                             std::min(segment_size_, size - i), data_size_,
+                             ext_dist);
     }
 
     fence();
