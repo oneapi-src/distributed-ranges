@@ -4,11 +4,11 @@
 
 #include "cxxopts.hpp"
 #include "oneapi/mkl/dft.hpp"
+#include <complex>
 #include <dr/sp.hpp>
 #include <fmt/core.h>
 #include <latch>
 #include <thread>
-#include <complex>
 
 #ifndef STANDALONE_BENCHMARK
 
