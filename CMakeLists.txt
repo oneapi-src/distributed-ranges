@@ -132,8 +132,8 @@ endif()
 
 FetchContent_Declare(
   range-v3
-  GIT_REPOSITORY https://github.com/BenBrock/range-v3.git
-  GIT_TAG 5300fe3)
+  GIT_REPOSITORY https://github.com/Xewar313/range-v3.git
+  GIT_TAG c1ed9bf)
 FetchContent_MakeAvailable(range-v3)
 
 FetchContent_Declare(
