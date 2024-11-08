@@ -200,6 +200,7 @@ private:
       
 
       // auto begin = std::chrono::high_resolution_clock::now();
+      
       for (auto k = 0; k < vals_width; k++) {
         auto current_offset = 0;
         for (auto i = 0; i < communicator.size(); i++) {
@@ -207,7 +208,7 @@ private:
           auto last_row = row_offsets_[i] + row_sizes_[i];
           auto row_size = row_sizes_[i];
           for (auto j = first_row; j < last_row; j++) {
-            res[j + k * shape_[1]] += gathered_res_host[vals_width * current_offset + k * row_size + j - first_row];
+            res[j + k * shape_[0]] += gathered_res_host[vals_width * current_offset + k * row_size + j - first_row];
           }
           current_offset += row_sizes_[i];
         }

@@ -24,7 +24,10 @@ int main(int argc, char **argv) {
   dr::views::csr_matrix_view<double, long> local_data;
   auto root = 0;
   if (root == dr::mp::default_comm().rank()) {
-  local_data = dr::read_csr<double, long>(fname);
+    std::size_t m = 10;
+    std::size_t k = 1000;
+    local_data = dr::generate_random_csr<double, long>({m, k}, 0.1f);
+    // local_data = dr::read_csr<double, long>(fname);
   }
   {
     mp::distributed_sparse_matrix<
@@ -37,7 +40,7 @@ int main(int argc, char **argv) {
         m_row(local_data, root);
     fmt::print("{}\n", m.size());
 
-    auto width = 6;
+    auto width = 3;
     std::vector<double> res(m.shape().first * width);
     std::vector<double> res_row(m.shape().first * width);
     std::vector<double> base_a(m.shape().second * width);
@@ -85,12 +88,13 @@ int main(int argc, char **argv) {
 
     std::vector<double> ref(m.shape().first * width);
     auto res_col_len = m.shape().first;
+    auto in_len = m.shape().second;
     if (dr::mp::default_comm().rank() == 0) {
       for (auto a : local_data) {
         auto [index, val] = a;
         auto [m, n] = index;
         for (int i = 0; i < width; i++) {
-            ref[m + i * res_col_len] += base_a[n + i * res_col_len] * val;
+            ref[m + i * res_col_len] += base_a[n + i * in_len] * val;
         }
       }
       for (int i = 0; i < m.shape().first * width; i++) {
