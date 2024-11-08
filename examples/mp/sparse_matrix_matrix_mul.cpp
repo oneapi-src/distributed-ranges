@@ -23,13 +23,9 @@ int main(int argc, char **argv) {
 
   dr::views::csr_matrix_view<double, long> local_data;
   auto root = 0;
-  // auto n = 50000;
-  // std::size_t up = n / 10;
-  // std::size_t down = n / 10;
-  // local_data = dr::generate_band_csr<double,long>(n, up, down);
-  // if (root == dr::mp::default_comm().rank()) {
+  if (root == dr::mp::default_comm().rank()) {
   local_data = dr::read_csr<double, long>(fname);
-  // }
+  }
   {
     mp::distributed_sparse_matrix<
         double, long, dr::mp::MpiBackend,
@@ -68,9 +64,6 @@ int main(int argc, char **argv) {
         fmt::print("eq canary {}\n\n", duration * 1000);
       }
     }
-    // if (root == dr::mp::default_comm().rank()) {
-    //   fmt::print("eq gemv time total {}\n", total_time * 1000 / N);
-    // }
     m.fence();
     total_time = 0;
     gemv(0, res_row, m_row, allocated_a);

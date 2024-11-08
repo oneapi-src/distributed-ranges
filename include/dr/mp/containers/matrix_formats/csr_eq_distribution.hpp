@@ -186,7 +186,7 @@ private:
       }
       auto gathered_res = alloc.allocate(max_row_size_ * vals_width);
       communicator.gatherv(partial_res, counts, offsets, gathered_res, root);
-      // communicator.gather(partial_res, gathered_res, max_row_size_ * vals_width, root);
+      // communicator.gather_typed(partial_res, gathered_res, max_row_size_ * vals_width, root);
       T* gathered_res_host;
       
       if (use_sycl()) {
@@ -222,7 +222,7 @@ private:
       delete[] offsets;
       alloc.deallocate(gathered_res, max_row_size_ * vals_width);
     } else {
-      // communicator.gather(partial_res, static_cast<T *>(nullptr), max_row_size_ * vals_width,
+      // communicator.gather_typed(partial_res, static_cast<T *>(nullptr), max_row_size_ * vals_width,
       //                     root);
       communicator.gatherv(partial_res, counts, nullptr, nullptr, root);
     }

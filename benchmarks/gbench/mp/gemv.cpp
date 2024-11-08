@@ -51,7 +51,6 @@ int main(int argc, char **argv) {
         auto n = std::stoul(argv[2]);
         auto up = std::stoul(argv[3]);
         auto down = std::stoul(argv[4]);
-        // local_data = dr::generate_random_csr<double, long>({n, m}, density, 42);
         local_data = dr::generate_band_csr<double,long>(n, up, down);
         filenamestream << "mp_band_" << computeSize << "_" << n << "_" << up + down << "_" << local_data.size();
     fmt::print("finished loading\n");
@@ -182,7 +181,6 @@ mp::distributed_sparse_matrix<
 DR_BENCHMARK(GemvEq_DR);
 
 static void GemvRow_DR(benchmark::State &state) {
-  // fft requires usm shared allocation
   auto local_data = getMatrix();
 
 
@@ -229,21 +227,11 @@ static void Gemv_Reference(benchmark::State &state) {
   double* elems = new double[band_shape[0] * width];
   auto input = sycl::malloc_device<double>(band_shape[1] * width, q);
   auto output = sycl::malloc_device<double>(band_shape[0] * width, q);
-  //   for (int i = 0; i < band_shape[0]; i++) {
-  //   fmt::print("{} {}\n", i, local_data.rowptr_data()[i]);
-  // }
   q.memcpy(val_ptr, local_data.values_data(), nnz_count * sizeof(double)).wait();
   q.memcpy(col_ptr, local_data.colind_data(), nnz_count * sizeof(long)).wait();
   q.memcpy(row_ptr, local_data.rowptr_data(), (band_shape[0] + 1) * sizeof(long)).wait();
   q.fill(output, 0, band_shape[0] * width);
-  // std::copy(policy, local_data.values_data(), local_data.values_data() + nnz_count, val_ptr);
-  // std::copy(policy, local_data.colind_data(), local_data.colind_data() + nnz_count, col_ptr);
-  // std::copy(policy, local_data.rowptr_data(), local_data.rowptr_data() + band_shape[0], row_ptr);
-
   std::copy(policy, b.begin(), b.end(), input);
-  // for (int i = 0; i < band_shape[0]; i++) {
-  //   fmt::print("{} {}\n", i, local_data.rowptr_data()[i + 1] - local_data.rowptr_data()[i]);
-  // }
 
   auto wg = 32;
   while (width * band_shape[0] * wg > INT_MAX) {

@@ -36,6 +36,7 @@ add_executable(
   communicator.cpp
   copy.cpp
   distributed_vector.cpp
+  gemv.cpp
   halo.cpp
   mdstar.cpp
   mpsort.cpp
@@ -43,6 +44,7 @@ add_executable(
   stencil.cpp
   segments.cpp
   slide_view.cpp
+  sparse_matrix.cpp
   wave_kernel.cpp)
 
 add_executable(

@@ -23,9 +23,12 @@ int main(int argc, char **argv) {
 
   dr::views::csr_matrix_view<double, long> local_data;
   auto root = 0;
-  // if (root == dr::mp::default_comm().rank()) {
-  local_data = dr::read_csr<double, long>(fname);
-  // }
+  if (root == dr::mp::default_comm().rank()) {
+    std::size_t m = 1000;
+    std::size_t k = 10;
+    local_data = dr::generate_random_csr<double, long>({m, k}, 0.1f);
+    // local_data = dr::read_csr<double, long>(fname);
+  }
   {
     mp::distributed_sparse_matrix<
         double, long, dr::mp::MpiBackend,
@@ -35,30 +38,6 @@ int main(int argc, char **argv) {
         double, long, dr::mp::MpiBackend,
         dr::mp::csr_row_distribution<double, long, dr::mp::MpiBackend>>
         m_row(local_data, root);
-    fmt::print("{}\n", m.size());
-    // for (int i = 0; i < dr::mp::default_comm().size(); i++) {
-    //   if (dr::mp::default_comm().rank() == i) {
-    //     auto csr_iter = local_data.begin();
-    //     int j = 0;
-    //     // fmt::print("{}\n", i);
-    //     for (auto [index, val]: m) {
-    //       auto [m, n] = index;
-
-    //       auto [index_csr, val_csr] = *csr_iter;
-    //       auto [m_csr, n_csr] = index_csr;
-    //       auto check = m == m_csr && n_csr == n && val == val_csr;
-    //       if (!check) {
-    //         fmt::print("{} {} {} {} {} {} {}\n", j, m, m_csr, n, n_csr, val,
-    //         val_csr);
-    //       }
-    //       // assert(check);
-    //       csr_iter++;
-    //       j++;
-    //     }
-    //   }
-    //   m.fence();
-    // }
-
     std::vector<double> res(m.shape().first);
     std::vector<double> res_row(m.shape().first);
     std::vector<double> a(m.shape().second);

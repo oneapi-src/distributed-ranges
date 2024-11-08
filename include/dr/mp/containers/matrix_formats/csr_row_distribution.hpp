@@ -164,16 +164,16 @@ private:
 
     if (communicator.rank() == root) {
       auto scratch = alloc.allocate(segment_size_ * communicator.size() * vals_width);
-      communicator.gather(partial_res, scratch, segment_size_ * vals_width, root);
+      communicator.gather_typed(partial_res, scratch, segment_size_ * vals_width, root);
       T* temp = nullptr;
       if (use_sycl()) {
         temp = new T[res.size()];
       }
       for (auto j = 0; j < communicator.size(); j++) {
-        if (j * segment_size_ >= shape_.second) {
+        if (j * segment_size_ >= shape_.first) {
           break;
         }
-        auto comm_segment_size = std::min(segment_size_, shape_.second - j * segment_size_);
+        auto comm_segment_size = std::min(segment_size_, shape_.first - j * segment_size_);
 
         for (auto i = 0; i < vals_width; i++) {
           auto piece_start = scratch + j * vals_width * segment_size_ + i * segment_size_;
@@ -198,7 +198,7 @@ private:
       // }
       alloc.deallocate(scratch, segment_size_ * communicator.size()* vals_width);
     } else {
-      communicator.gather(partial_res, static_cast<T *>(nullptr), segment_size_ * vals_width,
+      communicator.gather_typed(partial_res, static_cast<T *>(nullptr), segment_size_ * vals_width,
                           root);
     }
   }
