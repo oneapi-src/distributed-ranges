@@ -5,6 +5,7 @@
 #pragma once
 
 #include <dr/mp/global.hpp>
+#include <dr/mp/halo/halo.hpp>
 
 #ifdef DR_FORMAT
 
