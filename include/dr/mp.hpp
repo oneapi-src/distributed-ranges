@@ -87,3 +87,5 @@
 #include <dr/mp/containers/broadcasted_vector.hpp>
 #include <dr/mp/containers/broadcasted_slim_matrix.hpp>
 #include <dr/mp/containers/distributed_mdarray.hpp>
+#include <dr/mp/containers/matrix_formats/csr_eq_distribution.hpp>
+#include <dr/mp/containers/matrix_formats/csr_row_distribution.hpp>

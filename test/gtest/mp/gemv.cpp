@@ -42,7 +42,7 @@ auto testMatrixGemm(std::size_t m, std::size_t n, auto &a, std::size_t width) {
   for (auto &&[index, v] : a) {
     auto &&[i, k] = index;
 
-    for (auto  j = 0; j < width; j++) {
+    for (auto j = 0; j < width; j++) {
       c_ref[i + j * m] += v * base_b[k + j * n];
     }
   }
@@ -55,10 +55,10 @@ TEST(SparseMatrix, GemvRow) {
   std::size_t m = 100;
   std::size_t k = 100;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemv(m, k, a);
 }
 
@@ -66,10 +66,10 @@ TEST(SparseMatrix, GemvEq) {
   std::size_t m = 100;
   std::size_t k = 100;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemv(m, k, a);
 }
 
@@ -77,10 +77,10 @@ TEST(SparseMatrix, GemvRowNotSquare) {
   std::size_t m = 1000;
   std::size_t k = 10;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemv(m, k, a);
 }
 
@@ -88,10 +88,10 @@ TEST(SparseMatrix, GemvEqNotSquare) {
   std::size_t m = 1000;
   std::size_t k = 10;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemv(m, k, a);
 }
 
@@ -99,10 +99,10 @@ TEST(SparseMatrix, GemvRowNotSquareDifferentAxis) {
   std::size_t m = 10;
   std::size_t k = 1000;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemv(m, k, a);
 }
 
@@ -110,22 +110,21 @@ TEST(SparseMatrix, GemvEqNotSquareDifferentAxis) {
   std::size_t m = 10;
   std::size_t k = 1000;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemv(m, k, a);
 }
-
 
 TEST(SparseMatrix, GemmRow) {
   std::size_t m = 100;
   std::size_t k = 100;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemm(m, k, a, 20);
 }
 
@@ -133,10 +132,10 @@ TEST(SparseMatrix, GemmEq) {
   std::size_t m = 100;
   std::size_t k = 100;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemm(m, k, a, 20);
 }
 
@@ -144,10 +143,10 @@ TEST(SparseMatrix, GemmRowNotSquare) {
   std::size_t m = 1000;
   std::size_t k = 10;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemm(m, k, a, 20);
 }
 
@@ -155,10 +154,10 @@ TEST(SparseMatrix, GemmEqNotSquare) {
   std::size_t m = 1000;
   std::size_t k = 10;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemm(m, k, a, 20);
 }
 
@@ -166,10 +165,10 @@ TEST(SparseMatrix, GemmRowNotSquareDifferentAxis) {
   std::size_t m = 10;
   std::size_t k = 1000;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_row_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemm(m, k, a, 20);
 }
 
@@ -177,9 +176,9 @@ TEST(SparseMatrix, GemmEqNotSquareDifferentAxis) {
   std::size_t m = 10;
   std::size_t k = 1000;
   auto csr = dr::generate_random_csr({m, k}, 0.1f);
-   dr::mp::distributed_sparse_matrix<
-    float, unsigned long, dr::mp::MpiBackend,
-    dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
-    a(csr, 0);
+  dr::mp::distributed_sparse_matrix<
+      float, unsigned long, dr::mp::MpiBackend,
+      dr::mp::csr_eq_distribution<float, unsigned long, dr::mp::MpiBackend>>
+      a(csr, 0);
   testMatrixGemm(m, k, a, 20);
 }

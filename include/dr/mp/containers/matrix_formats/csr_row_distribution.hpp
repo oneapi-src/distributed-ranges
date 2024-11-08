@@ -21,7 +21,6 @@ public:
   csr_row_distribution &operator=(const csr_row_distribution &) = delete;
   csr_row_distribution(csr_row_distribution &&) { assert(false); }
 
-  /// Constructor
   csr_row_distribution(dr::views::csr_matrix_view<T, I> csr_view,
                        distribution dist = distribution(),
                        std::size_t root = 0) {
@@ -35,8 +34,6 @@ public:
         vals_backend_.deallocate(vals_data_, vals_size_ * sizeof(index_type));
         cols_backend_.deallocate(cols_data_, vals_size_ * sizeof(index_type));
       }
-
-      //   delete halo_; TODO
     }
   }
   std::size_t get_id_in_segment(std::size_t offset) const {
@@ -58,7 +55,8 @@ public:
     vals_backend_.fence();
     cols_backend_.fence();
   }
-  template <typename C> auto local_gemv(C &res, T* vals, std::size_t vals_width) const {
+  template <typename C>
+  auto local_gemv(C &res, T *vals, std::size_t vals_width) const {
     auto rank = cols_backend_.getrank();
     if (shape_[0] <= segment_size_ * rank)
       return;
@@ -74,43 +72,43 @@ public:
       auto res_col_len = segment_size_;
       std::size_t wg = 32;
       while (vals_width * size * wg > INT_MAX) {
-        // this check is necessary, because sycl does not permit ranges exceeding integer limit 
+        // this check is necessary, because sycl does not permit ranges
+        // exceeding integer limit
         wg /= 2;
       }
       assert(wg > 0);
-      // auto begin = std::chrono::high_resolution_clock::now();
-      dr::mp::sycl_queue().submit([&](auto &&h) { 
-        h.parallel_for(sycl::nd_range<1>(vals_width * size * wg, wg), [=](auto item) {
-              auto input_j = item.get_group(0) / size;
-              auto idx = item.get_group(0) % size;
-              auto local_id = item.get_local_id();
-              auto group_size = item.get_local_range(0);
-              std::size_t lower_bound = 0;
-              if (rows_data[idx] > offset) {
-                lower_bound = rows_data[idx] - offset;
-              }
-              std::size_t upper_bound = real_segment_size;
-              if (idx < size - 1) {
-                upper_bound = rows_data[idx + 1] - offset;
-              }
-              T sum = 0;
-              for (auto i = lower_bound + local_id; i < upper_bound; i += group_size) {
-                auto colNum = local_cols[i];
-                auto matrixVal = vals[colNum + input_j * vals_len];
-                auto vectorVal = local_vals[i];
-                sum += matrixVal * vectorVal;
-              }
-              
-              sycl::atomic_ref<T, sycl::memory_order::relaxed,
-                              sycl::memory_scope::device>
-                  c_ref(res[idx + input_j * res_col_len]);
-              c_ref += sum;
-        });
+      dr::mp::sycl_queue()
+          .submit([&](auto &&h) {
+            h.parallel_for(
+                sycl::nd_range<1>(vals_width * size * wg, wg), [=](auto item) {
+                  auto input_j = item.get_group(0) / size;
+                  auto idx = item.get_group(0) % size;
+                  auto local_id = item.get_local_id();
+                  auto group_size = item.get_local_range(0);
+                  std::size_t lower_bound = 0;
+                  if (rows_data[idx] > offset) {
+                    lower_bound = rows_data[idx] - offset;
+                  }
+                  std::size_t upper_bound = real_segment_size;
+                  if (idx < size - 1) {
+                    upper_bound = rows_data[idx + 1] - offset;
+                  }
+                  T sum = 0;
+                  for (auto i = lower_bound + local_id; i < upper_bound;
+                       i += group_size) {
+                    auto colNum = local_cols[i];
+                    auto matrixVal = vals[colNum + input_j * vals_len];
+                    auto vectorVal = local_vals[i];
+                    sum += matrixVal * vectorVal;
+                  }
 
-      }).wait();
-      // auto end = std::chrono::high_resolution_clock::now();
-      // double duration = std::chrono::duration<double>(end - begin).count() * 1000;
-      // fmt::print("timeDuration b: {} {} {}\n", duration, size, real_segment_size * vals_width);
+                  sycl::atomic_ref<T, sycl::memory_order::relaxed,
+                                   sycl::memory_scope::device>
+                      c_ref(res[idx + input_j * res_col_len]);
+                  c_ref += sum;
+                });
+          })
+          .wait();
     } else {
       auto local_rows = dr::mp::local_segment(*rows_data_);
       auto val_count = val_sizes_[rank];
@@ -124,30 +122,26 @@ public:
           current_row_position = local_rows[row_i + 1];
         }
         for (auto j = 0; j < vals_width; j++) {
-          res[row_i + j * segment_size_] += vals_data_[i] * vals[cols_data_[i] + j * vals_len];
+          res[row_i + j * segment_size_] +=
+              vals_data_[i] * vals[cols_data_[i] + j * vals_len];
         }
       }
     }
   }
 
   template <typename C>
-  auto local_gemv_and_collect(std::size_t root, C &res, T* &vals, std::size_t vals_width) const {
+  auto local_gemv_and_collect(std::size_t root, C &res, T *&vals,
+                              std::size_t vals_width) const {
     assert(res.size() == shape_.first * vals_width);
     __detail::allocator<T> alloc;
     auto res_alloc = alloc.allocate(segment_size_ * vals_width);
     if (use_sycl()) {
       sycl_queue().fill(res_alloc, 0, segment_size_ * vals_width).wait();
-    }
-    else {
+    } else {
       std::fill(res_alloc, res_alloc + segment_size_ * vals_width, 0);
     }
-    
-    // auto begin = std::chrono::high_resolution_clock::now();
+
     local_gemv(res_alloc, vals, vals_width);
-    // auto end = std::chrono::high_resolution_clock::now();
-    // double duration = std::chrono::duration<double>(end - begin).count();
-    // auto size = std::min(segment_size_, shape_[0] - segment_size_ * default_comm().rank());
-    // fmt::print("rows gemv time {} {} {}\n", duration * 1000, size, default_comm().rank());
 
     gather_gemv_vector(root, res, res_alloc, vals_width);
     fence();
@@ -158,14 +152,17 @@ private:
   friend csr_row_segment_iterator<csr_row_distribution>;
 
   template <typename C, typename A>
-  void gather_gemv_vector(std::size_t root, C &res, A &partial_res, std::size_t vals_width) const {
+  void gather_gemv_vector(std::size_t root, C &res, A &partial_res,
+                          std::size_t vals_width) const {
     auto communicator = default_comm();
     __detail::allocator<T> alloc;
 
     if (communicator.rank() == root) {
-      auto scratch = alloc.allocate(segment_size_ * communicator.size() * vals_width);
-      communicator.gather_typed(partial_res, scratch, segment_size_ * vals_width, root);
-      T* temp = nullptr;
+      auto scratch =
+          alloc.allocate(segment_size_ * communicator.size() * vals_width);
+      communicator.gather_typed(partial_res, scratch,
+                                segment_size_ * vals_width, root);
+      T *temp = nullptr;
       if (use_sycl()) {
         temp = new T[res.size()];
       }
@@ -173,16 +170,20 @@ private:
         if (j * segment_size_ >= shape_.first) {
           break;
         }
-        auto comm_segment_size = std::min(segment_size_, shape_.first - j * segment_size_);
+        auto comm_segment_size =
+            std::min(segment_size_, shape_.first - j * segment_size_);
 
         for (auto i = 0; i < vals_width; i++) {
-          auto piece_start = scratch + j * vals_width * segment_size_ + i * segment_size_;
-          
+          auto piece_start =
+              scratch + j * vals_width * segment_size_ + i * segment_size_;
+
           if (use_sycl()) {
-            __detail::sycl_copy(piece_start, temp + shape_.first * i + j * segment_size_, comm_segment_size);
-          }
-          else {
-            std::copy(piece_start, piece_start + comm_segment_size, res.begin() + shape_.first * i + j * segment_size_);
+            __detail::sycl_copy(piece_start,
+                                temp + shape_.first * i + j * segment_size_,
+                                comm_segment_size);
+          } else {
+            std::copy(piece_start, piece_start + comm_segment_size,
+                      res.begin() + shape_.first * i + j * segment_size_);
           }
         }
       }
@@ -190,16 +191,11 @@ private:
         std::copy(temp, temp + res.size(), res.begin());
         delete[] temp;
       }
-      // for (auto i = 0; i < segment_size_ * communicator.size() * vals_width; i++) {
-      //   fmt::print("{} {} {}\n", i, scratch[i], segment_size_);
-      // }
-      // for (auto i = 0; i < vals_width * shape_.first; i++) {
-      //   fmt::print("{} {} {}\n", i, res[i], segment_size_);
-      // }
-      alloc.deallocate(scratch, segment_size_ * communicator.size()* vals_width);
+      alloc.deallocate(scratch,
+                       segment_size_ * communicator.size() * vals_width);
     } else {
-      communicator.gather_typed(partial_res, static_cast<T *>(nullptr), segment_size_ * vals_width,
-                          root);
+      communicator.gather_typed(partial_res, static_cast<T *>(nullptr),
+                                segment_size_ * vals_width, root);
     }
   }
   void init(dr::views::csr_matrix_view<T, I> csr_view, auto dist,
@@ -262,8 +258,6 @@ private:
     }
     delete[] val_information;
     vals_size_ = std::max(val_sizes_[rank], static_cast<std::size_t>(1));
-    // fmt::print("dfsa {} {} {} {}\n", vals_size_,
-    // val_sizes_[rank],lower_limit, rank);
 
     cols_data_ =
         static_cast<I *>(cols_backend_.allocate(vals_size_ * sizeof(I)));
@@ -287,34 +281,10 @@ private:
     std::size_t segment_index = 0;
     segment_size_ = rows_data_->segment_size();
     for (std::size_t i = 0; i < default_comm().size(); i++) {
-      // TODO fix segment creation, to include proper sizes, basing on
-      // val_offsets;
       segments_.emplace_back(
           this, segment_index++, val_sizes_[i],
           std::max(val_sizes_[i], static_cast<std::size_t>(1)));
     }
-    // if (rank == 0) {
-    //   int ax = 0;
-    //   for (auto x: val_offsets_) {
-    //     fmt::print("{} {}\n", ax++, x);
-    //   }
-    //   for (int i = 0; i < 49; i++) {
-    //     fmt::print("{} {}\n", i, get_segment_from_offset(i));
-    //   }
-    // }
-    // fmt::print(" {} {} {} {}\n",get_segment_from_offset(47),
-    // get_segment_from_offset(48), get_segment_from_offset(49),
-    // get_segment_from_offset(50)); for (int i = 0; i < vals_size_; i++) {
-    //   fmt::print("col, val, i, rank {} {} {} {}\n", cols_data_[i],
-    //   vals_data_[i], i, rank);
-    // }
-    // fence();
-    // if (rank < rows_data_->segments().size()) {
-    //   for (int i = 0; i < rows_data_->segments()[rank].size(); i++) {
-    //     fmt::print("row, i, rank {} {} {}\n",
-    //     rows_data_->segments()[rank][i], i, rank);
-    //   }
-    // }
     fence();
   }
 
@@ -334,6 +304,5 @@ private:
   std::size_t nnz_;
   std::vector<csr_row_segment<csr_row_distribution>> segments_;
   std::shared_ptr<distributed_vector<I>> rows_data_;
-  
 };
 } // namespace dr::mp

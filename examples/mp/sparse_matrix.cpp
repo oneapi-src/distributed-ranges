@@ -24,10 +24,7 @@ int main(int argc, char **argv) {
   dr::views::csr_matrix_view<double, long> local_data;
   auto root = 0;
   if (root == dr::mp::default_comm().rank()) {
-    std::size_t m = 1000;
-    std::size_t k = 10;
-    local_data = dr::generate_random_csr<double, long>({m, k}, 0.1f);
-    // local_data = dr::read_csr<double, long>(fname);
+    local_data = dr::read_csr<double, long>(fname);
   }
   {
     mp::distributed_sparse_matrix<
@@ -44,10 +41,10 @@ int main(int argc, char **argv) {
     for (int i = 0; i < a.size(); i++) {
       a[i] = i;
     }
-    
 
     dr::mp::broadcasted_vector<double> allocated_a;
-    allocated_a.broadcast_data(m_row.shape().second, 0, a, dr::mp::default_comm());
+    allocated_a.broadcast_data(m_row.shape().second, 0, a,
+                               dr::mp::default_comm());
     m.fence();
     double total_time = 0;
     auto N = 1;
@@ -98,11 +95,12 @@ int main(int argc, char **argv) {
       }
       for (int i = 0; i < m.shape().first; i++) {
         if (res_row[i] != ref[i]) {
-          fmt::print("mismatching outcome row {} {} {}\n", i, res_row[i], ref[i]);
+          fmt::print("mismatching outcome row {} {} {}\n", i, res_row[i],
+                     ref[i]);
         }
       }
     }
-  allocated_a.destroy_data();
+    allocated_a.destroy_data();
   }
 
   if (root == dr::mp::default_comm().rank()) {

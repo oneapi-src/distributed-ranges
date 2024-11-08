@@ -4,13 +4,12 @@
 
 #pragma once
 #include <dr/mp/allocator.hpp>
+#include <dr/mp/containers/broadcasted_slim_matrix.hpp>
+#include <dr/mp/containers/broadcasted_vector.hpp>
 #include <dr/mp/containers/distributed_sparse_matrix.hpp>
 #include <dr/mp/global.hpp>
 #include <fmt/core.h>
 #include <ranges>
-#include <dr/mp/containers/broadcasted_vector.hpp>
-#include <dr/mp/containers/broadcasted_slim_matrix.hpp>
-
 
 namespace dr::mp {
 
@@ -18,7 +17,8 @@ template <typename T, typename I, rng::output_range<T> C, typename Alloc,
           typename Backend, typename MatDistr>
   requires(vector_multiplicable<MatDistr>)
 void gemv(int root, C &res,
-          distributed_sparse_matrix<T, I, Backend, MatDistr> &a, broadcasted_vector<T,Alloc> b) {
+          distributed_sparse_matrix<T, I, Backend, MatDistr> &a,
+          broadcasted_vector<T, Alloc> b) {
   if (default_comm().rank() == root) {
     assert(a.shape().first == res.size());
     assert(a.shape().second == b.size());
@@ -30,7 +30,8 @@ template <typename T, typename I, rng::output_range<T> C, typename Alloc,
           typename Backend, typename MatDistr>
   requires(vector_multiplicable<MatDistr>)
 void gemv(int root, C &res,
-          distributed_sparse_matrix<T, I, Backend, MatDistr> &a, broadcasted_slim_matrix<T,Alloc> b) {
+          distributed_sparse_matrix<T, I, Backend, MatDistr> &a,
+          broadcasted_slim_matrix<T, Alloc> b) {
   if (default_comm().rank() == root) {
     assert(a.shape().first * b.width() == res.size());
   }
@@ -40,7 +41,8 @@ void gemv(int root, C &res,
 template <typename T, typename I, rng::output_range<T> C, typename Alloc,
           typename Backend, typename MatDistr>
   requires(vector_multiplicable<MatDistr>)
-void gemv(C &res, distributed_sparse_matrix<T, I, Backend, MatDistr> &a, broadcasted_vector<T,Alloc> b) {
+void gemv(C &res, distributed_sparse_matrix<T, I, Backend, MatDistr> &a,
+          broadcasted_vector<T, Alloc> b) {
   std::vector<T> workspace(res.size());
   gemv(0, workspace, a, b);
   auto tmp = new T[res.size()];
@@ -55,7 +57,8 @@ void gemv(C &res, distributed_sparse_matrix<T, I, Backend, MatDistr> &a, broadca
 template <typename T, typename I, rng::output_range<T> C, typename Alloc,
           typename Backend, typename MatDistr>
   requires(vector_multiplicable<MatDistr>)
-void gemv(C &res, distributed_sparse_matrix<T, I, Backend, MatDistr> &a, broadcasted_slim_matrix<T,Alloc> b) {
+void gemv(C &res, distributed_sparse_matrix<T, I, Backend, MatDistr> &a,
+          broadcasted_slim_matrix<T, Alloc> b) {
   std::vector<T> workspace(res.size());
   gemv(0, workspace, a, b);
   auto tmp = new T[res.size()];

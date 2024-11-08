@@ -4,7 +4,6 @@
 #pragma once
 #include <dr/detail/matrix_entry.hpp>
 #include <dr/mp/containers/matrix_formats/csr_eq_distribution.hpp>
-#include <dr/mp/containers/matrix_formats/csr_row_distribution.hpp>
 #include <dr/views/csr_matrix_view.hpp>
 
 namespace dr::mp {
@@ -22,9 +21,10 @@ concept matrix_distibution = requires(T t, std::vector<int> res, int *input) {
 };
 
 template <typename T>
-concept vector_multiplicable = requires(T t, std::vector<typename T::elem_type> res, T::elem_type *input) {
-  t.local_gemv_and_collect(int(), res, input, 1);
-};
+concept vector_multiplicable =
+    requires(T t, std::vector<typename T::elem_type> res, T::elem_type *input) {
+      t.local_gemv_and_collect(int(), res, input, 1);
+    };
 
 template <typename T, typename I, class BackendT = MpiBackend,
           class MatrixDistrT = csr_eq_distribution<T, I, BackendT>>
@@ -152,7 +152,8 @@ public:
 
   template <typename C>
     requires(vector_multiplicable<MatrixDistrT>)
-  auto local_gemv_and_collect(std::size_t root, C &res, T* vals, std::size_t val_width) const {
+  auto local_gemv_and_collect(std::size_t root, C &res, T *vals,
+                              std::size_t val_width) const {
     distribution_.local_gemv_and_collect(root, res, vals, val_width);
   }
 

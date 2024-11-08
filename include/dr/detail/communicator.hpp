@@ -62,7 +62,8 @@ public:
   }
 
   template <typename T>
-  void gather_typed(const T *src, T *dst, std::size_t count, std::size_t root) const {
+  void gather_typed(const T *src, T *dst, std::size_t count,
+                    std::size_t root) const {
     MPI_Gather_c(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
                  MPI_BYTE, root, mpi_comm_);
   }
@@ -114,7 +115,7 @@ public:
   void gatherv(const void *src, long long *counts, long *offsets, void *dst,
                std::size_t root) const {
     MPI_Gatherv_c(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
-                root, mpi_comm_);
+                  root, mpi_comm_);
   }
 
   // pointer with explicit tag

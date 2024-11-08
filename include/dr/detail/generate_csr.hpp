@@ -6,9 +6,9 @@
 
 #include <concepts>
 #include <dr/views/csr_matrix_view.hpp>
-#include <unordered_set>
-#include <random>
 #include <fmt/core.h>
+#include <random>
+#include <unordered_set>
 
 namespace dr {
 
@@ -26,14 +26,13 @@ template <typename T>
 using uniform_distribution_t = typename uniform_distribution<T>::type;
 
 struct pair_hash {
-    template <std::integral I>
-    inline std::size_t operator()(const std::pair<I,I> & v) const {
-        return v.first*31+v.second;
-    }
+  template <std::integral I>
+  inline std::size_t operator()(const std::pair<I, I> &v) const {
+    return v.first * 31 + v.second;
+  }
 };
 
 } // namespace
-
 
 template <typename T = float, std::integral I = std::size_t>
 auto generate_random_csr(dr::index<I> shape, double density = 0.01,
@@ -42,7 +41,7 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
   assert(density >= 0.0 && density < 1.0);
 
   std::unordered_set<std::pair<I, I>, pair_hash> tuples{};
-  std::vector<std::pair<std::pair<I,I>, T>> entries;
+  std::vector<std::pair<std::pair<I, I>, T>> entries;
   std::size_t nnz = density * shape[0] * shape[1];
   entries.reserve(nnz);
 
@@ -102,8 +101,10 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
 
 template <typename T = float, std::integral I = std::size_t>
 auto generate_band_csr(I size, std::size_t up_band = 3,
-                         std::size_t down_band = 3) {
-  std::size_t nnz = (1 + up_band + down_band) * size - (up_band * (up_band + 1) / 2) - (down_band * (down_band + 1) / 2);
+                       std::size_t down_band = 3) {
+  std::size_t nnz = (1 + up_band + down_band) * size -
+                    (up_band * (up_band + 1) / 2) -
+                    (down_band * (down_band + 1) / 2);
 
   T *values = new T[nnz];
   I *rowptr = new I[size + 1];
@@ -114,32 +115,35 @@ auto generate_band_csr(I size, std::size_t up_band = 3,
   std::size_t r = 0;
   std::size_t c = 0;
   for (auto i = 0; i < size; i++) {
-    for (auto j = std::max(static_cast<long long>(i) - static_cast<long long>(down_band), static_cast<long long>(0)); j < i ; j++) {
-        values[c] = 1;
-        colind[c] = static_cast<I>(j);
-        c++;
+    for (auto j = std::max(static_cast<long long>(i) -
+                               static_cast<long long>(down_band),
+                           static_cast<long long>(0));
+         j < i; j++) {
+      values[c] = 1;
+      colind[c] = static_cast<I>(j);
+      c++;
     }
     values[c] = 1;
     colind[c] = i;
     c++;
-    for (auto j = i + 1; j <= i + up_band ; j++) {
-        if (j >= size) {
-          continue;
-        }
-        values[c] = 1;
-        colind[c] = j;
-        c++;
+    for (auto j = i + 1; j <= i + up_band; j++) {
+      if (j >= size) {
+        continue;
+      }
+      values[c] = 1;
+      colind[c] = j;
+      c++;
     }
     rowptr[r + 1] = c;
     r++;
-
   }
 
   for (; r < size; r++) {
     rowptr[r + 1] = nnz;
   }
 
-  return dr::views::csr_matrix_view<T,I>(values, rowptr, colind, {size, size}, nnz, 0);
+  return dr::views::csr_matrix_view<T, I>(values, rowptr, colind, {size, size},
+                                          nnz, 0);
 }
 
 } // namespace dr

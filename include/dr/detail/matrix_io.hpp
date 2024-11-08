@@ -44,20 +44,20 @@ auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
   std::size_t r = 0;
   std::size_t c = 0;
   for (auto iter = tuples.begin(); iter != tuples.end(); ++iter) {
-     auto &&[index, value] = *iter;
+    auto &&[index, value] = *iter;
 
-      auto &&[i, j] = index;
+    auto &&[i, j] = index;
 
-      values[c] = value;
-      colind[c] = j;
+    values[c] = value;
+    colind[c] = j;
 
-      while (r < i) {
-        assert(r + 1 <= shape[0]);
-        // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
-        rowptr[r + 1] = c;
-        r++;
-      }
-      c++;
+    while (r < i) {
+      assert(r + 1 <= shape[0]);
+      // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
+      rowptr[r + 1] = c;
+      r++;
+    }
+    c++;
 
     assert(c <= nnz);
     // throw std::runtime_error("csr_matrix_impl_: given invalid matrix");
@@ -68,12 +68,12 @@ auto convert_to_csr(Tuples &&tuples, dr::index<> shape, std::size_t nnz,
   }
 
   return dr::views::csr_matrix_view(values, rowptr, colind,
-                         dr::index<I>(shape[0], shape[1]), nnz, 0);
+                                    dr::index<I>(shape[0], shape[1]), nnz, 0);
 }
 
 template <typename Tuples, typename Allocator>
-auto convert_csr_base_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t nnz,
-                    Allocator &&allocator) {
+auto convert_csr_base_to_csr(Tuples &&csr_matrix, dr::index<> shape,
+                             std::size_t nnz, Allocator &&allocator) {
   auto &&[v, j] = *csr_matrix.begin()->begin();
 
   using T = std::remove_reference_t<decltype(v)>;
@@ -118,7 +118,7 @@ auto convert_csr_base_to_csr(Tuples &&csr_matrix, dr::index<> shape, std::size_t
 /// a coo_matrix data structure with its contents.
 template <typename T, typename I = std::size_t>
 inline csr_matrix_base<T, I> read_csr_matrix_base(std::string file_path,
-                                              bool one_indexed = true) {
+                                                  bool one_indexed = true) {
   using size_type = std::size_t;
 
   std::ifstream f;
@@ -249,7 +249,8 @@ auto read_csr(std::string file_path, bool one_indexed = true) {
   auto m = __detail::read_csr_matrix_base<T, I>(file_path, one_indexed);
   auto shape = m.shape();
   auto nnz = m.size();
-  auto t = __detail::convert_csr_base_to_csr(m, shape, nnz, std::allocator<T>{});
+  auto t =
+      __detail::convert_csr_base_to_csr(m, shape, nnz, std::allocator<T>{});
 
   return t;
 }
