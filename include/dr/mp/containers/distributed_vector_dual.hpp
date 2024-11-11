@@ -83,60 +83,9 @@ public:
   void fence() { win_.fence(); }
 };
 
-#ifdef DRISHMEM
-class IshmemBackend {
-  void *shared_mem_;
-
-public:
-  void *allocate(std::size_t data_size) {
-    assert(data_size > 0);
-    shared_mem_ = ishmem_malloc(data_size);
-    DRLOG("called ishmem_malloc({}) -> got:{}", data_size, shared_mem_);
-    return shared_mem_;
-  }
-
-  void deallocate(void *data, std::size_t data_size) {
-    assert(data_size > 0);
-    assert(data == shared_mem_);
-    drlog.debug("calling ishmem_free({})\n", data);
-    ishmem_free(data);
-  }
-
-  void getmem(void *dst, std::size_t offset, std::size_t datalen,
-              int segment_index) {
-    void *src = static_cast<std::byte *>(shared_mem_) + offset;
-
-    DRLOG("calling ishmem_getmem(dst:{}, src:{} (= dv:{} + "
-          "segm_offset:{}), size:{}, peer:{})",
-          dst, src, shared_mem_, offset, datalen, segment_index);
-
-    ishmem_getmem(dst, src, datalen, segment_index);
-  }
-
-  void putmem(void const *src, std::size_t offset, std::size_t datalen,
-              int segment_index) {
-    void *dst = static_cast<std::byte *>(shared_mem_) + offset;
-    DRLOG("calling ishmem_putmem(dst:{} (= dv:{} + segm_offset:{}), "
-          "src:{}, size:{}, peer:{})",
-          dst, shared_mem_, offset, src, datalen, segment_index);
-    ishmem_putmem(dst, src, datalen, segment_index);
-  }
-
-  std::size_t getrank() {
-    auto my_process_segment_index = ishmem_my_pe();
-    DRLOG("called ishmem_my_pe() -> {}", my_process_segment_index);
-    return my_process_segment_index;
-  }
-
-  void fence() {
-    // TODO: to have locality use ishmemx_fence_work_group
-    ishmem_fence();
-  }
-};
-#endif
-
 /// distributed vector
-template <typename T, class BackendT = MpiBackend> class distributed_vector {
+template <typename T, class BackendT = MpiBackend> 
+class distributed_vector_dual {
 
 public:
   using value_type = T;
@@ -235,34 +184,40 @@ public:
 
   // Do not copy
   // We need a move constructor for the implementation of reduce algorithm
-  distributed_vector(const distributed_vector &) = delete;
-  distributed_vector &operator=(const distributed_vector &) = delete;
-  distributed_vector(distributed_vector &&) { assert(false); }
+  distributed_vector_dual(const distributed_vector_dual &) = delete;
+  distributed_vector_dual &operator=(const distributed_vector_dual &) = delete;
+  distributed_vector_dual(distributed_vector_dual &&) { assert(false); }
 
   /// Constructor
-  distributed_vector(std::size_t size = 0, distribution dist = distribution()) {
+  distributed_vector_dual(std::size_t size = 0, 
+                          distribution dist = distribution()) {
     init(size, dist);
   }
 
   /// Constructor
-  distributed_vector(std::size_t size, value_type fill_value,
-                     distribution dist = distribution()) {
+  distributed_vector_dual(std::size_t size, value_type fill_value,
+                          distribution dist = distribution()) {
     init(size, dist);
     mp::fill(*this, fill_value);
   }
 
-  ~distributed_vector() {
-    if (!finalized()) {
-      fence();
-      if (data_ != nullptr) {
+  ~distributed_vector_dual() {
+    if (finalized()) return;
+
+    fence();
+
+    for (size_t i = 0; i < segments_per_proc; i++) {
+      if (datas_[i] != nullptr) {
         backend.deallocate(data_, data_size_ * sizeof(value_type));
       }
 
-      delete halo_;
+      delete halos_[i];
     }
+    
+    delete halo_;
   }
 
-  /// Returns iterator to beginning
+  /// Returns iterator to beginning=
   auto begin() const { return iterator(this, 0); }
   /// Returns iterator to end
   auto end() const { return begin() + size_; }
@@ -271,6 +226,7 @@ public:
   auto size() const { return size_; }
   /// Returns reference using index
   auto operator[](difference_type n) const { return *(begin() + n); }
+
   auto &halo() const { return *halo_; }
 
   auto segments() const { return rng::views::all(segments_); }
@@ -290,16 +246,24 @@ private:
     assert(size % gran == 0 && "size must be a multiple of the granularity");
     assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
     assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
-    segment_size_ = gran * std::max({(size / gran + comm_size - 1) / comm_size,
-                                     hb.prev / gran, hb.next / gran});
+
+    auto proc_segments_size = gran * std::max({
+        (size / gran + comm_size - 1) / comm_size,
+        hb.prev / gran, 
+        hb.next / gran});
+    segment_size_ = proc_segments_size / segments_per_proc;
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
-    if (size_ > 0) {
-      data_ = static_cast<T *>(backend.allocate(data_size_ * sizeof(T)));
+    for (std::size_t i = 0; i < segments_per_proc; i++) {
+      if (size_ > 0) {
+        datas_[i] = static_cast<T *>( backend.allocate(data_size_ * sizeof(T)));
+      }
+
+      halos_[i] = new span_halo<T>(default_comm(), datas_[i], data_size_, hb);
     }
 
-    halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
+    halo_ = new cyclic_span_halo<T>(halos_);
 
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
@@ -312,19 +276,23 @@ private:
 
   friend dv_segment_iterator<distributed_vector>;
 
+  static constexpr std::size_t segments_per_proc = 2;
+
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0; // size + halo
-  T *data_ = nullptr;
-  span_halo<T> *halo_;
+
+  std::array<span_halo<T> *, segments_per_proc> halos_;
+  std::array<T *, segments_per_proc> datas_;
+  cyclic_span_halo<T> *halo_;
 
   distribution distribution_;
   std::size_t size_;
-  std::vector<dv_segment<distributed_vector>> segments_;
+  std::vector<dv_segment<distributed_vector_dual>> segments_;
   BackendT backend;
 };
 
 template <typename T, typename B>
-auto &halo(const distributed_vector<T, B> &dv) {
+auto &halo(const distributed_vector_dual<T, B> &dv) {
   return dv.halo();
 }
 
