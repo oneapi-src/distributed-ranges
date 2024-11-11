@@ -418,6 +418,60 @@ private:
   }
 };
 
+template <typename T, typename Memory>
+class cyclic_span_halo {
+public:
+  using group_type = span_group<T, Memory>;
+  using halo_type = span_halo<T, Memory>;
+
+  cyclic_span_halo(const std::vector<halo_type *>& halos)
+    : halos_(halos) {
+    for (const auto& halo : halos_) {
+      assert(halo != nullptr);
+    }
+  }
+
+  void exchange_begin() {
+    halos_[next_comm_index_]->exchange_begin();
+  }
+
+  void exchange_finalize() {
+    halos_[next_comm_index_]->exchange_finalize();
+    //increment_index();
+  }
+
+  void exchange() {
+    halos_[next_comm_index_]->exchange();
+    //increment_index();
+  }
+
+  void reduce_begin() {
+    halos_[next_comm_index_]->reduce_begin();
+  }
+
+  void reduce_finalize(const auto &op) {
+    halos_[next_comm_index_]->reduce_finalize(op);
+    //increment_index();
+  }
+
+  void reduce_finalize() {
+    halos_[next_comm_index_]->reduce_finalize();
+    //increment_index();
+  }
+
+  void swap() {
+    increment_index();
+  }
+
+private:
+  void increment_index() {
+    next_comm_index_ = (next_comm_index_ + 1) % halos_.size();
+  }
+
+  std::vector<halo_type *> halos_;
+  std::size_t next_comm_index_ = 0;
+}
+
 } // namespace dr::mp
 
 #ifdef DR_FORMAT
