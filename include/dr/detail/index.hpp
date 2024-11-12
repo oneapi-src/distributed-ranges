@@ -8,6 +8,7 @@
 #include <concepts>
 #include <limits>
 #include <tuple>
+#include <cassert>
 
 namespace dr {
 
