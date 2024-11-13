@@ -51,8 +51,8 @@ public:
         rng::copy(root_data.begin(), root_data.end(), _data);
       }
     }
-    auto position = 0;
-    auto reminder = sizeof(T) * _data_size;
+    std::size_t position = 0;
+    std::size_t reminder = sizeof(T) * _data_size;
     while (reminder > INT_MAX) {
       comm.bcast(((uint8_t *)_data) + position, INT_MAX, root);
       position += INT_MAX;
