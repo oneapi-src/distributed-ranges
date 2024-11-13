@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "cxxopts.hpp"
+#if (ONEDPL_VERSION_MAJOR >= 2025)
 #include "oneapi/mkl/dft.hpp"
+#else
+#include "oneapi/mkl/dfti.hpp"
+#endif
 #include <complex>
 #include <dr/sp.hpp>
 #include <fmt/core.h>
