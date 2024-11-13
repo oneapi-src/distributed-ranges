@@ -5,7 +5,7 @@
 #include "cxxopts.hpp"
 #include "fmt/core.h"
 #include "mpi.h"
-#if (ONEDPL_VERSION_MAJOR >= 2025)
+#if (__INTEL_LLVM_COMPILER >= 20250000)
 #include "oneapi/mkl/dft.hpp"
 #else
 #include "oneapi/mkl/dfti.hpp"
