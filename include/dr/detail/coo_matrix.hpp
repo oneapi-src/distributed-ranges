@@ -110,14 +110,14 @@ public:
   }
 
   iterator find(key_type key) noexcept {
-    return std::find_if(begin(), end(), [&](auto &&v) {
+    return std::ranges::find_if(begin(), end(), [&](auto &&v) {
       auto &&[i, v_] = v;
       return i == key;
     });
   }
 
   const_iterator find(key_type key) const noexcept {
-    return std::find_if(begin(), end(), [&](auto &&v) {
+    return std::ranges::find_if(begin(), end(), [&](auto &&v) {
       auto &&[i, v_] = v;
       return i == key;
     });
