@@ -5,10 +5,10 @@
 #pragma once
 
 #include <any>
+#include <cassert>
 #include <concepts>
 #include <limits>
 #include <tuple>
-#include <cassert>
 
 namespace dr {
 
