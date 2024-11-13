@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "cxxopts.hpp"
+#if (__INTEL_LLVM_COMPILER >= 20250000)
 #include "oneapi/mkl/dft.hpp"
+#else
+#include "oneapi/mkl/dfti.hpp"
+#endif
 #include <complex>
 #include <dr/sp.hpp>
 #include <fmt/core.h>
