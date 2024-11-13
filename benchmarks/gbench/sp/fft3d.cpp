@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "cxxopts.hpp"
-#include "oneapi/mkl/dfti.hpp"
+#include "oneapi/mkl/dft.hpp"
+#include <complex>
 #include <dr/sp.hpp>
 #include <fmt/core.h>
 #include <latch>
