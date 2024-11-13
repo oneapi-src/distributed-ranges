@@ -5,7 +5,11 @@
 #include "cxxopts.hpp"
 #include "fmt/core.h"
 #include "mpi.h"
-#include "oneapi/mkl/dft.hpp"
+#if (ONEDPL_VERSION_MAJOR >= 2025)
+  #include "oneapi/mkl/dft.hpp"
+#else
+  #include "oneapi/mkl/dfti.hpp"
+#endif
 #include <complex>
 
 #include "dr/mp.hpp"
