@@ -12,6 +12,7 @@ template <typename T, typename I, class BackendT = MpiBackend>
 class csr_eq_distribution {
 public:
   using value_type = dr::matrix_entry<T, I>;
+  using segment_type = csr_eq_segment<csr_eq_distribution>;
   using elem_type = T;
   using index_type = I;
   using difference_type = std::ptrdiff_t;
@@ -311,7 +312,7 @@ private:
   distribution distribution_;
   dr::index<size_t> shape_;
   std::size_t nnz_;
-  std::vector<csr_eq_segment<csr_eq_distribution>> segments_;
+  std::vector<segment_type> segments_;
   std::shared_ptr<distributed_vector<T>> vals_data_;
   std::shared_ptr<distributed_vector<I>> cols_data_;
 };

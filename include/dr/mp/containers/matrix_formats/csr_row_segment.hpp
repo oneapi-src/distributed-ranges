@@ -223,6 +223,39 @@ public:
     assert(dsm_ != nullptr);
     return dr::__detail::drop_segments(dsm_->segments(), segment_index_,
                                        index_);
+  }  
+
+  auto local() const {
+    const auto my_process_segment_index = dsm_->vals_backend_.getrank();
+
+    assert(my_process_segment_index == segment_index_);
+    std::size_t offset = dsm_->segment_size_ * segment_index_;
+    assert(offset == 0);
+    // auto row_size = dsm_->segment_size_;
+    auto vals_size = dsm_->vals_size_;
+    auto local_vals = dsm_->vals_data_;
+    auto local_vals_range = rng::subrange(local_vals, local_vals + vals_size);
+    auto local_cols = dsm_->cols_data_;
+    auto local_cols_range = rng::subrange(local_cols, local_cols + vals_size);
+    // auto local_rows = dsm_->rows_data_->segments()[segment_index_].begin().local();
+    auto zipped_results = rng::views::zip(local_vals_range, local_cols_range);
+    auto enumerated_zipped = rng::views::enumerate(zipped_results);
+    auto transformer = [=](auto entry) {
+      assert(offset == 0);
+      auto [index, pair] = entry;
+      auto [val, column] = pair;
+      auto row = 0; //TODO fix calculating row - it results in segfault
+      // problem originates from the fact that variables cannot be caputed properly by value
+      // auto row = rng::distance(
+      //           local_rows,
+      //           std::upper_bound(local_rows, local_rows + row_size, offset) -
+      //               1);
+      dr::index<index_type> index_obj(row, column);
+      value_type entry_obj(index_obj, val);
+      return entry_obj;
+    };
+    auto transformed_res = rng::views::transform(enumerated_zipped, transformer);
+    return transformed_res.begin();
   }
 
 private:
