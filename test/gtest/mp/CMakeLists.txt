@@ -43,9 +43,7 @@ add_executable(
   stencil.cpp
   segments.cpp
   slide_view.cpp
-  wave_kernel.cpp
-  wide-halo-1d-3.cpp
-  wide-halo-2d-3.cpp)
+  wave_kernel.cpp)
 
 add_executable(
         mp-tests-3

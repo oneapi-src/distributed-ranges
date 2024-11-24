@@ -4,27 +4,27 @@
 
 #include "xp-tests.hpp"
 
-template <typename T> class WideHalo3 : public testing::Test {};
+template <typename T> class WideHalo3_2D : public testing::Test {};
 
 using T = int;
 using Array = dr::mp::distributed_mdarray<T, 2>;
 
-const std::size_t redundancy = 2;
-const std::array<std::size_t, 2> size = {6, 6};
+static const std::size_t redundancy = 2;
+static const std::array<std::size_t, 2> size = {6, 6};
 
-dr::mp::distribution get_distribution() {
+static dr::mp::distribution get_distribution() {
   return dr::mp::distribution().halo(1).redundancy(redundancy);
 }
 
-int &get(Array &v, std::size_t i, std::size_t j) {
+static int &get(Array &v, std::size_t i, std::size_t j) {
   return *(v.begin() + i * size[0] + j).local();
 }
 
-TEST(WideHalo3, suite_works_for_3_processes_only) {
+TEST(WideHalo3_2D, suite_works_for_3_processes_only) {
   EXPECT_EQ(dr::mp::default_comm().size(), 3);
 }
 
-TEST(WideHalo3, halo2d_is_visible_after_exchange_not_earlier) {
+TEST(WideHalo3_2D, halo2d_is_visible_after_exchange_not_earlier) {
   dr::mp::distribution dist = get_distribution();
   Array dv(size, dist);
   Array dv_out(size, dist);
@@ -178,7 +178,7 @@ TEST(WideHalo3, halo2d_is_visible_after_exchange_not_earlier) {
   }
 }
 
-TEST(WideHalo3, halo2d_api_works) {
+TEST(WideHalo3_2D, halo2d_api_works) {
   dr::mp::distribution dist = get_distribution();
   Array dv(size, dist);
   Array dv_out(size, dist);
