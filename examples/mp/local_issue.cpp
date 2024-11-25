@@ -30,9 +30,15 @@ int main(int argc, char **argv) {
     auto [n, ma] = ind;
     fmt::print("some res 2 {} {} {}\n", val, n, ma);
 
-    auto mapper = [] (auto elem) { auto [a, b] = elem; auto [c, d] = a; return d;};
-    auto summer = [](auto x, auto y) { return x + y;};
+    auto mapper = [] (auto elem) { auto [a, b] = elem; auto [c, d] = a; return c;};
     auto z2 = dr::transform_view(m_row, mapper);
+    for (auto x: local_segments(z2)) {
+      for (auto z : x)
+        {
+        fmt::print("some res {}\n", z);
+        }
+    }
+    auto summer = [](auto x, auto y) { return x + y;};
     auto red2 = dr::mp::reduce(z2, 0, summer);
     fmt::print("reduced row {} {}\n", red2, m_row.size());
   }

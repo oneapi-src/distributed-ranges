@@ -335,18 +335,18 @@ private:
     std::size_t offset = row_size * rank;
     auto local_vals_range = rng::subrange(local_vals, local_vals + vals_size);
     auto local_cols_range = rng::subrange(local_cols, local_cols + vals_size);
-    // auto local_rows = rows_data->segments()[rank].begin().local();
+    auto local_rows = rows_data->segments()[rank].begin().local();
     auto zipped_results = rng::views::zip(local_vals_range, local_cols_range);
     auto enumerated_zipped = rng::views::enumerate(zipped_results);
     auto transformer = [=](auto entry){
       assert(offset == 0);
       auto [index, pair] = entry;
       auto [val, column] = pair;
-      auto row = 0;
-      // auto row = rng::distance(
-      //           local_rows,
-      //           std::upper_bound(local_rows, local_rows + row_size, offset_ + index) -
-      //               1);
+      // auto row = 0;
+      auto row = rng::distance(
+                local_rows,
+                std::upper_bound(local_rows, local_rows + row_size, offset + index) -
+                    1);
       dr::index<index_type> index_obj(row, column);
       value_type entry_obj(index_obj, val);
       return entry_obj;
