@@ -1,11 +1,11 @@
-#SPDX - FileCopyrightText : Intel Corporation
+# SPDX-FileCopyrightText: Intel Corporation
 #
-#SPDX - License - Identifier : BSD - 3 - Clause
+# SPDX-License-Identifier: BSD-3-Clause
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-#tested with a variable number of ranks
-#cmake - format : off
+# tested with a variable number of ranks
+# cmake-format: off
 add_executable(
   mp-tests
   mp-tests.cpp
@@ -17,10 +17,10 @@ add_executable(
   ../common/drop.cpp
   ../common/enumerate.cpp
   ../common/equal.cpp
-#../ common / exclusive_scan.cpp disabled due to deadlock - DRA - 213
+#  ../common/exclusive_scan.cpp disabled due to deadlock - DRA-213
   ../common/fill.cpp
   ../common/for_each.cpp
-#../ common / inclusive_scan.cpp disabled due to deadlock - DRA - 213
+#  ../common/inclusive_scan.cpp disabled due to deadlock - DRA-213
   ../common/iota.cpp
   ../common/iota_view.cpp
   ../common/reduce.cpp
@@ -55,11 +55,9 @@ add_executable(
         wide-halo-2d-3.cpp
 )
 
-#mp - quick - test and mp - quick - test - 3 -                                 \
-    only is for development.By reducing the number of source files,            \
-    it
-#builds much faster.Change the source files to match what you need to test.It
-#is OK to commit changes to the source file list.
+# mp-quick-test and mp-quick-test-3-only is for development. By reducing the number of source files, it
+# builds much faster. Change the source files to match what you need to test. It
+# is OK to commit changes to the source file list.
 add_executable(mp-quick-test
   mp-tests.cpp
   halo.cpp
@@ -68,7 +66,7 @@ add_executable(mp-quick-test-3-only
   mp-tests.cpp
   wide-halo-2d-3.cpp
 )
-#cmake - format : on
+# cmake-format: on
 
 target_compile_definitions(mp-quick-test PRIVATE QUICK_TEST)
 target_compile_definitions(mp-quick-test-3-only PRIVATE QUICK_TEST)
@@ -82,8 +80,8 @@ foreach(test-exec IN ITEMS mp-tests mp-tests-3 mp-quick-test mp-quick-test-3-onl
           "${CMAKE_COMMAND} -E time")
 endforeach()
 
-#tests without-- sycl flag will fail on IshmemBackend TODO : make them be
-#running somehow if ENABLE_ISHMEM will be default CI config
+# tests without --sycl flag will fail on IshmemBackend TODO: make them be
+# running somehow if ENABLE_ISHMEM will be default CI config
 if(NOT ENABLE_ISHMEM)
   add_mp_ctest(NAME mp-quick-test NPROC 1)
   add_mp_ctest(NAME mp-quick-test NPROC 2)
@@ -92,7 +90,7 @@ if(NOT ENABLE_ISHMEM)
   cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
   if(NOT MPI_IMPL STREQUAL "openmpi")
-#MPI_Win_create fails for communicator with size 1
+    # MPI_Win_create fails for communicator with size 1
     add_mp_ctest(NAME mp-tests NPROC 1 TIMEOUT 150)
   endif()
   foreach(nproc RANGE 2 4)
@@ -102,16 +100,15 @@ if(NOT ENABLE_ISHMEM)
 endif()
 
 if(ENABLE_SYCL)
-#DRA - 83 : Slide isn't complete
+  # DRA-83: Slide isn't complete
   set(sycl-exclusions *Slide*:ComplexSlide*:)
 
   if(ENABLE_ISHMEM)
-#Some Halo3 cases don't work on IshmemBackend (work on MPI, see: DRA-84),
-#Counted.large fails with
-#distributed -                                                                 \
-    ranges / test / gtest / common / counted.cpp : 62 : Failure Expected
-#equality of these values : *(--counted_result.end())Which is : 5, should be
-# 77 Mdspan, Mdarray hangs sometimes on ISHMEM.
+    # Some Halo3 cases don't work on IshmemBackend (work on MPI, see: DRA-84),
+    # Counted.large fails with
+    # distributed-ranges/test/gtest/common/counted.cpp:62: Failure Expected
+    # equality of these values: *(--counted_result.end()) Which is: 5, should be
+    # 77 Mdspan, Mdarray hangs sometimes on ISHMEM.
     set(sycl-exclusions
             ${sycl-exclusions}Halo3/*:Sort*:Counted/*:Mdspan*:Mdarray*:)
   endif()
