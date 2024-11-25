@@ -109,7 +109,7 @@ public:
     requires(dr::ranges::__detail::has_local<Iter>)
   {
     auto iter = dr::ranges::__detail::local(iter_);
-    return transform_iterator<decltype(iter), F>(iter, fn_);
+    return transform_iterator<decltype(iter), F>(std::move(iter), fn_);
   }
 
 private:

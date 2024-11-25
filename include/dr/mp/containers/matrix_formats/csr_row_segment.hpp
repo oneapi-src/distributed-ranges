@@ -4,8 +4,49 @@
 
 #pragma once
 
-namespace dr::mp {
 
+int some_id_base =0;
+namespace dr::mp {
+namespace __detail {
+  template <typename T, typename V>
+  class transform_fn_1 {
+    public:
+    using value_type = V;
+    using index_type = T;
+    transform_fn_1(std::size_t offset, std::size_t row_size, T* row_ptr):
+      offset_(offset), row_size_(row_size), row_ptr_(row_ptr) {
+      assert(offset_ == 0);
+      myid = some_id_base++;
+      fmt::print("created {}\n", myid);
+      }
+
+    ~transform_fn_1() {
+      destroyed = true;
+      fmt::print("destroyed {}\n", myid);
+    }
+    template <typename P>
+    auto operator()(P entry) const {
+      fmt::print("called {}\n", myid);
+      assert(offset_ == 0);
+      assert(!destroyed);
+      auto [index, pair] = entry;
+      auto [val, column] = pair;
+      auto row = rng::distance(
+                row_ptr_,
+                std::upper_bound(row_ptr_, row_ptr_ + row_size_, offset_) -
+                    1);
+      dr::index<index_type> index_obj(row, column);
+      value_type entry_obj(index_obj, val);
+      return entry_obj;
+    }
+    private:
+    int myid = 0;
+    bool destroyed = false;
+    std::size_t offset_;
+    std::size_t row_size_;
+    T* row_ptr_;
+  };
+}
 template <typename DSM> class csr_row_segment_iterator;
 
 template <typename DSM> class csr_row_segment_reference {
@@ -55,6 +96,10 @@ public:
     dsm_ = dsm;
     segment_index_ = segment_index;
     index_ = index;
+    if (dsm_->vals_backend_.getrank() == segment_index_) {
+      elem_view_ = get_elem_view(dsm_, segment_index);
+      base_iter = elem_view_.begin();
+    }
   }
 
   auto operator<=>(const csr_row_segment_iterator &other) const noexcept {
@@ -227,40 +272,36 @@ public:
 
   auto local() const {
     const auto my_process_segment_index = dsm_->vals_backend_.getrank();
-
     assert(my_process_segment_index == segment_index_);
-    std::size_t offset = dsm_->segment_size_ * segment_index_;
-    assert(offset == 0);
-    // auto row_size = dsm_->segment_size_;
-    auto vals_size = dsm_->vals_size_;
-    auto local_vals = dsm_->vals_data_;
-    auto local_vals_range = rng::subrange(local_vals, local_vals + vals_size);
-    auto local_cols = dsm_->cols_data_;
-    auto local_cols_range = rng::subrange(local_cols, local_cols + vals_size);
-    // auto local_rows = dsm_->rows_data_->segments()[segment_index_].begin().local();
-    auto zipped_results = rng::views::zip(local_vals_range, local_cols_range);
-    auto enumerated_zipped = rng::views::enumerate(zipped_results);
-    auto transformer = [=](auto entry) {
-      assert(offset == 0);
-      auto [index, pair] = entry;
-      auto [val, column] = pair;
-      auto row = 0; //TODO fix calculating row - it results in segfault
-      // problem originates from the fact that variables cannot be caputed properly by value
-      // auto row = rng::distance(
-      //           local_rows,
-      //           std::upper_bound(local_rows, local_rows + row_size, offset) -
-      //               1);
-      dr::index<index_type> index_obj(row, column);
-      value_type entry_obj(index_obj, val);
-      return entry_obj;
-    };
-    auto transformed_res = rng::views::transform(enumerated_zipped, transformer);
-    return transformed_res.begin();
+    auto [a, b] = *base_iter;
+    auto [c, d] = a;
+    fmt::print("aqwsedrftgyhuji {} {} {}\n", b, c, d);
+    return base_iter;
   }
 
 private:
+
+  static auto get_elem_view(DSM *dsm, std::size_t segment_index) {
+    std::size_t offset = dsm->segment_size_ * segment_index;
+    auto row_size = dsm->segment_size_;
+    auto vals_size = dsm->vals_size_;
+    auto local_vals = dsm->vals_data_;
+    auto local_vals_range = rng::subrange(local_vals, local_vals + vals_size);
+    auto local_cols = dsm->cols_data_;
+    auto local_cols_range = rng::subrange(local_cols, local_cols + vals_size);
+    auto local_rows = dsm->rows_data_->segments()[segment_index].begin().local();
+    auto zipped_results = rng::views::zip(local_vals_range, local_cols_range);
+    auto enumerated_zipped = rng::views::enumerate(zipped_results);
+    auto transformer = __detail::transform_fn_1<index_type, value_type>(offset, row_size, local_rows);
+    return rng::views::transform(enumerated_zipped, transformer);
+  }
+
   // all fields need to be initialized by default ctor so every default
   // constructed iter is equal to any other default constructed iter
+  using view_type = decltype(get_elem_view(std::declval<DSM*>(), 0));
+  using iter_type = rng::iterator_t<view_type>;
+  view_type elem_view_;
+  iter_type base_iter;
   DSM *dsm_ = nullptr;
   std::size_t segment_index_ = 0;
   std::size_t index_ = 0;
