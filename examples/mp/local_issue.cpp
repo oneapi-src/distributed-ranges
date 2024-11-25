@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
   dr::views::csr_matrix_view<double, long> local_data;
   auto root = 0;
   if (root == dr::mp::default_comm().rank()) {
-      local_data = dr::generate_band_csr<double, long>(100, 2, 2);
+      local_data = dr::generate_band_csr<double, long>(10, 0, 1);
   }
   {
     mp::distributed_sparse_matrix<
@@ -30,8 +30,13 @@ int main(int argc, char **argv) {
     auto [n, ma] = ind;
     fmt::print("some res 2 {} {} {}\n", val, n, ma);
 
+    auto mapper = [] (auto elem) { auto [a, b] = elem; auto [c, d] = a; return d;};
+    auto summer = [](auto x, auto y) { return x + y;};
+    auto z2 = dr::transform_view(m_row, mapper);
+    auto red2 = dr::mp::reduce(z2, 0, summer);
+    fmt::print("reduced row {} {}\n", red2, m_row.size());
   }
-
+  
   if (root == dr::mp::default_comm().rank()) {
     dr::__detail::destroy_csr_matrix_view(local_data, std::allocator<double>{});
   }

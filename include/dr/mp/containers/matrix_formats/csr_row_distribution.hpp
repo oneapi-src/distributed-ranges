@@ -8,6 +8,42 @@
 #include <fmt/core.h>
 
 namespace dr::mp {
+namespace __detail {
+  template <typename T, typename V>
+  class transform_fn_1 {
+    public:
+    using value_type = V;
+    using index_type = T;
+    transform_fn_1(std::size_t offset, std::size_t row_size, T* row_ptr):
+      offset_(offset), row_size_(row_size), row_ptr_(row_ptr) {
+      assert(offset_ == 0);
+      }
+
+    ~transform_fn_1() {
+      destroyed = true;
+    }
+    template <typename P>
+    auto operator()(P entry) const {
+      assert(offset_ == 0);
+      assert(!destroyed);
+      auto [index, pair] = entry;
+      auto [val, column] = pair;
+      auto row = 0;
+      // auto row = rng::distance(
+      //           row_ptr_,
+      //           std::upper_bound(row_ptr_, row_ptr_ + row_size_, offset_ + index) -
+      //               1);
+      dr::index<index_type> index_obj(row, column);
+      value_type entry_obj(index_obj, val);
+      return entry_obj;
+    }
+    private:
+    bool destroyed = false;
+    std::size_t offset_;
+    std::size_t row_size_;
+    T* row_ptr_;
+  };
+}
 
 template <typename T, typename I, class BackendT = MpiBackend>
 class csr_row_distribution {
@@ -287,8 +323,41 @@ private:
           std::max(val_sizes_[i], static_cast<std::size_t>(1)));
     }
     fence();
+    local_view = get_elem_view(vals_size_, cols_data_, vals_data_, rows_data_, rank);
   }
 
+  static auto get_elem_view(std::size_t vals_size, 
+  index_type *local_cols, 
+  elem_type *local_vals,
+   std::shared_ptr<distributed_vector<I>> rows_data, 
+   std::size_t rank) {
+    auto row_size = rows_data->segment_size();
+    std::size_t offset = row_size * rank;
+    auto local_vals_range = rng::subrange(local_vals, local_vals + vals_size);
+    auto local_cols_range = rng::subrange(local_cols, local_cols + vals_size);
+    // auto local_rows = rows_data->segments()[rank].begin().local();
+    auto zipped_results = rng::views::zip(local_vals_range, local_cols_range);
+    auto enumerated_zipped = rng::views::enumerate(zipped_results);
+    auto transformer = [=](auto entry){
+      assert(offset == 0);
+      auto [index, pair] = entry;
+      auto [val, column] = pair;
+      auto row = 0;
+      // auto row = rng::distance(
+      //           local_rows,
+      //           std::upper_bound(local_rows, local_rows + row_size, offset_ + index) -
+      //               1);
+      dr::index<index_type> index_obj(row, column);
+      value_type entry_obj(index_obj, val);
+      return entry_obj;
+    };
+    //__detail::transform_fn_1<index_type, value_type>(offset, row_size, local_rows);
+    return rng::views::transform(enumerated_zipped, transformer);
+  }
+
+  using view_type = decltype(get_elem_view(0, nullptr, nullptr, std::shared_ptr<distributed_vector<I>>(nullptr),0));
+
+  view_type local_view;
   std::size_t segment_size_ = 0;
   std::size_t vals_size_ = 0;
   std::vector<std::size_t> val_offsets_;
