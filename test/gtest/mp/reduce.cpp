@@ -6,9 +6,7 @@
 
 // Fixture
 
-template <typename T> class ReduceMP : public testing::Test {
-public:
-};
+template <typename T> class ReduceMP : public testing::Test { public: };
 
 TYPED_TEST_SUITE(ReduceMP, AllTypes);
 

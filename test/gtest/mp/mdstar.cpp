@@ -35,7 +35,7 @@ protected:
 
 TEST_F(Mdspan, StaticAssert) {
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto mdspan = xp::views::mdspan(dist, extents2d);
+  auto mdspan = xp::views::mdspan(dist, extents2d, dist2d_1d);
   static_assert(rng::forward_range<decltype(mdspan)>);
   static_assert(dr::distributed_range<decltype(mdspan)>);
   auto segments = dr::ranges::segments(mdspan);
@@ -47,7 +47,7 @@ TEST_F(Mdspan, StaticAssert) {
 
 TEST_F(Mdspan, Iterator) {
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto mdspan = xp::views::mdspan(dist, extents2d);
+  auto mdspan = xp::views::mdspan(dist, extents2d, dist2d_1d);
 
   *mdspan.begin() = 17;
   xp::fence();
@@ -57,7 +57,7 @@ TEST_F(Mdspan, Iterator) {
 
 TEST_F(Mdspan, Mdindex2D) {
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto dmdspan = xp::views::mdspan(dist, extents2d);
+  auto dmdspan = xp::views::mdspan(dist, extents2d, dist2d_1d);
 
   std::size_t i = 1, j = 2;
   dmdspan.mdspan()(i, j) = 17;
@@ -68,7 +68,7 @@ TEST_F(Mdspan, Mdindex2D) {
 
 TEST_F(Mdspan, Mdindex3D) {
   xp::distributed_vector<T> dist(n3d, dist3d_1d);
-  auto dmdspan = xp::views::mdspan(dist, extents3d);
+  auto dmdspan = xp::views::mdspan(dist, extents3d, dist3d_1d);
 
   std::size_t i = 1, j = 2, k = 0;
   dmdspan.mdspan()(i, j, k) = 17;
@@ -79,7 +79,7 @@ TEST_F(Mdspan, Mdindex3D) {
 
 TEST_F(Mdspan, Pipe) {
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto mdspan = dist | xp::views::mdspan(extents2d);
+  auto mdspan = dist | xp::views::mdspan(extents2d, dist2d_1d);
 
   *mdspan.begin() = 17;
   xp::fence();
@@ -89,7 +89,7 @@ TEST_F(Mdspan, Pipe) {
 
 TEST_F(Mdspan, SegmentExtents) {
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
-  auto dmdspan = xp::views::mdspan(dist, extents2d);
+  auto dmdspan = xp::views::mdspan(dist, extents2d, dist2d_1d);
 
   // Sum of leading dimension matches original
   std::size_t x = 0;
@@ -106,7 +106,7 @@ TEST_F(Mdspan, Subrange) {
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
   auto inner = rng::subrange(dist.begin() + ydim, dist.end() - ydim);
   std::array<std::size_t, 2> inner_extents({extents2d[0] - 2, extents2d[1]});
-  auto dmdspan = xp::views::mdspan(inner, inner_extents);
+  auto dmdspan = xp::views::mdspan(inner, inner_extents, dist2d_1d);
 
   // Summing up leading dimension size of segments should equal
   // original minus 2 rows
@@ -123,7 +123,7 @@ TEST_F(Mdspan, Subrange) {
 TEST_F(Mdspan, GridExtents) {
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
   xp::iota(dist, 100);
-  auto dmdspan = xp::views::mdspan(dist, extents2d);
+  auto dmdspan = xp::views::mdspan(dist, extents2d, dist2d_1d);
   auto grid = dmdspan.grid();
 
   auto x = 0;
@@ -147,7 +147,7 @@ TEST_F(Mdspan, GridLocalReference) {
 
   xp::distributed_vector<T> dist(n2d, dist2d_1d);
   xp::iota(dist, 100);
-  auto dmdspan = xp::views::mdspan(dist, extents2d);
+  auto dmdspan = xp::views::mdspan(dist, extents2d, dist2d_1d);
   auto grid = dmdspan.grid();
 
   auto tile = grid(0, 0).mdspan();

@@ -11,7 +11,9 @@
 namespace dr::mp {
 
 template <typename T>
-concept has_segments = requires(T &t) { dr::ranges::segments(t); };
+concept has_segments = requires(T &t) {
+  dr::ranges::segments(t);
+};
 
 template <typename T>
 concept no_segments = !has_segments<T>;

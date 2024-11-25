@@ -80,13 +80,31 @@ add_executable(wave_equation wave_equation.cpp)
 target_link_libraries(wave_equation cxxopts DR::mpi)
 target_compile_definitions(wave_equation PRIVATE STANDALONE_BENCHMARK)
 add_mp_ctest(NAME wave_equation)
+add_executable(wave_equation_wide wave_equation_wide.cpp)
+target_link_libraries(wave_equation_wide cxxopts DR::mpi)
+target_compile_definitions(wave_equation_wide PRIVATE STANDALONE_BENCHMARK)
+add_mp_ctest(NAME wave_equation_wide)
 # add_mp_ctest(TEST_NAME wave_equation_fused NAME wave_equation TARGS -f) #
 # DRA-92
 if(ENABLE_SYCL)
   add_mp_ctest(
-    TEST_NAME wave_equation-sycl NAME wave_equation NPROC 2 SYCL)
+    TEST_NAME wave_equation-sycl NAME wave_equation TIMEOUT 1000 NPROC 8 SYCL)
   add_mp_ctest(
-    TEST_NAME wave_equation_fused-sycl NAME wave_equation NPROC 2 SYCL TARGS -f)
+    TEST_NAME wave_equation-sycl-benchmark NAME wave_equation TIMEOUT 1000 NPROC 8 SYCL TARGS -t)
+  add_mp_ctest(
+    TEST_NAME wave_equation_fused-sycl NAME wave_equation TIMEOUT 1000 NPROC 2 SYCL TARGS -f)
+  add_mp_ctest(
+    TEST_NAME wave_equation_wide-sycl NAME wave_equation_wide TIMEOUT 1000 NPROC 8 SYCL)
+  foreach(redundancy RANGE 1 8)
+    add_mp_ctest(
+      TEST_NAME wave_equation_wide-sycl-benchmark-${redundancy} NAME wave_equation_wide TIMEOUT 1000 NPROC 8 SYCL TARGS -t 100 -r ${redundancy})
+  endforeach()
+  add_mp_ctest(
+    TEST_NAME wave_equation_wide-sycl-gpu NAME wave_equation_wide TIMEOUT 1000 NPROC 8 SYCL TARGS --device-memory)
+  foreach(redundancy RANGE 1 8)
+    add_mp_ctest(
+      TEST_NAME wave_equation_wide-sycl-gpu-benchmark-${redundancy} NAME wave_equation_wide TIMEOUT 1000 NPROC 8 SYCL TARGS --device-memory -t 100 -r ${redundancy})
+  endforeach()
 endif()
 
 add_executable(shallow_water shallow_water.cpp)

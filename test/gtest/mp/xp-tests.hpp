@@ -20,15 +20,15 @@ namespace xp = dr::mp;
 
 template <typename V>
 concept compliant_view = rng::forward_range<V> && rng::random_access_range<V> &&
-                         rng::viewable_range<V> && requires(V &v) {
-                           // test one at a time so error is apparent
-                           dr::ranges::segments(v);
-                           dr::ranges::segments(v).begin();
-                           *dr::ranges::segments(v).begin();
-                           dr::ranges::rank(*dr::ranges::segments(v).begin());
-                           //  dr::ranges::local(rng::begin(dr::ranges::segments(v)[0]));
-                           //  dr::mp::local_segments(v);
-                         };
+    rng::viewable_range<V> && requires(V &v) {
+  // test one at a time so error is apparent
+  dr::ranges::segments(v);
+  dr::ranges::segments(v).begin();
+  *dr::ranges::segments(v).begin();
+  dr::ranges::rank(*dr::ranges::segments(v).begin());
+  //  dr::ranges::local(rng::begin(dr::ranges::segments(v)[0]));
+  //  dr::mp::local_segments(v);
+};
 
 inline void barrier() { dr::mp::barrier(); }
 inline void fence() { dr::mp::fence(); }

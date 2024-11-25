@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <execution>
+#include <ranges>
 #include <type_traits>
 #include <utility>
 
@@ -14,6 +15,7 @@
 #include <dr/detail/onedpl_direct_iterator.hpp>
 #include <dr/detail/ranges_shim.hpp>
 #include <dr/detail/sycl_utils.hpp>
+#include <dr/detail/tuple_utils.hpp>
 #include <dr/mp/global.hpp>
 
 namespace dr::mp {
@@ -60,6 +62,189 @@ DI for_each_n(DI first, I n, auto op) {
   rng::advance(last, n);
   mp::for_each(first, last, op);
   return last;
+}
+
+namespace __detail {
+template <std::size_t Rank>
+using stencil_index_type = dr::__detail::dr_extents<Rank>;
+
+void stencil_for_each_extended_1(auto op, stencil_index_type<1> begin,
+                                 stencil_index_type<1> end, const auto &segs) {
+  auto [seg0_begin, seg0_end] = std::get<0>(segs).stencil(begin, end);
+
+  auto sub = [](auto a) { return std::get<1>(a) - std::get<0>(a); };
+  auto is_zero = [](auto a) { return a != 0; };
+
+  auto zipped = zip_view(seg0_begin, seg0_end);
+  auto distance = zipped | std::views::transform(sub);
+
+  if (rng::empty(distance | std::views::filter(is_zero)))
+    return;
+
+  auto seg_infos = dr::__detail::tuple_transform(segs, [begin](auto &&seg) {
+    return std::make_pair(seg.begin() + seg.begin_stencil(begin)[0],
+                          seg.extents());
+  });
+
+  auto do_point = [seg_infos, op](auto index) {
+    auto stencils =
+        dr::__detail::tuple_transform(seg_infos, [index](auto seg_info) {
+          return md::mdspan(
+              std::to_address(dr::ranges::local(seg_info.first + index)),
+              seg_info.second);
+        });
+    op(stencils);
+  };
+  if (mp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    dr::__detail::parallel_for(dr::mp::sycl_queue(),
+                               sycl::range<1>(distance[0]), do_point)
+        .wait();
+#else
+    assert(false);
+#endif
+  } else {
+    for (std::size_t i = 0; i < distance[0]; i++) {
+      do_point(i);
+    }
+  }
+}
+
+void stencil_for_each_extended_2(auto op, stencil_index_type<2> &begin,
+                                 stencil_index_type<2> end, const auto &segs) {
+  auto [seg0_begin, seg0_end] = std::get<0>(segs).stencil(begin, end);
+
+  auto sub = [](auto a) {
+    auto x = std::get<0>(a);
+    auto y = std::get<1>(a);
+    return y > x ? y - x : 0;
+  };
+  auto is_zero = [](auto a) { return a != 0; };
+
+  auto zipped = zip_view(seg0_begin, seg0_end);
+  auto distance = zipped | std::views::transform(sub);
+
+  if (rng::empty(distance | std::views::filter(is_zero)))
+    return;
+
+  auto seg_infos = dr::__detail::tuple_transform(segs, [&begin](auto &&seg) {
+    auto ext = seg.root_mdspan().extents();
+    auto begin_stencil = seg.begin_stencil(begin);
+    return std::make_pair(md::mdspan(std::to_address(&seg.mdspan_extended()(
+                                         begin_stencil[0], begin_stencil[1])),
+                                     ext),
+                          ext);
+  });
+
+  auto do_point = [seg_infos, op](auto index) {
+    auto stencils =
+        dr::__detail::tuple_transform(seg_infos, [index](auto seg_info) {
+          return md::mdspan(
+              std::to_address(&seg_info.first(index[0], index[1])),
+              seg_info.second);
+        });
+    op(stencils);
+  };
+  if (mp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    dr::__detail::parallel_for(dr::mp::sycl_queue(),
+                               sycl::range<2>(distance[0], distance[1]),
+                               do_point)
+        .wait();
+#else
+    assert(false);
+#endif
+  } else {
+    for (std::size_t i = 0; i < distance[0]; i++) {
+      for (std::size_t j = 0; j < distance[1]; j++) {
+        do_point(stencil_index_type<2>{i, j});
+      }
+    }
+  }
+}
+
+void stencil_for_each_extended_3(auto op, stencil_index_type<3> &begin,
+                                 stencil_index_type<3> end, const auto &segs) {
+  auto [seg0_begin, seg0_end] = std::get<0>(segs).stencil(begin, end);
+
+  auto sub = [](auto a) {
+    auto x = std::get<0>(a);
+    auto y = std::get<1>(a);
+    return y > x ? y - x : 0;
+  };
+  auto is_zero = [](auto a) { return a != 0; };
+
+  auto zipped = zip_view(seg0_begin, seg0_end);
+  auto distance = zipped | std::views::transform(sub);
+
+  if (rng::empty(distance | std::views::filter(is_zero)))
+    return;
+
+  auto seg_infos = dr::__detail::tuple_transform(segs, [&begin](auto &&seg) {
+    auto ext = seg.root_mdspan().extents();
+    auto begin_stencil = seg.begin_stencil(begin);
+    return std::make_pair(
+        md::mdspan(std::to_address(&seg.mdspan_extended()(
+                       begin_stencil[0], begin_stencil[1], begin_stencil[2])),
+                   ext),
+        ext);
+  });
+
+  auto do_point = [seg_infos, op](auto index) {
+    auto stencils =
+        dr::__detail::tuple_transform(seg_infos, [index](auto seg_info) {
+          return md::mdspan(
+              std::to_address(&seg_info.first(index[0], index[1], index[2])),
+              seg_info.second);
+        });
+    op(stencils);
+  };
+  if (mp::use_sycl()) {
+#ifdef SYCL_LANGUAGE_VERSION
+    dr::__detail::parallel_for(
+        dr::mp::sycl_queue(),
+        sycl::range<3>(distance[0], distance[1], distance[2]), do_point)
+        .wait();
+#else
+    assert(false);
+#endif
+  } else {
+    for (std::size_t i = 0; i < distance[0]; i++) {
+      for (std::size_t j = 0; j < distance[1]; j++) {
+        for (std::size_t k = 0; k < distance[3]; k++) {
+          do_point(stencil_index_type<3>{i, j, k});
+        }
+      }
+    }
+  }
+}
+} // namespace __detail
+
+template <std::size_t Rank, typename... Ts>
+requires(1 <= Rank && Rank <= 3) void stencil_for_each_extended(
+    auto op, __detail::stencil_index_type<Rank> begin,
+    __detail::stencil_index_type<Rank> end,
+    dr::distributed_range auto &&...drs) {
+  auto ranges = std::tie(drs...);
+  auto &&dr0 = std::get<0>(ranges);
+  if (rng::empty(dr0)) {
+    return;
+  }
+
+  auto all_segments = rng::views::zip(dr::ranges::segments(drs)...);
+  for (const auto &segs : all_segments) {
+    if constexpr (Rank == 1) {
+      __detail::stencil_for_each_extended_1(op, begin, end, segs);
+    } else if constexpr (Rank == 2) {
+      __detail::stencil_for_each_extended_2(op, begin, end, segs);
+    } else if constexpr (Rank == 3) {
+      __detail::stencil_for_each_extended_3(op, begin, end, segs);
+    } else {
+      static_assert(false, "Not supported"); // sycl for_each does not support
+                                             // more than 3 dimensions
+    }
+  }
+  barrier();
 }
 
 } // namespace dr::mp
