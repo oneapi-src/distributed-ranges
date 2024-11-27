@@ -11,7 +11,7 @@
 namespace dr::mp {
 template <typename T, typename I, class BackendT = MpiBackend>
 class csr_row_distribution {
-  using view_tuple = std::tuple<std::size_t, std::size_t, I*>;
+  using view_tuple = std::tuple<std::size_t, std::size_t, std::size_t, I*>;
 public:
   using value_type = dr::matrix_entry<T, I>;
   using segment_type = csr_row_segment<csr_row_distribution>;
@@ -290,7 +290,9 @@ private:
     }
     fence();
     auto local_rows = rows_data_->segments()[rank].begin().local();
-    auto my_tuple = std::make_tuple(rows_data_->segment_size(), segment_size_ * rank, local_rows);
+    auto offset = val_offsets_[rank];
+    auto real_row_size = std::min(rows_data_->segment_size(), shape_.first - rows_data_->segment_size() * rank);
+    auto my_tuple = std::make_tuple(real_row_size, segment_size_ * rank, offset, local_rows);
     view_helper_const = alloc.allocate(1);
 
     view_helper_const[0] = my_tuple;
@@ -316,16 +318,13 @@ private:
     
     auto transformer = [=](auto x) {
       auto [entry, tuple] = x;
-      auto [row_size, offset, local_rows] = tuple;
-      assert(offset == 0);
-      assert(local_rows[0] == 0);
-      assert(row_size == 10);
+      auto [row_size, row_offset, offset, local_rows] = tuple;
       auto [index, pair] = entry;
       auto [val, column] = pair;
       auto row = rng::distance(
                 local_rows,
                 std::upper_bound(local_rows, local_rows + row_size, offset + index) -
-                    1);
+                    1) + row_offset;
       dr::index<index_type> index_obj(row, column);
       value_type entry_obj(index_obj, val);
       return entry_obj;
