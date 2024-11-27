@@ -228,7 +228,7 @@ public:
   auto local() const {
     const auto my_process_segment_index = dsm_->vals_backend_.getrank();
     assert(my_process_segment_index == segment_index_);
-    return dsm_->local_view.begin();
+    return dsm_->local_view->begin();
   }
 
 private:
