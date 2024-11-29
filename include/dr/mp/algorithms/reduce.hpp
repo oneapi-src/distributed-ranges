@@ -35,11 +35,10 @@ inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
                          sycl::known_identity_v<Fn, T>, binary_op);
     } else {
       dr::drlog.debug("  peel 1st value\n");
-      auto base = *rng::begin(r);
       return std::reduce(dpl_policy(),
                          dr::__detail::direct_iterator(rng::begin(r) + 1),
                          dr::__detail::direct_iterator(rng::end(r)),
-                         sycl_get(base), binary_op);
+                         sycl_get_deref(rng::begin(r)), binary_op);
     }
   }
 #else

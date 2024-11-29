@@ -295,7 +295,12 @@ private:
     auto my_tuple = std::make_tuple(real_row_size, segment_size_ * rank, offset, local_rows);
     view_helper_const = alloc.allocate(1);
 
-    view_helper_const[0] = my_tuple;
+
+    if (use_sycl()) {
+      sycl_queue().memcpy(view_helper_const, &my_tuple, sizeof(view_tuple)).wait();
+    } else {
+      view_helper_const[0] = my_tuple;
+    }
 
     local_view = std::make_shared<view_type>(get_elem_view(vals_size_, view_helper_const, cols_data_, vals_data_, rank));
   }
