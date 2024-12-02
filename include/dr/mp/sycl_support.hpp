@@ -19,7 +19,7 @@ namespace dr::mp::__detail {
 
 //sometimes we only want to dereference iterator inside SYCL
 template <typename T> auto sycl_get_deref(T v) {
-  using deref_type = decltype(*v);
+  using deref_type = std::remove_reference<decltype(*v)>::type;
   deref_type temp;
   {
     sycl::buffer<deref_type> buff(&temp, 1);
