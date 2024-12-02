@@ -41,9 +41,7 @@ TYPED_TEST(ReduceMP, RootIterators) {
 TYPED_TEST(ReduceMP, TransformReduce) {
   Ops1<TypeParam> ops(10);
 
-  auto add = [](auto &&elem) {
-    return elem + 1;
-  };
+  auto add = [](auto &&elem) { return elem + 1; };
 
   auto added = dr::mp::views::transform(ops.dist_vec, add);
   auto min = [](double x, double y) { return std::min(x, y); };

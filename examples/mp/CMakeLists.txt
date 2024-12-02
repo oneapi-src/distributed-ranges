@@ -34,7 +34,6 @@ add_mp_example(hello_world)
 add_mp_example_no_test(sparse_matrix)
 add_mp_example_no_test(sparse_benchmark)
 add_mp_example_no_test(sparse_matrix_matrix_mul)
-add_mp_example_no_test(local_issue)
 
 if(OpenMP_FOUND)
   add_executable(vector-add-ref vector-add-ref.cpp)

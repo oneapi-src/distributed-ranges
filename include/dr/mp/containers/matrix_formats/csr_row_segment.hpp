@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 namespace dr::mp {
 template <typename DSM> class csr_row_segment_iterator;
 
@@ -223,7 +222,7 @@ public:
     assert(dsm_ != nullptr);
     return dr::__detail::drop_segments(dsm_->segments(), segment_index_,
                                        index_);
-  }  
+  }
 
   auto local() const {
     const auto my_process_segment_index = dsm_->vals_backend_.getrank();
@@ -232,7 +231,6 @@ public:
   }
 
 private:
-
   // all fields need to be initialized by default ctor so every default
   // constructed iter is equal to any other default constructed iter
   DSM *dsm_ = nullptr;

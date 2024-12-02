@@ -235,7 +235,7 @@ public:
     return dr::__detail::drop_segments(dsm_->segments(), segment_index_,
                                        index_);
   }
-  
+
   auto local() const {
     const auto my_process_segment_index = dsm_->rows_backend_.getrank();
     assert(my_process_segment_index == segment_index_);

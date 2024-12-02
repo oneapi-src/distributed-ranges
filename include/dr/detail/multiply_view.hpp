@@ -13,8 +13,7 @@
 
 namespace dr::__detail {
 
-template <std::random_access_iterator Iter>
-class multiply_iterator {
+template <std::random_access_iterator Iter> class multiply_iterator {
 public:
   using value_type = std::iter_value_t<Iter>;
   using difference_type = long long;
@@ -25,7 +24,8 @@ public:
 
   using iterator_category = std::random_access_iterator_tag;
 
-  multiply_iterator(Iter iter, std::size_t len, long long pos) noexcept : iter_(iter), len_(len), pos_(pos) {}
+  multiply_iterator(Iter iter, std::size_t len, long long pos) noexcept
+      : iter_(iter), len_(len), pos_(pos) {}
   multiply_iterator() noexcept = default;
   ~multiply_iterator() noexcept = default;
   multiply_iterator(const multiply_iterator &) noexcept = default;
@@ -55,13 +55,9 @@ public:
 
   bool operator>(iterator other) const noexcept { return pos_ > other.pos_; }
 
-  bool operator<=(iterator other) const noexcept {
-    return pos_ <= other.pos_;
-  }
+  bool operator<=(iterator other) const noexcept { return pos_ <= other.pos_; }
 
-  bool operator>=(iterator other) const noexcept {
-    return pos_ >= other.pos_;
-  }
+  bool operator>=(iterator other) const noexcept { return pos_ >= other.pos_; }
 
   iterator &operator++() noexcept {
     ++pos_;
@@ -119,21 +115,23 @@ private:
 };
 
 template <rng::random_access_range V>
-    requires(rng::sized_range<V>)
+  requires(rng::sized_range<V>)
 class multiply_view : public rng::view_interface<multiply_view<V>> {
 public:
   template <rng::viewable_range R>
   multiply_view(R &&r, std::size_t n)
       : base_(rng::views::all(std::forward<R>(r))), n_(n) {}
 
-  auto begin() const { return multiply_iterator(rng::begin(base_), base_.size(), 0); }
-
-  auto end() const { return multiply_iterator(rng::begin(base_), base_.size(), n_ * base_.size()); }
-
-  auto size() const
-  {
-    return rng::size(base_);
+  auto begin() const {
+    return multiply_iterator(rng::begin(base_), base_.size(), 0);
   }
+
+  auto end() const {
+    return multiply_iterator(rng::begin(base_), base_.size(),
+                             n_ * base_.size());
+  }
+
+  auto size() const { return rng::size(base_); }
 
 private:
   V base_;
@@ -143,4 +141,4 @@ private:
 template <rng::viewable_range R>
 multiply_view(R &&r, std::size_t n) -> multiply_view<rng::views::all_t<R>>;
 
-} // namespace dr
+} // namespace dr::__detail

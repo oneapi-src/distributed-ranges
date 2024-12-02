@@ -3,15 +3,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 #include <dr/detail/matrix_entry.hpp>
+#include <dr/detail/multiply_view.hpp>
 #include <dr/mp/containers/matrix_formats/csr_eq_segment.hpp>
 #include <dr/views/csr_matrix_view.hpp>
-#include <dr/detail/multiply_view.hpp>
 
 namespace dr::mp {
 
 template <typename T, typename I, class BackendT = MpiBackend>
 class csr_eq_distribution {
-  using view_tuple = std::tuple<std::size_t, std::size_t, std::size_t, I*>;
+  using view_tuple = std::tuple<std::size_t, std::size_t, std::size_t, I *>;
+
 public:
   using value_type = dr::matrix_entry<T, I>;
   using segment_type = csr_eq_segment<csr_eq_distribution>;
@@ -302,48 +303,52 @@ private:
     }
     fence();
     auto local_rows = rows_data_;
-    auto real_val_size = std::min(vals_data_->segment_size(), nnz_ - vals_data_->segment_size() * rank);
-    auto my_tuple = std::make_tuple(row_size_, row_offsets_[rank], segment_size_ * rank, local_rows);
+    auto real_val_size = std::min(vals_data_->segment_size(),
+                                  nnz_ - vals_data_->segment_size() * rank);
+    auto my_tuple = std::make_tuple(row_size_, row_offsets_[rank],
+                                    segment_size_ * rank, local_rows);
     view_helper_const = tuple_alloc.allocate(1);
 
-
     if (use_sycl()) {
-      sycl_queue().memcpy(view_helper_const, &my_tuple, sizeof(view_tuple)).wait();
+      sycl_queue()
+          .memcpy(view_helper_const, &my_tuple, sizeof(view_tuple))
+          .wait();
     } else {
       view_helper_const[0] = my_tuple;
     }
 
     auto local_cols = cols_data_->segments()[rank].begin().local();
     auto local_vals = vals_data_->segments()[rank].begin().local();
-    local_view = std::make_shared<view_type>(get_elem_view(real_val_size, view_helper_const, local_cols, local_vals, rank));
+    local_view = std::make_shared<view_type>(get_elem_view(
+        real_val_size, view_helper_const, local_cols, local_vals, rank));
   }
 
-
-  static auto get_elem_view(
-  std::size_t vals_size, 
-  view_tuple* helper_tuple,
-  index_type *local_cols, 
-  elem_type *local_vals,
-   std::size_t rank) {
+  static auto get_elem_view(std::size_t vals_size, view_tuple *helper_tuple,
+                            index_type *local_cols, elem_type *local_vals,
+                            std::size_t rank) {
     auto local_vals_range = rng::subrange(local_vals, local_vals + vals_size);
     auto local_cols_range = rng::subrange(local_cols, local_cols + vals_size);
     auto zipped_results = rng::views::zip(local_vals_range, local_cols_range);
     auto enumerated_zipped = rng::views::enumerate(zipped_results);
-    // we need to use multiply_view here, 
+    // we need to use multiply_view here,
     // because lambda is not properly copied to sycl environment
-    // when we use variable capture 
-    auto multiply_range = dr::__detail::multiply_view(rng::subrange(helper_tuple, helper_tuple + 1), vals_size);
-    auto enumerted_with_data = rng::views::zip(enumerated_zipped, multiply_range);
-    
+    // when we use variable capture
+    auto multiply_range = dr::__detail::multiply_view(
+        rng::subrange(helper_tuple, helper_tuple + 1), vals_size);
+    auto enumerted_with_data =
+        rng::views::zip(enumerated_zipped, multiply_range);
+
     auto transformer = [=](auto x) {
       auto [entry, tuple] = x;
       auto [row_size, row_offset, offset, local_rows] = tuple;
       auto [index, pair] = entry;
       auto [val, column] = pair;
-      auto row = rng::distance(
-                local_rows,
-                std::upper_bound(local_rows, local_rows + row_size, offset + index) -
-                    1) + row_offset;
+      auto row =
+          rng::distance(local_rows,
+                        std::upper_bound(local_rows, local_rows + row_size,
+                                         offset + index) -
+                            1) +
+          row_offset;
       dr::index<index_type> index_obj(row, column);
       value_type entry_obj(index_obj, val);
       return entry_obj;
@@ -351,10 +356,10 @@ private:
     return rng::transform_view(enumerted_with_data, std::move(transformer));
   }
 
-  using view_type = decltype(get_elem_view(0, nullptr, nullptr, nullptr,0));
+  using view_type = decltype(get_elem_view(0, nullptr, nullptr, nullptr, 0));
 
   dr::mp::__detail::allocator<view_tuple> tuple_alloc;
-  view_tuple* view_helper_const;
+  view_tuple *view_helper_const;
   std::shared_ptr<view_type> local_view;
 
   std::size_t segment_size_ = 0;
