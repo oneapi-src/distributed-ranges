@@ -147,7 +147,7 @@ std::size_t getWidth() {
 }
 } // namespace
 static auto getMatrix() {
-  std::size_t n = std::sqrt(default_vector_size / 100000) * 50000;
+  std::size_t n = std::max(1., std::sqrt(default_vector_size / 100000)) * 50000;
   // std::size_t n = default_vector_size / 2;
   std::size_t up = n / 50;
   std::size_t down = n / 50;
