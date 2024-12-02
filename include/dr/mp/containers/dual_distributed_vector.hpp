@@ -1,5 +1,4 @@
 // SPDX-FileCopyrightText: Intel Corporation
-// SPDX-FileCopyrightText: Intel Corporation
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
@@ -8,84 +7,13 @@
 #include <dr/mp/algorithms/fill.hpp>
 #include <dr/mp/allocator.hpp>
 #include <dr/mp/containers/distribution.hpp>
-#include <dr/mp/containers/segment.hpp>
+#include <dr/mp/containers/dual_segment.hpp>
 
 namespace dr::mp {
 
-class MpiBackend {
-  dr::rma_window win_;
-
-public:
-  void *allocate(std::size_t data_size) {
-    assert(data_size > 0);
-    void *data = __detail::allocator<std::byte>().allocate(data_size);
-    DRLOG("called MPI allocate({}) -> got:{}", data_size, data);
-    win_.create(default_comm(), data, data_size);
-    active_wins().insert(win_.mpi_win());
-    return data;
-  }
-
-  void deallocate(void *data, std::size_t data_size) {
-    assert(data_size > 0);
-    DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size);
-    active_wins().erase(win_.mpi_win());
-    win_.free();
-    __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
-                                                data_size);
-  }
-
-  void getmem(void *dst, std::size_t offset, std::size_t datalen,
-              int segment_index) {
-    DRLOG("calling MPI get(dst:{}, "
-          "segm_offset:{}, size:{}, peer:{})",
-          dst, offset, datalen, segment_index);
-
-#if (MPI_VERSION >= 4) ||                                                      \
-    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
-    // 64-bit API inside
-    win_.get(dst, datalen, segment_index, offset);
-#else
-    for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
-      std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
-      DRLOG("{}:{} win_.get total {} now {} bytes at off {}, dst offset {}",
-            default_comm().rank(), __LINE__, datalen, s, off, offset + off);
-      win_.get((uint8_t *)dst + off, s, segment_index, offset + off);
-      off += s;
-      remainder -= s;
-    }
-#endif
-  }
-
-  void putmem(void const *src, std::size_t offset, std::size_t datalen,
-              int segment_index) {
-    DRLOG("calling MPI put(segm_offset:{}, "
-          "src:{}, size:{}, peer:{})",
-          offset, src, datalen, segment_index);
-
-#if (MPI_VERSION >= 4) ||                                                      \
-    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
-    // 64-bit API inside
-    win_.put(src, datalen, segment_index, offset);
-#else
-    for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
-      std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
-      DRLOG("{}:{} win_.put {} bytes at off {}, dst offset {}",
-            default_comm().rank(), __LINE__, s, off, offset + off);
-      win_.put((uint8_t *)src + off, s, segment_index, offset + off);
-      off += s;
-      remainder -= s;
-    }
-#endif
-  }
-
-  std::size_t getrank() { return win_.communicator().rank(); }
-
-  void fence() { win_.fence(); }
-};
-
 /// distributed vector
 template <typename T, class BackendT = MpiBackend> 
-class distributed_vector_dual {
+class dual_distributed_vector {
 
 public:
   using value_type = T;
@@ -96,11 +24,11 @@ public:
   class iterator {
   public:
     using iterator_category = std::random_access_iterator_tag;
-    using value_type = typename distributed_vector::value_type;
-    using difference_type = typename distributed_vector::difference_type;
+    using value_type = typename dual_distributed_vector::value_type;
+    using difference_type = typename dual_distributed_vector::difference_type;
 
     iterator() {}
-    iterator(const distributed_vector *parent, difference_type offset)
+    iterator(const dual_distributed_vector *parent, difference_type offset)
         : parent_(parent), offset_(offset) {}
 
     auto operator+(difference_type n) const {
@@ -178,37 +106,37 @@ public:
     }
 
   private:
-    const distributed_vector *parent_ = nullptr;
+    const dual_distributed_vector *parent_ = nullptr;
     difference_type offset_;
   };
 
   // Do not copy
   // We need a move constructor for the implementation of reduce algorithm
-  distributed_vector_dual(const distributed_vector_dual &) = delete;
-  distributed_vector_dual &operator=(const distributed_vector_dual &) = delete;
-  distributed_vector_dual(distributed_vector_dual &&) { assert(false); }
+  dual_distributed_vector(const dual_distributed_vector &) = delete;
+  dual_distributed_vector &operator=(const dual_distributed_vector &) = delete;
+  dual_distributed_vector(dual_distributed_vector &&) { assert(false); }
 
   /// Constructor
-  distributed_vector_dual(std::size_t size = 0, 
+  dual_distributed_vector(std::size_t size = 0, 
                           distribution dist = distribution()) {
     init(size, dist);
   }
 
   /// Constructor
-  distributed_vector_dual(std::size_t size, value_type fill_value,
+  dual_distributed_vector(std::size_t size, value_type fill_value,
                           distribution dist = distribution()) {
     init(size, dist);
     mp::fill(*this, fill_value);
   }
 
-  ~distributed_vector_dual() {
+  ~dual_distributed_vector() {
     if (finalized()) return;
 
     fence();
 
     for (size_t i = 0; i < segments_per_proc; i++) {
       if (datas_[i] != nullptr) {
-        backend.deallocate(data_, data_size_ * sizeof(value_type));
+        backend.deallocate(datas_[i], data_size_ * sizeof(value_type));
       }
 
       delete halos_[i];
@@ -257,7 +185,7 @@ private:
 
     for (std::size_t i = 0; i < segments_per_proc; i++) {
       if (size_ > 0) {
-        datas_[i] = static_cast<T *>( backend.allocate(data_size_ * sizeof(T)));
+        datas_[i] = static_cast<T *>(backend.allocate(data_size_ * sizeof(T)));
       }
 
       halos_[i] = new span_halo<T>(default_comm(), datas_[i], data_size_, hb);
@@ -266,15 +194,33 @@ private:
     halo_ = new cyclic_span_halo<T>(halos_);
 
     std::size_t segment_index = 0;
+    bool first_half = true;
     for (std::size_t i = 0; i < size; i += segment_size_) {
-      segments_.emplace_back(this, segment_index++,
+      segments_.emplace_back(this, segment_index,
                              std::min(segment_size_, size - i), data_size_);
+
+      if (first_half) {
+        if (segment_index < comm_size - 1) {
+          segment_index++;
+        } else {
+          first_half = false;
+        }
+      } else {
+        segment_index--;
+      }
+    }
+
+    for (auto& s: segments) {
+      if (s.is_local()) {
+        s.swap_state();
+        break;
+      }
     }
 
     fence();
   }
 
-  friend dv_segment_iterator<distributed_vector>;
+  friend dv_segment_iterator<dual_distributed_vector>;
 
   static constexpr std::size_t segments_per_proc = 2;
 
@@ -287,12 +233,12 @@ private:
 
   distribution distribution_;
   std::size_t size_;
-  std::vector<dv_segment<distributed_vector_dual>> segments_;
+  std::vector<dv_dual_segment<dual_distributed_vector>> segments_;
   BackendT backend;
 };
 
 template <typename T, typename B>
-auto &halo(const distributed_vector_dual<T, B> &dv) {
+auto &halo(const dual_distributed_vector<T, B> &dv) {
   return dv.halo();
 }
 

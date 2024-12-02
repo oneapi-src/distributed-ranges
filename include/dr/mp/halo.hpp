@@ -418,7 +418,7 @@ private:
   }
 };
 
-template <typename T, typename Memory>
+template <typename T, typename Memory = default_memory<T>>
 class cyclic_span_halo {
 public:
   using group_type = span_group<T, Memory>;
@@ -470,7 +470,7 @@ private:
 
   std::vector<halo_type *> halos_;
   std::size_t next_comm_index_ = 0;
-}
+};
 
 } // namespace dr::mp
 

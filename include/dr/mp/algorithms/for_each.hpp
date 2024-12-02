@@ -18,7 +18,48 @@
 
 namespace dr::mp {
 
-/// Collective for_each on distributed range
+template <typename R>
+concept dual_vector_range =
+    dr::distributed_range<R> && requires(R &r) { local_segments(r)[0].is_compute(); };
+
+void for_each(dual_vector_range auto &&dr, auto op) {
+  assert(false);
+
+  dr::drlog.debug(dr::logger::for_each, "for_each: parallel execution\n");
+  if (rng::empty(dr)) {
+    return;
+  }
+  assert(aligned(dr));
+
+  for (auto &s : local_segments(dr)) {
+    if (!s.is_compute()) {
+      s.swap_state();
+      continue;
+    }
+
+    if (mp::use_sycl()) {
+      dr::drlog.debug("  using sycl\n");
+
+      assert(rng::distance(s) > 0);
+#ifdef SYCL_LANGUAGE_VERSION
+      dr::__detail::parallel_for(
+          dr::mp::sycl_queue(), sycl::range<1>(rng::distance(s)),
+          [first = rng::begin(s), op](auto idx) { op(first[idx]); })
+          .wait();
+#else
+      assert(false);
+#endif
+    } else {
+      dr::drlog.debug("  using cpu\n");
+      rng::for_each(s, op);
+    }
+
+    s.swap_state();
+  }
+  barrier();
+}
+
+// Collective for_each on distributed range
 void for_each(dr::distributed_range auto &&dr, auto op) {
   dr::drlog.debug(dr::logger::for_each, "for_each: parallel execution\n");
   if (rng::empty(dr)) {
