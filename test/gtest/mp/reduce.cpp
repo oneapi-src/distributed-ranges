@@ -38,16 +38,15 @@ TYPED_TEST(ReduceMP, RootIterators) {
   }
 }
 
-// Example of code that should be compiling, but does not, described in issue
-// DRA-192 TYPED_TEST(ReduceMP, NotCompiling) {
-//   dr::mp::distributed_vector<int> r1(10);
+TYPED_TEST(ReduceMP, TransformReduce) {
+  Ops1<TypeParam> ops(10);
 
-//   auto add = [](auto &&elem) {
-//     return elem + 1;
-//   };
+  auto add = [](auto &&elem) { return elem + 1; };
 
-//   auto added = dr::mp::views::transform(r1, add);
-//   auto min = [](double x, double y) { return std::min(x, y); };
-//   auto result = dr::mp::reduce(root, added, 1, min);
-//   EXPECT_EQ(result, 1);
-// }
+  auto added = dr::mp::views::transform(ops.dist_vec, add);
+  auto min = [](double x, double y) { return std::min(x, y); };
+  auto result = dr::mp::reduce(root, added, 1, min);
+  if (comm_rank == root) {
+    EXPECT_EQ(result, 1);
+  }
+}
