@@ -200,12 +200,6 @@ private:
             std::copy(piece_start, piece_start + last_row - first_row - 1,
                       res.begin() + first_row + k * shape_[0] + 1);
           }
-          // for (auto j = first_row; j < last_row; j++) {
-          //   res[j + k * shape_[0]] +=
-          //       gathered_res_host[vals_width * current_offset + k * row_size
-          //       +
-          //                         j - first_row];
-          // }
           current_offset += row_sizes_[i];
         }
       }
