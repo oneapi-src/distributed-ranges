@@ -289,8 +289,11 @@ private:
           this, segment_index++, val_sizes_[i],
           std::max(val_sizes_[i], static_cast<std::size_t>(1)));
     }
-    fence();
-    auto local_rows = rows_data_->segments()[rank].begin().local();
+
+    auto local_rows = static_cast<I *>(nullptr);
+    if (rows_data_->segments().size() > rank) {
+      local_rows = rows_data_->segments()[rank].begin().local();
+    }
     auto offset = val_offsets_[rank];
     auto real_row_size =
         std::min(rows_data_->segment_size(),
@@ -307,8 +310,11 @@ private:
       view_helper_const[0] = my_tuple;
     }
 
-    local_view = std::make_shared<view_type>(get_elem_view(
-        vals_size_, view_helper_const, cols_data_, vals_data_, rank));
+    if (rows_data_->segments().size() > rank) {
+      local_view = std::make_shared<view_type>(get_elem_view(
+          vals_size_, view_helper_const, cols_data_, vals_data_, rank));
+    }
+    fence();
   }
 
   static auto get_elem_view(std::size_t vals_size, view_tuple *helper_tuple,
@@ -365,6 +371,6 @@ private:
   dr::index<size_t> shape_;
   std::size_t nnz_;
   std::vector<segment_type> segments_;
-  std::shared_ptr<distributed_vector<I>> rows_data_;
+  std::shared_ptr<distributed_vector<I>> rows_data_ = nullptr;
 };
 } // namespace dr::mp

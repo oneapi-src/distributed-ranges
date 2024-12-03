@@ -301,7 +301,6 @@ private:
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, nnz_ - i), segment_size_);
     }
-    fence();
     auto local_rows = rows_data_;
     auto real_val_size = std::min(vals_data_->segment_size(),
                                   nnz_ - vals_data_->segment_size() * rank);
@@ -317,10 +316,15 @@ private:
       view_helper_const[0] = my_tuple;
     }
 
-    auto local_cols = cols_data_->segments()[rank].begin().local();
-    auto local_vals = vals_data_->segments()[rank].begin().local();
-    local_view = std::make_shared<view_type>(get_elem_view(
-        real_val_size, view_helper_const, local_cols, local_vals, rank));
+    auto local_cols = static_cast<I *>(nullptr);
+    auto local_vals = static_cast<T *>(nullptr);
+    if (cols_data_->segments().size() > rank) {
+      local_cols = cols_data_->segments()[rank].begin().local();
+      local_vals = vals_data_->segments()[rank].begin().local();
+      local_view = std::make_shared<view_type>(get_elem_view(
+          real_val_size, view_helper_const, local_cols, local_vals, rank));
+    }
+    fence();
   }
 
   static auto get_elem_view(std::size_t vals_size, view_tuple *helper_tuple,
@@ -360,7 +364,7 @@ private:
 
   dr::mp::__detail::allocator<view_tuple> tuple_alloc;
   view_tuple *view_helper_const;
-  std::shared_ptr<view_type> local_view;
+  std::shared_ptr<view_type> local_view = nullptr;
 
   std::size_t segment_size_ = 0;
   std::size_t row_size_ = 0;
