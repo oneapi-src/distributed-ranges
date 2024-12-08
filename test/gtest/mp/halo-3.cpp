@@ -18,19 +18,27 @@ TYPED_TEST(Halo3, halo_is_visible_after_exchange_not_earlier) {
   dv.halo().exchange();
 
   fill(dv, 13);
+  std::cout << "switch to check values: \n";
   switch (dr::mp::default_comm().rank()) {
   case 0:
+    std::cout << "dv[0] = " << *(dv.begin() + 0).local() << "\n";
     EXPECT_EQ(*(dv.begin() + 0).local(), 13);
+    std::cout << "dv[1] = " << *(dv.begin() + 0).local() << "\n";
     EXPECT_EQ(*(dv.begin() + 1).local(), 7);
     break;
   case 1:
+    std::cout << "dv[0] = " << *(dv.begin() + 0).local() << "\n";
     EXPECT_EQ(*(dv.begin() + 0).local(), 7);
+    std::cout << "dv[1] = " << *(dv.begin() + 0).local() << "\n";
     EXPECT_EQ(*(dv.begin() + 1).local(), 13);
+    std::cout << "dv[2] = " << *(dv.begin() + 0).local() << "\n";
     EXPECT_EQ(*(dv.begin() + 2).local(), 7);
     break;
   case 2:
     EXPECT_EQ(*(dv.begin() + 1).local(), 7);
+    std::cout << "dv[1] = " << *(dv.begin() + 0).local() << "\n";
     EXPECT_EQ(*(dv.begin() + 2).local(), 13);
+    std::cout << "dv[2] = " << *(dv.begin() + 0).local() << "\n";
     break;
   }
 

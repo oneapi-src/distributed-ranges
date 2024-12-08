@@ -60,7 +60,7 @@ add_executable(
 # is OK to commit changes to the source file list.
 add_executable(mp-quick-test
   mp-tests.cpp
-  halo.cpp
+  halo-3.cpp
 )
 add_executable(mp-quick-test-3-only
   mp-tests.cpp
