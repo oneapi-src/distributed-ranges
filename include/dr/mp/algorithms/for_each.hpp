@@ -97,13 +97,16 @@ void stencil_for_each_extended_1(auto op, stencil_index_type<1> begin,
   };
   if (mp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    std::cout << "do parallel_for 1d - sycl\n";
     dr::__detail::parallel_for(dr::mp::sycl_queue(),
                                sycl::range<1>(distance[0]), do_point)
         .wait();
 #else
+    std::cout << "do parallel_for 1d - sycl failed\n";
     assert(false);
 #endif
   } else {
+    std::cout << "do parallel_for 1d - no sycl\n";
     for (std::size_t i = 0; i < distance[0]; i++) {
       do_point(i);
     }
@@ -147,14 +150,17 @@ void stencil_for_each_extended_2(auto op, stencil_index_type<2> &begin,
   };
   if (mp::use_sycl()) {
 #ifdef SYCL_LANGUAGE_VERSION
+    std::cout << "do parallel_for 2d - sycl\n";
     dr::__detail::parallel_for(dr::mp::sycl_queue(),
                                sycl::range<2>(distance[0], distance[1]),
                                do_point)
         .wait();
 #else
+    std::cout << "do parallel_for 2d - sycl fail\n";
     assert(false);
 #endif
   } else {
+    std::cout << "do parallel_for 2d - no sycl\n";
     for (std::size_t i = 0; i < distance[0]; i++) {
       for (std::size_t j = 0; j < distance[1]; j++) {
         do_point(stencil_index_type<2>{i, j});

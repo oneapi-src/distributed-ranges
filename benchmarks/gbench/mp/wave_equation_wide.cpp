@@ -140,10 +140,13 @@ int run(
     std::cout << "Redundancy " << redundancy << std::endl;
   }
 
+  std::cout << "before e\n";
   // state variables
   // water elevation at T points
   Array e({nx + 1, ny}, dist);
+  std::cout << "after e\n";
   dr::mp::fill(e, 0.0);
+  std::cout << "after fill e\n";
   // x velocity at U points
   Array u({nx + 1, ny}, dist);
   dr::mp::fill(u, 0.0);
@@ -165,12 +168,17 @@ int run(
   Array dudt({nx + 1, ny}, dist);
   Array dvdt({nx + 1, ny + 1}, dist);
 
+  std::cout << "After all arrays\n";
+
   dr::mp::fill(dedt, 0);
   dr::mp::fill(dudt, 0);
   dr::mp::fill(dvdt, 0);
+  std::cout << "After fill\n";
+
   dr::mp::halo(dedt).exchange();
   dr::mp::halo(dudt).exchange();
   dr::mp::halo(dvdt).exchange();
+  std::cout << "After first exchange\n";
 
   auto init_op = [xmin, ymin, grid](auto index, auto v) {
     auto &[o] = v;
@@ -184,6 +192,7 @@ int run(
     }
   };
   dr::mp::for_each(init_op, e);
+  std::cout << "After mp::for_each\n";
 
   auto add = [](auto ops) { return ops.first + ops.second; };
   auto max = [](double x, double y) { return std::max(x, y); };
@@ -225,6 +234,7 @@ int run(
   };
 
   for (std::size_t i = 0; i < nt + 1; i++) {
+    std::cout << "i = " << i << "\n";
     t = static_cast<double>(i) * dt;
 
     if (t >= next_t_export - 1e-8) {
