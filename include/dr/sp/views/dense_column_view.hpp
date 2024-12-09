@@ -5,7 +5,7 @@
 #pragma once
 
 #include <dr/detail/index.hpp>
-#include <dr/sp/containers/matrix_entry.hpp>
+#include <dr/detail/matrix_entry.hpp>
 #include <iterator>
 
 namespace dr::sp {
@@ -17,9 +17,9 @@ public:
   using scalar_value_type = std::iter_value_t<Iter>;
   using scalar_reference = std::iter_reference_t<Iter>;
 
-  using value_type = dr::sp::matrix_entry<scalar_value_type, std::size_t>;
+  using value_type = dr::matrix_entry<scalar_value_type, std::size_t>;
 
-  using reference = dr::sp::matrix_ref<T, std::size_t, scalar_reference>;
+  using reference = dr::matrix_ref<T, std::size_t, scalar_reference>;
 
   using iterator_category = std::random_access_iterator_tag;
 

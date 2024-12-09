@@ -15,6 +15,7 @@ add_executable(
   ../common/stream.cpp
   streammp.cpp
   rooted.cpp
+  gemv.cpp
   stencil_1d.cpp
   stencil_2d.cpp
   chunk.cpp
@@ -41,7 +42,7 @@ endif()
 # mp-quick-bench is for development. By reducing the number of source files, it
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
-add_executable(mp-quick-bench mp-bench.cpp ../common/distributed_vector.cpp)
+add_executable(mp-quick-bench mp-bench.cpp gemv.cpp)
 
 foreach(mp-bench-exec IN ITEMS mp-bench mp-quick-bench)
   target_compile_definitions(${mp-bench-exec} PRIVATE BENCH_MP)

@@ -5,10 +5,10 @@
 #pragma once
 
 #include <dr/detail/index.hpp>
-#include <dr/sp/containers/matrix_entry.hpp>
+#include <dr/detail/matrix_entry.hpp>
 #include <iterator>
 
-namespace dr::sp {
+namespace dr::views {
 
 template <typename T, typename I, typename TIter, typename IIter>
 class csr_matrix_view_accessor {
@@ -21,9 +21,9 @@ public:
 
   using index_type = I;
 
-  using value_type = dr::sp::matrix_entry<scalar_type, I>;
+  using value_type = dr::matrix_entry<scalar_type, I>;
 
-  using reference = dr::sp::matrix_ref<T, I, scalar_reference>;
+  using reference = dr::matrix_ref<T, I, scalar_reference>;
 
   using iterator_category = std::random_access_iterator_tag;
 
@@ -129,7 +129,7 @@ public:
   using difference_type = std::ptrdiff_t;
 
   using scalar_reference = std::iter_reference_t<TIter>;
-  using reference = dr::sp::matrix_ref<T, I, scalar_reference>;
+  using reference = dr::matrix_ref<T, I, scalar_reference>;
 
   using scalar_type = T;
   using index_type = I;
@@ -138,7 +138,7 @@ public:
   using map_type = T;
 
   using iterator = csr_matrix_view_iterator<T, I, TIter, IIter>;
-
+  csr_matrix_view() = default;
   csr_matrix_view(TIter values, IIter rowptr, IIter colind, key_type shape,
                   size_type nnz, size_type rank)
       : values_(values), rowptr_(rowptr), colind_(colind), shape_(shape),
@@ -222,4 +222,4 @@ csr_matrix_view(TIter, IIter, IIter, Args &&...)
     -> csr_matrix_view<std::iter_value_t<TIter>, std::iter_value_t<IIter>,
                        TIter, IIter>;
 
-} // namespace dr::sp
+} // namespace dr::views

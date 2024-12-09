@@ -53,7 +53,7 @@ public:
 
   bool operator<(iterator other) const noexcept { return iter_ < other.iter_; }
 
-  bool operator>(iterator other) const noexcept { return iter_ > iter_; }
+  bool operator>(iterator other) const noexcept { return iter_ > other.iter_; }
 
   bool operator<=(iterator other) const noexcept {
     return iter_ <= other.iter_;

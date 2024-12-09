@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "dr/detail/coo_matrix.hpp"
 #include "xp-tests.hpp"
-
 TEST(SparseMatrix, Gemv) {
-  std::size_t m = 100;
-  std::size_t k = 100;
+  long m = 100;
+  long k = 100;
 
   dr::sp::sparse_matrix<float> a(
       {m, k}, 0.1f,
@@ -40,9 +40,9 @@ TEST(SparseMatrix, EmptyGemv) {
   using T = float;
   using I = int;
 
-  dr::sp::__detail::coo_matrix<T, I> base;
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
-                                              std::allocator<T>{});
+  dr::__detail::coo_matrix<T, I> base;
+  auto csr = dr::__detail::convert_to_csr(base, {m, k}, base.size(),
+                                          std::allocator<T>{});
   dr::sp::sparse_matrix<T, I> a =
       dr::sp::create_distributed(csr, dr::sp::row_cyclic());
 
@@ -73,8 +73,8 @@ TEST(SparseMatrix, ZeroVector) {
     }
   }
 
-  auto csr = dr::sp::__detail::convert_to_csr(base, {m, k}, base.size(),
-                                              std::allocator<T>{});
+  auto csr = dr::__detail::convert_to_csr(base, {m, k}, base.size(),
+                                          std::allocator<T>{});
   dr::sp::sparse_matrix<T, I> a =
       dr::sp::create_distributed(csr, dr::sp::row_cyclic());
 
@@ -94,8 +94,8 @@ TEST(SparseMatrix, ZeroVector) {
 }
 
 TEST(SparseMatrix, NotSquareMatrix) {
-  std::size_t m = 10;
-  std::size_t k = 1000;
+  long m = 10;
+  long k = 1000;
 
   dr::sp::sparse_matrix<float> a(
       {m, k}, 0.1f,
@@ -124,8 +124,8 @@ TEST(SparseMatrix, NotSquareMatrix) {
 }
 
 TEST(SparseMatrix, NotSquareMatrixOtherAxis) {
-  std::size_t m = 1000;
-  std::size_t k = 10;
+  long m = 1000;
+  long k = 10;
 
   dr::sp::sparse_matrix<float> a(
       {m, k}, 0.1f,
@@ -154,8 +154,8 @@ TEST(SparseMatrix, NotSquareMatrixOtherAxis) {
 }
 
 TEST(SparseMatrix, VerySparseMatrix) {
-  std::size_t m = 100;
-  std::size_t k = 100;
+  long m = 100;
+  long k = 100;
 
   dr::sp::sparse_matrix<float> a(
       {m, k}, 0.001f,
