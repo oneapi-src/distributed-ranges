@@ -228,7 +228,7 @@ public:
     const auto my_process_segment_index = dsm_->vals_backend_.getrank();
     assert(my_process_segment_index == segment_index_);
     if (dsm_->local_view == nullptr) {
-      return nullptr;
+      throw std::runtime_error("Requesting not existing local segment");
     }
     return dsm_->local_view->begin();
   }
