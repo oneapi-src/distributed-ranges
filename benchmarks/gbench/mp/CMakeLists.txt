@@ -107,6 +107,10 @@ if(ENABLE_SYCL)
   endforeach()
 endif()
 
+add_executable(game_of_life game_of_life.cpp)
+target_link_libraries(game_of_life cxxopts DR::mpi)
+target_compile_definitions(game_of_life PRIVATE STANDALONE_BENCHMARK)
+
 add_executable(shallow_water shallow_water.cpp)
 target_link_libraries(shallow_water cxxopts DR::mpi)
 target_compile_definitions(shallow_water PRIVATE STANDALONE_BENCHMARK)
