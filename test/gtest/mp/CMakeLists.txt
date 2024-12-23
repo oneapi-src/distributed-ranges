@@ -81,6 +81,13 @@ foreach(test-exec IN ITEMS mp-tests mp-tests-3 mp-quick-test mp-quick-test-3-onl
           "${CMAKE_COMMAND} -E time")
 endforeach()
 
+# Game of life
+add_executable(game_of_life game_of_life.cpp)
+if(ENABLE_ISHMEM)
+  target_link_ishmem(game_of_life)
+endif()
+target_link_libraries(game_of_life cxxopts DR::mpi)
+
 # tests without --sycl flag will fail on IshmemBackend TODO: make them be
 # running somehow if ENABLE_ISHMEM will be default CI config
 if(NOT ENABLE_ISHMEM)
