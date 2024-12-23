@@ -37,6 +37,7 @@ add_executable(
   copy.cpp
   distributed_vector.cpp
   halo.cpp
+  halo-2d.cpp
   mdstar.cpp
   mpsort.cpp
   reduce.cpp
@@ -60,7 +61,7 @@ add_executable(
 # is OK to commit changes to the source file list.
 add_executable(mp-quick-test
   mp-tests.cpp
-  halo-3.cpp
+  halo-2d.cpp
 )
 add_executable(mp-quick-test-3-only
   mp-tests.cpp
