@@ -237,9 +237,9 @@ private:
   BackendT backend;
 };
 
-template <typename T, typename B>
-auto &halo(const dual_distributed_vector<T, B> &dv) {
-  return dv.halo();
-}
+// template <typename T, typename B>
+// auto &halo(const dual_distributed_vector<T, B> &dv) {
+//   return dv.halo();
+// }
 
 } // namespace dr::mp
