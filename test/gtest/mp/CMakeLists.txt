@@ -59,7 +59,7 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  count.cpp
+  ../common/count.cpp
   )
 # cmake-format: on
 
