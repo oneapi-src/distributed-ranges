@@ -36,7 +36,7 @@ add_executable(
   communicator.cpp
   copy.cpp
   distributed_vector.cpp
-  # dual_distributed_vector.cpp
+  dual_distributed_vector.cpp
   halo.cpp
   mdstar.cpp
   mpsort.cpp
@@ -59,7 +59,7 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  ../common/count.cpp
+  dual_distributed_vector.cpp
   )
 # cmake-format: on
 
