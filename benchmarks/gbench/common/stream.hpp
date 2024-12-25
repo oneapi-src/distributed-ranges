@@ -7,7 +7,7 @@
 #include "dr_bench.hpp"
 
 template <class ContainerT> void Stream_Copy(benchmark::State &state) {
-  using T = rng::value_type_t<ContainerT>;
+  using T = rng::iter_value_t<ContainerT>;
   T init = 0;
   ContainerT a(default_vector_size, init);
   ContainerT b(default_vector_size, init);
@@ -25,7 +25,7 @@ template <class ContainerT> void Stream_Copy(benchmark::State &state) {
 inline int val = 0;
 
 template <class ContainerT> void Stream_Scale(benchmark::State &state) {
-  using T = rng::value_type_t<ContainerT>;
+  using T = rng::iter_value_t<ContainerT>;
   T scalar = val;
   ContainerT a(default_vector_size, scalar);
   ContainerT b(default_vector_size, scalar);
@@ -42,7 +42,7 @@ template <class ContainerT> void Stream_Scale(benchmark::State &state) {
 }
 
 template <class ContainerT> void Stream_Add(benchmark::State &state) {
-  using T = rng::value_type_t<ContainerT>;
+  using T = rng::iter_value_t<ContainerT>;
   T scalar = val;
   xp::distributed_vector<T> a(default_vector_size, scalar);
   xp::distributed_vector<T> b(default_vector_size, scalar);
@@ -60,7 +60,7 @@ template <class ContainerT> void Stream_Add(benchmark::State &state) {
 }
 
 template <class ContainerT> void Stream_Triad(benchmark::State &state) {
-  using T = rng::value_type_t<ContainerT>;
+  using T = rng::iter_value_t<ContainerT>;
   T scalar = val;
   ContainerT a(default_vector_size, scalar);
   ContainerT b(default_vector_size, scalar);
