@@ -67,11 +67,11 @@ TEST(MpTests, DualDistributedVectorAlgorithms) {
   }
 }
 
-int a;
+int aa;
 
 // Operations on a const distributed_vector
 void common_operations(auto &dv) {
-  a = dv[1];
+  aa = dv[1];
   EXPECT_EQ(dv[1], 101);
   EXPECT_EQ(*(&(dv[1])), 101);
 
