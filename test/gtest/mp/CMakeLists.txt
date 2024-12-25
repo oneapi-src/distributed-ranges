@@ -36,7 +36,7 @@ add_executable(
   communicator.cpp
   copy.cpp
   distributed_vector.cpp
-  dual_distributed_vector.cpp
+  # dual_distributed_vector.cpp
   halo.cpp
   mdstar.cpp
   mpsort.cpp
