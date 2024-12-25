@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <dr/mp/algorithms/fill.hpp>
 #include <dr/mp/allocator.hpp>
+#include <dr/mp/containers/distributed_vector.hpp>
 #include <dr/mp/containers/distribution.hpp>
 #include <dr/mp/containers/dual_segment.hpp>
 
