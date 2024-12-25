@@ -59,7 +59,7 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  dual_distributed_vector.cpp
+  count.cpp
   )
 # cmake-format: on
 
