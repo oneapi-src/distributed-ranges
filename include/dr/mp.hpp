@@ -79,3 +79,4 @@
 #include <dr/mp/algorithms/transpose.hpp>
 #include <dr/mp/containers/distributed_vector.hpp>
 #include <dr/mp/containers/distributed_mdarray.hpp>
+#include <dr/mp/containers/dual_distributed_vector.hpp>

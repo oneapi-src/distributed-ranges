@@ -8,7 +8,7 @@
 
 namespace dr::mp {
 
-template <typename DV> class dual_dv_segment : dv_segment<DV> {
+template <typename DV> class dual_dv_segment : public dv_segment<DV> {
 private:
   using iterator = dv_segment_iterator<DV>;
 
@@ -17,7 +17,7 @@ public:
   dual_dv_segment() = default;
   dual_dv_segment(DV *dv, std::size_t segment_index, std::size_t size,
                   std::size_t reserved) 
-                  : dv_segment(dv, segment_index, size, reserved) {
+                  : dv_segment<DV>(dv, segment_index, size, reserved) {
   }
 
   bool is_compute() const { return _is_compute; }

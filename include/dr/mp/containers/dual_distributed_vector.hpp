@@ -185,10 +185,10 @@ private:
 
     for (std::size_t i = 0; i < segments_per_proc; i++) {
       if (size_ > 0) {
-        datas_[i] = static_cast<T *>(backend.allocate(data_size_ * sizeof(T)));
+        datas_.push_back(static_cast<T *>(backend.allocate(data_size_ * sizeof(T))));
       }
 
-      halos_[i] = new span_halo<T>(default_comm(), datas_[i], data_size_, hb);
+      halos_.push_back(new span_halo<T>(default_comm(), datas_[i], data_size_, hb));
     }
 
     halo_ = new cyclic_span_halo<T>(halos_);
@@ -210,7 +210,7 @@ private:
       }
     }
 
-    for (auto& s: segments) {
+    for (auto& s: segments_) {
       if (s.is_local()) {
         s.swap_state();
         break;
@@ -227,13 +227,13 @@ private:
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0; // size + halo
 
-  std::array<span_halo<T> *, segments_per_proc> halos_;
-  std::array<T *, segments_per_proc> datas_;
+  std::vector<span_halo<T> *> halos_;
+  std::vector<T *> datas_;
   cyclic_span_halo<T> *halo_;
 
   distribution distribution_;
   std::size_t size_;
-  std::vector<dv_dual_segment<dual_distributed_vector>> segments_;
+  std::vector<dual_dv_segment<dual_distributed_vector>> segments_;
   BackendT backend;
 };
 
