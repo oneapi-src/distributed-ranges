@@ -8,14 +8,15 @@
 
 namespace dr::mp {
 
-template <typename DV> class dual_dv_segment_iterator : public dv_segment_iterator<DV> {
+template <typename DV> 
+class dual_dv_segment_iterator : public dv_segment_iterator<DV> {
 protected:
-  DV::backend_type& backend() override {
-    return dv_->backends[0];
-  }
+  virtual DV::backend_type& backend() { return dv_->backends[0]; }
+  virtual const DV::backend_type& backend() const { return dv_->backends[0]; }
 };
 
-template <typename DV> class dual_dv_segment : public dv_segment<DV> {
+template <typename DV> 
+class dual_dv_segment : public dv_segment<DV> {
 private:
   using iterator = dual_dv_segment_iterator<DV>;
 

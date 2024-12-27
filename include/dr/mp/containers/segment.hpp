@@ -204,9 +204,8 @@ public:
   }
 
 protected:
-  virtual DV::backend_type& backend() {
-    return dv_->backend;
-  }
+  virtual DV::backend_type& backend() { return dv_->backend; }
+  virtual const DV::backend_type& backend() const { return dv_->backend; }
 
   // all fields need to be initialized by default ctor so every default
   // constructed iter is equal to any other default constructed iter
