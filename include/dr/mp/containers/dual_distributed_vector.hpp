@@ -5,11 +5,85 @@
 #pragma once
 
 #include <dr/mp/allocator.hpp>
-#include <dr/mp/containers/distributed_vector.hpp>
 #include <dr/mp/containers/distribution.hpp>
 #include <dr/mp/containers/dual_segment.hpp>
 
 namespace dr::mp {
+
+class MpiBackend {
+  dr::rma_window win_;
+
+public:
+  void *allocate(std::size_t data_size) {
+    assert(data_size > 0);
+    void *data = __detail::allocator<std::byte>().allocate(data_size);
+    DRLOG("called MPI allocate({}) -> got:{}", data_size, data);
+    win_.create(default_comm(), data, data_size);
+    active_wins().insert(win_.mpi_win());
+    return data;
+  }
+
+  void deallocate(void *data, std::size_t data_size) {
+    assert(data_size > 0);
+    DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size);
+    active_wins().erase(win_.mpi_win());
+    __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
+                                                data_size);
+  }
+
+  void free() {
+    DRLOG("calling MPI win free");
+    win_.free();
+  }
+
+  void getmem(void *dst, std::size_t offset, std::size_t datalen,
+              int segment_index) {
+    DRLOG("calling MPI get(dst:{}, "
+          "segm_offset:{}, size:{}, peer:{})",
+          dst, offset, datalen, segment_index);
+
+#if (MPI_VERSION >= 4) ||                                                      \
+    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+    // 64-bit API inside
+    win_.get(dst, datalen, segment_index, offset);
+#else
+    for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
+      std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
+      DRLOG("{}:{} win_.get total {} now {} bytes at off {}, dst offset {}",
+            default_comm().rank(), __LINE__, datalen, s, off, offset + off);
+      win_.get((uint8_t *)dst + off, s, segment_index, offset + off);
+      off += s;
+      remainder -= s;
+    }
+#endif
+  }
+
+  void putmem(void const *src, std::size_t offset, std::size_t datalen,
+              int segment_index) {
+    DRLOG("calling MPI put(segm_offset:{}, "
+          "src:{}, size:{}, peer:{})",
+          offset, src, datalen, segment_index);
+
+#if (MPI_VERSION >= 4) ||                                                      \
+    (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+    // 64-bit API inside
+    win_.put(src, datalen, segment_index, offset);
+#else
+    for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
+      std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
+      DRLOG("{}:{} win_.put {} bytes at off {}, dst offset {}",
+            default_comm().rank(), __LINE__, s, off, offset + off);
+      win_.put((uint8_t *)src + off, s, segment_index, offset + off);
+      off += s;
+      remainder -= s;
+    }
+#endif
+  }
+
+  std::size_t getrank() { return win_.communicator().rank(); }
+
+  void fence() { win_.fence(); }
+};
 
 /// distributed vector
 template <typename T, class BackendT = MpiBackend> 
@@ -142,15 +216,18 @@ public:
     for (size_t i = 0; i < segments_per_proc; i++) {
       std::cout << "~: loop " << i << "\n";
       if (datas_[i] != nullptr) {
-        std::cout << "~: deallocating\n";
+        std::cout << "~: backend.deallocate()\n";
         backend.deallocate(datas_[i], data_size_ * sizeof(value_type));
       }
 
-      std::cout << "~: deleting i-th halo\n";
+      std::cout << "~: delete halos_[i]\n";
       delete halos_[i];
     }
+
+    std::cout << "~: backend.free()\n";
+    backend.free();
     
-    std::cout << "~: deleting superhalo\n";
+    std::cout << "~: delete halo_\n";
     delete halo_;
   }
 
