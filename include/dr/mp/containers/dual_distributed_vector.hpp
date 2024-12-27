@@ -206,28 +206,19 @@ public:
   }
 
   ~dual_distributed_vector() {
-    std::cout << "~dual_distributed_vector()\n";
     if (finalized()) return;
-    std::cout << "~: before fence\n";
 
     fence();
-    std::cout << "~: after fence\n";
 
     for (size_t i = 0; i < segments_per_proc; i++) {
-      std::cout << "~: loop " << i << "\n";
       if (datas_[i] != nullptr) {
-        std::cout << "~: backend.deallocate()\n";
         backend.deallocate(datas_[i], data_size_ * sizeof(value_type));
       }
 
-      std::cout << "~: delete halos_[i]\n";
       delete halos_[i];
     }
 
-    std::cout << "~: backend.free()\n";
     backend.free();
-    
-    std::cout << "~: delete halo_\n";
     delete halo_;
   }
 
