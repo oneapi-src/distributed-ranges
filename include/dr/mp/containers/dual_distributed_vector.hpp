@@ -307,7 +307,7 @@ private:
   distribution distribution_;
   std::size_t size_;
   std::vector<dual_dv_segment<dual_distributed_vector>> segments_;
-  std::vector<DualMpiBackend> backends(DUAL_SEGMENTS_PER_PROC);
+  std::vector<DualMpiBackend> backends{DUAL_SEGMENTS_PER_PROC};
 };
 
 // template <typename T, typename B>
