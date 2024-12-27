@@ -208,7 +208,7 @@ public:
       fence(i);
 
       if (datas_[i] != nullptr) {
-        backends[i].deallocate(datas_[i], data_size_ * sizeof(value_type));
+        backends_[i].deallocate(datas_[i], data_size_ * sizeof(value_type));
       }
 
       delete halos_[i];
@@ -231,13 +231,13 @@ public:
 
   auto segments() const { return rng::views::all(segments_); }
 
-  void fence(const std::size_t i) { backends[i].fence(); }
+  void fence(const std::size_t i) { backends_[i].fence(); }
 
   backend_type& backend(const std::size_t segment_index) { 
-    return backends[0]; 
+    return backends_[0]; 
   }
   const backend_type& backend(const std::size_t segment_index) const { 
-    return backends[0];
+    return backends_[0];
   }
 
 private:
@@ -265,7 +265,7 @@ private:
     for (std::size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       if (size_ > 0) {
         datas_.push_back(static_cast<T *>(
-          backends[i].allocate(data_size_ * sizeof(value_type))));
+          backends_[i].allocate(data_size_ * sizeof(value_type))));
       }
 
       halos_.push_back(new span_halo<T>(default_comm(), datas_[i], data_size_, hb));
@@ -314,7 +314,7 @@ private:
   distribution distribution_;
   std::size_t size_;
   std::vector<dual_dv_segment<dual_distributed_vector>> segments_;
-  std::vector<DualMpiBackend> backends{DUAL_SEGMENTS_PER_PROC};
+  std::vector<DualMpiBackend> backends_{DUAL_SEGMENTS_PER_PROC};
 };
 
 // template <typename T, typename B>

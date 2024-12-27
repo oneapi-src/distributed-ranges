@@ -254,7 +254,7 @@ public:
     if (!finalized()) {
       fence();
       if (data_ != nullptr) {
-        backend.deallocate(data_, data_size_ * sizeof(value_type));
+        backend_.deallocate(data_, data_size_ * sizeof(value_type));
       }
 
       delete halo_;
@@ -274,13 +274,13 @@ public:
 
   auto segments() const { return rng::views::all(segments_); }
 
-  void fence() { backend.fence(); }
+  void fence() { backend_.fence(); }
 
   backend_type& backend(const std::size_t segment_index) { 
-    return backend; 
+    return backend_; 
   }
   const backend_type& backend(const std::size_t segment_index) const { 
-    return backend; 
+    return backend_; 
   }
 
 private:
@@ -302,7 +302,7 @@ private:
     data_size_ = segment_size_ + hb.prev + hb.next;
 
     if (size_ > 0) {
-      data_ = static_cast<T *>(backend.allocate(data_size_ * sizeof(T)));
+      data_ = static_cast<T *>(backend_.allocate(data_size_ * sizeof(T)));
     }
 
     halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
@@ -326,7 +326,7 @@ private:
   distribution distribution_;
   std::size_t size_;
   std::vector<dv_segment<distributed_vector>> segments_;
-  BackendT backend;
+  BackendT backend_;
 };
 
 template <typename T, typename B>
