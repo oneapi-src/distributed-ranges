@@ -10,6 +10,8 @@
 
 namespace dr::mp {
 
+static constexpr std::size_t DUAL_SEGMENTS_PER_PROC = 2;
+
 class DualMpiBackend {
   dr::rma_window win_;
 
@@ -202,7 +204,7 @@ public:
   ~dual_distributed_vector() {
     if (finalized()) return;
 
-    for (size_t i = 0; i < segments_per_proc; i++) {
+    for (size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       fence(i);
 
       if (datas_[i] != nullptr) {
@@ -249,11 +251,11 @@ private:
         (size / gran + comm_size - 1) / comm_size,
         hb.prev / gran, 
         hb.next / gran});
-    segment_size_ = proc_segments_size / segments_per_proc;
+    segment_size_ = proc_segments_size / DUAL_SEGMENTS_PER_PROC;
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
-    for (std::size_t i = 0; i < segments_per_proc; i++) {
+    for (std::size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       if (size_ > 0) {
         datas_.push_back(static_cast<T *>(
           backends[i].allocate(data_size_ * sizeof(value_type))));
@@ -288,14 +290,12 @@ private:
       }
     }
 
-    for (size_t i = 0; i < segments_per_proc; i++) {
+    for (size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       fence(i);
     }
   }
 
   friend dv_segment_iterator<dual_distributed_vector>;
-
-  static constexpr std::size_t segments_per_proc = 2;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0; // size + halo
@@ -307,7 +307,7 @@ private:
   distribution distribution_;
   std::size_t size_;
   std::vector<dual_dv_segment<dual_distributed_vector>> segments_;
-  std::vector<DualMpiBackend> backends(segments_per_proc);
+  std::vector<DualMpiBackend> backends(DUAL_SEGMENTS_PER_PROC);
 };
 
 // template <typename T, typename B>
