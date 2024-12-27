@@ -280,18 +280,18 @@ private:
     std::size_t segment_index = 0;
     bool first_half = true;
     for (std::size_t i = 0; i < size; i += segment_size_) {
-      segments_.emplace_back(this, segment_index,
+      segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i), data_size_);
 
-      if (first_half) {
-        if (segment_index < comm_size - 1) {
-          segment_index++;
-        } else {
-          first_half = false;
-        }
-      } else {
-        segment_index--;
-      }
+      // if (first_half) {
+      //   if (segment_index < comm_size - 1) {
+      //     segment_index++;
+      //   } else {
+      //     first_half = false;
+      //   }
+      // } else {
+      //   segment_index--;
+      // }
     }
 
     for (auto& s: segments_) {
