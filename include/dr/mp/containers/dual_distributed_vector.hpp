@@ -119,29 +119,38 @@ public:
   /// Constructor
   dual_distributed_vector(std::size_t size = 0, 
                           distribution dist = distribution()) {
+    std::cout << "dual_distributed_vector()\n";
     init(size, dist);
   }
 
   /// Constructor
   dual_distributed_vector(std::size_t size, value_type fill_value,
                           distribution dist = distribution()) {
+    std::cout << "dual_distributed_vector(fill)\n";
     init(size, dist);
     mp::fill(*this, fill_value);
   }
 
   ~dual_distributed_vector() {
+    std::cout << "~dual_distributed_vector()\n";
     if (finalized()) return;
+    std::cout << "~: before fence\n";
 
     fence();
+    std::cout << "~: after fence\n";
 
     for (size_t i = 0; i < segments_per_proc; i++) {
+      std::cout << "~: loop " << i << "\n";
       if (datas_[i] != nullptr) {
+        std::cout << "~: deallocating\n";
         backend.deallocate(datas_[i], data_size_ * sizeof(value_type));
       }
 
+      std::cout << "~: deleting i-th halo\n";
       delete halos_[i];
     }
     
+    std::cout << "~: deleting superhalo\n";
     delete halo_;
   }
 
@@ -185,7 +194,8 @@ private:
 
     for (std::size_t i = 0; i < segments_per_proc; i++) {
       if (size_ > 0) {
-        datas_.push_back(static_cast<T *>(backend.allocate(data_size_ * sizeof(T))));
+        datas_.push_back(static_cast<T *>(
+          backend.allocate(data_size_ * sizeof(value_type))));
       }
 
       halos_.push_back(new span_halo<T>(default_comm(), datas_[i], data_size_, hb));
