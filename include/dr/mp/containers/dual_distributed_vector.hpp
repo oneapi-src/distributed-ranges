@@ -27,13 +27,9 @@ public:
     assert(data_size > 0);
     DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size);
     active_wins().erase(win_.mpi_win());
+    win_.free();
     __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
                                                 data_size);
-  }
-
-  void free() {
-    DRLOG("calling MPI win free");
-    win_.free();
   }
 
   void getmem(void *dst, std::size_t offset, std::size_t datalen,
@@ -193,14 +189,12 @@ public:
   /// Constructor
   dual_distributed_vector(std::size_t size = 0, 
                           distribution dist = distribution()) {
-    std::cout << "dual_distributed_vector()\n";
     init(size, dist);
   }
 
   /// Constructor
   dual_distributed_vector(std::size_t size, value_type fill_value,
                           distribution dist = distribution()) {
-    std::cout << "dual_distributed_vector(fill)\n";
     init(size, dist);
     mp::fill(*this, fill_value);
   }
@@ -208,17 +202,16 @@ public:
   ~dual_distributed_vector() {
     if (finalized()) return;
 
-    fence();
-
     for (size_t i = 0; i < segments_per_proc; i++) {
+      fence(i);
+
       if (datas_[i] != nullptr) {
-        backend.deallocate(datas_[i], data_size_ * sizeof(value_type));
+        backends[i].deallocate(datas_[i], data_size_ * sizeof(value_type));
       }
 
       delete halos_[i];
     }
 
-    backend.free();
     delete halo_;
   }
 
@@ -236,7 +229,7 @@ public:
 
   auto segments() const { return rng::views::all(segments_); }
 
-  void fence() { backend.fence(); }
+  void fence(const std::size_t i) { backends[i].fence(); }
 
 private:
   void init(auto size, auto dist) {
@@ -263,7 +256,7 @@ private:
     for (std::size_t i = 0; i < segments_per_proc; i++) {
       if (size_ > 0) {
         datas_.push_back(static_cast<T *>(
-          backend.allocate(data_size_ * sizeof(value_type))));
+          backends[i].allocate(data_size_ * sizeof(value_type))));
       }
 
       halos_.push_back(new span_halo<T>(default_comm(), datas_[i], data_size_, hb));
@@ -295,7 +288,9 @@ private:
       }
     }
 
-    fence();
+    for (size_t i = 0; i < segments_per_proc; i++) {
+      fence(i);
+    }
   }
 
   friend dv_segment_iterator<dual_distributed_vector>;
@@ -312,7 +307,7 @@ private:
   distribution distribution_;
   std::size_t size_;
   std::vector<dual_dv_segment<dual_distributed_vector>> segments_;
-  BackendT backend;
+  std::vector<DualMpiBackend> backends(segments_per_proc);
 };
 
 // template <typename T, typename B>
