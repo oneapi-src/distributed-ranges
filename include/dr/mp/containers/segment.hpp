@@ -203,9 +203,9 @@ public:
     return dv_->distribution_.halo();
   }
 
-protected:
-  virtual DV::backend_type& backend() { return dv_->backend; }
-  virtual const DV::backend_type& backend() const { return dv_->backend; }
+private:
+  virtual DV::backend_type& backend() { return dv_->backend(segment_index_); }
+  virtual const DV::backend_type& backend() const { return dv_->backend(segment_index_); }
 
   // all fields need to be initialized by default ctor so every default
   // constructed iter is equal to any other default constructed iter
