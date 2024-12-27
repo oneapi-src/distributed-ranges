@@ -36,20 +36,22 @@ public:
 
   void getmem(void *dst, std::size_t offset, std::size_t datalen,
               int segment_index) {
+    const std::size_t peer = get_peer(segment_index);
+
     DRLOG("calling MPI get(dst:{}, "
           "segm_offset:{}, size:{}, peer:{})",
-          dst, offset, datalen, segment_index);
+          dst, offset, datalen, peer);
 
 #if (MPI_VERSION >= 4) ||                                                      \
     (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
     // 64-bit API inside
-    win_.get(dst, datalen, segment_index, offset);
+    win_.get(dst, datalen, peer, offset);
 #else
     for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
       std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
       DRLOG("{}:{} win_.get total {} now {} bytes at off {}, dst offset {}",
             default_comm().rank(), __LINE__, datalen, s, off, offset + off);
-      win_.get((uint8_t *)dst + off, s, segment_index, offset + off);
+      win_.get((uint8_t *)dst + off, s, peer, offset + off);
       off += s;
       remainder -= s;
     }
@@ -58,20 +60,22 @@ public:
 
   void putmem(void const *src, std::size_t offset, std::size_t datalen,
               int segment_index) {
+    const std::size_t peer = get_peer(segment_index);
+
     DRLOG("calling MPI put(segm_offset:{}, "
           "src:{}, size:{}, peer:{})",
-          offset, src, datalen, segment_index);
+          offset, src, datalen, peer);
 
 #if (MPI_VERSION >= 4) ||                                                      \
     (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
     // 64-bit API inside
-    win_.put(src, datalen, segment_index, offset);
+    win_.put(src, datalen, peer, offset);
 #else
     for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
       std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
       DRLOG("{}:{} win_.put {} bytes at off {}, dst offset {}",
             default_comm().rank(), __LINE__, s, off, offset + off);
-      win_.put((uint8_t *)src + off, s, segment_index, offset + off);
+      win_.put((uint8_t *)src + off, s, peer, offset + off);
       off += s;
       remainder -= s;
     }
@@ -81,6 +85,12 @@ public:
   std::size_t getrank() { return win_.communicator().rank(); }
 
   void fence() { win_.fence(); }
+
+private:
+  std::size_t get_peer(const std::size_t segment_index) { 
+    const auto size = win_.communicator().size();
+    return segment_index < size ? segment_index : 2 * size - segment_index - 1;
+  }
 };
 
 /// distributed vector
@@ -236,12 +246,12 @@ public:
   backend_type& backend(const std::size_t segment_index) {
     auto comm_size = default_comm().size();
     std::cout << "[backend] segment_index, comm_size: " << segment_index << ", " << comm_size << "\n";
-    return backends_[segment_index < comm_size ? 0 : 1]; 
+    return backends_[segment_index < comm_size ? 0 : 1];
   }
   const backend_type& backend(const std::size_t segment_index) const {
     auto comm_size = default_comm().size();
     std::cout << "[backend] segment_index, comm_size: " << segment_index << ", " << comm_size << "\n";
-    return backends_[segment_index < comm_size ? 0 : 1]; 
+    return backends_[segment_index < comm_size ? 0 : 1];
   }
 
 private:
