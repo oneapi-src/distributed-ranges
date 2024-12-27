@@ -10,7 +10,7 @@
 
 namespace dr::mp {
 
-class MpiBackend {
+class DualMpiBackend {
   dr::rma_window win_;
 
 public:
@@ -86,7 +86,7 @@ public:
 };
 
 /// distributed vector
-template <typename T, class BackendT = MpiBackend> 
+template <typename T, class BackendT = DualMpiBackend> 
 class dual_distributed_vector {
 
 public:
