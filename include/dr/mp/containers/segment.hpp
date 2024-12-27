@@ -127,7 +127,7 @@ public:
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
-    dv_->backend.getmem(dst, segment_offset * sizeof(value_type),
+    backend().getmem(dst, segment_offset * sizeof(value_type),
                         size * sizeof(value_type), segment_index_);
   }
 
@@ -143,7 +143,7 @@ public:
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
-    dv_->backend.putmem(dst, segment_offset * sizeof(value_type),
+    backend().putmem(dst, segment_offset * sizeof(value_type),
                         size * sizeof(value_type), segment_index_);
   }
 
@@ -158,7 +158,7 @@ public:
 #ifndef SYCL_LANGUAGE_VERSION
     assert(dv_ != nullptr);
 #endif
-    const auto my_process_segment_index = dv_->backend.getrank();
+    const auto my_process_segment_index = backend().getrank();
 
     if (my_process_segment_index == segment_index_)
       return dv_->data_ + index_ + dv_->distribution_.halo().prev;
@@ -203,7 +203,11 @@ public:
     return dv_->distribution_.halo();
   }
 
-private:
+protected:
+  virtual DV::backend_type& backend() {
+    return dv_->backend;
+  }
+
   // all fields need to be initialized by default ctor so every default
   // constructed iter is equal to any other default constructed iter
   DV *dv_ = nullptr;

@@ -8,9 +8,16 @@
 
 namespace dr::mp {
 
+template <typename DV> class dual_dv_segment_iterator : public dv_segment_iterator<DV> {
+protected:
+  DV::backend_type& backend() override {
+    return dv_->backends[0];
+  }
+};
+
 template <typename DV> class dual_dv_segment : public dv_segment<DV> {
 private:
-  using iterator = dv_segment_iterator<DV>;
+  using iterator = dual_dv_segment_iterator<DV>;
 
 public:
   using difference_type = std::ptrdiff_t;
