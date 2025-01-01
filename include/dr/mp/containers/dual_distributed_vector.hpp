@@ -245,12 +245,12 @@ public:
 
   backend_type& backend(const std::size_t segment_index) {
     auto comm_size = default_comm().size();
-    std::cout << "[backend] segment_index, comm_size: " << segment_index << ", " << comm_size << "\n";
+    std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
     return backends_[segment_index < comm_size ? 0 : 1];
   }
   const backend_type& backend(const std::size_t segment_index) const {
     auto comm_size = default_comm().size();
-    std::cout << "[backend] segment_index, comm_size: " << segment_index << ", " << comm_size << "\n";
+    std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
     return backends_[segment_index < comm_size ? 0 : 1];
   }
 
