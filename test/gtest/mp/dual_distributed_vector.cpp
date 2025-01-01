@@ -93,6 +93,12 @@ TEST(MpTests, DualDistributedVectorReference) {
   }
   std::cout << "]\n";
 
+  std::cout << "printing the vec iteratively\n\t[" << dv[0];
+  for (auto iter = dv.begin(); iter != dv.end(); iter++) {
+    std::cout << ", " << *iter;
+  }
+  std::cout << "]\n";
+
   const DV &cdv = dv;
   if (comm_rank == 0) {
     common_operations(cdv);
