@@ -268,11 +268,19 @@ private:
     assert(hb.prev % gran == 0 && "size must be a multiple of the granularity");
     assert(hb.next % gran == 0 && "size must be a multiple of the granularity");
 
+    std::size_t segment_count = comm_size * DUAL_SEGMENTS_PER_PROC;
     auto proc_segments_size = gran * std::max({
-        (size / gran + comm_size - 1) / comm_size,
+        (size / gran + segment_count - 1) / segment_count,
         hb.prev / gran, 
         hb.next / gran});
-    segment_size_ = proc_segments_size / DUAL_SEGMENTS_PER_PROC;
+    segment_size_ = proc_segments_size;
+
+    std::cout << "init: segment_count = " << segment_count << "\n";
+
+    std::size_t actual_segment_count_ = 
+      size_ / segment_size_ + (size_ % segment_size_ == 0 ? 0 : 1);
+    assert(actual_segment_count_ <= segment_count
+      && "there must be at most 2 segments per process");
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
