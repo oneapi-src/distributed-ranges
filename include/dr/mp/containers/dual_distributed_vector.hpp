@@ -287,10 +287,11 @@ private:
 
     halo_ = new cyclic_span_halo<T>(halos_);
 
+    std::cout << "entering loop, segment_size_ = " << segment_size_ << "\n";
     std::size_t segment_index = 0;
     // bool first_half = true;
     for (std::size_t i = 0; i < size; i += segment_size_) {
-      std::cout << i << ": segments_.emplace_back(" << segment_index 
+      std::cout << "\t" << i << ": segments_.emplace_back(" << segment_index 
         << ", " << std::min(segment_size_, size - i) 
         << ", " << data_size_ << ")\n";
       segments_.emplace_back(this, segment_index++,
