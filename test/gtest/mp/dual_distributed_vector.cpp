@@ -87,6 +87,10 @@ TEST(MpTests, DualDistributedVectorReference) {
   }
   dr::mp::fence();
 
+  std::vector<int> ref(n);
+  std::iota(ref.begin(), ref.end(), 100);
+  EXPECT_TRUE(equal_gtest(dv, ref));
+
   const DV &cdv = dv;
   if (comm_rank == 0) {
     common_operations(cdv);
