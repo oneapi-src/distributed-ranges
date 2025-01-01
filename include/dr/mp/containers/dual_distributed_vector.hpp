@@ -227,7 +227,7 @@ public:
     delete halo_;
   }
 
-  /// Returns iterator to beginning=
+  /// Returns iterator to beginning
   auto begin() const { return iterator(this, 0); }
   /// Returns iterator to end
   auto end() const { return begin() + size_; }

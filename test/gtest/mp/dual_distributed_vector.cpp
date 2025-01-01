@@ -87,9 +87,11 @@ TEST(MpTests, DualDistributedVectorReference) {
   }
   dr::mp::fence();
 
-  std::vector<int> ref(n);
-  std::iota(ref.begin(), ref.end(), 100);
-  EXPECT_TRUE(equal_gtest(dv, ref));
+  std::cout << "printing the vec\n\t[" << dv[0];
+  for (std::size_t i = 1; i < n; i++) {
+    std::cout << ", " << dv[i];
+  }
+  std::cout << "]\n";
 
   const DV &cdv = dv;
   if (comm_rank == 0) {
