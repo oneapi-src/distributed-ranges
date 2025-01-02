@@ -71,12 +71,12 @@ int aa;
 
 // Operations on a const distributed_vector
 void common_operations(auto &dv) {
-  aa = dv[2];
-  EXPECT_EQ(dv[2], 102);
-  EXPECT_EQ(*(&(dv[2])), 102);
+  aa = dv[0];
+  EXPECT_EQ(dv[0], 100);
+  EXPECT_EQ(*(&(dv[0])), 100);
 
-  auto p = &dv[2];
-  EXPECT_EQ(*(p + 1), 103);
+  auto p = &dv[0];
+  EXPECT_EQ(*(p + 1), 101);
 }
 
 TEST(MpTests, DualDistributedVectorReference) {
