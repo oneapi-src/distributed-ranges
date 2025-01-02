@@ -76,7 +76,7 @@ void common_operations(auto &dv) {
   EXPECT_EQ(*(&(dv[2])), 102);
 
   auto p = &dv[2];
-  EXPECT_EQ(*(p + 2), 103);
+  EXPECT_EQ(*(p + 1), 103);
 }
 
 TEST(MpTests, DualDistributedVectorReference) {
