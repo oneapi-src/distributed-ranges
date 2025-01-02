@@ -245,12 +245,12 @@ public:
 
   backend_type& backend(const std::size_t segment_index) {
     auto comm_size = default_comm().size();
-    std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
+    // std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
     return backends_[segment_index < comm_size ? 0 : 1];
   }
   const backend_type& backend(const std::size_t segment_index) const {
     auto comm_size = default_comm().size();
-    std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
+    // std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
     return backends_[segment_index < comm_size ? 0 : 1];
   }
 
@@ -275,7 +275,7 @@ private:
         hb.next / gran});
     segment_size_ = proc_segments_size;
 
-    std::cout << "init: segment_count = " << segment_count << "\n";
+    // std::cout << "init: segment_count = " << segment_count << "\n";
 
     std::size_t actual_segment_count_ = 
       size_ / segment_size_ + (size_ % segment_size_ == 0 ? 0 : 1);
@@ -295,33 +295,27 @@ private:
 
     halo_ = new cyclic_span_halo<T>(halos_);
 
-    std::cout << "entering loop, segment_size_ = " << segment_size_ << "\n";
+    // std::cout << "entering loop, segment_size_ = " << segment_size_ << "\n";
     std::size_t segment_index = 0;
-    // bool first_half = true;
     for (std::size_t i = 0; i < size; i += segment_size_) {
-      std::cout << "\t" << i << ": segments_.emplace_back(" << segment_index 
-        << ", " << std::min(segment_size_, size - i) 
-        << ", " << data_size_ << ")\n";
+      // std::cout << "\t" << i << ": segments_.emplace_back(" << segment_index 
+      //   << ", " << std::min(segment_size_, size - i) 
+      //   << ", " << data_size_ << ")\n";
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i), data_size_);
-
-      // if (first_half) {
-      //   if (segment_index < comm_size - 1) {
-      //     segment_index++;
-      //   } else {
-      //     first_half = false;
-      //   }
-      // } else {
-      //   segment_index--;
-      // }
     }
 
-    for (auto& s: segments_) {
-      if (s.is_local()) {
-        s.swap_state();
-        break;
-      }
+    for (size_t i = 0; i < default_comm().size(); i++) {
+      segments_[i].swap_state();
     }
+
+    // segments_[default_comm().rank()].swap_state();
+    // for (auto& s: segments_) {
+    //   if (s.is_local()) {
+    //     s.swap_state();
+    //     break;
+    //   }
+    // }
 
     for (size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       fence(i);
