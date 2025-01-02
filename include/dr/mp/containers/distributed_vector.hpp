@@ -277,9 +277,9 @@ public:
   void fence() { backend_.fence(); }
 
   backend_type& backend(const std::size_t segment_index) { return backend_; }
-  // const backend_type& backend(const std::size_t segment_index) const { 
-  //   return backend_;
-  // }
+  const backend_type& backend(const std::size_t segment_index) const { 
+    return backend_;
+  }
 
   T *data(const std::size_t segment_index) { return data_; }
 
