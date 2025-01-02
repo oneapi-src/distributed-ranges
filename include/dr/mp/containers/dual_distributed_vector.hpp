@@ -309,14 +309,6 @@ private:
       segments_[i].swap_state();
     }
 
-    // segments_[default_comm().rank()].swap_state();
-    // for (auto& s: segments_) {
-    //   if (s.is_local()) {
-    //     s.swap_state();
-    //     break;
-    //   }
-    // }
-
     for (size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       fence(i);
     }
