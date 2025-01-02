@@ -71,12 +71,12 @@ int aa;
 
 // Operations on a const distributed_vector
 void common_operations(auto &dv) {
-  aa = dv[1];
-  EXPECT_EQ(dv[1], 101);
-  EXPECT_EQ(*(&(dv[1])), 101);
+  aa = dv[2];
+  EXPECT_EQ(dv[2], 102);
+  EXPECT_EQ(*(&(dv[2])), 102);
 
-  auto p = &dv[1];
-  EXPECT_EQ(*(p + 1), 102);
+  auto p = &dv[2];
+  EXPECT_EQ(*(p + 2), 103);
 }
 
 TEST(MpTests, DualDistributedVectorReference) {
@@ -86,18 +86,6 @@ TEST(MpTests, DualDistributedVectorReference) {
     rng::iota(dv, 100);
   }
   dr::mp::fence();
-
-  std::cout << "printing the vec\n\t[" << dv[0];
-  for (std::size_t i = 1; i < n; i++) {
-    std::cout << ", " << dv[i];
-  }
-  std::cout << "]\n";
-
-  std::cout << "printing the vec iteratively\n\t[" << dv[0];
-  for (auto iter = dv.begin(); iter != dv.end(); iter++) {
-    std::cout << ", " << *iter;
-  }
-  std::cout << "]\n";
 
   const DV &cdv = dv;
   if (comm_rank == 0) {
