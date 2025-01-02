@@ -190,7 +190,7 @@ public:
   }
 
   auto& backend() { return dv_->backend(segment_index_); }
-  const auto& backend() const { return dv_->backend(segment_index_); }
+  // const auto& backend() const { return dv_->backend(segment_index_); }
 
   auto* data() { return dv_->data(segment_index_); }
 

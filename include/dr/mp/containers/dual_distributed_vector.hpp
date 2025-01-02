@@ -246,9 +246,9 @@ public:
   backend_type& backend(const std::size_t segment_index) {
     return backends_[segment_index < default_comm().size() ? 0 : 1];
   }
-  const backend_type& backend(const std::size_t segment_index) const {
-    return backends_[segment_index < default_comm().size() ? 0 : 1];
-  }
+  // const backend_type& backend(const std::size_t segment_index) const {
+  //   return backends_[segment_index < default_comm().size() ? 0 : 1];
+  // }
 
   T *data(const std::size_t segment_index) {
     return datas_[segment_index < default_comm().size() ? 0 : 1];
