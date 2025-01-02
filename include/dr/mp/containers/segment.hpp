@@ -127,7 +127,7 @@ public:
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
-    backend().getmem(dst, segment_offset * sizeof(value_type),
+    dv_->backend(segment_index_).getmem(dst, segment_offset * sizeof(value_type),
                         size * sizeof(value_type), segment_index_);
   }
 
@@ -143,8 +143,8 @@ public:
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
-    backend().putmem(dst, segment_offset * sizeof(value_type),
-                     size * sizeof(value_type), segment_index_);
+    dv_->backend(segment_index_).putmem(dst, segment_offset * sizeof(value_type),
+                        size * sizeof(value_type), segment_index_);
   }
 
   void put(const value_type &value) const { put(&value, 1); }
@@ -158,10 +158,10 @@ public:
 #ifndef SYCL_LANGUAGE_VERSION
     assert(dv_ != nullptr);
 #endif
-    const auto my_process_segment_index = backend().getrank();
+    const auto my_process_segment_index = dv_->backend(segment_index_).getrank();
 
     if (my_process_segment_index == segment_index_)
-      return data() + index_ + dv_->distribution_.halo().prev;
+      return dv_->data(segment_index_) + index_ + dv_->distribution_.halo().prev;
 #ifndef SYCL_LANGUAGE_VERSION
     assert(!dv_->distribution_.halo().periodic); // not implemented
 #endif
@@ -171,28 +171,23 @@ public:
       assert(index_ <= dv_->distribution_.halo()
                            .next); // <= instead of < to cover end() case
 #endif
-      return data() + dv_->distribution_.halo().prev + index_ +
-             dv_->segment_size_;
+      return dv_->data(segment_index_) + dv_->distribution_.halo().prev 
+             + index_ + dv_->segment_size_;
     }
 
     if (my_process_segment_index == segment_index_ + 1) {
 #ifndef SYCL_LANGUAGE_VERSION
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
 #endif
-      return data() + dv_->distribution_.halo().prev + index_ -
-             dv_->segment_size_;
+      return dv_->data(segment_index_) + dv_->distribution_.halo().prev 
+             + index_ - dv_->segment_size_;
     }
 
 #ifndef SYCL_LANGUAGE_VERSION
     assert(false); // trying to read non-owned memory
 #endif
-    return static_cast<decltype(data())>(nullptr);
+    return static_cast<decltype(dv_->data(segment_index_))>(nullptr);
   }
-
-  auto backend() { return dv_->backend(segment_index_); }
-  // const auto& backend() const { return dv_->backend(segment_index_); }
-
-  auto* data() { return dv_->data(segment_index_); }
 
   auto segments() const {
     assert(dv_ != nullptr);
