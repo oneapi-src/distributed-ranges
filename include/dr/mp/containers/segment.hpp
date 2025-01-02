@@ -144,7 +144,7 @@ public:
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
     backend().putmem(dst, segment_offset * sizeof(value_type),
-                        size * sizeof(value_type), segment_index_);
+                     size * sizeof(value_type), segment_index_);
   }
 
   void put(const value_type &value) const { put(&value, 1); }
@@ -189,10 +189,10 @@ public:
     return static_cast<decltype(data())>(nullptr);
   }
 
-  auto backend() { return dv_->backend(segment_index_); }
-  const auto backend() const { return dv_->backend(segment_index_); }
+  auto& backend() { return dv_->backend(segment_index_); }
+  const auto& backend() const { return dv_->backend(segment_index_); }
 
-  auto data() { return dv_->data(segment_index_); }
+  auto* data() { return dv_->data(segment_index_); }
 
   auto segments() const {
     assert(dv_ != nullptr);
