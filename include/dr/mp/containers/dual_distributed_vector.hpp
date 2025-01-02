@@ -244,14 +244,14 @@ public:
   void fence(const std::size_t i) { backends_[i].fence(); }
 
   backend_type& backend(const std::size_t segment_index) {
-    auto comm_size = default_comm().size();
-    // std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
-    return backends_[segment_index < comm_size ? 0 : 1];
+    return backends_[segment_index < default_comm().size() ? 0 : 1];
   }
   const backend_type& backend(const std::size_t segment_index) const {
-    auto comm_size = default_comm().size();
-    // std::cout << "backend(" << segment_index << ") -> " << (segment_index < comm_size ? 0 : 1) << "\n";
-    return backends_[segment_index < comm_size ? 0 : 1];
+    return backends_[segment_index < default_comm().size() ? 0 : 1];
+  }
+
+  T *data(const std::size_t segment_index) {
+    return datas_[segment_index < default_comm().size() ? 0 : 1];
   }
 
 private:

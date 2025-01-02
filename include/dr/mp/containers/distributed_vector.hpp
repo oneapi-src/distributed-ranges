@@ -276,12 +276,12 @@ public:
 
   void fence() { backend_.fence(); }
 
-  backend_type& backend(const std::size_t segment_index) { 
-    return backend_;
-  }
+  backend_type& backend(const std::size_t segment_index) { return backend_; }
   const backend_type& backend(const std::size_t segment_index) const { 
     return backend_;
   }
+
+  T *data(const std::size_t segment_index) { return data_; }
 
 private:
   void init(auto size, auto dist) {
