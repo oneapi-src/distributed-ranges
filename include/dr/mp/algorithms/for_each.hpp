@@ -20,7 +20,7 @@ namespace dr::mp {
 
 template <typename R>
 concept dual_vector_range =
-    dr::distributed_range<R> && requires(R &r) { local_segments(r)[0].is_compute(); };
+    dr::distributed_range<R> && requires(R &r) { dr::ranges::segments(r)[0].is_compute(); };
 
 void for_each(dual_vector_range auto &&dr, auto op) {
   assert(false);
