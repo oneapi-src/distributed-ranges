@@ -240,6 +240,7 @@ public:
   auto &halo() const { return *halo_; }
 
   auto segments() const { return rng::views::all(segments_); }
+  auto segments() { return rng::views::all(segments_); }
 
   void fence(const std::size_t i) { backends_[i].fence(); }
 
