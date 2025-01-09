@@ -22,7 +22,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "distributed-ranges"
-copyright = "2022-2024, Intel"
+copyright = "2022-2025, Intel"
 
 
 # -- General configuration ---------------------------------------------------
@@ -52,10 +52,7 @@ html_theme = "sphinx_book_theme"
 # documentation.
 #
 html_theme_options = {
-    "repository_url": (
-        "https://github.com/intel-sandbox/"
-        "personal.rscohn1.distributed-ranges"
-    ),
+    "repository_url": ("https://github.com/oneapi-src/distributed-ranges"),
     "path_to_docs": "doc/spec/source",
     "use_issues_button": True,
     "use_edit_page_button": True,
