@@ -21,7 +21,7 @@ jobs:
     runs-on: intel-ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Ubuntu dependencies
       run: scripts/install-doxygen.sh
     - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
@@ -48,14 +48,14 @@ jobs:
 #    env:
 #      CXX: ${{ matrix.cxx }}
 #    steps:
-#    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+#    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 #    - name: Generate
 #      run: cmake -B build
 #    - name: Build
 #      run: make -C build -j
 #    - name: Unit tests
 #      run: ctest --test-dir build -L TESTLABEL -j 4
-#    - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+#    - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
 #      if: always()
 #      with:
 #        name: log-gcc-${{ env.CXX }}
@@ -82,7 +82,7 @@ jobs:
       CXX: icpx
       FI_PROVIDER: tcp
     steps:
-      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Intel APT repository
         run: |
           # https://www.intel.com/content/www/us/en/docs/oneapi/installation-guide-linux/2024-0/apt.html
@@ -111,7 +111,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           ctest --test-dir build --output-on-failure -L TESTLABEL -j 4
-      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+      - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
         if: always()
         with:
           name: log-pvc-impi-icpx-${{ matrix.config }}
@@ -142,7 +142,7 @@ jobs:
 #    env:
 #      CXX: icpx
 #    steps:
-#      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+#      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 #      - name: Generate
 #        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DENABLE_ISHMEM=on -DENABLE_L0=on -DENABLE_OFI=on -DOFI_PROVIDER=psm3 -DONETILE_PVC=on
 #      - name: Build ISHMEM
@@ -152,7 +152,7 @@ jobs:
 #      - name: MP unit tests
 #        # run: srun -p cluster scripts/run_command_on_compute_node.sh build/Testing/mptests.outerr.txt ctest --test-dir build -R ^mp-tests-sycl -L MP -j 4
 #        run: ctest --test-dir build -R ^mp-tests-sycl -L MP -j 4
-#      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+#      - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
 #        if: always()
 #        with:
 #          name: log-ishmem-impi-icpx-${{ matrix.config }}
@@ -171,7 +171,7 @@ jobs:
     env:
       CXX: g++-13
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - run: |
         echo "creating DEB package is going to be here"
 
@@ -186,7 +186,7 @@ jobs:
       SPHINXOPTS: -q -W
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
       with:
         python-version: '3.10'
@@ -198,7 +198,7 @@ jobs:
       run: |
         make -C doc/spec html
     - name: Checkout gh-pages
-      uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         ref: gh-pages
         path: gh-pages
