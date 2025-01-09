@@ -14,8 +14,6 @@ inline void fence_on(auto &&obj) { obj.fence(); }
 #include <memory>
 #include <iomanip>
 
-//
-
 struct MPI_data {
   MPI_Comm comm;
   int rank;
@@ -29,7 +27,8 @@ struct MPI_data {
 static MPI_data mpi_data;
 
 struct Options {
-  std::size_t size;
+  std::size_t width;
+  std::size_t height;
   std::size_t steps;
   std::size_t redundancy;
   bool debug;
@@ -57,7 +56,7 @@ void init(std::size_t n, Array& out) {
   in[2][1] = 0; in[2][2] = 1; in[2][3] = 1;
   in[3][1] = 1; in[3][2] = 1; in[3][3] = 0;
   // clang-format on
-  std::vector<int> local(n * n);
+  std::vector<int> local(n * 4);
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
       local[i * n + j] = in[i][j];
@@ -66,10 +65,10 @@ void init(std::size_t n, Array& out) {
   dr::mp::copy(local.begin(), local.end(), out.begin());
 }
 
-void run(std::size_t n, std::size_t redundancy, std::size_t steps, bool debug) {
+void run(std::size_t n, std::size_t m, std::size_t redundancy, std::size_t steps, bool debug) {
   if (mpi_data.host()) {
     std::cout << "Using backend: dr" << std::endl;
-    std::cout << "Grid size: " << n << " x " << n << std::endl;
+    std::cout << "Grid size: " << n << " x " << m << std::endl;
     std::cout << "Time steps:" << steps << std::endl;
     std::cout << "Redundancy " << redundancy << std::endl;
     std::cout << std::endl;
@@ -77,11 +76,11 @@ void run(std::size_t n, std::size_t redundancy, std::size_t steps, bool debug) {
 
   // construct grid
   auto dist = dr::mp::distribution().halo(1).redundancy(redundancy);
-  Array array({n, n}, dist);
-  Array array_out({n, n}, dist);
+  Array array({n, m}, dist);
+  Array array_out({n, m}, dist);
   dr::mp::fill(array, 0);
 
-  init(n, array);
+  init(m, array);
 
   // execute one calculation for one cell in game of life
   auto calculate = [](auto stencils) {
@@ -117,18 +116,21 @@ void run(std::size_t n, std::size_t redundancy, std::size_t steps, bool debug) {
       x(0, 0) = x_out(0, 0);
     };
 
-  auto print = [n](const auto &v) {
+  auto print = [n, m](const auto &v) {
       std::vector<int> local(n * n);
       dr::mp::copy(0, v, local.begin());
       if (mpi_data.host()) {
         for (int i = 0; i < n; i++) {
-          for (int j = 0; j < n; j++) {
-            fmt::print("{}", local[i * n + j] == 1 ? '#' : '.');
+          for (int j = 0; j < m; j++) {
+            fmt::print("{}", local[i * m + j] == 1 ? '#' : '.');
           }
           fmt::print("\n");
         }
       }
     };
+
+  std::chrono::duration<double> exchange_duration;
+  std::size_t exchange_count = 0;
 
   auto tic = std::chrono::steady_clock::now();
   for (std::size_t i = 0, next_treshold = 0; i < steps; i++) {
@@ -147,7 +149,12 @@ void run(std::size_t n, std::size_t redundancy, std::size_t steps, bool debug) {
       if (debug && mpi_data.host()) {
         fmt::print("Exchange at step {}\n", i);
       }
+      auto exchange_tic = std::chrono::steady_clock::now();
       array.halo().exchange();
+      auto exchange_toc = std::chrono::steady_clock::now();
+      exchange_duration += exchange_toc - exchange_tic;
+      exchange_count++;
+
       // Array_out is a temporary, no need to exchange it
     }
 
@@ -166,11 +173,14 @@ void run(std::size_t n, std::size_t redundancy, std::size_t steps, bool debug) {
 
   if (mpi_data.host()) {
     double t_cpu = duration.count();
+    double t_exch = exchange_duration.count();
     double t_step = t_cpu / static_cast<double>(steps);
+    double t_exch_step = t_exch / static_cast<double>(exchange_count);
 
     fmt::print("Steps done 100% ({} of {} steps)\n", steps, steps);
-    fmt::print("Duration {} s\n", t_cpu);
+    fmt::print("Duration {} s, including exchange total time {} s\n", t_cpu, t_exch);
     fmt::print("Time per step {} ms\n", t_step * 1000);
+    fmt::print("Time per exchange {} ms\n", t_exch_step * 1000);
   }
 }
 
@@ -201,7 +211,8 @@ Options parse_options(int argc, char *argv[]) {
     ("device-memory", "Use device memory")
     ("sycl", "Execute on SYCL device")
     ("d,debug", "enable debug logging")
-    ("n,size", "Grid size", cxxopts::value<std::size_t>()->default_value("128"))
+    ("n,size", "Grid width", cxxopts::value<std::size_t>()->default_value("128"))
+    ("m,height", "Grid height", cxxopts::value<std::size_t>()->default_value("128"))
     ("t,steps", "Run a fixed number of time steps.", cxxopts::value<std::size_t>()->default_value("100"))
     ("r,redundancy", "Set outer-grid redundancy parameter.", cxxopts::value<std::size_t>()->default_value("2"));
   // clang-format on
@@ -215,7 +226,7 @@ Options parse_options(int argc, char *argv[]) {
   }
 
   out.sycl = options.count("sycl") != 0;
-  out.device_memory = options.count("debug") != 0;
+  out.device_memory = options.count("device-memory") != 0;
 
   if (options.count("drhelp")) {
     std::cout << options_spec.help() << "\n";
@@ -231,7 +242,8 @@ Options parse_options(int argc, char *argv[]) {
     }
   }
 
-  out.size = options["n"].as<std::size_t>();
+  out.width = options["n"].as<std::size_t>();
+  out.height = options.count("m") != 0 ? options["m"].as<std::size_t>() : out.width;
   out.redundancy = options["r"].as<std::size_t>();
   out.steps = options["t"].as<std::size_t>();
 
@@ -244,7 +256,7 @@ void dr_init(const Options& options) {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.sycl) {
     sycl::queue q;
-    fmt::print("Running on sycl device: {}, memory: {}\n", q.get_device().get_info<sycl::info::device::name>(), options.device_memory ? "devive" : "shared");
+    fmt::print("Running on sycl device: {}, memory: {}\n", q.get_device().get_info<sycl::info::device::name>(), options.device_memory ? "device" : "shared");
     dr::mp::init(q, options.device_memory ? sycl::usm::alloc::device
                                           : sycl::usm::alloc::shared);
     return;
@@ -261,7 +273,7 @@ int main(int argc, char *argv[]) {
   Options options = parse_options(argc, argv);
   dr_init(options);
 
-  GameOfLife::run(options.size, options.redundancy, options.steps, options.debug);
+  GameOfLife::run(options.width, options.height, options.redundancy, options.steps, options.debug);
 
   dr::mp::finalize();
   MPI_Finalize();
