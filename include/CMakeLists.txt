@@ -4,7 +4,7 @@
 
 FetchContent_Declare(
   dpl
-  GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
+  GIT_REPOSITORY https://github.com/uxlfoundation/oneDPL.git
   GIT_TAG main)
 FetchContent_MakeAvailable(dpl)
 
