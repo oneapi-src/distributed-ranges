@@ -126,6 +126,36 @@ Run all tests::
 
   ctest --test-dir build --output-on-failure -L TESTLABEL -j 4
 
+Run benchmarks
+==============
+
+Two binaries are build for benchmarks:
+
+* mp-bench - for benchmarking `Multi-Process` model
+* sp-bench - for benchmarking `Single-Process` model
+
+Here are examples of running single benchmarks.
+
+Running `GemvEq_DR` strong scaling benchmark in Multi-Process model using two GPUs::
+
+  ONEAPI_DEVICE_SELECTOR='level_zero:gpu' I_MPI_OFFLOAD=1 I_MPI_OFFLOAD_CELL_LIST=0-11 \
+  mpiexec -n 2 -ppn 2  build/benchmarks/gbench/mp/mp-bench --vector-size 1000000000 --reps 50 \
+  --v=3 --benchmark_out=mp_gemv.txt --benchmark_filter=GemvEq_DR/ --sycl
+
+Running `Exclusive_Scan_DR` weak scaling in Single-Process model using two GPUs::
+
+  ONEAPI_DEVICE_SELECTOR='level_zero:gpu' KMP_AFFINITY=compact \
+  build/benchmarks/gbench/sp/sp-bench --vector-size 1000000000 --reps 50 \
+  --v=3 --benchmark_out=sp_exclscan.txt --benchmark_filter=Exclusive_Scan_DR/ \
+  --weak-scaling --device-memory --num-devices 2
+
+
+Check all options::
+
+  ./build/benchmarks/gbench/mp/mp-bench --help  # see google test options help
+  ./build/benchmarks/gbench/mp/mp-bench --drhelp  # see DR specific options
+
+
 
 Examples
 --------
