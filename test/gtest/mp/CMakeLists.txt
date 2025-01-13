@@ -59,7 +59,8 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  ../common/for_each.cpp
+  halo.cpp
+  # ../common/for_each.cpp
   # dual_distributed_vector.cpp
   )
 # cmake-format: on
