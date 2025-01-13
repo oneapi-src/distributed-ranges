@@ -31,13 +31,15 @@ std::size_t getWidth() {
 }
 } // namespace
 static auto getMatrix() {
-  // size below is useful when testing weak scaling with default vector size using dr-bench
-  // it creates matrix which non-zero element count increases linearly when we increase default_vector_size
-  // std::size_t n = std::max(1., std::sqrt(default_vector_size / 100000)) * 50000;
+  // size below is useful when testing weak scaling with default vector size
+  // using dr-bench it creates matrix which non-zero element count increases
+  // linearly when we increase default_vector_size std::size_t n = std::max(1.,
+  // std::sqrt(default_vector_size / 100000)) * 50000;
 
   std::size_t density_scalar = 50;
 
-  std::size_t n = std::max(1., std::sqrt(default_vector_size * density_scalar / 2));
+  std::size_t n =
+      std::max(1., std::sqrt(default_vector_size * density_scalar / 2));
 
   std::size_t up = n / density_scalar;
   std::size_t down = n / density_scalar;
@@ -199,4 +201,3 @@ static void GemvRow_Reference(benchmark::State &state) {
 DR_BENCHMARK(GemvEq_Reference);
 
 DR_BENCHMARK(GemvRow_Reference);
-
