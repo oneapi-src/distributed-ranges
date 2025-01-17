@@ -63,8 +63,20 @@ public:
 
 #if (MPI_VERSION >= 4) ||                                                      \
     (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
-    // 64-bit API inside
-    win_.put(src, datalen, segment_index, offset);
+    if (mp::use_sycl()) {
+      // 32-bit API inside for sycl based buffers
+      for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
+        std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
+        DRLOG("{}:{} win_.put {} bytes at off {}, dst offset {}",
+              default_comm().rank(), __LINE__, s, off, offset + off);
+        win_.put((uint8_t *)src + off, s, segment_index, offset + off);
+        off += s;
+        remainder -= s;
+      }
+    } else {
+      // 64-bit API inside
+      win_.put(src, datalen, segment_index, offset);
+    }
 #else
     for (std::size_t remainder = datalen, off = 0UL; remainder > 0;) {
       std::size_t s = std::min(remainder, (std::size_t)INT_MAX);
@@ -77,9 +89,9 @@ public:
 #endif
   }
 
-  std::size_t getrank() { return win_.communicator().rank(); }
+  std::size_t getrank() const { return win_.communicator().rank(); }
 
-  void fence() { win_.fence(); }
+  void fence() const { win_.fence(); }
 };
 
 #ifdef DRISHMEM
@@ -121,13 +133,13 @@ public:
     ishmem_putmem(dst, src, datalen, segment_index);
   }
 
-  std::size_t getrank() {
+  std::size_t getrank() const {
     auto my_process_segment_index = ishmem_my_pe();
     DRLOG("called ishmem_my_pe() -> {}", my_process_segment_index);
     return my_process_segment_index;
   }
 
-  void fence() {
+  void fence() const {
     // TODO: to have locality use ishmemx_fence_work_group
     ishmem_fence();
   }
@@ -275,6 +287,12 @@ public:
   auto segments() const { return rng::views::all(segments_); }
 
   void fence() { backend.fence(); }
+
+  auto segment_size() const { return segment_size_; }
+
+  auto get_segment_offset(std::size_t segment_id) const {
+    return segment_id * segment_size_;
+  }
 
 private:
   void init(auto size, auto dist) {

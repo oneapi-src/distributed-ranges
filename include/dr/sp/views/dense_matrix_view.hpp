@@ -8,7 +8,7 @@
 
 #include <dr/detail/index.hpp>
 #include <dr/detail/iterator_adaptor.hpp>
-#include <dr/sp/containers/matrix_entry.hpp>
+#include <dr/detail/matrix_entry.hpp>
 #include <dr/sp/containers/sequential/dense_matrix.hpp>
 #include <dr/sp/views/dense_column_view.hpp>
 #include <dr/sp/views/dense_matrix_iterator.hpp>
@@ -24,7 +24,7 @@ public:
   using difference_type = std::ptrdiff_t;
 
   using scalar_reference = std::iter_reference_t<Iter>;
-  using reference = dr::sp::matrix_ref<T, std::size_t, scalar_reference>;
+  using reference = dr::matrix_ref<T, std::size_t, scalar_reference>;
 
   using key_type = dr::index<>;
   using map_type = T;

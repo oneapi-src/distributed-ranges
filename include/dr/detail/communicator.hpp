@@ -67,9 +67,14 @@ public:
   }
 
   template <typename T>
+  void gather(const T *src, T *dst, std::size_t count, std::size_t root) const {
+    gather((void *)src, (void *)dst, count * sizeof(T), root);
+  }
+
+  template <typename T>
   void gather(const T &src, std::span<T> dst, std::size_t root) const {
     assert(rng::size(dst) >= size_);
-    gather(&src, rng::data(dst), sizeof(T), root);
+    gather(&src, rng::data(dst), 1, root);
   }
 
   template <typename T>
@@ -105,10 +110,10 @@ public:
     i_all_gather(&src, rng::data(dst), 1, req);
   }
 
-  void gatherv(const void *src, int *counts, int *offsets, void *dst,
+  void gatherv(const void *src, MPI_Count *counts, MPI_Aint *offsets, void *dst,
                std::size_t root) const {
-    MPI_Gatherv(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
-                root, mpi_comm_);
+    MPI_Gatherv_c(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
+                  root, mpi_comm_);
   }
 
   // pointer with explicit tag
@@ -165,6 +170,13 @@ public:
   template <rng::contiguous_range R>
   void irecv(R &data, std::size_t src_rank, MPI_Request *request) const {
     irecv(data, src_rank, 0, request);
+  }
+
+  void wait(MPI_Request request) const {
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+  }
+  void waitall(std::size_t count, MPI_Request *requests) const {
+    MPI_Waitall(count, requests, MPI_STATUS_IGNORE);
   }
 
   template <rng::contiguous_range R>

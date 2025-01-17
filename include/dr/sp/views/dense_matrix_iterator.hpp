@@ -8,7 +8,7 @@
 
 #include <dr/detail/index.hpp>
 #include <dr/detail/iterator_adaptor.hpp>
-#include <dr/sp/containers/matrix_entry.hpp>
+#include <dr/detail/matrix_entry.hpp>
 #include <dr/sp/views/dense_column_view.hpp>
 #include <dr/sp/views/dense_row_view.hpp>
 
@@ -22,9 +22,9 @@ public:
   using scalar_type = std::iter_value_t<Iter>;
   using scalar_reference = std::iter_reference_t<Iter>;
 
-  using value_type = dr::sp::matrix_entry<scalar_type, std::size_t>;
+  using value_type = dr::matrix_entry<scalar_type, std::size_t>;
 
-  using reference = dr::sp::matrix_ref<T, std::size_t, scalar_reference>;
+  using reference = dr::matrix_ref<T, std::size_t, scalar_reference>;
 
   using iterator_category = std::random_access_iterator_tag;
 
