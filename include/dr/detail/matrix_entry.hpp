@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <cassert>
 #include <concepts>
 #include <limits>
 #include <type_traits>
-#include <cassert>
 
 #include <dr/detail/index.hpp>
 

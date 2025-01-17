@@ -67,9 +67,8 @@ public:
   }
 
   template <typename T>
-  void gather(const T *src, T *dst, std::size_t count,
-                    std::size_t root) const {
-    gather((void*)src, (void*)dst,  count * sizeof(T),root);
+  void gather(const T *src, T *dst, std::size_t count, std::size_t root) const {
+    gather((void *)src, (void *)dst, count * sizeof(T), root);
   }
 
   template <typename T>

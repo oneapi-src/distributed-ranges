@@ -164,8 +164,8 @@ private:
     if (communicator.rank() == root) {
       auto scratch =
           alloc.allocate(segment_size_ * communicator.size() * vals_width);
-      communicator.gather(partial_res, scratch,
-                                segment_size_ * vals_width, root);
+      communicator.gather(partial_res, scratch, segment_size_ * vals_width,
+                          root);
       T *temp = nullptr;
       if (use_sycl()) {
         temp = new T[res.size()];
@@ -199,7 +199,7 @@ private:
                        segment_size_ * communicator.size() * vals_width);
     } else {
       communicator.gather(partial_res, static_cast<T *>(nullptr),
-                                segment_size_ * vals_width, root);
+                          segment_size_ * vals_width, root);
     }
   }
   void init(dr::views::csr_matrix_view<T, I> csr_view, auto dist,

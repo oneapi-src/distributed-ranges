@@ -27,7 +27,7 @@ bool equal(std::size_t root, bool root_provided, R1 &&r1, R2 &&r2) {
 
   auto zipped_views = views::zip(r1, r2);
   auto compared = dr::mp::views::transform(zipped_views, compare);
-  
+
   auto min = [](double x, double y) { return std::min(x, y); };
   if (root_provided) {
     auto result = mp::reduce(root, compared, 1, min);

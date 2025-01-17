@@ -4,13 +4,13 @@
 
 #include "mpi.h"
 
+#include "../common/dr_bench.hpp"
 #include "dr/mp.hpp"
 #include <filesystem>
 #include <fmt/core.h>
 #include <fstream>
 #include <random>
 #include <sstream>
-#include "../common/dr_bench.hpp"
 
 namespace mp = dr::mp;
 

@@ -39,10 +39,10 @@ inline auto dpl_reduce(rng::forward_range auto &&r, auto &&binary_op) {
                          dr::__detail::direct_iterator(rng::begin(r) + 1),
                          dr::__detail::direct_iterator(rng::end(r)),
                          sycl_get_deref(rng::begin(r)), binary_op);
-      // We are not using below code, because we don't want to dereference rng::begin(r)
-      // beyond SYCL environment - the * operator may require complex operation that 
-      // relies on GPU memory access (for example transform view iterator)
-      // return std::reduce(dpl_policy(),
+      // We are not using below code, because we don't want to dereference
+      // rng::begin(r) beyond SYCL environment - the * operator may require
+      // complex operation that relies on GPU memory access (for example
+      // transform view iterator) return std::reduce(dpl_policy(),
       //                    dr::__detail::direct_iterator(rng::begin(r) + 1),
       //                    dr::__detail::direct_iterator(rng::end(r)),
       //                    sycl_get(*rng::begin(r)), binary_op);
