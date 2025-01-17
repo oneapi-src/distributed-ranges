@@ -74,7 +74,7 @@ public:
   template <typename T>
   void gather(const T &src, std::span<T> dst, std::size_t root) const {
     assert(rng::size(dst) >= size_);
-    gather(&src, rng::data(dst), sizeof(T), root);
+    gather(&src, rng::data(dst), 1, root);
   }
 
   template <typename T>
