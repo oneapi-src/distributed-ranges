@@ -16,16 +16,16 @@ add_executable(vector-add vector-add.cpp)
 target_link_libraries(vector-add DR::mpi)
 add_mp_ctest(TEST_NAME vector-add NAME vector-add NPROC 2)
 
-function(add_mp_example example_name)
-  add_executable(${example_name} ${example_name}.cpp)
-  target_link_libraries(${example_name} cxxopts DR::mpi)
-  add_mp_ctest(TEST_NAME ${example_name} NAME ${example_name} NPROC 2)
-endfunction()
-
 function(add_mp_example_no_test example_name)
   add_executable(${example_name} ${example_name}.cpp)
   target_link_libraries(${example_name} cxxopts DR::mpi)
 endfunction()
+
+function(add_mp_example example_name)
+  add_mp_example_no_test(${example_name})
+  add_mp_ctest(TEST_NAME ${example_name} NAME ${example_name} NPROC 2)
+endfunction()
+
 
 add_mp_example(stencil-1d)
 add_mp_example(stencil-1d-array)

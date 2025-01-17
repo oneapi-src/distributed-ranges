@@ -164,7 +164,7 @@ private:
     if (communicator.rank() == root) {
       auto scratch =
           alloc.allocate(segment_size_ * communicator.size() * vals_width);
-      communicator.gather_typed(partial_res, scratch,
+      communicator.gather(partial_res, scratch,
                                 segment_size_ * vals_width, root);
       T *temp = nullptr;
       if (use_sycl()) {
@@ -198,7 +198,7 @@ private:
       alloc.deallocate(scratch,
                        segment_size_ * communicator.size() * vals_width);
     } else {
-      communicator.gather_typed(partial_res, static_cast<T *>(nullptr),
+      communicator.gather(partial_res, static_cast<T *>(nullptr),
                                 segment_size_ * vals_width, root);
     }
   }

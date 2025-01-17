@@ -61,16 +61,15 @@ public:
                  mpi_comm_);
   }
 
-  template <typename T>
-  void gather_typed(const T *src, T *dst, std::size_t count,
-                    std::size_t root) const {
-    MPI_Gather_c(src, count * sizeof(T), MPI_BYTE, dst, count * sizeof(T),
-                 MPI_BYTE, root, mpi_comm_);
-  }
-
   void gather(const void *src, void *dst, std::size_t count,
               std::size_t root) const {
     MPI_Gather_c(src, count, MPI_BYTE, dst, count, MPI_BYTE, root, mpi_comm_);
+  }
+
+  template <typename T>
+  void gather(const T *src, T *dst, std::size_t count,
+                    std::size_t root) const {
+    gather((void*)src, (void*)dst,  count * sizeof(T),root);
   }
 
   template <typename T>
@@ -112,7 +111,7 @@ public:
     i_all_gather(&src, rng::data(dst), 1, req);
   }
 
-  void gatherv(const void *src, long long *counts, long *offsets, void *dst,
+  void gatherv(const void *src, MPI_Count *counts, MPI_Aint *offsets, void *dst,
                std::size_t root) const {
     MPI_Gatherv_c(src, counts[rank()], MPI_BYTE, dst, counts, offsets, MPI_BYTE,
                   root, mpi_comm_);

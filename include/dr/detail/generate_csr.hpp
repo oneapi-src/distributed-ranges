@@ -34,6 +34,9 @@ struct pair_hash {
 
 } // namespace
 
+// it returns matrix view of randomly generated matrix
+// the memory is owned by the view, so it needs to be released using
+// destroy_csr_matrix_view
 template <typename T = float, std::integral I = std::size_t>
 auto generate_random_csr(dr::index<I> shape, double density = 0.01,
                          unsigned int seed = 0) {
@@ -99,6 +102,9 @@ auto generate_random_csr(dr::index<I> shape, double density = 0.01,
   return dr::views::csr_matrix_view(values, rowptr, colind, shape, nnz, 0);
 }
 
+// it returns matrix view of band matrix
+// the memory is owned by the view, so it needs to be released using
+// destroy_csr_matrix_view
 template <typename T = float, std::integral I = std::size_t>
 auto generate_band_csr(I size, std::size_t up_band = 3,
                        std::size_t down_band = 3) {

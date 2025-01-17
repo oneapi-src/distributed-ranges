@@ -10,18 +10,7 @@
 #include <fstream>
 #include <random>
 #include <sstream>
-
-#ifdef STANDALONE_BENCHMARK
-
-MPI_Comm comm;
-int comm_rank;
-int comm_size;
-
-#else
-
 #include "../common/dr_bench.hpp"
-
-#endif
 
 namespace mp = dr::mp;
 
