@@ -26,7 +26,6 @@ function(add_mp_example example_name)
   add_mp_ctest(TEST_NAME ${example_name} NAME ${example_name} NPROC 2)
 endfunction()
 
-
 add_mp_example(stencil-1d)
 add_mp_example(stencil-1d-array)
 add_mp_example(stencil-1d-pointer)
