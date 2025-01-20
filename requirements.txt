@@ -43,7 +43,7 @@ sphinxcontrib-htmlhelp==2.1.0
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==2.0.0
 sphinxcontrib-serializinghtml==2.0.0
-sphinxcontrib-spelling==8.0.0
+sphinxcontrib-spelling==8.0.1
 typing_extensions==4.12.2
 urllib3==2.3.0
 virtualenv==20.29.1
