@@ -28,7 +28,7 @@ platformdirs==4.3.6
 pre-commit==4.0.1
 pydata-sphinx-theme==0.16.1
 pyenchant==3.2.2
-Pygments==2.18.0
+Pygments==2.19.1
 python-debian==0.1.49
 PyYAML==6.0.2
 requests==2.32.3
