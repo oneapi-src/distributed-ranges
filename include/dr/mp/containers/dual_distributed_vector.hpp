@@ -242,6 +242,7 @@ public:
   auto segments() const { return rng::views::all(segments_); }
   auto segments() { return rng::views::all(segments_); }
 
+  __attribute__((unused))
   void fence(const std::size_t i) { backends_[i].fence(); }
 
   backend_type& backend(const std::size_t segment_index) {
@@ -276,8 +277,6 @@ private:
         hb.next / gran});
     segment_size_ = proc_segments_size;
 
-    // std::cout << "init: segment_count = " << segment_count << "\n";
-
     std::size_t actual_segment_count_ = 
       size_ / segment_size_ + (size_ % segment_size_ == 0 ? 0 : 1);
     assert(actual_segment_count_ <= segment_count
@@ -296,12 +295,8 @@ private:
 
     halo_ = new cyclic_span_halo<T>(halos_);
 
-    // std::cout << "entering loop, segment_size_ = " << segment_size_ << "\n";
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
-      // std::cout << "\t" << i << ": segments_.emplace_back(" << segment_index 
-      //   << ", " << std::min(segment_size_, size - i) 
-      //   << ", " << data_size_ << ")\n";
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i), data_size_);
     }

@@ -33,9 +33,7 @@ void partial_for_each(dual_vector_range auto &&dr, auto op) {
     return;
   }
   
-  assert(aligned(dr));
-
-  for (auto &s : dr::ranges::segments(dr)) {
+  for (auto &s : local_segments(dr)) {
     if (!s.is_compute()) {
       s.swap_state();
       continue;

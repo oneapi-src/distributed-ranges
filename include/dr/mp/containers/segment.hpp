@@ -151,7 +151,7 @@ public:
 
   auto rank() const {
     assert(dv_ != nullptr);
-    return segment_index_;
+    return dv_->backend(segment_index_).getrank();
   }
 
   auto local() const {
