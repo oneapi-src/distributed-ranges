@@ -255,7 +255,7 @@ Options parse_options(int argc, char *argv[]) {
 void dr_init(const Options& options) {
 #ifdef SYCL_LANGUAGE_VERSION
   if (options.sycl) {
-    sycl::queue q;
+    sycl::queue q = dr::mp::select_queue();
     fmt::print("Running on sycl device: {}, memory: {}\n", q.get_device().get_info<sycl::info::device::name>(), options.device_memory ? "device" : "shared");
     dr::mp::init(q, options.device_memory ? sycl::usm::alloc::device
                                           : sycl::usm::alloc::shared);
