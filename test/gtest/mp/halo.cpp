@@ -12,12 +12,13 @@ template <typename DV>
 void local_is_accessible_in_halo_region(const int halo_prev,
                                         const int halo_next) {
 
-  DV dv(6, dr::mp::distribution().halo(halo_prev, halo_next));
+  std::cout << "0\n";
+  DV dv(6, dr::mp::distribution().halo(halo_prev, halo_next)); std::cout << "1\n";
   DRLOG("local_is_accessible_in_halo_region TEST START, prev:{}, next:{}",
         halo_prev, halo_next);
-  iota(dv, 0);
+  iota(dv, 0); std::cout << "2\n";
   DRLOG("exchange start");
-  dv.halo().exchange();
+  dv.halo().exchange(); std::cout << "3\n";
 
   // arrays below is function depending on size of communicator-1
   std::array<int, 6> first_local_index___;
@@ -62,6 +63,7 @@ void local_is_accessible_in_halo_region(const int halo_prev,
         "c:{}",
         first_legal_idx, first_illegal_idx, c);
 
+  std::cout << "4\n";
   for (int idx = first_legal_idx; idx < first_illegal_idx; ++idx) {
     typename DV::value_type *local_ptr = (dv.begin() + idx).local();
     EXPECT_TRUE(local_ptr != nullptr);
