@@ -232,7 +232,8 @@ public:
   void create(communicator comm, void *data, std::size_t size) {
     local_data_ = data; std::cout << "create 0\n";
     communicator_ = comm; std::cout << "create 1\n";
-    DRLOG("win create:: size: {} data:{}", size, data);
+    DRLOG("win create:: size: {} data:{}", size, data); 
+    std::cout << "MPI_WIN_CREATE " << data << " " << size << " " << &win_ << "\n";
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_); std::cout << "create 2\n";
   }
 
