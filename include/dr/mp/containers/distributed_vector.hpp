@@ -16,11 +16,11 @@ class MpiBackend {
 
 public:
   void *allocate(std::size_t data_size) {
-    assert(data_size > 0);
-    void *data = __detail::allocator<std::byte>().allocate(data_size);
-    DRLOG("called MPI allocate({}) -> got:{}", data_size, data);
-    win_.create(default_comm(), data, data_size);
-    active_wins().insert(win_.mpi_win());
+    assert(data_size > 0); std::cout << "alloc 0\n";
+    void *data = __detail::allocator<std::byte>().allocate(data_size); std::cout << "alloc 1\n";
+    DRLOG("called MPI allocate({}) -> got:{}", data_size, data); std::cout << "alloc 2\n";
+    win_.create(default_comm(), data, data_size); std::cout << "alloc 3\n";
+    active_wins().insert(win_.mpi_win()); std::cout << "alloc 4\n";
     return data;
   }
 
