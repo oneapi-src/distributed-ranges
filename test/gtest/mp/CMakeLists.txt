@@ -65,7 +65,7 @@ add_executable(mp-quick-test
   )
 # cmake-format: on
 
-target_compile_definitions(mp-quick-test PRIVATE QUICK_TEST)
+target_compile_definitions(mp-quick-test PRIVATE QUICK_TEST DR_FORMAT)
 
 foreach(test-exec IN ITEMS mp-tests mp-tests-3 mp-quick-test)
   if(ENABLE_ISHMEM)

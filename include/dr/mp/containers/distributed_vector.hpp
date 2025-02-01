@@ -58,7 +58,7 @@ public:
   void putmem(void const *src, std::size_t offset, std::size_t datalen,
               int segment_index) {
 
-    std::cout << "calling MPI put(segm_offset:" << offset << ", src:" << src << ", size:" << datalen << ", peer:" << segment_index << ")";
+    std::cout << "calling MPI put(segm_offset:" << offset << ", src:" << src << ", size:" << datalen << ", peer:" << segment_index << ")\n";
     DRLOG("calling MPI put(segm_offset:{}, "
           "src:{}, size:{}, peer:{})",
           offset, src, datalen, segment_index);
