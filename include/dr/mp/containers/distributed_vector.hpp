@@ -25,12 +25,12 @@ public:
   }
 
   void deallocate(void *data, std::size_t data_size) {
-    assert(data_size > 0);
-    DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size);
-    active_wins().erase(win_.mpi_win());
-    win_.free();
+    assert(data_size > 0); std::cout << "dealloc 0\n";
+    DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size); std::cout << "dealloc 1\n";
+    active_wins().erase(win_.mpi_win()); std::cout << "dealloc 2\n";
+    win_.free(); std::cout << "dealloc 3\n";
     __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
-                                                data_size);
+                                                data_size); std::cout << "dealloc 4\n";
   }
 
   void getmem(void *dst, std::size_t offset, std::size_t datalen,
@@ -253,13 +253,18 @@ public:
   }
 
   ~distributed_vector() {
+    std::cout << "~distributed_vector 0\n";
     if (!finalized()) {
       fence();
+      std::cout << "~distributed_vector 1\n";
       if (data_ != nullptr) {
         backend_.deallocate(data_, data_size_ * sizeof(value_type));
       }
 
+      std::cout << "~distributed_vector 2\n";
       delete halo_;
+
+      std::cout << "~distributed_vector 3\n";
     }
   }
 
