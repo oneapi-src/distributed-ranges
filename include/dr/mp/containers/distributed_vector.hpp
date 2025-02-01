@@ -285,6 +285,7 @@ public:
 
 private:
   void init(auto size, auto dist) {
+    std::cout << "init 0\n";
     size_ = size;
     distribution_ = dist;
 
@@ -301,17 +302,25 @@ private:
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
+    std::cout << "init 1\n";
+
     if (size_ > 0) {
       data_ = static_cast<T *>(backend_.allocate(data_size_ * sizeof(T)));
     }
 
+    std::cout << "init 2\n";
+
     halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
+
+    std::cout << "init 3\n";
 
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i), data_size_);
     }
+
+    std::cout << "init 4\n";
 
     fence();
   }
