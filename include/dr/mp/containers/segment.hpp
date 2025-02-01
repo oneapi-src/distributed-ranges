@@ -138,6 +138,7 @@ public:
   }
 
   void put(const value_type *dst, std::size_t size) const {
+    std::cout << "put with (size=" << size << " segment_index_=" << segment_index_ << " index_=" << index_ << ")\n";
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
