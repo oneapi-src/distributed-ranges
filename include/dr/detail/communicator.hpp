@@ -282,6 +282,7 @@ public:
 
 #if (MPI_VERSION >= 4) ||                                                      \
     (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
+    std::cout << "MPI_RPUT_C: rank=" << rank << "\n";
     MPI_Rput_c(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
     // MPI_Rput origin_count is 32-bit signed int - check range
