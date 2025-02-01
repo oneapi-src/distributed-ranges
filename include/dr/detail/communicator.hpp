@@ -230,10 +230,10 @@ private:
 class rma_window {
 public:
   void create(communicator comm, void *data, std::size_t size) {
-    local_data_ = data;
-    communicator_ = comm;
+    local_data_ = data; std::cout << "create 0\n";
+    communicator_ = comm; std::cout << "create 1\n";
     DRLOG("win create:: size: {} data:{}", size, data);
-    MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
+    MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_); std::cout << "create 2\n";
   }
 
   template <typename T> auto local_data() {
