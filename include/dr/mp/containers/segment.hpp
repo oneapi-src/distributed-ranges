@@ -145,7 +145,7 @@ public:
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
     dv_->backend(segment_index_).putmem(dst, segment_offset * sizeof(value_type),
-                        size * sizeof(value_type), segment_index_);
+                        size * sizeof(value_type), rank());
   }
 
   void put(const value_type &value) const { put(&value, 1); }
