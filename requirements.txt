@@ -5,7 +5,7 @@
 accessible-pygments==0.0.5
 alabaster==1.0.0
 Babel==2.16.0
-beautifulsoup4==4.12.3
+beautifulsoup4==4.13.1
 binaryornot==0.4.4
 boolean.py==4.0
 breathe==4.35.0
