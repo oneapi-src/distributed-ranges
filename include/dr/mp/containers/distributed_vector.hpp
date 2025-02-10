@@ -21,10 +21,14 @@ public:
     DRLOG("called MPI allocate({}) -> got:{}", data_size, data); std::cout << "alloc 2\n";
     win_.create(default_comm(), data, data_size); std::cout << "alloc 3\n";
     active_wins().insert(win_.mpi_win()); std::cout << "alloc 4\n";
+
+    std::cout << "allocated: " << data << std::endl;
     return data;
   }
 
   void deallocate(void *data, std::size_t data_size) {
+    std::cout << "deallocating: " << data << std::endl;
+
     assert(data_size > 0); std::cout << "dealloc 0\n";
     DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size); std::cout << "dealloc 1\n";
     active_wins().erase(win_.mpi_win()); std::cout << "dealloc 2\n";

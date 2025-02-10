@@ -79,6 +79,8 @@ void local_is_accessible_in_halo_region(const int halo_prev,
   }
   DRLOG("checks ok");
 
+  std::cout << "5\n";
+
   // although assertions indeed happen, but they are not caught by EXPECT_DEATH
   //  if (first_illegal_idx < 6) {
   //    dr::drlog.debug("checking first illegal idx:{} after legal ones\n",
