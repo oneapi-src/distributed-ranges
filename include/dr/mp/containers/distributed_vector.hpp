@@ -13,12 +13,11 @@ namespace dr::mp {
 
 class MpiBackend {
   dr::rma_window win_;
-  __detail::allocator<std::byte> allocator_;
 
 public:
   void *allocate(std::size_t data_size) {
     assert(data_size > 0); std::cout << "alloc 0\n";
-    void *data = allocator_.allocate(data_size); std::cout << "alloc 1\n";
+    void *data = __detail::allocator<std::byte>().allocate(data_size); std::cout << "alloc 1\n";
     DRLOG("called MPI allocate({}) -> got:{}", data_size, data); std::cout << "alloc 2\n";
     win_.create(default_comm(), data, data_size); std::cout << "alloc 3\n";
     active_wins().insert(win_.mpi_win()); std::cout << "alloc 4\n";
@@ -34,7 +33,8 @@ public:
     DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size); std::cout << "dealloc 1\n";
     active_wins().erase(win_.mpi_win()); std::cout << "dealloc 2\n";
     win_.free(); std::cout << "dealloc 3\n";
-    allocator_.deallocate(static_cast<std::byte *>(data), data_size); std::cout << "dealloc 4\n";
+    __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
+                                                data_size); std::cout << "dealloc 4\n";
   }
 
   void getmem(void *dst, std::size_t offset, std::size_t datalen,
