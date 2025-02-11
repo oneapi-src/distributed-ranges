@@ -33,8 +33,8 @@ public:
     DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size); std::cout << "dealloc 1\n";
     active_wins().erase(win_.mpi_win()); std::cout << "dealloc 2\n";
     win_.free(); std::cout << "dealloc 3\n";
-    // __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
-    //                                             data_size); std::cout << "dealloc 4\n";
+    __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
+                                                data_size); std::cout << "dealloc 4\n";
   }
 
   void getmem(void *dst, std::size_t offset, std::size_t datalen,
