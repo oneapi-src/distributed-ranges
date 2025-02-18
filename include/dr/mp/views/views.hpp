@@ -14,6 +14,7 @@ namespace dr::mp {
 // segment to local
 template <typename R> auto local_segments(R &&dr) {
   auto is_local = [](const auto &segment) {
+    std::cout << "local_segments::is_local: [seg rank] " << dr::ranges::rank(segment) << " == " << default_comm().rank() << " [comm rank]" << std::endl;
     return dr::ranges::rank(segment) == default_comm().rank();
   };
   // Convert from remote iter to local iter

@@ -16,25 +16,20 @@ class MpiBackend {
 
 public:
   void *allocate(std::size_t data_size) {
-    assert(data_size > 0); std::cout << "alloc 0\n";
-    void *data = __detail::allocator<std::byte>().allocate(data_size); std::cout << "alloc 1\n";
-    DRLOG("called MPI allocate({}) -> got:{}", data_size, data); std::cout << "alloc 2\n";
-    win_.create(default_comm(), data, data_size); std::cout << "alloc 3\n";
-    active_wins().insert(win_.mpi_win()); std::cout << "alloc 4\n";
-
-    std::cout << "allocated: " << data << std::endl;
+    void *data = __detail::allocator<std::byte>().allocate(data_size);
+    DRLOG("called MPI allocate({}) -> got:{}", data_size, data);
+    win_.create(default_comm(), data, data_size);
+    active_wins().insert(win_.mpi_win());
     return data;
   }
 
   void deallocate(void *data, std::size_t data_size) {
-    std::cout << "deallocating: " << data << std::endl;
-
-    assert(data_size > 0); std::cout << "dealloc 0\n";
-    DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size); std::cout << "dealloc 1\n";
-    active_wins().erase(win_.mpi_win()); std::cout << "dealloc 2\n";
-    win_.free(); std::cout << "dealloc 3\n";
+    assert(data_size > 0);
+    DRLOG("calling MPI deallocate ({}, data_size:{})", data, data_size);
+    active_wins().erase(win_.mpi_win());
+    win_.free();
     __detail::allocator<std::byte>().deallocate(static_cast<std::byte *>(data),
-                                                data_size); std::cout << "dealloc 4\n";
+                                                data_size);
   }
 
   void getmem(void *dst, std::size_t offset, std::size_t datalen,
@@ -61,8 +56,6 @@ public:
 
   void putmem(void const *src, std::size_t offset, std::size_t datalen,
               int segment_index) {
-
-    std::cout << "calling MPI put(segm_offset:" << offset << ", src:" << src << ", size:" << datalen << ", peer:" << segment_index << ")\n";
     DRLOG("calling MPI put(segm_offset:{}, "
           "src:{}, size:{}, peer:{})",
           offset, src, datalen, segment_index);
@@ -257,18 +250,14 @@ public:
   }
 
   ~distributed_vector() {
-    std::cout << "~distributed_vector 0\n";
     if (!finalized()) {
       fence();
-      std::cout << "~distributed_vector 1\n";
+      
       if (data_ != nullptr) {
         backend_.deallocate(data_, data_size_ * sizeof(value_type));
       }
 
-      std::cout << "~distributed_vector 2\n";
       delete halo_;
-
-      std::cout << "~distributed_vector 3\n";
     }
   }
 
@@ -296,7 +285,6 @@ public:
 
 private:
   void init(auto size, auto dist) {
-    std::cout << "init 0\n";
     size_ = size;
     distribution_ = dist;
 
@@ -313,26 +301,17 @@ private:
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
-    std::cout << "init 1\n";
-
     if (size_ > 0) {
       data_ = static_cast<T *>(backend_.allocate(data_size_ * sizeof(T)));
     }
 
-    std::cout << "init 2\n";
-
     halo_ = new span_halo<T>(default_comm(), data_, data_size_, hb);
-
-    std::cout << "init 3\n";
 
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
-      std::cout << "segments_.emplace_back si=" << segment_index << " size=" << std::min(segment_size_, size - i) << " reserved=" << data_size_ << "\n";
       segments_.emplace_back(this, segment_index++,
                              std::min(segment_size_, size - i), data_size_);
     }
-
-    std::cout << "init 4\n";
 
     fence();
   }

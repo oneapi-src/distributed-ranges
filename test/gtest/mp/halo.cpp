@@ -12,13 +12,13 @@ template <typename DV>
 void local_is_accessible_in_halo_region(const int halo_prev,
                                         const int halo_next) {
 
-  std::cout << "0\n";
-  DV dv(6, dr::mp::distribution().halo(halo_prev, halo_next)); std::cout << "1\n";
+  DV dv(6, dr::mp::distribution().halo(halo_prev, halo_next));
   DRLOG("local_is_accessible_in_halo_region TEST START, prev:{}, next:{}",
         halo_prev, halo_next);
-  iota(dv, 0); std::cout << "2\n";
+  iota(dv, 0);
   DRLOG("exchange start");
-  dv.halo().exchange(); std::cout << "3\n";
+  
+  dv.halo().exchange();
 
   // arrays below is function depending on size of communicator-1
   std::array<int, 6> first_local_index___;
@@ -59,11 +59,13 @@ void local_is_accessible_in_halo_region(const int halo_prev,
   auto first_legal_idx = std::max(0, first_local_index___[c] - halo_prev);
   auto first_illegal_idx = std::min(6, first_nonlocal_index[c] + halo_next);
 
+  std::cout << "first_legal_idx: " << first_legal_idx << "\n";
+  std::cout << "first_illegal_idx: " << first_illegal_idx << "\n";
+
   DRLOG("checking access to idx between first legal {} and first illegal {}, "
         "c:{}",
         first_legal_idx, first_illegal_idx, c);
 
-  std::cout << "4\n";
   for (int idx = first_legal_idx; idx < first_illegal_idx; ++idx) {
     typename DV::value_type *local_ptr = (dv.begin() + idx).local();
     EXPECT_TRUE(local_ptr != nullptr);
@@ -78,8 +80,6 @@ void local_is_accessible_in_halo_region(const int halo_prev,
     EXPECT_EQ(value_on_host, idx);
   }
   DRLOG("checks ok");
-
-  std::cout << "5\n";
 
   // although assertions indeed happen, but they are not caught by EXPECT_DEATH
   //  if (first_illegal_idx < 6) {

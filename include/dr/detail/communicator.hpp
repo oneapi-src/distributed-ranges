@@ -230,11 +230,10 @@ private:
 class rma_window {
 public:
   void create(communicator comm, void *data, std::size_t size) {
-    local_data_ = data; std::cout << "create 0\n";
-    communicator_ = comm; std::cout << "create 1\n";
+    local_data_ = data;
+    communicator_ = comm;
     DRLOG("win create:: size: {} data:{}", size, data); 
-    std::cout << "MPI_WIN_CREATE " << data << " " << size << " " << &win_ << "\n";
-    MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_); std::cout << "create 2\n";
+    MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
 
   template <typename T> auto local_data() {
@@ -283,7 +282,6 @@ public:
 
 #if (MPI_VERSION >= 4) ||                                                      \
     (defined(I_MPI_NUMVERSION) && (I_MPI_NUMVERSION > 20211200000))
-    std::cout << "MPI_RPUT_C: rank=" << rank << "\n";
     MPI_Rput_c(src, size, MPI_BYTE, rank, disp, size, MPI_BYTE, win_, &request);
 #else
     // MPI_Rput origin_count is 32-bit signed int - check range

@@ -33,7 +33,6 @@ public:
   }
 
   void deallocate(T *ptr, std::size_t sz) {
-    std::cout << "deallocate(" << ptr << "," << sz << ")\n";
     if (sz == 0) {
       assert(ptr == nullptr);
       return;
@@ -41,13 +40,11 @@ public:
     assert(ptr != nullptr);
 #ifdef SYCL_LANGUAGE_VERSION
     if (mp::use_sycl()) {
-      std::cout << "deallocating with sycl\n";
       sycl::free(ptr, sycl_queue());
       return;
     }
 #endif
 
-    std::cout << "deallocating with std\n";
     std_allocator_.deallocate(ptr, sz);
   }
 

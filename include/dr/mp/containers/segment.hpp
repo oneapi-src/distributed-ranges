@@ -152,7 +152,14 @@ public:
 
   auto rank() const {
     assert(dv_ != nullptr);
-    return dv_->backend(segment_index_).getrank();
+
+    std::cout << "rank(): segment_index_ == " << this->segment_index_ << "\n";
+
+    if (this->segment_index_ < default_comm().size()) {
+      return this->segment_index_;
+    }
+
+    return 2 * default_comm().size() - this->segment_index_ - 1;
   }
 
   auto local() const {
@@ -241,7 +248,7 @@ public:
 
   bool is_local() const { return segment_index_ == default_comm().rank(); }
 
-private:
+protected:
   DV *dv_ = nullptr;
   std::size_t segment_index_;
   std::size_t size_;

@@ -240,7 +240,7 @@ public:
   auto &halo() const { return *halo_; }
 
   auto segments() const { return rng::views::all(segments_); }
-  auto segments() { return rng::views::all(segments_); }
+  // auto segments() { return rng::views::all(segments_); }
 
   __attribute__((unused))
   void fence(const std::size_t i) { backends_[i].fence(); }
@@ -284,6 +284,12 @@ private:
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
+    std::cout << "creating dual_distributed vector\n"
+      << "\tsize: " << size << "\n"
+      << "\tsegment_size_: " << segment_size_ << "\n"
+      << "\tactual_segment_count_: " << actual_segment_count_ << "\n"
+      << "\tdata_size_: " << data_size_ << "\n";
+
     for (std::size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       if (size_ > 0) {
         datas_.push_back(static_cast<T *>(
@@ -311,6 +317,7 @@ private:
   }
 
   friend dv_segment_iterator<dual_distributed_vector>;
+  // friend dual_dv_segment_iterator<dual_distributed_vector>;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0; // size + halo
