@@ -4,8 +4,8 @@
 
 FetchContent_Declare(
   dpl
-  GIT_REPOSITORY https://github.com/uxlfoundation/oneDPL.git
-  GIT_TAG main)
+  GIT_REPOSITORY https://github.com/lslusarczyk/oneDPL
+  GIT_TAG fix-warning)
 FetchContent_MakeAvailable(dpl)
 
 # mpi:  multi-process
