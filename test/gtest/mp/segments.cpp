@@ -6,9 +6,7 @@
 
 #include <dr/mp/views/segmented.hpp>
 
-template <typename T> class Segmented : public testing::Test {
-public:
-};
+template <typename T> class Segmented : public testing::Test { public: };
 
 TYPED_TEST_SUITE(Segmented, AllTypesWithoutIshmem);
 
@@ -27,9 +25,7 @@ TYPED_TEST(Segmented, Basic) {
   EXPECT_EQ(dr::ranges::segments(ops.dist_vec), segmented);
 }
 
-template <typename T> class SegmentUtils : public testing::Test {
-public:
-};
+template <typename T> class SegmentUtils : public testing::Test { public: };
 
 // traversing on host over local_segment does not work in case of both:
 // device_memory and IshmemBackend (which uses device memory)

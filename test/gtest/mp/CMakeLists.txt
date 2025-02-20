@@ -38,6 +38,7 @@ add_executable(
   distributed_vector.cpp
   gemv.cpp
   halo.cpp
+  halo-2d.cpp
   mdstar.cpp
   mpsort.cpp
   reduce.cpp
@@ -48,38 +49,53 @@ add_executable(
   wave_kernel.cpp)
 
 add_executable(
-  mp-tests-3
-  mp-tests.cpp
-  communicator-3.cpp
-  halo-3.cpp
-  slide_view-3.cpp)
+        mp-tests-3
+        mp-tests.cpp
+        communicator-3.cpp
+        halo-3.cpp
+        slide_view-3.cpp
+        wide-halo-1d-3.cpp
+        wide-halo-2d-3.cpp
+)
 
-# mp-quick-test is for development. By reducing the number of source files, it
+# mp-quick-test and mp-quick-test-3-only is for development. By reducing the number of source files, it
 # builds much faster. Change the source files to match what you need to test. It
 # is OK to commit changes to the source file list.
-
 add_executable(mp-quick-test
   mp-tests.cpp
-  ../common/count.cpp
-  )
+  halo-2d.cpp
+)
+add_executable(mp-quick-test-3-only
+  mp-tests.cpp
+  wide-halo-2d-3.cpp
+)
 # cmake-format: on
 
 target_compile_definitions(mp-quick-test PRIVATE QUICK_TEST)
+target_compile_definitions(mp-quick-test-3-only PRIVATE QUICK_TEST)
 
-foreach(test-exec IN ITEMS mp-tests mp-tests-3 mp-quick-test)
+foreach(test-exec IN ITEMS mp-tests mp-tests-3 mp-quick-test mp-quick-test-3-only)
   if(ENABLE_ISHMEM)
     target_link_ishmem(${test-exec})
   endif()
   target_link_libraries(${test-exec} GTest::gtest_main cxxopts DR::mpi)
   set_property(TARGET ${test-exec} PROPERTY RULE_LAUNCH_COMPILE
-                                            "${CMAKE_COMMAND} -E time")
+          "${CMAKE_COMMAND} -E time")
 endforeach()
+
+# Game of life
+add_executable(game_of_life game_of_life.cpp)
+if(ENABLE_ISHMEM)
+  target_link_ishmem(game_of_life)
+endif()
+target_link_libraries(game_of_life cxxopts DR::mpi)
 
 # tests without --sycl flag will fail on IshmemBackend TODO: make them be
 # running somehow if ENABLE_ISHMEM will be default CI config
 if(NOT ENABLE_ISHMEM)
   add_mp_ctest(NAME mp-quick-test NPROC 1)
   add_mp_ctest(NAME mp-quick-test NPROC 2)
+  add_mp_ctest(NAME mp-quick-test-3-only NPROC 3)
 
   cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
@@ -90,8 +106,7 @@ if(NOT ENABLE_ISHMEM)
   foreach(nproc RANGE 2 4)
     add_mp_ctest(NAME mp-tests NPROC ${nproc} TIMEOUT 150)
   endforeach()
-  add_mp_ctest(
-    TEST_NAME mp-tests-3-only NAME mp-tests-3 NPROC 3 TIMEOUT 150)
+  add_mp_ctest(TEST_NAME mp-tests-3-only NAME mp-tests-3 NPROC 3 TIMEOUT 150)
 endif()
 
 if(ENABLE_SYCL)
@@ -105,7 +120,7 @@ if(ENABLE_SYCL)
     # equality of these values: *(--counted_result.end()) Which is: 5, should be
     # 77 Mdspan, Mdarray hangs sometimes on ISHMEM.
     set(sycl-exclusions
-        ${sycl-exclusions}Halo3/*:Sort*:Counted/*:Mdspan*:Mdarray*:)
+            ${sycl-exclusions}Halo3/*:Sort*:Counted/*:Mdspan*:Mdarray*:)
   endif()
 
   foreach(nproc RANGE 1 4)
@@ -113,6 +128,8 @@ if(ENABLE_SYCL)
     add_mp_pvc_ctest(
       NAME mp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory)
   endforeach()
+  add_mp_ctest(NAME mp-quick-test-3-only NPROC 3 SYCL)
+  add_mp_ctest(NAME mp-quick-test-3-only NPROC 3 OFFLOAD SYCL TARGS --device-memory)
 
   add_mp_pvc_ctest(
     NAME mp-tests NPROC 2 TIMEOUT 150 OFFLOAD SYCL TARGS --device-memory
