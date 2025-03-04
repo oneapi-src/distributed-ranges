@@ -171,7 +171,7 @@ public:
       assert(index_ <= dv_->distribution_.halo()
                            .next); // <= instead of < to cover end() case
 #endif
-      return dv_->data_ + dv_->distribution_.halo().prev + index_ + 
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ +
              dv_->segment_size_;
     }
 
@@ -179,7 +179,7 @@ public:
 #ifndef SYCL_LANGUAGE_VERSION
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
 #endif
-      return dv_->data_ + dv_->distribution_.halo().prev + index_ - 
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ -
              dv_->segment_size_;
     }
 
