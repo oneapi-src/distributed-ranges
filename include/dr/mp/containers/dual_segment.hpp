@@ -109,14 +109,14 @@ public:
   }
 
   // When *this is not first in the expression
-  friend auto operator+(difference_type n, const dual_dv_segment_iterator &other) {
+  friend auto operator+(difference_type n, const dv_segment_iterator &other) {
     return other + n;
   }
 
   // dereference
   auto operator*() const {
     assert(dv_ != nullptr);
-    return dual_dv_segment_reference<DV>{*this};
+    return dv_segment_reference<DV>{*this};
   }
   auto operator[](difference_type n) const {
     assert(dv_ != nullptr);
@@ -127,7 +127,7 @@ public:
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
-    dv_->backend(segment_index_).getmem(dst, segment_offset * sizeof(value_type),
+    dv_->backend.getmem(dst, segment_offset * sizeof(value_type),
                         size * sizeof(value_type), segment_index_);
   }
 
@@ -138,40 +138,30 @@ public:
   }
 
   void put(const value_type *dst, std::size_t size) const {
-    std::cout << "put with (size=" << size << " segment_index_=" << segment_index_ << " index_=" << index_ << ")\n";
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
-    dv_->backend(segment_index_).putmem(dst, segment_offset * sizeof(value_type),
-                        size * sizeof(value_type), rank());
+    dv_->backend.putmem(dst, segment_offset * sizeof(value_type),
+                        size * sizeof(value_type), segment_index_);
   }
 
   void put(const value_type &value) const { put(&value, 1); }
 
   auto rank() const {
-    std::cout << "rank()\n\tsegment_index_ == " << this->segment_index_ << "\n";
-
-    // return this->segment_index_;
-
-    if (this->segment_index_ < default_comm().size()) {
-      std::cout << "\treturning: " << this->segment_index_ << "\n";
-      return this->segment_index_;
-    }
-
-    std::cout << "\treturning: " << 2 * default_comm().size() - this->segment_index_ - 1 << "\n";
-    return 2 * default_comm().size() - this->segment_index_ - 1;
+    assert(dv_ != nullptr);
+    return segment_index_;
   }
 
   auto local() const {
 #ifndef SYCL_LANGUAGE_VERSION
     assert(dv_ != nullptr);
 #endif
-    const auto my_process_segment_index = dv_->backend(segment_index_).getrank();
+    const auto my_process_segment_index = dv_->backend.getrank();
 
     if (my_process_segment_index == segment_index_)
-      return dv_->data(segment_index_) + index_ + dv_->distribution_.halo().prev;
+      return dv_->data_ + index_ + dv_->distribution_.halo().prev;
 #ifndef SYCL_LANGUAGE_VERSION
     assert(!dv_->distribution_.halo().periodic); // not implemented
 #endif
@@ -181,22 +171,22 @@ public:
       assert(index_ <= dv_->distribution_.halo()
                            .next); // <= instead of < to cover end() case
 #endif
-      return dv_->data(segment_index_) + dv_->distribution_.halo().prev 
-             + index_ + dv_->segment_size_;
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ +
+             dv_->segment_size_;
     }
 
     if (my_process_segment_index == segment_index_ + 1) {
 #ifndef SYCL_LANGUAGE_VERSION
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
 #endif
-      return dv_->data(segment_index_) + dv_->distribution_.halo().prev 
-             + index_ - dv_->segment_size_;
+      return dv_->data_ + dv_->distribution_.halo().prev + index_ -
+             dv_->segment_size_;
     }
 
 #ifndef SYCL_LANGUAGE_VERSION
     assert(false); // trying to read non-owned memory
 #endif
-    return static_cast<decltype(dv_->data(segment_index_))>(nullptr);
+    return static_cast<decltype(dv_->data_)>(nullptr);
   }
 
   auto segments() const {
@@ -249,8 +239,9 @@ public:
   auto operator[](difference_type n) const { return *(begin() + n); }
 
   bool is_local() const { 
-    return this->segment_index_ == default_comm().rank()
-      || this->segment_index_ == 2 * default_comm().size() - default_comm().rank() - 1;
+    auto rank = default_comm().rank();
+    return this->segment_index_ == rank
+      || this->segment_index_ == 2 * default_comm().size() - rank - 1;
   }
 
   bool is_compute() const { return _is_compute; }
@@ -264,18 +255,5 @@ private:
   std::size_t size_;
   std::size_t reserved_;
 }; // dual_dv_segment
-
-//
-// Many views preserve the distributed_vector segments iterator, which
-// can supply halo
-//
-// template <typename DR>
-// concept has_halo_method = dr::distributed_range<DR> && requires(DR &&dr) {
-//   { rng::begin(dr::ranges::segments(dr)[0]).halo() };
-// };
-
-// auto &halo(has_halo_method auto &&dr) {
-//   return rng::begin(dr::ranges::segments(dr)[0]).halo();
-// }
 
 } // namespace dr::mp

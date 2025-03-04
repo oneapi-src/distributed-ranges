@@ -245,15 +245,19 @@ public:
   __attribute__((unused))
   void fence(const std::size_t i) { backends_[i].fence(); }
 
+  auto res_idx(const std::size_t segment_index) const {
+    return segment_index < default_comm().size() ? 0 : 1;
+  }
+
   backend_type& backend(const std::size_t segment_index) {
-    return backends_[segment_index < default_comm().size() ? 0 : 1];
+    return backends_[res_idx(segment_index)];
   }
   const backend_type& backend(const std::size_t segment_index) const {
-    return backends_[segment_index < default_comm().size() ? 0 : 1];
+    return backends_[res_idx(segment_index)];
   }
 
   T *data(const std::size_t segment_index) {
-    return datas_[segment_index < default_comm().size() ? 0 : 1];
+    return datas_[res_idx(segment_index)];
   }
 
 private:
