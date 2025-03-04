@@ -18,7 +18,7 @@ void local_is_accessible_in_halo_region(const int halo_prev,
   iota(dv, 0);
   DRLOG("exchange start");
   
-  dv.halo().exchange();
+  // dv.halo().exchange();
 
   // arrays below is function depending on size of communicator-1
   std::array<int, 6> first_local_index___;

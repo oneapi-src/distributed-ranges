@@ -232,7 +232,7 @@ public:
   void create(communicator comm, void *data, std::size_t size) {
     local_data_ = data;
     communicator_ = comm;
-    DRLOG("win create:: size: {} data:{}", size, data); 
+    DRLOG("win create:: size: {} data:{}", size, data);
     MPI_Win_create(data, size, 1, MPI_INFO_NULL, comm.mpi_comm(), &win_);
   }
 

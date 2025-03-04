@@ -138,7 +138,6 @@ public:
   }
 
   void put(const value_type *dst, std::size_t size) const {
-    std::cout << "put with (size=" << size << " segment_index_=" << segment_index_ << " index_=" << index_ << ")\n";
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
@@ -152,14 +151,7 @@ public:
 
   auto rank() const {
     assert(dv_ != nullptr);
-
-    std::cout << "rank(): segment_index_ == " << this->segment_index_ << "\n";
-
-    if (this->segment_index_ < default_comm().size()) {
-      return this->segment_index_;
-    }
-
-    return 2 * default_comm().size() - this->segment_index_ - 1;
+    return this->segment_index_;
   }
 
   auto local() const {
@@ -248,7 +240,7 @@ public:
 
   bool is_local() const { return segment_index_ == default_comm().rank(); }
 
-protected:
+private:
   DV *dv_ = nullptr;
   std::size_t segment_index_;
   std::size_t size_;

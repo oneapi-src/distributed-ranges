@@ -316,8 +316,7 @@ private:
     }
   }
 
-  friend dv_segment_iterator<dual_distributed_vector>;
-  // friend dual_dv_segment_iterator<dual_distributed_vector>;
+  friend dual_dv_segment_iterator<dual_distributed_vector>;
 
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0; // size + halo

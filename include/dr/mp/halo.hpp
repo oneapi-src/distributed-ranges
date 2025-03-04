@@ -445,9 +445,17 @@ public:
   }
 
   void exchange() {
-    partial_exchange();
-    increment_index();
-    partial_exchange();
+    // partial_exchange();
+    // increment_index();
+    // partial_exchange();
+  }
+
+  void exchange_begin() {
+    // todo
+  }
+
+  void exchange_finalize() {
+    // todo
   }
 
   void reduce_begin() {
