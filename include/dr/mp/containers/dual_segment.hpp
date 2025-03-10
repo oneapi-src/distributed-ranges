@@ -109,14 +109,14 @@ public:
   }
 
   // When *this is not first in the expression
-  friend auto operator+(difference_type n, const dv_segment_iterator &other) {
+  friend auto operator+(difference_type n, const dual_dv_segment_iterator &other) {
     return other + n;
   }
 
   // dereference
   auto operator*() const {
     assert(dv_ != nullptr);
-    return dv_segment_reference<DV>{*this};
+    return dual_dv_segment_reference<DV>{*this};
   }
   auto operator[](difference_type n) const {
     assert(dv_ != nullptr);
@@ -127,8 +127,8 @@ public:
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
-    dv_->backend.getmem(dst, segment_offset * sizeof(value_type),
-                        size * sizeof(value_type), segment_index_);
+    dv_->backend(segment_index_).getmem(dst, segment_offset * sizeof(value_type),
+                                        size * sizeof(value_type), segment_index_);
   }
 
   value_type get() const {
@@ -143,7 +143,7 @@ public:
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
     dr::drlog.debug("dv put:: ({}:{}:{})\n", segment_index_, segment_offset,
                     size);
-    dv_->backend.putmem(dst, segment_offset * sizeof(value_type),
+    dv_->backend(segment_index_).putmem(dst, segment_offset * sizeof(value_type),
                         size * sizeof(value_type), segment_index_);
   }
 
@@ -158,35 +158,40 @@ public:
 #ifndef SYCL_LANGUAGE_VERSION
     assert(dv_ != nullptr);
 #endif
-    const auto my_process_segment_index = dv_->backend.getrank();
+    const auto my_process_rank = dv_->backend(segment_index_).getrank();
+    const auto normalized_segment_index = segment_index_ < default_comm().size()
+                                          ? segment_index_
+                                          : segment_index_ - default_comm().size();
+    const auto data = dv_->data(segment_index_);
 
-    if (my_process_segment_index == segment_index_)
-      return dv_->data_ + index_ + dv_->distribution_.halo().prev;
+    if (my_process_rank == normalized_segment_index) {
+      std::cout << "case 0\n";
+      return data + index_ + dv_->distribution_.halo().prev;
+    }
 #ifndef SYCL_LANGUAGE_VERSION
     assert(!dv_->distribution_.halo().periodic); // not implemented
 #endif
     // sliding view needs local iterators that point to the halo
-    if (my_process_segment_index + 1 == segment_index_) {
+    if (my_process_rank + 1 == normalized_segment_index) {
+      std::cout << "case 1\n";
 #ifndef SYCL_LANGUAGE_VERSION
-      assert(index_ <= dv_->distribution_.halo()
-                           .next); // <= instead of < to cover end() case
+      assert(index_ <= dv_->distribution_.halo().next); // <= instead of < to cover end() case
 #endif
-      return dv_->data_ + dv_->distribution_.halo().prev + index_ +
-             dv_->segment_size_;
+      return data + dv_->distribution_.halo().prev + index_ + dv_->segment_size_;
     }
 
-    if (my_process_segment_index == segment_index_ + 1) {
+    if (my_process_rank == normalized_segment_index + 1) {
+      std::cout << "case 2\n";
 #ifndef SYCL_LANGUAGE_VERSION
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
 #endif
-      return dv_->data_ + dv_->distribution_.halo().prev + index_ -
-             dv_->segment_size_;
+      return data + dv_->distribution_.halo().prev + index_ - dv_->segment_size_;
     }
 
 #ifndef SYCL_LANGUAGE_VERSION
     assert(false); // trying to read non-owned memory
 #endif
-    return static_cast<decltype(dv_->data_)>(nullptr);
+    return static_cast<decltype(dv_->data(segment_index_))>(nullptr);
   }
 
   auto segments() const {
@@ -240,8 +245,8 @@ public:
 
   bool is_local() const { 
     auto rank = default_comm().rank();
-    return this->segment_index_ == rank
-      || this->segment_index_ == 2 * default_comm().size() - rank - 1;
+    return segment_index_ == rank
+      || segment_index_ == 2 * default_comm().size() - rank - 1;
   }
 
   bool is_compute() const { return _is_compute; }

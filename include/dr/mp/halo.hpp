@@ -445,17 +445,24 @@ public:
   }
 
   void exchange() {
-    // partial_exchange();
-    // increment_index();
-    // partial_exchange();
+    partial_exchange();
+    increment_index();
+    partial_exchange();
+    increment_index();
   }
 
   void exchange_begin() {
-    // todo
+    halos_[next_comm_index_]->partial_exchange_begin();
+    increment_index();
+    halos_[next_comm_index_]->partial_exchange_begin();
+    increment_index();
   }
 
   void exchange_finalize() {
-    // todo
+    halos_[next_comm_index_]->partial_exchange_finalize();
+    increment_index();
+    halos_[next_comm_index_]->partial_exchange_finalize();
+    increment_index();
   }
 
   void reduce_begin() {
