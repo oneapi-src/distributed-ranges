@@ -440,8 +440,7 @@ public:
   }
 
   void partial_exchange() {
-    halos_[next_comm_index_]->exchange_begin();
-    halos_[next_comm_index_]->exchange_finalize();
+    halos_[next_comm_index_]->exchange();
   }
 
   void exchange() {
@@ -452,16 +451,16 @@ public:
   }
 
   void exchange_begin() {
-    halos_[next_comm_index_]->partial_exchange_begin();
+    partial_exchange_begin();
     increment_index();
-    halos_[next_comm_index_]->partial_exchange_begin();
+    partial_exchange_begin();
     increment_index();
   }
 
   void exchange_finalize() {
-    halos_[next_comm_index_]->partial_exchange_finalize();
+    partial_exchange_finalize();
     increment_index();
-    halos_[next_comm_index_]->partial_exchange_finalize();
+    partial_exchange_finalize();
     increment_index();
   }
 

@@ -151,7 +151,12 @@ public:
 
   auto rank() const {
     assert(dv_ != nullptr);
-    return segment_index_;
+    
+    if (segment_index_ < default_comm().size()) {
+      return segment_index_;
+    }
+
+    return 2 * default_comm().size() - segment_index_ - 1;
   }
 
   auto local() const {
@@ -159,29 +164,43 @@ public:
     assert(dv_ != nullptr);
 #endif
     const auto my_process_rank = dv_->backend(segment_index_).getrank();
-    const auto normalized_segment_index = segment_index_ < default_comm().size()
+    const bool is_left_segment = segment_index_ < default_comm().size();
+    const auto normalized_segment_index = is_left_segment
                                           ? segment_index_
-                                          : segment_index_ - default_comm().size();
+                                          : 2 * default_comm().size() - segment_index_ - 1;
     const auto data = dv_->data(segment_index_);
+    
+    const bool is_in_bounds = my_process_rank == normalized_segment_index;
+    const bool is_in_halo_prev = is_left_segment 
+                                 ? my_process_rank + 1 == normalized_segment_index
+                                 : my_process_rank == normalized_segment_index + 1;
+    const bool is_in_halo_next = is_left_segment 
+                                 ? my_process_rank == normalized_segment_index + 1
+                                 : my_process_rank + 1 == normalized_segment_index;
 
-    if (my_process_rank == normalized_segment_index) {
-      std::cout << "case 0\n";
+    std::cout << "my_process_rank, normalized_segment_index = " << my_process_rank << " " << normalized_segment_index << "\n";
+
+    if (is_in_bounds) {
+      std::cout << "case is_in_bounds\n";
+      assert(!is_in_halo_prev && !is_in_halo_next);
       return data + index_ + dv_->distribution_.halo().prev;
     }
 #ifndef SYCL_LANGUAGE_VERSION
     assert(!dv_->distribution_.halo().periodic); // not implemented
 #endif
     // sliding view needs local iterators that point to the halo
-    if (my_process_rank + 1 == normalized_segment_index) {
-      std::cout << "case 1\n";
+    if (is_in_halo_prev) {
+      std::cout << "case is_in_halo_prev\n";
+      assert(!is_in_bounds && !is_in_halo_next);
 #ifndef SYCL_LANGUAGE_VERSION
       assert(index_ <= dv_->distribution_.halo().next); // <= instead of < to cover end() case
 #endif
       return data + dv_->distribution_.halo().prev + index_ + dv_->segment_size_;
     }
 
-    if (my_process_rank == normalized_segment_index + 1) {
-      std::cout << "case 2\n";
+    if (is_in_halo_next) {
+      std::cout << "case is_in_halo_next\n";
+      assert(!is_in_bounds && !is_in_halo_prev);
 #ifndef SYCL_LANGUAGE_VERSION
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
 #endif

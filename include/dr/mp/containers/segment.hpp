@@ -160,13 +160,16 @@ public:
 #endif
     const auto my_process_segment_index = dv_->backend.getrank();
 
-    if (my_process_segment_index == segment_index_)
+    if (my_process_segment_index == segment_index_) {
+      std::cout << "case 0\n";
       return dv_->data_ + index_ + dv_->distribution_.halo().prev;
+    }
 #ifndef SYCL_LANGUAGE_VERSION
     assert(!dv_->distribution_.halo().periodic); // not implemented
 #endif
     // sliding view needs local iterators that point to the halo
     if (my_process_segment_index + 1 == segment_index_) {
+      std::cout << "case 1\n";
 #ifndef SYCL_LANGUAGE_VERSION
       assert(index_ <= dv_->distribution_.halo()
                            .next); // <= instead of < to cover end() case
@@ -176,6 +179,7 @@ public:
     }
 
     if (my_process_segment_index == segment_index_ + 1) {
+      std::cout << "case 2\n";
 #ifndef SYCL_LANGUAGE_VERSION
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);
 #endif

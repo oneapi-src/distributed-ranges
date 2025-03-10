@@ -38,6 +38,7 @@ add_executable(
   distributed_vector.cpp
   dual_distributed_vector.cpp
   halo.cpp
+  halo-dual.cpp
   mdstar.cpp
   mpsort.cpp
   reduce.cpp
@@ -59,7 +60,7 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  halo.cpp
+  halo-dual.cpp
   # ../common/for_each.cpp
   # dual_distributed_vector.cpp
   )
@@ -81,6 +82,8 @@ endforeach()
 if(NOT ENABLE_ISHMEM)
   add_mp_ctest(NAME mp-quick-test NPROC 1)
   add_mp_ctest(NAME mp-quick-test NPROC 2)
+  add_mp_ctest(NAME mp-quick-test NPROC 3)
+  add_mp_ctest(NAME mp-quick-test NPROC 4)
 
   cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 

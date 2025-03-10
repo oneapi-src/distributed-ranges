@@ -296,11 +296,10 @@ private:
 
     for (std::size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       if (size_ > 0) {
-        datas_.push_back(static_cast<T *>(
-          backends_[i].allocate(data_size_ * sizeof(value_type))));
+        datas_.push_back(static_cast<T *>(backends_[i].allocate(data_size_ * sizeof(value_type))));
+        std::memset(datas_[i], 69, data_size_ * sizeof(value_type)); // todo: debug remove later
+        halos_.push_back(new span_halo<T>(default_comm(), datas_[i], data_size_, hb));
       }
-
-      halos_.push_back(new span_halo<T>(default_comm(), datas_[i], data_size_, hb));
     }
 
     halo_ = new cyclic_span_halo<T>(halos_);
