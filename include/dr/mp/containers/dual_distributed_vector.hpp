@@ -199,7 +199,7 @@ public:
   dual_distributed_vector(dual_distributed_vector &&) { assert(false); }
 
   /// Constructor
-  dual_distributed_vector(std::size_t size = 0, 
+  dual_distributed_vector(std::size_t size = 0,
                           distribution dist = distribution()) {
     init(size, dist);
   }
@@ -290,17 +290,19 @@ private:
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
-    std::cout << "creating dual_distributed vector\n"
+    std::cout << "[creating dual_distributed vector]\n"
       << "\tsize: " << size << "\n"
       << "\tsegment_size_: " << segment_size_ << "\n"
       << "\tactual_segment_count_: " << actual_segment_count_ << "\n"
-      << "\tdata_size_: " << data_size_ << "\n";
+      << "\tdata_size_: " << data_size_ << "\n"
+      << "\thalo: prev=" << hb.prev << " next=" << hb.next << " periodic=" << hb.periodic << "\n";
 
     for (std::size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       if (size_ > 0) {
         datas_.push_back(static_cast<T *>(backends_[i].allocate(data_size_ * sizeof(value_type))));
         std::memset(datas_[i], 69, data_size_ * sizeof(value_type)); // todo: debug remove later
-        halos_.push_back(new span_halo<T>(default_comm(), datas_[i], data_size_, hb));
+        std::cout << "[creating new halo (" << i << ")]\n";
+        halos_.push_back(new dual_span_halo<T>(default_comm(), datas_[i], data_size_, hb, i == 1));
       }
     }
 
@@ -326,7 +328,7 @@ private:
   std::size_t segment_size_ = 0;
   std::size_t data_size_ = 0; // size + halo
 
-  std::vector<span_halo<T> *> halos_;
+  std::vector<dual_span_halo<T> *> halos_;
   std::vector<T *> datas_;
   cyclic_span_halo<T> *halo_;
 

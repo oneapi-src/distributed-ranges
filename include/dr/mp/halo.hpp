@@ -394,13 +394,13 @@ private:
     std::vector<group_type> owned;
     DRLOG("owned groups {}/{} first/last", comm.first(), comm.last());
     if (hb.next > 0 && (hb.periodic || !comm.first())) {
-      owned.emplace_back(span.subspan(hb.prev, hb.next), comm.prev(),
-                         halo_tag::reverse);
+      owned.emplace_back(span.subspan(hb.prev, hb.next),
+                         comm.prev(), halo_tag::reverse);
     }
     if (hb.prev > 0 && (hb.periodic || !comm.last())) {
       owned.emplace_back(
           span.subspan(rng::size(span) - (hb.prev + hb.next), hb.prev),
-          comm.next(), halo_tag::forward);
+                       comm.next(), halo_tag::forward);
     }
     return owned;
   }
@@ -409,10 +409,89 @@ private:
   halo_groups(communicator comm, std::span<T> span, halo_bounds hb) {
     std::vector<group_type> halo;
     if (hb.prev > 0 && (hb.periodic || !comm.first())) {
-      halo.emplace_back(span.first(hb.prev), comm.prev(), halo_tag::forward);
+      halo.emplace_back(span.first(hb.prev), 
+                        comm.prev(), halo_tag::forward);
     }
     if (hb.next > 0 && (hb.periodic || !comm.last())) {
-      halo.emplace_back(span.last(hb.next), comm.next(), halo_tag::reverse);
+      halo.emplace_back(span.last(hb.next), 
+                        comm.next(), halo_tag::reverse);
+    }
+    return halo;
+  }
+};
+
+template <typename T, typename Memory = default_memory<T>>
+class dual_span_halo : public span_halo_impl<T, Memory> {
+public:
+  using group_type = span_group<T, Memory>;
+
+  dual_span_halo() : span_halo_impl<T, Memory>(communicator(), {}, {}) {}
+
+  dual_span_halo(communicator comm, T *data, std::size_t size, halo_bounds hb, bool rev = false)
+      : span_halo_impl<T, Memory>(comm, owned_groups(comm, {data, size}, hb, rev),
+                                  halo_groups(comm, {data, size}, hb, rev)) {
+    check(size, hb);
+  }
+
+  dual_span_halo(communicator comm, std::span<T> span, halo_bounds hb, bool rev = false)
+      : span_halo_impl<T, Memory>(comm, owned_groups(comm, span, hb, rev),
+                                  halo_groups(comm, span, hb, rev)) {}
+
+private:
+  void check(auto size, auto hb) {
+    assert(size >= hb.prev + hb.next + std::max(hb.prev, hb.next));
+  }
+
+  static std::vector<group_type>
+  owned_groups(communicator comm, std::span<T> span, halo_bounds hb, bool rev) {
+    std::vector<group_type> owned;
+
+    bool should_make_left =  hb.next > 0 && (hb.periodic || !(rev ? comm.last() : comm.first()));
+    bool should_make_right = hb.prev > 0 && (hb.periodic || !(rev ? comm.first() : comm.last()));
+
+    DRLOG("owned groups {}/{} first/last", comm.first(), comm.last());
+    if (should_make_left) {
+      std::cout << "\tnew owned: span=(" << hb.prev << ", " << hb.next 
+                << ") rank=" << (rev ? comm.next() : comm.prev())
+                << " tag=" << (rev ? "forward\n" : "reverse\n");
+      owned.emplace_back(span.subspan(hb.prev, hb.next),
+                         rev ? comm.next() : comm.prev(),
+                         rev ? halo_tag::forward : halo_tag::reverse);
+    }
+    if (should_make_right) {
+      std::cout << "\tnew owned: span=(" << rng::size(span) - (hb.prev + hb.next) << ", " << hb.prev
+                << ") rank=" << (rev ? comm.prev() : comm.next())
+                << " tag=" << (rev ? "reverse\n" : "forward\n");
+      owned.emplace_back(
+          span.subspan(rng::size(span) - (hb.prev + hb.next), hb.prev),
+                       rev ? comm.prev() : comm.next(),
+                       rev ? halo_tag::reverse : halo_tag::forward);
+    }
+    return owned;
+  }
+
+  static std::vector<group_type>
+  halo_groups(communicator comm, std::span<T> span, halo_bounds hb, bool rev) {
+    std::vector<group_type> halo;
+
+    bool should_make_left =  hb.prev > 0 && (hb.periodic || !(rev ? comm.last() : comm.first()));
+    bool should_make_right = hb.next > 0 && (hb.periodic || !(rev ? comm.first() : comm.last()));
+
+    if (should_make_left) {
+      std::cout << "\tnew halo: span=(first " << hb.prev
+                << ") rank=" << (rev ? comm.next() : comm.prev())
+                << " tag=" << (rev ? "reverse\n" : "forward\n");
+      halo.emplace_back(span.first(hb.prev),
+                        rev ? comm.next() : comm.prev(), 
+                        rev ? halo_tag::reverse : halo_tag::forward);
+    }
+    if (should_make_right) {
+      std::cout << "\tnew halo: span=(last " << hb.next
+                << ") rank=" << (rev ? comm.prev() : comm.next())
+                << " tag=" << (rev ? "forward\n" : "reverse\n");
+      halo.emplace_back(span.last(hb.next),
+                        rev ? comm.prev() : comm.next(), 
+                        rev ? halo_tag::forward : halo_tag::reverse);
     }
     return halo;
   }
@@ -422,7 +501,7 @@ template <typename T, typename Memory = default_memory<T>>
 class cyclic_span_halo {
 public:
   using group_type = span_group<T, Memory>;
-  using halo_type = span_halo<T, Memory>;
+  using halo_type = dual_span_halo<T, Memory>;
 
   cyclic_span_halo(const std::vector<halo_type *>& halos)
     : halos_(halos) {
