@@ -17,10 +17,27 @@ void local_is_accessible_in_halo_region(const int halo_prev,
         halo_prev, halo_next);
   iota(dv, 0);
   DRLOG("exchange start");
+
+  std::vector<int*> datas = { dv.data(0), dv.data(100) };
+  std::cout << "[datas before exchange]\n";
+  for (const auto& data: datas) {
+    for (size_t i = 0; i < dv.data_size(); i++) {
+      std::cout << data[i] << " ";
+    }
+    std::cout << "\n";
+  }
   
   std::cout << "[started exchange]\n";
   dv.halo().exchange();
   std::cout << "[finished exchange]\n";
+
+  std::cout << "[datas after exchange]\n";
+  for (const auto& data: datas) {
+    for (size_t i = 0; i < dv.data_size(); i++) {
+      std::cout << data[i] << " ";
+    }
+    std::cout << "\n";
+  }
 
   // 0   1   1   0
   // 012 345 678 9ab
@@ -60,8 +77,8 @@ void local_is_accessible_in_halo_region(const int halo_prev,
   case 3:
     first_local_index____ = {X, X, X, +6, 6, 3};
     first_nonlocal_index_ = {X, X, X, 10, 6, 4};
-    second_local_index___ = {X, X, X, X, 0, 0};
-    second_nonlocal_index = {X, X, X, X, 1, 1};
+    second_local_index___ = {X, X, X, +X, 0, 0};
+    second_nonlocal_index = {X, X, X, +X, 1, 1};
     break;
   case 4:
     first_local_index____ = {X, X, X, X, 6, 4};

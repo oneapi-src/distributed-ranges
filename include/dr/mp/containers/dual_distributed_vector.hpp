@@ -260,6 +260,8 @@ public:
     return datas_[res_idx(segment_index)];
   }
 
+  std::size_t data_size() const { return data_size_; }
+
 private:
   void init(auto size, auto dist) {
     size_ = size;

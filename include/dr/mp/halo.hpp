@@ -433,35 +433,35 @@ public:
 
   void partial_exchange_begin() {
     halos_[next_comm_index_]->exchange_begin();
+    increment_index();
   }
 
   void partial_exchange_finalize() {
     halos_[next_comm_index_]->exchange_finalize();
+    increment_index();
   }
 
   void partial_exchange() {
     halos_[next_comm_index_]->exchange();
+    increment_index();
   }
 
   void exchange() {
-    partial_exchange();
-    increment_index();
-    partial_exchange();
-    increment_index();
+    for (const auto &halo: halos_) {
+      halo->exchange();
+    }
   }
 
   void exchange_begin() {
-    partial_exchange_begin();
-    increment_index();
-    partial_exchange_begin();
-    increment_index();
+    for (const auto &halo: halos_) {
+      halo->exchange_begin();
+    }
   }
 
   void exchange_finalize() {
-    partial_exchange_finalize();
-    increment_index();
-    partial_exchange_finalize();
-    increment_index();
+    for (const auto &halo: halos_) {
+      halo->exchange_finalize();
+    }
   }
 
   void reduce_begin() {
