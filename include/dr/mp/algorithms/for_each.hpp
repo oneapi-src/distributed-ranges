@@ -18,6 +18,7 @@
 
 namespace dr::mp {
 
+// the concept doesn't work yet... for some reason
 template <typename R>
 concept dual_vector_range =
     dr::distributed_range<R> && requires(R &r) { dr::ranges::segments(r)[0].is_compute(); };
