@@ -178,10 +178,7 @@ public:
                                  ? my_process_rank == normalized_segment_index + 1
                                  : my_process_rank + 1 == normalized_segment_index;
 
-    std::cout << "my_process_rank, normalized_segment_index = " << my_process_rank << " " << normalized_segment_index << "\n";
-
     if (is_in_bounds) {
-      std::cout << "case is_in_bounds\n";
       assert(!is_in_halo_prev && !is_in_halo_next);
       return data + index_ + dv_->distribution_.halo().prev;
     }
@@ -190,7 +187,6 @@ public:
 #endif
     // sliding view needs local iterators that point to the halo
     if (is_in_halo_prev) {
-      std::cout << "case is_in_halo_prev\n";
       assert(!is_in_bounds && !is_in_halo_next);
 #ifndef SYCL_LANGUAGE_VERSION
       assert(index_ <= dv_->distribution_.halo().next); // <= instead of < to cover end() case
@@ -199,7 +195,6 @@ public:
     }
 
     if (is_in_halo_next) {
-      std::cout << "case is_in_halo_next\n";
       assert(!is_in_bounds && !is_in_halo_prev);
 #ifndef SYCL_LANGUAGE_VERSION
       assert(dv_->segment_size_ - index_ <= dv_->distribution_.halo().prev);

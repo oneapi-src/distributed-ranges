@@ -451,17 +451,11 @@ private:
 
     DRLOG("owned groups {}/{} first/last", comm.first(), comm.last());
     if (should_make_left) {
-      std::cout << "\tnew owned: span=(" << hb.prev << ", " << hb.next 
-                << ") rank=" << (rev ? comm.next() : comm.prev())
-                << " tag=" << (rev ? "forward\n" : "reverse\n");
       owned.emplace_back(span.subspan(hb.prev, hb.next),
                          rev ? comm.next() : comm.prev(),
                          rev ? halo_tag::forward : halo_tag::reverse);
     }
     if (should_make_right) {
-      std::cout << "\tnew owned: span=(" << rng::size(span) - (hb.prev + hb.next) << ", " << hb.prev
-                << ") rank=" << (rev ? comm.prev() : comm.next())
-                << " tag=" << (rev ? "reverse\n" : "forward\n");
       owned.emplace_back(
           span.subspan(rng::size(span) - (hb.prev + hb.next), hb.prev),
                        rev ? comm.prev() : comm.next(),
@@ -478,17 +472,11 @@ private:
     bool should_make_right = hb.next > 0 && (hb.periodic || !(rev ? comm.first() : comm.last()));
 
     if (should_make_left) {
-      std::cout << "\tnew halo: span=(first " << hb.prev
-                << ") rank=" << (rev ? comm.next() : comm.prev())
-                << " tag=" << (rev ? "reverse\n" : "forward\n");
       halo.emplace_back(span.first(hb.prev),
                         rev ? comm.next() : comm.prev(), 
                         rev ? halo_tag::reverse : halo_tag::forward);
     }
     if (should_make_right) {
-      std::cout << "\tnew halo: span=(last " << hb.next
-                << ") rank=" << (rev ? comm.prev() : comm.next())
-                << " tag=" << (rev ? "forward\n" : "reverse\n");
       halo.emplace_back(span.last(hb.next),
                         rev ? comm.prev() : comm.next(), 
                         rev ? halo_tag::forward : halo_tag::reverse);

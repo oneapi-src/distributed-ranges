@@ -28,7 +28,6 @@ void for_each(dual_vector_range auto &&dr, auto op) {
 }
 
 void partial_for_each(dual_vector_range auto &&dr, auto op) {
-  std::cout << "partial_for_each()" << std::endl;
   dr::drlog.debug(dr::logger::for_each, "partial_for_each: parallel execution\n");
   if (rng::empty(dr)) {
     return;
@@ -76,15 +75,14 @@ void for_each(dr::distributed_range auto &&dr, auto op) {
 
       assert(rng::distance(s) > 0);
 #ifdef SYCL_LANGUAGE_VERSION
-      // dr::__detail::parallel_for(
-      //     dr::mp::sycl_queue(), sycl::range<1>(rng::distance(s)),
-      //     [first = rng::begin(s), op](auto idx) { op(first[idx]); })
-      //     .wait();
+      dr::__detail::parallel_for(
+          dr::mp::sycl_queue(), sycl::range<1>(rng::distance(s)),
+          [first = rng::begin(s), op](auto idx) { op(first[idx]); })
+          .wait();
 #else
       assert(false);
 #endif
     } else {
-      std::cout << "for_eaching" << std::endl;
       dr::drlog.debug("  using cpu\n");
       rng::for_each(s, op);
     }
