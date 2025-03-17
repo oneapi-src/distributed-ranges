@@ -29,7 +29,7 @@ pre-commit==4.1.0
 pydata-sphinx-theme==0.16.1
 pyenchant==3.2.2
 Pygments==2.19.1
-python-debian==0.1.49
+python-debian==1.0.1
 PyYAML==6.0.2
 requests==2.32.3
 reuse==5.0.2
