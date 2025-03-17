@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: Intel Corporation
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  SPHINXOPTS: -q -W
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: pip install -r requirements.txt
+    - name: Checks
+      run: |
+        pre-commit run --all
+
+  clang:
+    runs-on: ubuntu-latest
+    env:
+      CXX: clang++
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & test
+      run: |
+        #source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j -C build all test
+    - uses: actions/upload-artifact@v3
+      with:
+        name: log-clang-${{ env.CXX }}
+        path: build/Testing
+
+  gcc:
+    runs-on: ubuntuy-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - cxx: g++-10
+        - cxx: g++-11
+        - cxx: g++-12
+    name: ${{ matrix.cxx }}
+    env:
+      CXX: ${{ matrix.cxx }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & test
+      run: |
+        #source /opt/intel/oneapi/setvars.sh
+        cmake -B build
+        make -j -C build all test
+        cmake -B build-nofmt
+        make -j -C build-nofmt/examples/cpu all test
+    - uses: actions/upload-artifact@v3
+      with:
+        name: log-gcc-${{ env.CXX }}
+        path: build/Testing
+
+  icpx:
+    runs-on: ubuntu-latest
+    env:
+      CXX: icpx
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & test
+      run: |
+        #source /opt/intel/oneapi/setvars.sh
+        cmake -B build -DENABLE_SYCL_MPI=on
+        make -j -C build all test
+    - uses: actions/upload-artifact@v3
+      with:
+        name: log-icpx-${{ env.CXX }}
+        path: build/Testing
+
+  publish:
+    needs: [checks, clang, gcc, icpx]
+    runs-on: dds-base
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: pip install -r requirements.txt
+    - name: Build doc
+      run: |
+        make -C doc/spec html
+    - name: Checkout gh-pages
+      uses: actions/checkout@v3
+      with:
+        ref: gh-pages
+        path: gh-pages
+    - name: Publish to github pages
+      run: |
+        rm -rf gh-pages/*
+        touch gh-pages/.nojekyll
+
+        cp -r doc/spec/build/html gh-pages/spec
+        cp -r doc/spec/build/doxygen-html gh-pages/doxygen
+
+        cd gh-pages
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .
+        # Ignore errors because no updates returns an error status.
+        git commit --reset-author --amend -m "Update from github actions"
+        git push --force origin gh-pages
