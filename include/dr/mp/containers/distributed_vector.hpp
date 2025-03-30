@@ -288,6 +288,8 @@ public:
 
   void fence() { backend.fence(); }
 
+  const auto &dist() const { return distribution_; }
+
   auto segment_size() const { return segment_size_; }
 
   auto get_segment_offset(std::size_t segment_id) const {
@@ -310,6 +312,8 @@ private:
     segment_size_ = gran * std::max({(size / gran + comm_size - 1) / comm_size,
                                      hb.prev / gran, hb.next / gran});
 
+    extended_local_data_distribution ext_dist(segment_size_, size_, hb);
+
     data_size_ = segment_size_ + hb.prev + hb.next;
 
     if (size_ > 0) {
@@ -321,7 +325,8 @@ private:
     std::size_t segment_index = 0;
     for (std::size_t i = 0; i < size; i += segment_size_) {
       segments_.emplace_back(this, segment_index++,
-                             std::min(segment_size_, size - i), data_size_);
+                             std::min(segment_size_, size - i), data_size_,
+                             ext_dist);
     }
 
     fence();
