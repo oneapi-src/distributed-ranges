@@ -33,12 +33,19 @@ void partial_for_each(dual_vector_range auto &&dr, auto op) {
   if (rng::empty(dr)) {
     return;
   }
+
+  auto is_local = [](const auto &segment) {
+    return dr::ranges::rank(segment) == default_comm().rank();
+  };
   
-  for (auto &s : local_segments(dr)) {
-    if (!s.is_compute()) {
-      s.swap_state();
+  for (auto &seg : dr::ranges::segments(dr) | rng::views::filter(is_local)) {
+    if (!seg.is_compute()) {
+      seg.swap_state();
       continue;
     }
+
+    auto b = dr::ranges::local(rng::begin(seg));
+    auto s = rng::subrange(b, b + rng::distance(seg));
 
     if (mp::use_sycl()) {
       dr::drlog.debug("  using sycl\n");
@@ -57,7 +64,7 @@ void partial_for_each(dual_vector_range auto &&dr, auto op) {
       rng::for_each(s, op);
     }
 
-    s.swap_state();
+    seg.swap_state();
   }
   barrier();
 }

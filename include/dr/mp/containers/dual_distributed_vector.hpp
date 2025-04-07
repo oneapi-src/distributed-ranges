@@ -240,7 +240,7 @@ public:
   auto &halo() const { return *halo_; }
 
   auto segments() const { return rng::views::all(segments_); }
-  // auto segments() { return rng::views::all(segments_); }
+  auto segments() { return rng::views::all(segments_); }
 
   __attribute__((unused))
   void fence(const std::size_t i) { backends_[i].fence(); }
@@ -300,7 +300,7 @@ private:
     for (std::size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       if (size_ > 0) {
         datas_.push_back(static_cast<T *>(backends_[i].allocate(data_size_ * sizeof(value_type))));
-        std::memset(datas_[i], 69, data_size_ * sizeof(value_type)); // todo: debug remove later
+        std::memset(datas_[i], 69, data_size_ * sizeof(value_type));
         halos_.push_back(new dual_span_halo<T>(default_comm(), datas_[i], data_size_, hb, i == 1));
       }
     }
@@ -314,7 +314,7 @@ private:
     }
 
     for (size_t i = 0; i < default_comm().size(); i++) {
-      segments_[i].swap_state();
+      segments_[default_comm().size() + i].swap_state();
     }
 
     for (size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
