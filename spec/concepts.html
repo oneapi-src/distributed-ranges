@@ -1,0 +1,727 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Concepts &#8212; distributed-ranges  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=a3416100" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=c73c0f3e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'concepts';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Containers" href="containers/containers.html" />
+    <link rel="prev" title="Architecture" href="arch.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the spec..."
+         aria-label="Search the spec..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">distributed-ranges  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="arch.html">Architecture</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Concepts</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="containers/containers.html">Containers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="containers/mp_distributed_vector.html"><code class="docutils literal notranslate"><span class="pre">dr::mp::distributed_vector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/mp_distributed_dense_matrix.html"><code class="docutils literal notranslate"><span class="pre">dr::mp::distributed_dense_matrix</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/sp_distributed_vector.html"><code class="docutils literal notranslate"><span class="pre">dr::sp::distributed_vector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/sp_dense_matrix.html"><code class="docutils literal notranslate"><span class="pre">dr::sp::dense_matrix</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/sp_sparse_matrix.html"><code class="docutils literal notranslate"><span class="pre">dr::sp::sparse_matrix</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="algorithms/algorithms.html">Algorithms</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/copy.html"><code class="docutils literal notranslate"><span class="pre">copy</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/exclusive_scan.html"><code class="docutils literal notranslate"><span class="pre">exclusive_scan</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/fill.html"><code class="docutils literal notranslate"><span class="pre">fill</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/for_each.html"><code class="docutils literal notranslate"><span class="pre">for_each</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/inclusive_scan.html"><code class="docutils literal notranslate"><span class="pre">inclusive_scan</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/iota.html"><code class="docutils literal notranslate"><span class="pre">iota</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/reduce.html"><code class="docutils literal notranslate"><span class="pre">reduce</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/sort.html"><code class="docutils literal notranslate"><span class="pre">sort</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/transform.html"><code class="docutils literal notranslate"><span class="pre">transform</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/sp_matrix_gemm.html"><code class="docutils literal notranslate"><span class="pre">gemm</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/sp_matrix_gemv.html"><code class="docutils literal notranslate"><span class="pre">gemv</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="views/views.html">Views</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="views/all_view.html"><code class="docutils literal notranslate"><span class="pre">all_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/counted_view.html"><code class="docutils literal notranslate"><span class="pre">counted_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/drop_view.html"><code class="docutils literal notranslate"><span class="pre">drop_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/iota_view.html"><code class="docutils literal notranslate"><span class="pre">iota_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/take_view.html"><code class="docutils literal notranslate"><span class="pre">take_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/sliding_view.html"><code class="docutils literal notranslate"><span class="pre">sliding_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/transform_view.html"><code class="docutils literal notranslate"><span class="pre">transform_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/zip_view.html"><code class="docutils literal notranslate"><span class="pre">zip_view</span></code></a></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/oneapi-src/distributed-ranges/edit/main/doc/spec/source/concepts.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/oneapi-src/distributed-ranges/issues/new?title=Issue%20on%20page%20%2Fconcepts.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/concepts.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Concepts</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-iterator"><code class="docutils literal notranslate"><span class="pre">remote_iterator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr15remote_iteratorE"><code class="docutils literal notranslate"><span class="pre">remote_iterator</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements">Requirements</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-range"><code class="docutils literal notranslate"><span class="pre">remote_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr12remote_rangeE"><code class="docutils literal notranslate"><span class="pre">remote_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Requirements</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distributed-range"><code class="docutils literal notranslate"><span class="pre">distributed_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr17distributed_rangeE"><code class="docutils literal notranslate"><span class="pre">distributed_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Requirements</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-contiguous-iterator"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr26remote_contiguous_iteratorE"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Requirements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#remarks">Remarks</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-contiguous-range"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr23remote_contiguous_rangeE"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Requirements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Remarks</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distributed-contiguous-range"><code class="docutils literal notranslate"><span class="pre">distributed_contiguous_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr28distributed_contiguous_rangeE"><code class="docutils literal notranslate"><span class="pre">distributed_contiguous_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Requirements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Remarks</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="concepts">
+<span id="id1"></span><h1>Concepts<a class="headerlink" href="#concepts" title="Link to this heading">#</a></h1>
+<section id="remote-iterator">
+<h2><code class="docutils literal notranslate"><span class="pre">remote_iterator</span></code><a class="headerlink" href="#remote-iterator" title="Link to this heading">#</a></h2>
+<dl class="cpp concept">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN2dr15remote_iteratorE">
+<span id="_CPPv3I0EN2dr15remote_iteratorE"></span><span id="_CPPv2I0EN2dr15remote_iteratorE"></span><span class="target" id="conceptdr_1_1remote__iterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">I</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="k"><span class="pre">concept</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remote_iterator</span></span></span><a class="headerlink" href="#_CPPv4I0EN2dr15remote_iteratorE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">concepts.hpp</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">&lt;</span><span class="n">typename</span> <span class="n">I</span><span class="o">&gt;</span>
+<span class="n">concept</span> <span class="n">remote_iterator</span> <span class="o">=</span>
+  <span class="n">std</span><span class="p">::</span><span class="n">forward_iterator</span><span class="o">&lt;</span><span class="n">I</span><span class="o">&gt;</span> <span class="o">&amp;&amp;</span> <span class="n">requires</span><span class="p">(</span><span class="n">I</span> <span class="o">&amp;</span><span class="nb">iter</span><span class="p">)</span> <span class="p">{</span> <span class="n">dr</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">rank</span><span class="p">(</span><span class="nb">iter</span><span class="p">);</span> <span class="p">};</span>
+</pre></div>
+</div>
+<section id="requirements">
+<h3>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">I</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">std::forward_iterator</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i</span></code> has a method <code class="docutils literal notranslate"><span class="pre">rank</span></code> returning the rank on which the memory
+<code class="docutils literal notranslate"><span class="pre">i</span></code> references is located.</p></li>
+</ol>
+</section>
+</section>
+<section id="remote-range">
+<h2><code class="docutils literal notranslate"><span class="pre">remote_range</span></code><a class="headerlink" href="#remote-range" title="Link to this heading">#</a></h2>
+<dl class="cpp concept">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN2dr12remote_rangeE">
+<span id="_CPPv3I0EN2dr12remote_rangeE"></span><span id="_CPPv2I0EN2dr12remote_rangeE"></span><span class="target" id="conceptdr_1_1remote__range"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">R</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="k"><span class="pre">concept</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remote_range</span></span></span><a class="headerlink" href="#_CPPv4I0EN2dr12remote_rangeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">concepts.hpp</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">&lt;</span><span class="n">typename</span> <span class="n">R</span><span class="o">&gt;</span>
+<span class="n">concept</span> <span class="n">remote_range</span> <span class="o">=</span>
+  <span class="n">rng</span><span class="p">::</span><span class="n">forward_range</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="o">&amp;&amp;</span> <span class="n">requires</span><span class="p">(</span><span class="n">R</span> <span class="o">&amp;</span><span class="n">r</span><span class="p">)</span> <span class="p">{</span> <span class="n">dr</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">rank</span><span class="p">(</span><span class="n">r</span><span class="p">);</span> <span class="p">};</span>
+</pre></div>
+</div>
+<section id="id2">
+<h3>Requirements<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">R</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">rng::forward_range</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code> has a method <code class="docutils literal notranslate"><span class="pre">rank</span></code> returning the rank on which the memory
+<code class="docutils literal notranslate"><span class="pre">r</span></code> references is located.</p></li>
+</ol>
+</section>
+</section>
+<section id="distributed-range">
+<h2><code class="docutils literal notranslate"><span class="pre">distributed_range</span></code><a class="headerlink" href="#distributed-range" title="Link to this heading">#</a></h2>
+<dl class="cpp concept">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN2dr17distributed_rangeE">
+<span id="_CPPv3I0EN2dr17distributed_rangeE"></span><span id="_CPPv2I0EN2dr17distributed_rangeE"></span><span class="target" id="conceptdr_1_1distributed__range"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">R</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="k"><span class="pre">concept</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">distributed_range</span></span></span><a class="headerlink" href="#_CPPv4I0EN2dr17distributed_rangeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">concepts.hpp</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">&lt;</span><span class="n">typename</span> <span class="n">R</span><span class="o">&gt;</span>
+<span class="n">concept</span> <span class="n">distributed_range</span> <span class="o">=</span>
+  <span class="n">rng</span><span class="p">::</span><span class="n">forward_range</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="o">&amp;&amp;</span> <span class="n">requires</span><span class="p">(</span><span class="n">R</span> <span class="o">&amp;</span><span class="n">r</span><span class="p">)</span> <span class="p">{</span> <span class="n">dr</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">segments</span><span class="p">(</span><span class="n">r</span><span class="p">);</span> <span class="p">};</span>
+</pre></div>
+</div>
+<section id="id3">
+<h3>Requirements<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">R</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">rng::forward_range</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code> has a method <code class="docutils literal notranslate"><span class="pre">segments</span></code></p></li>
+</ol>
+</section>
+</section>
+<section id="remote-contiguous-iterator">
+<h2><code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code><a class="headerlink" href="#remote-contiguous-iterator" title="Link to this heading">#</a></h2>
+<dl class="cpp concept">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN2dr26remote_contiguous_iteratorE">
+<span id="_CPPv3I0EN2dr26remote_contiguous_iteratorE"></span><span id="_CPPv2I0EN2dr26remote_contiguous_iteratorE"></span><span class="target" id="conceptdr_1_1remote__contiguous__iterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">I</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="k"><span class="pre">concept</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remote_contiguous_iterator</span></span></span><a class="headerlink" href="#_CPPv4I0EN2dr26remote_contiguous_iteratorE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<p>A remote contiguous iterator acts as a pointer to some contiguous piece
+of remote memory.</p>
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">concepts.hpp</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">&lt;</span><span class="n">typename</span> <span class="n">I</span><span class="o">&gt;</span>
+<span class="n">concept</span> <span class="n">remote_contiguous_iterator</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">random_access_iterator</span><span class="o">&lt;</span><span class="n">I</span><span class="o">&gt;</span> <span class="o">&amp;&amp;</span>
+    <span class="n">requires</span><span class="p">(</span><span class="n">I</span> <span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+  <span class="p">{</span> <span class="n">i</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span> <span class="p">}</span> <span class="o">-&gt;</span> <span class="n">std</span><span class="p">::</span><span class="n">convertible_to</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">size_t</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="p">{</span> <span class="n">i</span><span class="o">.</span><span class="n">local</span><span class="p">()</span> <span class="p">}</span> <span class="o">-&gt;</span> <span class="n">std</span><span class="p">::</span><span class="n">contiguous_iterator</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<section id="id4">
+<h3>Requirements<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<p>An object <cite>i</cite> of type <code class="docutils literal notranslate"><span class="pre">I</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code>
+if and only if:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">I</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">std::random_access_iterator</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i</span></code> has a method <code class="docutils literal notranslate"><span class="pre">rank</span></code> returning the rank on which the memory
+<code class="docutils literal notranslate"><span class="pre">i</span></code> references is located.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i</span></code> has a method <code class="docutils literal notranslate"><span class="pre">local</span></code> returning an object <code class="docutils literal notranslate"><span class="pre">l</span></code> whose type
+fulfills <code class="docutils literal notranslate"><span class="pre">std::contiguous_iterator</span></code>.  Dereferencing <code class="docutils literal notranslate"><span class="pre">l</span></code> is
+well-defined if the current rank is equal <code class="docutils literal notranslate"><span class="pre">i.rank()</span></code>.</p></li>
+</ol>
+</section>
+<section id="remarks">
+<h3>Remarks<a class="headerlink" href="#remarks" title="Link to this heading">#</a></h3>
+<p>Instantiations of <cite>remote_ptr</cite>, <cite>device_ptr</cite>, and <cite>BCL::GlobalPtr</cite> should all
+fulfill <code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code>.</p>
+</section>
+</section>
+<section id="remote-contiguous-range">
+<h2><code class="docutils literal notranslate"><span class="pre">remote_contiguous_range</span></code><a class="headerlink" href="#remote-contiguous-range" title="Link to this heading">#</a></h2>
+<dl class="cpp concept">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN2dr23remote_contiguous_rangeE">
+<span id="_CPPv3I0EN2dr23remote_contiguous_rangeE"></span><span id="_CPPv2I0EN2dr23remote_contiguous_rangeE"></span><span class="target" id="conceptdr_1_1remote__contiguous__range"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">R</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="k"><span class="pre">concept</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remote_contiguous_range</span></span></span><a class="headerlink" href="#_CPPv4I0EN2dr23remote_contiguous_rangeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<p>A remote contiguous range is a range located in a contiguous piece of remote
+memory.</p>
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">concepts.hpp</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">&lt;</span><span class="n">typename</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="n">concept</span> <span class="n">remote_contiguous_range</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">random_access_range</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">&amp;&amp;</span>
+    <span class="n">remote_contiguous_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">iterator_t</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="o">&amp;&amp;</span> <span class="n">requires</span><span class="p">(</span><span class="n">T</span> <span class="n">t</span><span class="p">)</span> <span class="p">{</span>
+  <span class="p">{</span> <span class="n">t</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span> <span class="p">}</span> <span class="o">-&gt;</span> <span class="n">std</span><span class="p">::</span><span class="n">convertible_to</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">size_t</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<section id="id5">
+<h3>Requirements<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<p>An object <cite>t</cite> of type <code class="docutils literal notranslate"><span class="pre">T</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">remote_contiguous_range</span></code> if and only
+if:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">T</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">std::ranges::random_access_range</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">T</span></code>’s iterator type fulfills <code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">t</span></code> has a method <code class="docutils literal notranslate"><span class="pre">rank</span></code> returning the rank on which the range is
+located. For all iterators <code class="docutils literal notranslate"><span class="pre">iter</span></code> <code class="docutils literal notranslate"><span class="pre">t.rank()</span> <span class="pre">==</span> <span class="pre">t.begin().rank()</span></code>.</p></li>
+</ol>
+</section>
+<section id="id6">
+<h3>Remarks<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<p>All of the iterators in <code class="docutils literal notranslate"><span class="pre">[begin(),</span> <span class="pre">end())</span></code> should be contiguous iterators
+with the same rank, and <code class="docutils literal notranslate"><span class="pre">[begin().local(),</span> <span class="pre">end().local())</span></code> should form a
+contiguous range referencing the same memory, but locally. Not quite sure how
+to express that concisely.</p>
+</section>
+</section>
+<section id="distributed-contiguous-range">
+<h2><code class="docutils literal notranslate"><span class="pre">distributed_contiguous_range</span></code><a class="headerlink" href="#distributed-contiguous-range" title="Link to this heading">#</a></h2>
+<dl class="cpp concept">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN2dr28distributed_contiguous_rangeE">
+<span id="_CPPv3I0EN2dr28distributed_contiguous_rangeE"></span><span id="_CPPv2I0EN2dr28distributed_contiguous_rangeE"></span><span class="target" id="conceptdr_1_1distributed__contiguous__range"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">R</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="k"><span class="pre">concept</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">distributed_contiguous_range</span></span></span><a class="headerlink" href="#_CPPv4I0EN2dr28distributed_contiguous_rangeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<p>A distributed contiguous range is a range consisting of multiple segments
+distributed over multiple processes, where each each segment is a
+remote contiguous range.</p>
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">concepts.hpp</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">&lt;</span><span class="n">typename</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="n">concept</span> <span class="n">distributed_contiguous_range</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">random_access_range</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">&amp;&amp;</span>
+    <span class="n">requires</span><span class="p">(</span><span class="n">T</span> <span class="n">t</span><span class="p">)</span> <span class="p">{</span>
+  <span class="p">{</span> <span class="n">t</span><span class="o">.</span><span class="n">segments</span><span class="p">()</span> <span class="p">}</span> <span class="o">-&gt;</span> <span class="n">std</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">random_access_range</span><span class="p">;</span>
+  <span class="p">{</span>
+    <span class="n">std</span><span class="p">::</span><span class="n">declval</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">ranges</span><span class="p">::</span><span class="n">range_value_t</span><span class="o">&lt;</span><span class="n">decltype</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">segments</span><span class="p">())</span><span class="o">&gt;&gt;</span><span class="p">()</span>
+    <span class="p">}</span> <span class="o">-&gt;</span> <span class="n">remote_contiguous_range</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<section id="id7">
+<h3>Requirements<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<p>An object <code class="docutils literal notranslate"><span class="pre">t</span></code> of type <code class="docutils literal notranslate"><span class="pre">T</span></code> fulfills <code class="docutils literal notranslate"><span class="pre">distributed_contiguous_range</span></code> if and
+only if:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">T</span></code> fulfills <cite>std::ranges::random_access_range</cite></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">t</span></code> has a method <code class="docutils literal notranslate"><span class="pre">segments</span></code> such that the <code class="docutils literal notranslate"><span class="pre">t.segments()</span></code> returns an
+<code class="docutils literal notranslate"><span class="pre">std::ranges::random_access_range</span></code> where each element is a
+<code class="docutils literal notranslate"><span class="pre">remote_contiguous_range</span></code>.</p></li>
+</ol>
+</section>
+<section id="id8">
+<h3>Remarks<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<p>Should there be other requirements, other than <code class="docutils literal notranslate"><span class="pre">segments</span></code>?  Perhaps a
+<code class="docutils literal notranslate"><span class="pre">distribution</span></code> method to return an implementation-defined type describing the
+distribution?</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="arch.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Architecture</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="containers/containers.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Containers</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-iterator"><code class="docutils literal notranslate"><span class="pre">remote_iterator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr15remote_iteratorE"><code class="docutils literal notranslate"><span class="pre">remote_iterator</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements">Requirements</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-range"><code class="docutils literal notranslate"><span class="pre">remote_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr12remote_rangeE"><code class="docutils literal notranslate"><span class="pre">remote_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Requirements</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distributed-range"><code class="docutils literal notranslate"><span class="pre">distributed_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr17distributed_rangeE"><code class="docutils literal notranslate"><span class="pre">distributed_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Requirements</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-contiguous-iterator"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr26remote_contiguous_iteratorE"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_iterator</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Requirements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#remarks">Remarks</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#remote-contiguous-range"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr23remote_contiguous_rangeE"><code class="docutils literal notranslate"><span class="pre">remote_contiguous_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Requirements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Remarks</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distributed-contiguous-range"><code class="docutils literal notranslate"><span class="pre">distributed_contiguous_range</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN2dr28distributed_contiguous_rangeE"><code class="docutils literal notranslate"><span class="pre">distributed_contiguous_range</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Requirements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Remarks</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Author name not set
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022-2025, Intel.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
