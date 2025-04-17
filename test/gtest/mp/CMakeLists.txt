@@ -94,6 +94,19 @@ if (ENABLE_SYCL)
 add_mp_ctest(NAME game_of_life NPROC 4 OFFLOAD SYCL TARGS --device-memory --steps 30 --redundancy 16 -n 100 -m 200)
 endif ()
 
+
+# Minimalistic program failing on CUDA
+add_executable(failing failing.cpp)
+if(ENABLE_ISHMEM)
+  target_link_ishmem(failing)
+endif()
+target_link_libraries(failing cxxopts DR::mpi)
+
+if (ENABLE_SYCL)
+add_mp_ctest(NAME failing NPROC 4 OFFLOAD SYCL)
+endif ()
+
+
 # tests without --sycl flag will fail on IshmemBackend TODO: make them be
 # running somehow if ENABLE_ISHMEM will be default CI config
 if(NOT ENABLE_ISHMEM)
