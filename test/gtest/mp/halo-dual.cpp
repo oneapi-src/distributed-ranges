@@ -202,3 +202,67 @@ void local_is_accessible_in_halo_region__partial(const int halo_prev,
 TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
   local_is_accessible_in_halo_region__partial<TypeParam>(0, 1);
 }
+
+// perf test!
+
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 200000;
+static constexpr size_t N_STEPS = 200000;
+auto stencil1d_subrange_op = [](auto &center) {
+  auto win = &center;
+  return win[-1] + win[0] + win[1];
+};
+
+void perf_test_dual() {
+  dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+  DRLOG("perf_test_dual TEST START");
+  iota(dv, 0);
+  DRLOG("exchange start");
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  dv.halo().exchange();
+
+  // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
+
+  for (size_t i = 0; i < N_STEPS; i++) {
+    partial_for_each(dv, stencil1d_subrange_op);
+    dv.halo().partial_exchange();
+
+    partial_for_each(dv, stencil1d_subrange_op);
+    dv.halo().partial_exchange();
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "\tperf_test_dual time: " << duration.count() << "ms" << std::endl;
+}
+
+void perf_test_classic() {
+  dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+  DRLOG("perf_test TEST START");
+  iota(dv, 0);
+  DRLOG("exchange start");
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  dv.halo().exchange();
+
+  // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
+
+  for (size_t i = 0; i < N_STEPS; i++) {
+    for_each(dv, stencil1d_subrange_op);
+    dv.halo().exchange();
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "\tperf_test time: " << duration.count() << "ms" << std::endl;
+}
+
+TYPED_TEST(HaloDual, perf_test_dual_dv) {
+  perf_test_dual();
+}
+
+TYPED_TEST(HaloDual, perf_test_classic_dv) {
+  perf_test_classic();
+}
