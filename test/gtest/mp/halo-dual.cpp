@@ -210,7 +210,7 @@ static constexpr size_t N_STEPS = 200000;
 size_t call_count = 0;
 auto stencil1d_subrange_op = [](auto &center) {
   auto win = &center;
-  call_count++;
+  // call_count++;
   return win[-1] + win[0] + win[1];
 };
 
