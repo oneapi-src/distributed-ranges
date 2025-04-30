@@ -207,8 +207,10 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 200000;
 static constexpr size_t N_STEPS = 200000;
+size_t call_count = 0;
 auto stencil1d_subrange_op = [](auto &center) {
   auto win = &center;
+  call_count++;
   return win[-1] + win[0] + win[1];
 };
 
@@ -220,21 +222,24 @@ void perf_test_dual() {
 
   auto start = std::chrono::high_resolution_clock::now();
 
+  call_count = 0;
   dv.halo().exchange();
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < N_STEPS; i++) {
+    dv.halo().partial_exchange_begin();
     partial_for_each(dv, stencil1d_subrange_op);
-    dv.halo().partial_exchange();
+    dv.halo().partial_exchange_finalize();
 
+    dv.halo().partial_exchange_begin();
     partial_for_each(dv, stencil1d_subrange_op);
-    dv.halo().partial_exchange();
+    dv.halo().partial_exchange_finalize();
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "\tperf_test_dual time: " << duration.count() << "ms" << std::endl;
+  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "ms \n\tcall_count = " << call_count << std::endl;
 }
 
 void perf_test_classic() {
@@ -245,6 +250,7 @@ void perf_test_classic() {
 
   auto start = std::chrono::high_resolution_clock::now();
 
+  call_count = 0;
   dv.halo().exchange();
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
@@ -256,7 +262,7 @@ void perf_test_classic() {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "\tperf_test time: " << duration.count() << "ms" << std::endl;
+  std::cout << "perf_test results: \n\ttime: " << duration.count() << "ms \n\tcall_count = " << call_count << std::endl;
 }
 
 TYPED_TEST(HaloDual, perf_test_dual_dv) {
