@@ -500,7 +500,7 @@ public:
 
   void partial_exchange_begin() {
     halos_[next_comm_index_]->exchange_begin();
-    increment_index();
+    // increment_index();
   }
 
   void partial_exchange_finalize() {
