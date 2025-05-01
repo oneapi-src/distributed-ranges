@@ -205,13 +205,28 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 
 // perf test!
 
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 200000;
-static constexpr size_t N_STEPS = 200000;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000;
+static constexpr size_t N_STEPS = 100000;
 size_t call_count = 0;
 auto stencil1d_subrange_op = [](auto &center) {
   auto win = &center;
   // call_count++;
   return win[-1] + win[0] + win[1];
+};
+
+auto stencil1d_subrange_op__heavy = [](auto &center) {
+  auto win = &center;
+  auto result = win[-1] + win[0] + win[1];
+
+  for (int i = 1; i < 10000; i++) {
+    if (i % 2 == 0) {
+      result *= i;
+    } else {
+      result /= i;
+    }
+  }
+
+  return result;
 };
 
 void perf_test_dual() {
@@ -227,13 +242,9 @@ void perf_test_dual() {
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
-  for (size_t i = 0; i < N_STEPS; i++) {
+  for (size_t i = 0; i < 2 * N_STEPS; i++) {
     dv.halo().partial_exchange_begin();
-    partial_for_each(dv, stencil1d_subrange_op);
-    dv.halo().partial_exchange_finalize();
-
-    dv.halo().partial_exchange_begin();
-    partial_for_each(dv, stencil1d_subrange_op);
+    partial_for_each(dv, stencil1d_subrange_op__heavy);
     dv.halo().partial_exchange_finalize();
   }
 
@@ -256,7 +267,7 @@ void perf_test_classic() {
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < N_STEPS; i++) {
-    for_each(dv, stencil1d_subrange_op);
+    for_each(dv, stencil1d_subrange_op__heavy);
     dv.halo().exchange();
   }
 
