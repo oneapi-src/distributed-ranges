@@ -23,11 +23,6 @@ template <typename R>
 concept dual_vector_range =
     dr::distributed_range<R> && requires(R &r) { dr::ranges::segments(r)[0].is_compute(); };
 
-void for_each(dual_vector_range auto &&dr, auto op) {
-  partial_for_each(dr, op);
-  partial_for_each(dr, op);
-}
-
 void partial_for_each(dual_vector_range auto &&dr, auto op) {
   dr::drlog.debug(dr::logger::for_each, "partial_for_each: parallel execution\n");
   if (rng::empty(dr)) {

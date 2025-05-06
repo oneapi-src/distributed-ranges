@@ -260,9 +260,9 @@ void perf_test_dual() {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() 
-            << "ms \n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count()
-            << "ms \n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << std::endl;
+  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "ms"
+            << "\n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count() << "ms"
+            << "\n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << "ms" << std::endl;
 }
 
 void perf_test_classic() {
@@ -293,9 +293,9 @@ void perf_test_classic() {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test results: \n\ttime: " << duration.count() 
-            << "ms \n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count()
-            << "ms \n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << std::endl;
+  std::cout << "perf_test results: \n\ttime: " << duration.count() << "ms"
+            << "\n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count() << "ms"
+            << "\n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << "ms" << std::endl;
 }
 
 TYPED_TEST(HaloDual, perf_test_dual_dv) {
