@@ -4,6 +4,13 @@
 
 #include "xp-tests.hpp"
 
+#include <dr/concepts/concepts.hpp>
+#include <dr/detail/logger.hpp>
+#include <dr/detail/onedpl_direct_iterator.hpp>
+#include <dr/detail/ranges_shim.hpp>
+#include <dr/detail/sycl_utils.hpp>
+#include <dr/mp/global.hpp>
+
 template <typename T> class HaloDual : public testing::Test {};
 
 TYPED_TEST_SUITE(HaloDual, ::testing::Types<dr::mp::dual_distributed_vector<int>>);
