@@ -206,98 +206,140 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 // perf test!
 
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000;
-static constexpr size_t N_STEPS = 100000;
-// auto stencil1d_subrange_op = [](auto &center) {
+// static constexpr size_t N_STEPS = 100000;
+// // auto stencil1d_subrange_op = [](auto &center) {
+// //   auto win = &center;
+// //   return win[-1] + win[0] + win[1];
+// // };
+
+// auto stencil1d_subrange_op__heavy = [](auto &center) {
 //   auto win = &center;
-//   return win[-1] + win[0] + win[1];
+//   auto result = win[-1] + win[0] + win[1];
+
+//   for (int i = 1; i < 100000; i++) {
+//     if (i % 2 == 0) {
+//       result *= i;
+//     } else {
+//       result /= i;
+//     }
+//   }
+
+//   return result;
 // };
 
-auto stencil1d_subrange_op__heavy = [](auto &center) {
-  auto win = &center;
-  auto result = win[-1] + win[0] + win[1];
+// void perf_test_dual() {
+//   dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+//   DRLOG("perf_test_dual TEST START");
+//   iota(dv, 0);
+//   DRLOG("exchange start");
 
-  for (int i = 1; i < 100000; i++) {
-    if (i % 2 == 0) {
-      result *= i;
-    } else {
-      result /= i;
-    }
-  }
+//   auto start = std::chrono::high_resolution_clock::now();
+//   auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
+//   auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
 
-  return result;
-};
+//   dv.halo().exchange();
 
-void perf_test_dual() {
-  dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
-  DRLOG("perf_test_dual TEST START");
-  iota(dv, 0);
-  DRLOG("exchange start");
+//   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
+
+//   for (size_t i = 0; i < 2 * N_STEPS; i++) {
+//     auto before = std::chrono::high_resolution_clock::now();
+//     dv.halo().partial_exchange_begin();
+//     auto after_exchange_begin = std::chrono::high_resolution_clock::now();
+//     partial_for_each(dv, stencil1d_subrange_op__heavy);
+//     auto after_for_each = std::chrono::high_resolution_clock::now();
+//     dv.halo().partial_exchange_finalize();
+//     auto after_exchange_finalize = std::chrono::high_resolution_clock::now();
+
+//     sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange_begin - before);
+//     sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange_finalize - after_for_each);
+//     sum_for_each += duration_cast<std::chrono::nanoseconds>(after_for_each - after_exchange_begin);
+//   }
+
+//   auto end = std::chrono::high_resolution_clock::now();
+//   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
+//   std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "ms"
+//             << "\n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count() << "ms"
+//             << "\n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << "ms" << std::endl;
+// }
+
+// void perf_test_classic() {
+//   dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+//   DRLOG("perf_test TEST START");
+//   iota(dv, 0);
+//   DRLOG("exchange start");
+
+//   auto start = std::chrono::high_resolution_clock::now();
+//   auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
+//   auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
+
+//   dv.halo().exchange();
+
+//   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
+
+//   for (size_t i = 0; i < N_STEPS; i++) {
+//     auto before = std::chrono::high_resolution_clock::now();
+//     for_each(dv, stencil1d_subrange_op__heavy);
+//     auto after_for_each = std::chrono::high_resolution_clock::now();
+//     dv.halo().exchange();
+//     auto after_exchange = std::chrono::high_resolution_clock::now();
+
+//     sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange - after_for_each);
+//     sum_for_each += duration_cast<std::chrono::nanoseconds>(after_for_each - before);
+//   }
+
+//   auto end = std::chrono::high_resolution_clock::now();
+//   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
+//   std::cout << "perf_test results: \n\ttime: " << duration.count() << "ms"
+//             << "\n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count() << "ms"
+//             << "\n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << "ms" << std::endl;
+// }
+
+// TYPED_TEST(HaloDual, perf_test_dual_dv) {
+//   perf_test_dual();
+// }
+
+// TYPED_TEST(HaloDual, perf_test_classic_dv) {
+//   perf_test_classic();
+// }
+
+void perf_test_dual_segment() {
+  dr::mp::dual_distributed_vector<int> dv(1000 * DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
   auto start = std::chrono::high_resolution_clock::now();
-  auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
-  auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
 
-  dv.halo().exchange();
+  for (auto &seg : dr::ranges::segments(dr) | rng::views::filter(is_local)) {
+    auto b = dr::ranges::local(rng::begin(seg));
+    auto s = rng::subrange(b, b + rng::distance(seg));
 
-  // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
-
-  for (size_t i = 0; i < 2 * N_STEPS; i++) {
-    auto before = std::chrono::high_resolution_clock::now();
-    dv.halo().partial_exchange_begin();
-    auto after_exchange_begin = std::chrono::high_resolution_clock::now();
-    partial_for_each(dv, stencil1d_subrange_op__heavy);
-    auto after_for_each = std::chrono::high_resolution_clock::now();
-    dv.halo().partial_exchange_finalize();
-    auto after_exchange_finalize = std::chrono::high_resolution_clock::now();
-
-    sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange_begin - before);
-    sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange_finalize - after_for_each);
-    sum_for_each += duration_cast<std::chrono::nanoseconds>(after_for_each - after_exchange_begin);
+    rng::for_each(s, [](auto &center) { return center + 1; });
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "ms"
-            << "\n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count() << "ms"
-            << "\n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << "ms" << std::endl;
+  std::cout << "perf_test_dual_segment results: \n\ttime: " << duration.count() << "ms" << std::endl;
 }
 
-void perf_test_classic() {
-  dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
-  DRLOG("perf_test TEST START");
-  iota(dv, 0);
-  DRLOG("exchange start");
+void perf_test_classic_segment() {
+  dr::mp::distributed_vector<int> dv(1000 * DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
   auto start = std::chrono::high_resolution_clock::now();
-  auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
-  auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
 
-  dv.halo().exchange();
+  for (auto &seg : dr::ranges::segments(dr) | rng::views::filter(is_local)) {
+    auto b = dr::ranges::local(rng::begin(seg));
+    auto s = rng::subrange(b, b + rng::distance(seg));
 
-  // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
-
-  for (size_t i = 0; i < N_STEPS; i++) {
-    auto before = std::chrono::high_resolution_clock::now();
-    for_each(dv, stencil1d_subrange_op__heavy);
-    auto after_for_each = std::chrono::high_resolution_clock::now();
-    dv.halo().exchange();
-    auto after_exchange = std::chrono::high_resolution_clock::now();
-
-    sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange - after_for_each);
-    sum_for_each += duration_cast<std::chrono::nanoseconds>(after_for_each - before);
+    rng::for_each(s, [](auto &center) { return center + 1; });
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test results: \n\ttime: " << duration.count() << "ms"
-            << "\n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count() << "ms"
-            << "\n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << "ms" << std::endl;
+  std::cout << "perf_test_dual_segment results: \n\ttime: " << duration.count() << "ms" << std::endl;
 }
 
-TYPED_TEST(HaloDual, perf_test_dual_dv) {
-  perf_test_dual();
+TYPED_TEST(HaloDual, perf_test_dual_dv_segment) {
+  perf_test_dual_segment();
 }
 
-TYPED_TEST(HaloDual, perf_test_classic_dv) {
-  perf_test_classic();
+TYPED_TEST(HaloDual, perf_test_classic_dv_segment) {
+  perf_test_classic_segment();
 }
