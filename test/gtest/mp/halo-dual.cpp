@@ -348,13 +348,13 @@ void perf_test_classic_segment() {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
-  std::cout << "perf_test_dual_segment results: \n\ttime: " << duration.count() << "us" << std::endl;
-}
-
-TYPED_TEST(HaloDual, perf_test_dual_dv_segment) {
-  perf_test_dual_segment();
+  std::cout << "perf_test_classic_segment results: \n\ttime: " << duration.count() << "us" << std::endl;
 }
 
 TYPED_TEST(HaloDual, perf_test_classic_dv_segment) {
   perf_test_classic_segment();
+}
+
+TYPED_TEST(HaloDual, perf_test_dual_dv_segment) {
+  perf_test_dual_segment();
 }
