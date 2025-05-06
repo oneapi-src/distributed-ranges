@@ -236,6 +236,8 @@ void perf_test_dual() {
   DRLOG("exchange start");
 
   auto start = std::chrono::high_resolution_clock::now();
+  auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
+  auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
 
   call_count = 0;
   dv.halo().exchange();
@@ -243,14 +245,24 @@ void perf_test_dual() {
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < 2 * N_STEPS; i++) {
+    auto before = std::chrono::high_resolution_clock::now();
     dv.halo().partial_exchange_begin();
+    auto after_exchange_begin = std::chrono::high_resolution_clock::now();
     partial_for_each(dv, stencil1d_subrange_op__heavy);
+    auto after_for_each = std::chrono::high_resolution_clock::now();
     dv.halo().partial_exchange_finalize();
+    auto after_exchange_finalize = std::chrono::high_resolution_clock::now();
+
+    sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange_begin - before);
+    sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange_finalize - after_for_each);
+    sum_for_each += duration_cast<std::chrono::nanoseconds>(after_for_each - after_exchange_begin);
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "ms \n\tcall_count = " << call_count << std::endl;
+  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() 
+            << "ms \n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count()
+            << "ms \n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << std::endl;
 }
 
 void perf_test_classic() {
@@ -260,6 +272,8 @@ void perf_test_classic() {
   DRLOG("exchange start");
 
   auto start = std::chrono::high_resolution_clock::now();
+  auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
+  auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
 
   call_count = 0;
   dv.halo().exchange();
@@ -267,13 +281,21 @@ void perf_test_classic() {
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < N_STEPS; i++) {
+    auto before = std::chrono::high_resolution_clock::now();
     for_each(dv, stencil1d_subrange_op__heavy);
+    auto after_for_each = std::chrono::high_resolution_clock::now();
     dv.halo().exchange();
+    auto after_exchange = std::chrono::high_resolution_clock::now();
+
+    sum_exchange += duration_cast<std::chrono::nanoseconds>(after_exchange - after_for_each);
+    sum_for_each += duration_cast<std::chrono::nanoseconds>(after_for_each - before);
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test results: \n\ttime: " << duration.count() << "ms \n\tcall_count = " << call_count << std::endl;
+  std::cout << "perf_test results: \n\ttime: " << duration.count() 
+            << "ms \n\tsum_exchange: " << duration_cast<std::chrono::milliseconds>(sum_exchange).count()
+            << "ms \n\tsum_for_each: " << duration_cast<std::chrono::milliseconds>(sum_for_each).count() << std::endl;
 }
 
 TYPED_TEST(HaloDual, perf_test_dual_dv) {
