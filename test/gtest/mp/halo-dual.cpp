@@ -309,12 +309,16 @@ static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000;
 //   perf_test_classic();
 // }
 
+auto is_local = [](const auto &segment) {
+  return dr::ranges::rank(segment) == default_comm().rank();
+};
+
 void perf_test_dual_segment() {
   dr::mp::dual_distributed_vector<int> dv(1000 * DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  for (auto &seg : dr::ranges::segments(dr) | rng::views::filter(is_local)) {
+  for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
     auto b = dr::ranges::local(rng::begin(seg));
     auto s = rng::subrange(b, b + rng::distance(seg));
 
@@ -331,7 +335,7 @@ void perf_test_classic_segment() {
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  for (auto &seg : dr::ranges::segments(dr) | rng::views::filter(is_local)) {
+  for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
     auto b = dr::ranges::local(rng::begin(seg));
     auto s = rng::subrange(b, b + rng::distance(seg));
 
