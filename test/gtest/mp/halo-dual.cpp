@@ -205,12 +205,10 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 
 // perf test!
 
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000;
-static constexpr size_t N_STEPS = 100000;
-size_t call_count = 0;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 300000;
+static constexpr size_t N_STEPS = 300000;
 // auto stencil1d_subrange_op = [](auto &center) {
 //   auto win = &center;
-//   // call_count++;
 //   return win[-1] + win[0] + win[1];
 // };
 
@@ -239,7 +237,6 @@ void perf_test_dual() {
   auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
   auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
 
-  call_count = 0;
   dv.halo().exchange();
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
@@ -275,7 +272,6 @@ void perf_test_classic() {
   auto sum_exchange = duration_cast<std::chrono::nanoseconds>(start - start);
   auto sum_for_each = duration_cast<std::chrono::nanoseconds>(start - start);
 
-  call_count = 0;
   dv.halo().exchange();
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
