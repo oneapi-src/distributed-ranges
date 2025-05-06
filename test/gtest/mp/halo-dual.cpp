@@ -310,7 +310,7 @@ static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000;
 // }
 
 auto is_local = [](const auto &segment) {
-  return dr::ranges::rank(segment) == default_comm().rank();
+  return dr::ranges::rank(segment) == dr::mp::default_comm().rank();
 };
 
 void perf_test_dual_segment() {
