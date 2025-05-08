@@ -290,13 +290,6 @@ private:
 
     data_size_ = segment_size_ + hb.prev + hb.next;
 
-    // std::cout << "[creating dual_distributed vector]\n"
-    //   << "\tsize: " << size << "\n"
-    //   << "\tsegment_size_: " << segment_size_ << "\n"
-    //   << "\tactual_segment_count_: " << actual_segment_count_ << "\n"
-    //   << "\tdata_size_: " << data_size_ << "\n"
-    //   << "\thalo: prev=" << hb.prev << " next=" << hb.next << " periodic=" << hb.periodic << "\n";
-
     for (std::size_t i = 0; i < DUAL_SEGMENTS_PER_PROC; i++) {
       if (size_ > 0) {
         datas_.push_back(static_cast<T *>(backends_[i].allocate(data_size_ * sizeof(value_type))));
@@ -334,7 +327,7 @@ private:
   distribution distribution_;
   std::size_t size_;
   std::vector<dual_dv_segment<dual_distributed_vector>> segments_;
-  std::vector<DualMpiBackend> backends_{DUAL_SEGMENTS_PER_PROC};
+  std::vector<backend_type> backends_{DUAL_SEGMENTS_PER_PROC};
 };
 
 template <typename T, typename B>

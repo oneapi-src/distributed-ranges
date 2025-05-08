@@ -56,11 +56,7 @@ void partial_for_each(dual_vector_range auto &&dr, auto op) {
 #endif
     } else {
       dr::drlog.debug("  using cpu\n");
-      auto start = std::chrono::high_resolution_clock::now();
       rng::for_each(s, op);
-      auto end = std::chrono::high_resolution_clock::now();
-      auto length = duration_cast<std::chrono::nanoseconds>(end - start);
-      dr::drlog.debug("  time spent: {}\n", length.count());
     }
 
     seg.swap_state();
@@ -91,11 +87,7 @@ void for_each(dr::distributed_range auto &&dr, auto op) {
 #endif
     } else {
       dr::drlog.debug("  using cpu\n");
-      auto start = std::chrono::high_resolution_clock::now();
       rng::for_each(s, op);
-      auto end = std::chrono::high_resolution_clock::now();
-      auto length = duration_cast<std::chrono::nanoseconds>(end - start);
-      dr::drlog.debug("  time spent: {}\n", length.count());
     }
   }
   barrier();

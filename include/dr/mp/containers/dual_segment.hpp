@@ -115,15 +115,18 @@ public:
 
   // dereference
   auto operator*() const {
+    std::cout << "ddsi::operator*()" << std::endl;
     assert(dv_ != nullptr);
     return dual_dv_segment_reference<DV>{*this};
   }
   auto operator[](difference_type n) const {
+    std::cout << "ddsi::operator[](" << n << ")" << std::endl;
     assert(dv_ != nullptr);
     return *(*this + n);
   }
 
   void get(value_type *dst, std::size_t size) const {
+    std::cout << "ddsi::get(dst, size)" << std::endl;
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
@@ -132,12 +135,14 @@ public:
   }
 
   value_type get() const {
+    std::cout << "ddsi::get()" << std::endl;
     value_type val;
     get(&val, 1);
     return val;
   }
 
   void put(const value_type *dst, std::size_t size) const {
+    std::cout << "ddsi::put(dst, size)" << std::endl;
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
@@ -147,9 +152,11 @@ public:
                         size * sizeof(value_type), segment_index_);
   }
 
-  void put(const value_type &value) const { put(&value, 1); }
+  void put(const value_type &value) const { std::cout << "ddsi::put(value)" << std::endl; put(&value, 1); }
 
   auto rank() const {
+    std::cout << "ddsi::rank()" << std::endl;
+
     assert(dv_ != nullptr);
     
     if (segment_index_ < default_comm().size()) {
@@ -160,6 +167,8 @@ public:
   }
 
   auto local() const {
+    std::cout << "ddsi::local()" << std::endl;
+
 #ifndef SYCL_LANGUAGE_VERSION
     assert(dv_ != nullptr);
 #endif
@@ -251,13 +260,14 @@ public:
     return size_;
   }
 
-  auto begin() const { return iterator(dv_, segment_index_, 0); }
-  auto end() const { return begin() + size(); }
+  auto begin() const { std::cout << "dds::begin()" << std::endl; return iterator(dv_, segment_index_, 0); }
+  auto end() const { std::cout << "dds::end()" << std::endl; return begin() + size(); }
   auto reserved() const { return reserved_; }
 
-  auto operator[](difference_type n) const { return *(begin() + n); }
+  auto operator[](difference_type n) const { std::cout << "dds::operator[](" << n << ")" << std::endl; return *(begin() + n); }
 
   bool is_local() const { 
+    std::cout << "dds::is_local()" << std::endl;
     auto rank = default_comm().rank();
     return segment_index_ == rank
       || segment_index_ == 2 * default_comm().size() - rank - 1;
