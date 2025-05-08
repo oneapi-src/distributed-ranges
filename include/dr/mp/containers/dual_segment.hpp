@@ -16,18 +16,16 @@ public:
 
   dual_dv_segment_reference(const iterator it) : iterator_(it) {}
 
-  operator value_type() const { std::cout << "ddsr::operator value_type()" << std::endl; return iterator_.get(); }
+  operator value_type() const { return iterator_.get(); }
   auto operator=(const value_type &value) const {
-    std::cout << "ddsr::operator=()" << std::endl;
     iterator_.put(value);
     return *this;
   }
   auto operator=(const dual_dv_segment_reference &other) const {
-    std::cout << "ddsr::operator=()" << std::endl;
     *this = value_type(other);
     return *this;
   }
-  auto operator&() const { std::cout << "ddsr::operator&()" << std::endl; return iterator_; }
+  auto operator&() const { return iterator_; }
 
 private:
   const iterator iterator_;
@@ -47,7 +45,6 @@ public:
   }
 
   auto operator<=>(const dual_dv_segment_iterator &other) const noexcept {
-    std::cout << "ddsi::operator<=>()" << std::endl;
     // assertion below checks against compare dereferenceable iterator to a
     // singular iterator and against attempt to compare iterators from different
     // sequences like _Safe_iterator<gnu_cxx::normal_iterator> does
@@ -59,23 +56,20 @@ public:
 
   // Comparison
   bool operator==(const dual_dv_segment_iterator &other) const noexcept {
-    std::cout << "ddsi::operator==()" << std::endl;
     return (*this <=> other) == 0;
   }
 
   // Only this arithmetic manipulate internal state
   auto &operator+=(difference_type n) {
-    std::cout << "ddsi::operator+=()" << std::endl;
     assert(dv_ != nullptr);
     assert(n >= 0 || static_cast<difference_type>(index_) >= -n);
     index_ += n;
     return *this;
   }
 
-  auto &operator-=(difference_type n) { std::cout << "ddsi::operator-=()" << std::endl; return *this += (-n); }
+  auto &operator-=(difference_type n) { return *this += (-n); }
 
   difference_type operator-(const dual_dv_segment_iterator &other) const noexcept {
-    std::cout << "ddsi::operator-()" << std::endl;
     assert(dv_ != nullptr && dv_ == other.dv_);
     assert(index_ >= other.index_);
     return index_ - other.index_;
@@ -83,38 +77,32 @@ public:
 
   // prefix
   auto &operator++() {
-    std::cout << "ddsi::operator++()" << std::endl;
     *this += 1;
     return *this;
   }
   auto &operator--() {
-    std::cout << "ddsi::operator--()" << std::endl;
     *this -= 1;
     return *this;
   }
 
   // postfix
   auto operator++(int) {
-    std::cout << "ddsi::operator++()" << std::endl;
     auto prev = *this;
     *this += 1;
     return prev;
   }
   auto operator--(int) {
-    std::cout << "ddsi::operator--()" << std::endl;
     auto prev = *this;
     *this -= 1;
     return prev;
   }
 
   auto operator+(difference_type n) const {
-    std::cout << "ddsi::operator+()" << std::endl;
     auto p = *this;
     p += n;
     return p;
   }
   auto operator-(difference_type n) const {
-    std::cout << "ddsi::operator-()" << std::endl;
     auto p = *this;
     p -= n;
     return p;
@@ -122,24 +110,20 @@ public:
 
   // When *this is not first in the expression
   friend auto operator+(difference_type n, const dual_dv_segment_iterator &other) {
-    std::cout << "ddsi::operator+()" << std::endl;
     return other + n;
   }
 
   // dereference
   auto operator*() const {
-    std::cout << "ddsi::operator*()" << std::endl;
     assert(dv_ != nullptr);
     return dual_dv_segment_reference<DV>{*this};
   }
   auto operator[](difference_type n) const {
-    std::cout << "ddsi::operator[](" << n << ")" << std::endl;
     assert(dv_ != nullptr);
     return *(*this + n);
   }
 
   void get(value_type *dst, std::size_t size) const {
-    std::cout << "ddsi::get(dst, size)" << std::endl;
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
@@ -148,14 +132,12 @@ public:
   }
 
   value_type get() const {
-    std::cout << "ddsi::get()" << std::endl;
     value_type val;
     get(&val, 1);
     return val;
   }
 
   void put(const value_type *dst, std::size_t size) const {
-    std::cout << "ddsi::put(dst, size)" << std::endl;
     assert(dv_ != nullptr);
     assert(segment_index_ * dv_->segment_size_ + index_ < dv_->size());
     auto segment_offset = index_ + dv_->distribution_.halo().prev;
@@ -165,11 +147,9 @@ public:
                         size * sizeof(value_type), segment_index_);
   }
 
-  void put(const value_type &value) const { std::cout << "ddsi::put(value)" << std::endl; put(&value, 1); }
+  void put(const value_type &value) const { put(&value, 1); }
 
   auto rank() const {
-    std::cout << "ddsi::rank()" << std::endl;
-
     assert(dv_ != nullptr);
     
     if (segment_index_ < default_comm().size()) {
@@ -180,8 +160,6 @@ public:
   }
 
   auto local() const {
-    std::cout << "ddsi::local()" << std::endl;
-
 #ifndef SYCL_LANGUAGE_VERSION
     assert(dv_ != nullptr);
 #endif
@@ -273,14 +251,13 @@ public:
     return size_;
   }
 
-  auto begin() const { std::cout << "dds::begin()" << std::endl; return iterator(dv_, segment_index_, 0); }
-  auto end() const { std::cout << "dds::end()" << std::endl; return begin() + size(); }
+  auto begin() const { return iterator(dv_, segment_index_, 0); }
+  auto end() const { return begin() + size(); }
   auto reserved() const { return reserved_; }
 
-  auto operator[](difference_type n) const { std::cout << "dds::operator[](" << n << ")" << std::endl; return *(begin() + n); }
+  auto operator[](difference_type n) const { return *(begin() + n); }
 
   bool is_local() const { 
-    std::cout << "dds::is_local()" << std::endl;
     auto rank = default_comm().rank();
     return segment_index_ == rank
       || segment_index_ == 2 * default_comm().size() - rank - 1;

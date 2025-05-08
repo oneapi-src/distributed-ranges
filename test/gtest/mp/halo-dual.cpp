@@ -212,8 +212,8 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 
 // perf test!
 
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10; // 100000;
-static constexpr size_t N_STEPS = 1; // 100000;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000;
+static constexpr size_t N_STEPS = 100000;
 // // auto stencil1d_subrange_op = [](auto &center) {
 // //   auto win = &center;
 // //   return win[-1] + win[0] + win[1];
@@ -313,18 +313,20 @@ auto is_local = [](const auto &segment) {
   return dr::ranges::rank(segment) == dr::mp::default_comm().rank();
 };
 
+auto perf_test_segment_lambda = [](auto &center) { center = center + 1; };
+
 void perf_test_dual_segment() {
-  dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+  dr::mp::dual_distributed_vector<int> dv(100 * DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  for (size_t i = 0; i < N_STEPS; i++) {
-    for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
-      auto b = dr::ranges::local(rng::begin(seg));
-      auto s = rng::subrange(b, b + rng::distance(seg));
   
-      std::cout << "CALLING RNG::FOR_EACH" << std::endl;
-      rng::for_each(s, [](auto &center) { std::cout << "lambda" << std::endl; center = center + 1; });
+  for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
+    auto b = dr::ranges::local(rng::begin(seg));
+    auto s = rng::subrange(b, b + rng::distance(seg));
+
+    for (size_t i = 0; i < N_STEPS; i++) {
+      rng::for_each(s, perf_test_segment_lambda);
     }
   }
 
@@ -334,16 +336,16 @@ void perf_test_dual_segment() {
 }
 
 void perf_test_classic_segment() {
-  dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+  dr::mp::distributed_vector<int> dv(100 * DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  for (size_t i = 0; i < N_STEPS; i++) {
-    for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
-      auto b = dr::ranges::local(rng::begin(seg));
-      auto s = rng::subrange(b, b + rng::distance(seg));
-  
-      rng::for_each(s, [](auto &center) { center = center + 1; });
+  for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
+    auto b = dr::ranges::local(rng::begin(seg));
+    auto s = rng::subrange(b, b + rng::distance(seg));
+
+    for (size_t i = 0; i < N_STEPS; i++) {
+      rng::for_each(s, perf_test_segment_lambda);
     }
   }
 
