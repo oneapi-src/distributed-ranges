@@ -323,6 +323,7 @@ void perf_test_dual_segment() {
       auto b = dr::ranges::local(rng::begin(seg));
       auto s = rng::subrange(b, b + rng::distance(seg));
   
+      std::cout << "CALLING RNG::FOR_EACH" << std::endl;
       rng::for_each(s, [](auto &center) { center = center + 1; });
     }
   }
