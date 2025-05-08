@@ -154,44 +154,54 @@ public:
         : parent_(parent), offset_(offset) {}
 
     auto operator+(difference_type n) const {
+      std::cout << "dvi::operator+()" << std::endl;
       return iterator(parent_, offset_ + n);
     }
     friend auto operator+(difference_type n, const iterator &other) {
+      std::cout << "dvi::operator+()" << std::endl;
       return other + n;
     }
     auto operator-(difference_type n) const {
+      std::cout << "dvi::operator-()" << std::endl;
       return iterator(parent_, offset_ - n);
     }
-    auto operator-(iterator other) const { return offset_ - other.offset_; }
+    auto operator-(iterator other) const { std::cout << "dvi::operator-()" << std::endl; return offset_ - other.offset_; }
 
     auto &operator+=(difference_type n) {
+      std::cout << "dvi::operator+=()" << std::endl;
       offset_ += n;
       return *this;
     }
     auto &operator-=(difference_type n) {
+      std::cout << "dvi::operator-=()" << std::endl;
       offset_ -= n;
       return *this;
     }
     auto &operator++() {
+      std::cout << "dvi::operator++()" << std::endl;
       offset_++;
       return *this;
     }
     auto operator++(int) {
+      std::cout << "dvi::operator++()" << std::endl;
       auto old = *this;
       offset_++;
       return old;
     }
     auto &operator--() {
+      std::cout << "dvi::operator--()" << std::endl;
       offset_--;
       return *this;
     }
     auto operator--(int) {
+      std::cout << "dvi::operator--()" << std::endl;
       auto old = *this;
       offset_--;
       return old;
     }
 
     bool operator==(iterator other) const {
+      std::cout << "dvi::operator==()" << std::endl;
       if (parent_ == nullptr || other.parent_ == nullptr) {
         return false;
       } else {
@@ -199,18 +209,21 @@ public:
       }
     }
     auto operator<=>(iterator other) const {
+      std::cout << "dvi::operator<=>()" << std::endl;
       assert(parent_ == other.parent_);
       return offset_ <=> other.offset_;
     }
 
     auto operator*() const {
+      std::cout << "dvi::operator*()" << std::endl;
       auto segment_size = parent_->segment_size_;
       return parent_
           ->segments()[offset_ / segment_size][offset_ % segment_size];
     }
-    auto operator[](difference_type n) const { return *(*this + n); }
+    auto operator[](difference_type n) const { std::cout << "dvi::operator[]()" << std::endl; return *(*this + n); }
 
     auto local() {
+      std::cout << "dvi::local()" << std::endl;
       auto segment_size = parent_->segment_size_;
       return (parent_->segments()[offset_ / segment_size].begin() +
               offset_ % segment_size)
@@ -224,6 +237,7 @@ public:
     // remote iterator provides local
     //
     auto segments() {
+      std::cout << "dvi::segments()" << std::endl;
       return dr::__detail::drop_segments(parent_->segments(), offset_);
     }
 
