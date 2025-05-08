@@ -323,7 +323,7 @@ void perf_test_dual_segment() {
       auto b = dr::ranges::local(rng::begin(seg));
       auto s = rng::subrange(b, b + rng::distance(seg));
   
-      rng::for_each(s, [](auto &center) { return center + 1; });
+      rng::for_each(s, [](auto &center) { center = center + 1; });
     }
   }
 
@@ -342,7 +342,7 @@ void perf_test_classic_segment() {
       auto b = dr::ranges::local(rng::begin(seg));
       auto s = rng::subrange(b, b + rng::distance(seg));
   
-      rng::for_each(s, [](auto &center) { return center + 1; });
+      rng::for_each(s, [](auto &center) { center = center + 1; });
     }
   }
 
