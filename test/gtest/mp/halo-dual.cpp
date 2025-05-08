@@ -324,7 +324,7 @@ void perf_test_dual_segment() {
       auto s = rng::subrange(b, b + rng::distance(seg));
   
       std::cout << "CALLING RNG::FOR_EACH" << std::endl;
-      rng::for_each(s, [](auto &center) { center = center + 1; });
+      rng::for_each(s, [](auto &center) { std::cout << "lambda" << std::endl; center = center + 1; });
     }
   }
 
