@@ -316,7 +316,7 @@ auto is_local = [](const auto &segment) {
 auto perf_test_segment_lambda = [](auto &center) { center = center + 1; };
 
 void perf_test_dual_segment() {
-  dr::mp::dual_distributed_vector<int> dv(100 * DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+  dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
   auto start = std::chrono::high_resolution_clock::now();
 
@@ -336,7 +336,7 @@ void perf_test_dual_segment() {
 }
 
 void perf_test_classic_segment() {
-  dr::mp::distributed_vector<int> dv(100 * DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+  dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
   auto start = std::chrono::high_resolution_clock::now();
 
