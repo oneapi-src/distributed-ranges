@@ -16,16 +16,18 @@ public:
 
   dual_dv_segment_reference(const iterator it) : iterator_(it) {}
 
-  operator value_type() const { return iterator_.get(); }
+  operator value_type() const { std::cout << "ddsr::operator value_type()" << std::endl; return iterator_.get(); }
   auto operator=(const value_type &value) const {
+    std::cout << "ddsr::operator=()" << std::endl;
     iterator_.put(value);
     return *this;
   }
   auto operator=(const dual_dv_segment_reference &other) const {
+    std::cout << "ddsr::operator=()" << std::endl;
     *this = value_type(other);
     return *this;
   }
-  auto operator&() const { return iterator_; }
+  auto operator&() const { std::cout << "ddsr::operator&()" << std::endl; return iterator_; }
 
 private:
   const iterator iterator_;
@@ -45,6 +47,7 @@ public:
   }
 
   auto operator<=>(const dual_dv_segment_iterator &other) const noexcept {
+    std::cout << "ddsi::operator<=>()" << std::endl;
     // assertion below checks against compare dereferenceable iterator to a
     // singular iterator and against attempt to compare iterators from different
     // sequences like _Safe_iterator<gnu_cxx::normal_iterator> does
@@ -56,20 +59,23 @@ public:
 
   // Comparison
   bool operator==(const dual_dv_segment_iterator &other) const noexcept {
+    std::cout << "ddsi::operator==()" << std::endl;
     return (*this <=> other) == 0;
   }
 
   // Only this arithmetic manipulate internal state
   auto &operator+=(difference_type n) {
+    std::cout << "ddsi::operator+=()" << std::endl;
     assert(dv_ != nullptr);
     assert(n >= 0 || static_cast<difference_type>(index_) >= -n);
     index_ += n;
     return *this;
   }
 
-  auto &operator-=(difference_type n) { return *this += (-n); }
+  auto &operator-=(difference_type n) { std::cout << "ddsi::operator-=()" << std::endl; return *this += (-n); }
 
   difference_type operator-(const dual_dv_segment_iterator &other) const noexcept {
+    std::cout << "ddsi::operator-()" << std::endl;
     assert(dv_ != nullptr && dv_ == other.dv_);
     assert(index_ >= other.index_);
     return index_ - other.index_;
@@ -77,32 +83,38 @@ public:
 
   // prefix
   auto &operator++() {
+    std::cout << "ddsi::operator++()" << std::endl;
     *this += 1;
     return *this;
   }
   auto &operator--() {
+    std::cout << "ddsi::operator--()" << std::endl;
     *this -= 1;
     return *this;
   }
 
   // postfix
   auto operator++(int) {
+    std::cout << "ddsi::operator++()" << std::endl;
     auto prev = *this;
     *this += 1;
     return prev;
   }
   auto operator--(int) {
+    std::cout << "ddsi::operator--()" << std::endl;
     auto prev = *this;
     *this -= 1;
     return prev;
   }
 
   auto operator+(difference_type n) const {
+    std::cout << "ddsi::operator+()" << std::endl;
     auto p = *this;
     p += n;
     return p;
   }
   auto operator-(difference_type n) const {
+    std::cout << "ddsi::operator-()" << std::endl;
     auto p = *this;
     p -= n;
     return p;
@@ -110,6 +122,7 @@ public:
 
   // When *this is not first in the expression
   friend auto operator+(difference_type n, const dual_dv_segment_iterator &other) {
+    std::cout << "ddsi::operator+()" << std::endl;
     return other + n;
   }
 
