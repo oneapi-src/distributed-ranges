@@ -231,6 +231,7 @@ auto stencil1d_subrange_op__heavy = [](auto &center) {
     }
   }
 
+  center = result;
   return result;
 };
 
@@ -253,8 +254,8 @@ void perf_test_dual() {
   //}
 
   auto end = std::chrono::high_resolution_clock::now();
-  auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "ms" << std::endl;
+  auto duration = duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "us" << std::endl;
 }
 
 void perf_test_classic() {
@@ -275,8 +276,8 @@ void perf_test_classic() {
   //}
 
   auto end = std::chrono::high_resolution_clock::now();
-  auto duration = duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "perf_test results: \n\ttime: " << duration.count() << "ms" << std::endl;
+  auto duration = duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "perf_test results: \n\ttime: " << duration.count() << "us" << std::endl;
 }
 
 TYPED_TEST(HaloDual, perf_test_dual_dv) {
@@ -291,50 +292,50 @@ auto is_local = [](const auto &segment) {
   return dr::ranges::rank(segment) == dr::mp::default_comm().rank();
 };
 
-auto perf_test_segment_lambda = [](auto &center) { center = center + 1; };
+// auto perf_test_segment_lambda = [](auto &center) { center = center + 1; };
 
-void perf_test_dual_segment() {
-  dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+// void perf_test_dual_segment() {
+//   dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
-  auto start = std::chrono::high_resolution_clock::now();
+//   auto start = std::chrono::high_resolution_clock::now();
   
-  for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
-    auto b = dr::ranges::local(rng::begin(seg));
-    auto s = rng::subrange(b, b + rng::distance(seg));
+//   for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
+//     auto b = dr::ranges::local(rng::begin(seg));
+//     auto s = rng::subrange(b, b + rng::distance(seg));
 
-    for (size_t i = 0; i < N_STEPS; i++) {
-      rng::for_each(s, perf_test_segment_lambda);
-    }
-  }
+//     for (size_t i = 0; i < N_STEPS; i++) {
+//       rng::for_each(s, perf_test_segment_lambda);
+//     }
+//   }
 
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration = duration_cast<std::chrono::microseconds>(end - start);
-  std::cout << "perf_test_dual_segment results: \n\ttime: " << duration.count() << "us" << std::endl;
-}
+//   auto end = std::chrono::high_resolution_clock::now();
+//   auto duration = duration_cast<std::chrono::microseconds>(end - start);
+//   std::cout << "perf_test_dual_segment results: \n\ttime: " << duration.count() << "us" << std::endl;
+// }
 
-void perf_test_classic_segment() {
-  dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+// void perf_test_classic_segment() {
+//   dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
 
-  auto start = std::chrono::high_resolution_clock::now();
+//   auto start = std::chrono::high_resolution_clock::now();
 
-  for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
-    auto b = dr::ranges::local(rng::begin(seg));
-    auto s = rng::subrange(b, b + rng::distance(seg));
+//   for (auto &seg : dr::ranges::segments(dv) | rng::views::filter(is_local)) {
+//     auto b = dr::ranges::local(rng::begin(seg));
+//     auto s = rng::subrange(b, b + rng::distance(seg));
 
-    for (size_t i = 0; i < N_STEPS; i++) {
-      rng::for_each(s, perf_test_segment_lambda);
-    }
-  }
+//     for (size_t i = 0; i < N_STEPS; i++) {
+//       rng::for_each(s, perf_test_segment_lambda);
+//     }
+//   }
 
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration = duration_cast<std::chrono::microseconds>(end - start);
-  std::cout << "perf_test_classic_segment results: \n\ttime: " << duration.count() << "us" << std::endl;
-}
+//   auto end = std::chrono::high_resolution_clock::now();
+//   auto duration = duration_cast<std::chrono::microseconds>(end - start);
+//   std::cout << "perf_test_classic_segment results: \n\ttime: " << duration.count() << "us" << std::endl;
+// }
 
-TYPED_TEST(HaloDual, perf_test_classic_dv_segment) {
-  perf_test_classic_segment();
-}
+// TYPED_TEST(HaloDual, perf_test_classic_dv_segment) {
+//   perf_test_classic_segment();
+// }
 
-TYPED_TEST(HaloDual, perf_test_dual_dv_segment) {
-  perf_test_dual_segment();
-}
+// TYPED_TEST(HaloDual, perf_test_dual_dv_segment) {
+//   perf_test_dual_segment();
+// }
