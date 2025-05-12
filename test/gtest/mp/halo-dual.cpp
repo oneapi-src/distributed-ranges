@@ -223,7 +223,7 @@ auto stencil1d_subrange_op__heavy = [](auto &center) {
   auto win = &center;
   auto result = win[-1] + win[0] + win[1];
 
-  for (int i = 1; i < 100000; i++) {
+  for (int i = 1; i < 100; i++) {
     if (i % 2 == 0) {
       result *= i;
     } else {
