@@ -223,7 +223,7 @@ auto stencil1d_subrange_op__heavy = [](auto &center) {
   auto win = &center;
   auto result = win[-1] + win[0] + win[1];
 
-  for (int i = 1; i < 100000000; i++) {
+  for (int i = 1; i < 10000000; i++) {
     if (i % 2 == 0) {
       result *= i;
     } else {
@@ -247,7 +247,11 @@ void perf_test_dual() {
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
-  //for (size_t i = 0; i < 2 * N_STEPS; i++) {
+  //for (size_t i = 0; i < N_STEPS; i++) {
+    dv.halo().partial_exchange_begin();
+    partial_for_each(dv, stencil1d_subrange_op__heavy);
+    dv.halo().partial_exchange_finalize();
+
     dv.halo().partial_exchange_begin();
     partial_for_each(dv, stencil1d_subrange_op__heavy);
     dv.halo().partial_exchange_finalize();
