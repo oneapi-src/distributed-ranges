@@ -214,28 +214,28 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
 // static constexpr size_t N_STEPS = 100000;
-// auto stencil1d_subrange_op = [](auto &center) {
-//   auto win = &center;
-//   return win[-1] + win[0] + win[1];
-// };
-
-auto stencil1d_subrange_op__heavy = [](auto &center) {
+auto stencil1d_subrange_op = [](auto &center) {
   auto win = &center;
-  auto result = win[-1] + win[0] + win[1];
-
-  for (int i = 1; i < 100; i++) {
-    if (i % 2 == 0) {
-      result *= i;
-    } else {
-      result /= i;
-    }
-  }
-
-  center = result;
-  return result;
+  center = win[-1] + win[0] + win[1];
 };
 
-void perf_test_dual() {
+// auto stencil1d_subrange_op__heavy = [](auto &center) {
+//   auto win = &center;
+//   auto result = win[-1] + win[0] + win[1];
+
+//   for (int i = 1; i < 100; i++) {
+//     if (i % 2 == 0) {
+//       result *= i;
+//     } else {
+//       result /= i;
+//     }
+//   }
+
+//   center = result;
+//   return result;
+// };
+
+void perf_test_dual(const auto& op) {
   dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
   DRLOG("perf_test_dual TEST START");
   iota(dv, 0);
@@ -247,22 +247,22 @@ void perf_test_dual() {
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
-  //for (size_t i = 0; i < N_STEPS; i++) {
+  for (size_t i = 0; i < N_STEPS; i++) {
     dv.halo().partial_exchange_begin();
-    partial_for_each(dv, stencil1d_subrange_op__heavy);
+    partial_for_each(dv, op);
     dv.halo().partial_exchange_finalize();
 
     dv.halo().partial_exchange_begin();
-    partial_for_each(dv, stencil1d_subrange_op__heavy);
+    partial_for_each(dv, op);
     dv.halo().partial_exchange_finalize();
-  //}
+  }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
   std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "us" << std::endl;
 }
 
-void perf_test_classic() {
+void perf_test_classic(const auto& op) {
   dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
   DRLOG("perf_test TEST START");
   iota(dv, 0);
@@ -274,10 +274,10 @@ void perf_test_classic() {
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
-  //for (size_t i = 0; i < N_STEPS; i++) {
-    for_each(dv, stencil1d_subrange_op__heavy);
+  for (size_t i = 0; i < N_STEPS; i++) {
+    for_each(dv, op);
     dv.halo().exchange();
-  //}
+  }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
@@ -285,11 +285,11 @@ void perf_test_classic() {
 }
 
 TYPED_TEST(HaloDual, perf_test_dual_dv) {
-  perf_test_dual();
+  perf_test_dual(stencil1d_subrange_op);
 }
 
 TYPED_TEST(HaloDual, perf_test_classic_dv) {
-  perf_test_classic();
+  perf_test_classic(stencil1d_subrange_op);
 }
 
 // auto is_local = [](const auto &segment) {
