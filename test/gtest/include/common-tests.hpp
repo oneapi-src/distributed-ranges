@@ -325,6 +325,12 @@ bool operator==(const xp::distributed_vector<T, B> &dist_vec,
   return is_equal(local_vec, dist_vec);
 }
 
+template <typename T, typename B>
+bool operator==(const mp::dual_distributed_vector<T, B> &dist_vec,
+                const std::vector<T> &local_vec) {
+  return is_equal(local_vec, dist_vec);
+}
+
 } // namespace dr::mp
 
 namespace dr::sp {
