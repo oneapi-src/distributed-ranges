@@ -44,15 +44,15 @@ using AllTypes =
 using IshmemTypes =
     ::testing::Types<dr::mp::distributed_vector<int, dr::mp::IshmemBackend>>;
 #else
-using AllTypes = ::testing::Types<dr::mp::distributed_vector<int>>; // ,
-                                  //dr::mp::dual_distributed_vector<int>>;
-using IshmemTypes = ::testing::Types<dr::mp::distributed_vector<int>>; //,
-                                     // dr::mp::dual_distributed_vector<int>>;
+using AllTypes = ::testing::Types<dr::mp::distributed_vector<int>>,
+                                  dr::mp::dual_distributed_vector<int>>;
+using IshmemTypes = ::testing::Types<dr::mp::distributed_vector<int>>,
+                                     dr::mp::dual_distributed_vector<int>>;
 
 #endif
 using AllTypesWithoutIshmem = 
-  ::testing::Types<dr::mp::distributed_vector<int>>; //, 
-                   //dr::mp::dual_distributed_vector<int>>;
+  ::testing::Types<dr::mp::distributed_vector<int>>, 
+                   dr::mp::dual_distributed_vector<int>>;
 
 namespace dr::mp {
 
