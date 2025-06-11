@@ -51,7 +51,7 @@ using IshmemTypes = ::testing::Types<dr::mp::distributed_vector<int>,
 
 #endif
 using AllTypesWithoutIshmem = 
-  ::testing::Types<dr::mp::distributed_vector<int>>, 
+  ::testing::Types<dr::mp::distributed_vector<int>, 
                    dr::mp::dual_distributed_vector<int>>;
 
 namespace dr::mp {
