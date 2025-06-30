@@ -7,7 +7,7 @@ alabaster==1.0.0
 Babel==2.17.0
 beautifulsoup4==4.13.3
 binaryornot==0.4.4
-boolean.py==4.0
+boolean.py==5.0
 breathe==4.35.0
 certifi==2024.12.14
 cfgv==3.4.0
