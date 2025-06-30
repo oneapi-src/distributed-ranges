@@ -1,0 +1,455 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; distributed-ranges  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=a3416100" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=c73c0f3e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the spec..."
+         aria-label="Search the spec..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">distributed-ranges  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="arch.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Concepts</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="containers/containers.html">Containers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="containers/mp_distributed_vector.html"><code class="docutils literal notranslate"><span class="pre">dr::mp::distributed_vector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/mp_distributed_dense_matrix.html"><code class="docutils literal notranslate"><span class="pre">dr::mp::distributed_dense_matrix</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/sp_distributed_vector.html"><code class="docutils literal notranslate"><span class="pre">dr::sp::distributed_vector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/sp_dense_matrix.html"><code class="docutils literal notranslate"><span class="pre">dr::sp::dense_matrix</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="containers/sp_sparse_matrix.html"><code class="docutils literal notranslate"><span class="pre">dr::sp::sparse_matrix</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="algorithms/algorithms.html">Algorithms</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/copy.html"><code class="docutils literal notranslate"><span class="pre">copy</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/exclusive_scan.html"><code class="docutils literal notranslate"><span class="pre">exclusive_scan</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/fill.html"><code class="docutils literal notranslate"><span class="pre">fill</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/for_each.html"><code class="docutils literal notranslate"><span class="pre">for_each</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/inclusive_scan.html"><code class="docutils literal notranslate"><span class="pre">inclusive_scan</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/iota.html"><code class="docutils literal notranslate"><span class="pre">iota</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/reduce.html"><code class="docutils literal notranslate"><span class="pre">reduce</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/sort.html"><code class="docutils literal notranslate"><span class="pre">sort</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/transform.html"><code class="docutils literal notranslate"><span class="pre">transform</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/sp_matrix_gemm.html"><code class="docutils literal notranslate"><span class="pre">gemm</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/sp_matrix_gemv.html"><code class="docutils literal notranslate"><span class="pre">gemv</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="views/views.html">Views</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="views/all_view.html"><code class="docutils literal notranslate"><span class="pre">all_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/counted_view.html"><code class="docutils literal notranslate"><span class="pre">counted_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/drop_view.html"><code class="docutils literal notranslate"><span class="pre">drop_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/iota_view.html"><code class="docutils literal notranslate"><span class="pre">iota_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/take_view.html"><code class="docutils literal notranslate"><span class="pre">take_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/sliding_view.html"><code class="docutils literal notranslate"><span class="pre">sliding_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/transform_view.html"><code class="docutils literal notranslate"><span class="pre">transform_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="views/zip_view.html"><code class="docutils literal notranslate"><span class="pre">zip_view</span></code></a></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/oneapi-src/distributed-ranges/issues/new?title=Issue%20on%20page%20%2Fgenindex.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button"
+   title="Open an issue"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#D"><strong>D</strong></a>
+ 
+</div>
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="concepts.html#_CPPv4I0EN2dr28distributed_contiguous_rangeE">dr::distributed_contiguous_range (C++ concept)</a>
+</li>
+      <li><a href="concepts.html#_CPPv4I0EN2dr17distributed_rangeE">dr::distributed_range (C++ concept)</a>
+</li>
+      <li><a href="algorithms/copy.html#_CPPv4I_N2dr20distributed_iteratorEEN2dr2mp4copyEvRR5DI_INRR5DI_INRRN2dr20distributed_iteratorE">dr::mp::copy (C++ function)</a>, <a href="algorithms/copy.html#_CPPv4N2dr2mp4copyENSt6size_tERRN2dr28distributed_contiguous_rangeENSt19contiguous_iteratorE">[1]</a>, <a href="algorithms/copy.html#_CPPv4N2dr2mp4copyENSt6size_tERRN3rng16contiguous_rangeEN2dr31distributed_contiguous_iteratorE">[2]</a>, <a href="algorithms/copy.html#_CPPv4N2dr2mp4copyERRN3rng13forward_rangeEN2dr20distributed_iteratorE">[3]</a>
+</li>
+      <li><a href="containers/mp_distributed_vector.html#_CPPv4I00EN2dr2mp18distributed_vectorE">dr::mp::distributed_vector (C++ class)</a>
+</li>
+      <li><a href="containers/mp_distributed_vector.html#_CPPv4NK2dr2mp18distributed_vector5beginEv">dr::mp::distributed_vector::begin (C++ function)</a>
+</li>
+      <li><a href="containers/mp_distributed_vector.html#_CPPv4N2dr2mp18distributed_vector18distributed_vectorENSt6size_tE10value_type12distribution">dr::mp::distributed_vector::distributed_vector (C++ function)</a>, <a href="containers/mp_distributed_vector.html#_CPPv4N2dr2mp18distributed_vector18distributed_vectorENSt6size_tE12distribution">[1]</a>
+</li>
+      <li><a href="containers/mp_distributed_vector.html#_CPPv4NK2dr2mp18distributed_vector3endEv">dr::mp::distributed_vector::end (C++ function)</a>
+</li>
+      <li><a href="containers/mp_distributed_vector.html#_CPPv4N2dr2mp18distributed_vector8iteratorE">dr::mp::distributed_vector::iterator (C++ class)</a>
+</li>
+      <li><a href="containers/mp_distributed_vector.html#_CPPv4NK2dr2mp18distributed_vectorixE15difference_type">dr::mp::distributed_vector::operator[] (C++ function)</a>
+</li>
+      <li><a href="containers/mp_distributed_vector.html#_CPPv4NK2dr2mp18distributed_vector4sizeEv">dr::mp::distributed_vector::size (C++ function)</a>
+</li>
+      <li><a href="algorithms/fill.html#_CPPv4I_N2dr20distributed_iteratorEEN2dr2mp4fillEDa2DI2DIDa">dr::mp::fill (C++ function)</a>, <a href="algorithms/fill.html#_CPPv4N2dr2mp4fillERRN2dr28distributed_contiguous_rangeEDa">[1]</a>
+</li>
+      <li><a href="algorithms/for_each.html#_CPPv4I_N2dr20distributed_iteratorEEN2dr2mp8for_eachEv2DI2DIDa">dr::mp::for_each (C++ function)</a>, <a href="algorithms/for_each.html#_CPPv4N2dr2mp8for_eachERRN2dr17distributed_rangeEDa">[1]</a>
+</li>
+      <li><a href="algorithms/iota.html#_CPPv4I_N2dr17distributed_rangeE_NSt8integralEEN2dr2mp4iotaEvRR1R1T">dr::mp::iota (C++ function)</a>, <a href="algorithms/iota.html#_CPPv4I_N2dr20distributed_iteratorE_NSt8integralEEN2dr2mp4iotaEv4Iter4Iter1T">[1]</a>
+</li>
+      <li><a href="algorithms/reduce.html#_CPPv4I0_N2dr17distributed_rangeEEN2dr2mp6reduceEDaNSt6size_tERR2DR1T">dr::mp::reduce (C++ function)</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr17distributed_rangeEEN2dr2mp6reduceEDaNSt6size_tERR2DR1TRRDa">[1]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr17distributed_rangeEEN2dr2mp6reduceEDaRR2DR1T">[2]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr17distributed_rangeEEN2dr2mp6reduceEDaRR2DR1TRRDa">[3]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr20distributed_iteratorEEN2dr2mp6reduceEDa2DI2DI1T">[4]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr20distributed_iteratorEEN2dr2mp6reduceEDa2DI2DI1TRRDa">[5]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr20distributed_iteratorEEN2dr2mp6reduceEDaNSt6size_tE2DI2DI1T">[6]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr20distributed_iteratorEEN2dr2mp6reduceEDaNSt6size_tE2DI2DI1TRRDa">[7]</a>, <a href="algorithms/reduce.html#_CPPv4I_N2dr17distributed_rangeEEN2dr2mp6reduceEDaNSt6size_tERR2DR">[8]</a>, <a href="algorithms/reduce.html#_CPPv4I_N2dr17distributed_rangeEEN2dr2mp6reduceEDaRR2DR">[9]</a>, <a href="algorithms/reduce.html#_CPPv4I_N2dr20distributed_iteratorEEN2dr2mp6reduceEDa2DI2DI">[10]</a>, <a href="algorithms/reduce.html#_CPPv4I_N2dr20distributed_iteratorEEN2dr2mp6reduceEDaNSt6size_tE2DI2DI">[11]</a>
+</li>
+      <li><a href="algorithms/transform.html#_CPPv4I_N3rng16forward_iteratorEEN2dr2mp9transformEvRR5DI_INRR5DI_INRRN2dr20distributed_iteratorEDa">dr::mp::transform (C++ function)</a>, <a href="algorithms/transform.html#_CPPv4N2dr2mp9transformERRN3rng13forward_rangeEN2dr20distributed_iteratorEDa">[1]</a>
+</li>
+      <li><a href="views/zip_view.html#_CPPv4IDpEN2dr2mp5views3zipEDaDpRR2Rs">dr::mp::views::zip (C++ function)</a>
+</li>
+      <li><a href="views/zip_view.html#_CPPv4I_DpN8__detail7zipableEEN2dr2mp8zip_viewE">dr::mp::zip_view (C++ class)</a>
+</li>
+      <li><a href="concepts.html#_CPPv4I0EN2dr26remote_contiguous_iteratorE">dr::remote_contiguous_iterator (C++ concept)</a>
+</li>
+      <li><a href="concepts.html#_CPPv4I0EN2dr23remote_contiguous_rangeE">dr::remote_contiguous_range (C++ concept)</a>
+</li>
+      <li><a href="concepts.html#_CPPv4I0EN2dr15remote_iteratorE">dr::remote_iterator (C++ concept)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="concepts.html#_CPPv4I0EN2dr12remote_rangeE">dr::remote_range (C++ concept)</a>
+</li>
+      <li><a href="algorithms/copy.html#_CPPv4I0_NSt19contiguous_iteratorEEN2dr2sp4copyE4Iter10device_ptrI1TE10device_ptrI1TE4Iter">dr::sp::copy (C++ function)</a>, <a href="algorithms/copy.html#_CPPv4I_NSt19contiguous_iteratorE_NSt19contiguous_iteratorEEN2dr2sp4copyE8OutputIt7InputIt7InputIt8OutputIt">[1]</a>
+</li>
+      <li><a href="containers/sp_dense_matrix.html#_CPPv4I00EN2dr2sp12dense_matrixE">dr::sp::dense_matrix (C++ class)</a>
+</li>
+      <li><a href="containers/sp_distributed_vector.html#_CPPv4I00EN2dr2sp18distributed_vectorE">dr::sp::distributed_vector (C++ struct)</a>
+</li>
+      <li><a href="algorithms/exclusive_scan.html#_CPPv4I0_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE00EN2dr2sp14exclusive_scanEvRR15ExecutionPolicy4Iter4Iter10OutputIter1TRR8BinaryOp">dr::sp::exclusive_scan (C++ function)</a>, <a href="algorithms/exclusive_scan.html#_CPPv4I0_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE0EN2dr2sp14exclusive_scanEvRR15ExecutionPolicy4Iter4Iter10OutputIter1T">[1]</a>, <a href="algorithms/exclusive_scan.html#_CPPv4I0_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE00EN2dr2sp14exclusive_scanEvRR15ExecutionPolicyRR1RRR1O1TRR8BinaryOp">[2]</a>, <a href="algorithms/exclusive_scan.html#_CPPv4I0_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE0EN2dr2sp14exclusive_scanEvRR15ExecutionPolicyRR1RRR1O1T">[3]</a>, <a href="algorithms/exclusive_scan.html#_CPPv4I_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE00EN2dr2sp14exclusive_scanEv4Iter4Iter10OutputIter1TRR8BinaryOp">[4]</a>, <a href="algorithms/exclusive_scan.html#_CPPv4I_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE0EN2dr2sp14exclusive_scanEv4Iter4Iter10OutputIter1T">[5]</a>, <a href="algorithms/exclusive_scan.html#_CPPv4I_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE00EN2dr2sp14exclusive_scanEvRR1RRR1O1TRR8BinaryOp">[6]</a>, <a href="algorithms/exclusive_scan.html#_CPPv4I_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE0EN2dr2sp14exclusive_scanEvRR1RRR1O1T">[7]</a>
+</li>
+      <li><a href="algorithms/fill.html#_CPPv4I00EN2dr2sp4fillEv10device_ptrI1TE10device_ptrI1TERK1U">dr::sp::fill (C++ function)</a>, <a href="algorithms/fill.html#_CPPv4I0_N2dr20distributed_iteratorEEN2dr2sp4fillEDa4Iter4IterRK1T">[1]</a>, <a href="algorithms/fill.html#_CPPv4I0_N2dr23remote_contiguous_rangeEEN2dr2sp4fillEDaRR1RRK1T">[2]</a>, <a href="algorithms/fill.html#_CPPv4I0_N2dr28distributed_contiguous_rangeEEN2dr2sp4fillEDaRR2DRRK1T">[3]</a>, <a href="algorithms/fill.html#_CPPv4I_NSt19contiguous_iteratorEEN2dr2sp4fillEv4Iter4IterRKNSt12iter_value_tI4IterEE">[4]</a>
+</li>
+      <li><a href="algorithms/fill.html#_CPPv4I00EN2dr2sp10fill_asyncEN4sycl5eventE10device_ptrI1TE10device_ptrI1TERK1U">dr::sp::fill_async (C++ function)</a>, <a href="algorithms/fill.html#_CPPv4I0_N2dr23remote_contiguous_rangeEEN2dr2sp10fill_asyncEN4sycl5eventERR1RRK1T">[1]</a>, <a href="algorithms/fill.html#_CPPv4I0_N2dr28distributed_contiguous_rangeEEN2dr2sp10fill_asyncEN4sycl5eventERR2DRRK1T">[2]</a>, <a href="algorithms/fill.html#_CPPv4I_NSt19contiguous_iteratorEEN2dr2sp10fill_asyncEN4sycl5eventE4Iter4IterRKNSt12iter_value_tI4IterEE">[3]</a>
+</li>
+      <li><a href="algorithms/sp_matrix_gemv.html#_CPPv4I_N2dr17distributed_rangeE00_N2dr17distributed_rangeEEN2dr2sp9flat_gemvEvRR1CRN2dr2sp13sparse_matrixI1T1IEERR1B">dr::sp::flat_gemv (C++ function)</a>
+</li>
+      <li><a href="algorithms/for_each.html#_CPPv4I0_N2dr17distributed_rangeE0EN2dr2sp8for_eachEvRR15ExecutionPolicyRR1RRR2Fn">dr::sp::for_each (C++ function)</a>, <a href="algorithms/for_each.html#_CPPv4I0_N2dr20distributed_iteratorE0EN2dr2sp8for_eachEvRR15ExecutionPolicy4Iter4IterRR2Fn">[1]</a>, <a href="algorithms/for_each.html#_CPPv4I_N2dr17distributed_rangeE0EN2dr2sp8for_eachEvRR1RRR2Fn">[2]</a>, <a href="algorithms/for_each.html#_CPPv4I_N2dr20distributed_iteratorE0EN2dr2sp8for_eachEv4Iter4IterRR2Fn">[3]</a>
+</li>
+      <li><a href="algorithms/sp_matrix_gemm.html#_CPPv4I0EN2dr2sp4gemmEvR24distributed_dense_matrixI1TER24distributed_dense_matrixI1TER24distributed_dense_matrixI1TE">dr::sp::gemm (C++ function)</a>
+</li>
+      <li><a href="algorithms/sp_matrix_gemv.html#_CPPv4I_N2dr17distributed_rangeE00_N2dr17distributed_rangeEEN2dr2sp4gemvEvRR1CRN2dr2sp13sparse_matrixI1T1IEERR1B">dr::sp::gemv (C++ function)</a>, <a href="algorithms/sp_matrix_gemv.html#_CPPv4I_N2dr17distributed_rangeE00_N2dr17distributed_rangeEEN2dr2sp4gemvEvRR1CRN2dr2sp13sparse_matrixI1T1IEERR1BRN2sp17duplicated_vectorIN3rng13range_value_tI1BEEEE">[1]</a>
+</li>
+      <li><a href="algorithms/sp_matrix_gemv.html#_CPPv4I_N2dr17distributed_rangeE00_N2dr17distributed_rangeEEN2dr2sp11gemv_squareEvRR1CRN2dr2sp13sparse_matrixI1T1IEERR1B">dr::sp::gemv_square (C++ function)</a>
+</li>
+      <li><a href="algorithms/sp_matrix_gemv.html#_CPPv4I_N2dr17distributed_rangeE00_N2dr17distributed_rangeEEN2dr2sp16gemv_square_copyEvRR1CRN2dr2sp13sparse_matrixI1T1IEERR1B">dr::sp::gemv_square_copy (C++ function)</a>
+</li>
+      <li><a href="algorithms/inclusive_scan.html#_CPPv4I0_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE00EN2dr2sp14inclusive_scanE10OutputIterRR15ExecutionPolicy4Iter4Iter10OutputIterRR8BinaryOp1T">dr::sp::inclusive_scan (C++ function)</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I0_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE0EN2dr2sp14inclusive_scanE10OutputIterRR15ExecutionPolicy4Iter4Iter10OutputIterRR8BinaryOp">[1]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I0_N2dr20distributed_iteratorE_N2dr20distributed_iteratorEEN2dr2sp14inclusive_scanE10OutputIterRR15ExecutionPolicy4Iter4Iter10OutputIter">[2]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I0_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE00EN2dr2sp14inclusive_scanEvRR15ExecutionPolicyRR1RRR1ORR8BinaryOp1T">[3]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I0_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE0EN2dr2sp14inclusive_scanEvRR15ExecutionPolicyRR1RRR1ORR8BinaryOp">[4]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I0_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeEEN2dr2sp14inclusive_scanEvRR15ExecutionPolicyRR1RRR1O">[5]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE00EN2dr2sp14inclusive_scanE10OutputIter4Iter4Iter10OutputIterRR8BinaryOp1T">[6]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE0EN2dr2sp14inclusive_scanE10OutputIter4Iter4Iter10OutputIterRR8BinaryOp">[7]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I_N2dr20distributed_iteratorE_N2dr20distributed_iteratorEEN2dr2sp14inclusive_scanE10OutputIter4Iter4Iter10OutputIter">[8]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE00EN2dr2sp14inclusive_scanEvRR1RRR1ORR8BinaryOp1T">[9]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeE0EN2dr2sp14inclusive_scanEvRR1RRR1ORR8BinaryOp">[10]</a>, <a href="algorithms/inclusive_scan.html#_CPPv4I_N2dr28distributed_contiguous_rangeE_N2dr28distributed_contiguous_rangeEEN2dr2sp14inclusive_scanEvRR1RRR1O">[11]</a>
+</li>
+      <li><a href="algorithms/iota.html#_CPPv4I_N2dr17distributed_rangeE_NSt8integralEEN2dr2sp4iotaEvRR1R1T">dr::sp::iota (C++ function)</a>, <a href="algorithms/iota.html#_CPPv4I_N2dr20distributed_iteratorE_NSt8integralEEN2dr2sp4iotaEv4Iter4Iter1T">[1]</a>
+</li>
+      <li><a href="algorithms/reduce.html#_CPPv4I0_N2dr17distributed_rangeE00EN2dr2sp6reduceE1TRR15ExecutionPolicyRR1R1TRR8BinaryOp">dr::sp::reduce (C++ function)</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr17distributed_rangeE0EN2dr2sp6reduceE1TRR15ExecutionPolicyRR1R1T">[1]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr17distributed_rangeEEN2dr2sp6reduceEN3rng13range_value_tI1REERR15ExecutionPolicyRR1R">[2]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr20distributed_iteratorE00EN2dr2sp6reduceE1TRR15ExecutionPolicy4Iter4Iter1TRR8BinaryOp">[3]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr20distributed_iteratorE0EN2dr2sp6reduceE1TRR15ExecutionPolicy4Iter4Iter1T">[4]</a>, <a href="algorithms/reduce.html#_CPPv4I0_N2dr20distributed_iteratorEEN2dr2sp6reduceENSt12iter_value_tI4IterEERR15ExecutionPolicy4Iter4Iter">[5]</a>, <a href="algorithms/reduce.html#_CPPv4I_N2dr17distributed_rangeE00EN2dr2sp6reduceE1TRR1R1TRR8BinaryOp">[6]</a>, <a href="algorithms/reduce.html#_CPPv4I_N2dr17distributed_rangeE0EN2dr2sp6reduceE1TRR1R1T">[7]</a>, <a href="algorithms/reduce.html#_CPPv4I_N2dr17distributed_rangeEEN2dr2sp6reduceEN3rng13range_value_tI1REERR1R">[8]</a>
+</li>
+      <li><a href="algorithms/sort.html#_CPPv4I_N2dr17distributed_rangeE0EN2dr2sp4sortEvRR1R7Compare">dr::sp::sort (C++ function)</a>, <a href="algorithms/sort.html#_CPPv4I_N2dr20distributed_iteratorE0EN2dr2sp4sortEv8RandomIt8RandomIt7Compare">[1]</a>
+</li>
+      <li><a href="containers/sp_sparse_matrix.html#_CPPv4I0_NSt8integralEEN2dr2sp13sparse_matrixE">dr::sp::sparse_matrix (C++ class)</a>
+</li>
+      <li><a href="algorithms/transform.html#_CPPv4I0EN2dr2sp9transformEDaRR15ExecutionPolicyRRN2dr17distributed_rangeEN2dr20distributed_iteratorERRDa">dr::sp::transform (C++ function)</a>, <a href="algorithms/transform.html#_CPPv4I0_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE0EN2dr2sp9transformEDaRR15ExecutionPolicy5Iter15Iter15Iter2RR2Fn">[1]</a>, <a href="algorithms/transform.html#_CPPv4I_N2dr17distributed_rangeE_N2dr20distributed_iteratorE0EN2dr2sp9transformEDaRR1R4IterRR2Fn">[2]</a>, <a href="algorithms/transform.html#_CPPv4I_N2dr20distributed_iteratorE_N2dr20distributed_iteratorE0EN2dr2sp9transformEDa5Iter15Iter15Iter2RR2Fn">[3]</a>
+</li>
+      <li><a href="views/zip_view.html#_CPPv4I_DpN3rng19random_access_rangeEEN2dr2sp5views3zipEDaDpRR2Rs">dr::sp::views::zip (C++ function)</a>
+</li>
+      <li><a href="views/zip_view.html#_CPPv4I_DpN3rng19random_access_rangeEEN2dr2sp8zip_viewE">dr::sp::zip_view (C++ class)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Author name not set
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022-2025, Intel.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
