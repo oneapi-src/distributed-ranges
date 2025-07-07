@@ -60,7 +60,8 @@ add_executable(
 
 add_executable(mp-quick-test
   mp-tests.cpp
-  ../common/iota.cpp
+  halo-dual.cpp
+  # ../common/iota.cpp
   # ../common/for_each.cpp
   # dual_distributed_vector.cpp
   )
