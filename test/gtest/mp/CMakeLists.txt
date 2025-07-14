@@ -114,9 +114,9 @@ if(ENABLE_SYCL)
   endif()
 
   foreach(nproc RANGE 1 4)
-    add_mp_ctest(NAME mp-quick-test NPROC ${nproc} SYCL)
+    add_mp_ctest(NAME mp-quick-test NPROC ${nproc} SYCL TIMEOUT 600)
     add_mp_pvc_ctest(
-      NAME mp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory)
+      NAME mp-quick-test NPROC ${nproc} OFFLOAD SYCL TARGS --device-memory TIMEOUT 600)
   endforeach()
 
   add_mp_pvc_ctest(
