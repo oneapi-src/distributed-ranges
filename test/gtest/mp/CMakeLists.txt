@@ -81,10 +81,10 @@ endforeach()
 # tests without --sycl flag will fail on IshmemBackend TODO: make them be
 # running somehow if ENABLE_ISHMEM will be default CI config
 if(NOT ENABLE_ISHMEM)
-  add_mp_ctest(NAME mp-quick-test NPROC 1)
-  add_mp_ctest(NAME mp-quick-test NPROC 2)
-  add_mp_ctest(NAME mp-quick-test NPROC 3)
-  add_mp_ctest(NAME mp-quick-test NPROC 4)
+  add_mp_ctest(NAME mp-quick-test NPROC 1 TIMEOUT 600)
+  add_mp_ctest(NAME mp-quick-test NPROC 2 TIMEOUT 600)
+  add_mp_ctest(NAME mp-quick-test NPROC 3 TIMEOUT 600)
+  add_mp_ctest(NAME mp-quick-test NPROC 4 TIMEOUT 600)
 
   cmake_path(GET MPI_CXX_ADDITIONAL_INCLUDE_DIRS FILENAME MPI_IMPL)
 
