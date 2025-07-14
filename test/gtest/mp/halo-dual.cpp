@@ -216,7 +216,7 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000000;
  
 [[maybe_unused]]
-static constexpr size_t N_STEPS = 1;
+static constexpr size_t N_STEPS = 10;
 
 [[maybe_unused]] 
 auto stencil1d_subrange_op = [](auto &center) {
@@ -229,7 +229,7 @@ auto stencil1d_subrange_op__heavy = [](auto &center) {
   auto win = &center;
   auto result = win[-1] + win[0] + win[1];
 
-  for (int i = 1; i < 10000; i++) {
+  for (int i = 1; i < 1000; i++) {
     if (i % 2 == 0) {
       result *= i;
     } else {
