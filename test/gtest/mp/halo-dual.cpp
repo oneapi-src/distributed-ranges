@@ -218,18 +218,20 @@ static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000000;
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 10;
 
+[[maybe_unused]]
+static constexpr size_t N_KERNEL_STEPS = 1000;
+
 [[maybe_unused]] 
 auto stencil1d_subrange_op = [](auto &center) {
   auto win = &center;
   center = win[-1] + win[0] + win[1];
 };
 
-[[maybe_unused]] 
 auto stencil1d_subrange_op__heavy = [](auto &center) {
   auto win = &center;
   auto result = win[-1] + win[0] + win[1];
 
-  for (int i = 1; i < 1000; i++) {
+  for (int i = 1; i < N_KERNEL_STEPS; i++) {
     if (i % 2 == 0) {
       result *= i;
     } else {
@@ -241,8 +243,8 @@ auto stencil1d_subrange_op__heavy = [](auto &center) {
   return result;
 };
 
-void perf_test_dual(const auto& op) {
-  dr::mp::dual_distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
+  dr::mp::dual_distributed_vector<int> dv(size, dr::mp::distribution().halo(1, 1));
   DRLOG("perf_test_dual TEST START");
   iota(dv, 0);
   DRLOG("exchange start");
@@ -253,7 +255,7 @@ void perf_test_dual(const auto& op) {
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
-  for (size_t i = 0; i < N_STEPS; i++) {
+  for (size_t i = 0; i < steps; i++) {
     dv.halo().partial_exchange_begin();
     partial_for_each(dv, op);
     dv.halo().partial_exchange_finalize();
@@ -268,8 +270,8 @@ void perf_test_dual(const auto& op) {
   std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "us" << std::endl;
 }
 
-void perf_test_classic(const auto& op) {
-  dr::mp::distributed_vector<int> dv(DISTRIBUTED_VECTOR_SIZE, dr::mp::distribution().halo(1, 1));
+void perf_test_classic(const size_t size, const size_t steps, const auto& op) {
+  dr::mp::distributed_vector<int> dv(size, dr::mp::distribution().halo(1, 1));
   DRLOG("perf_test TEST START");
   iota(dv, 0);
   DRLOG("exchange start");
@@ -280,7 +282,7 @@ void perf_test_classic(const auto& op) {
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
-  for (size_t i = 0; i < N_STEPS; i++) {
+  for (size_t i = 0; i < steps; i++) {
     for_each(dv, op);
     dv.halo().exchange();
   }
@@ -291,11 +293,11 @@ void perf_test_classic(const auto& op) {
 }
 
 TYPED_TEST(HaloDual, perf_test_dual_dv) {
-  perf_test_dual(stencil1d_subrange_op__heavy);
+  perf_test_dual(DISTRIBUTED_VECTOR_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
 }
 
 TYPED_TEST(HaloDual, perf_test_classic_dv) {
-  perf_test_classic(stencil1d_subrange_op__heavy);
+  perf_test_classic(DISTRIBUTED_VECTOR_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
 }
 
 // auto is_local = [](const auto &segment) {
