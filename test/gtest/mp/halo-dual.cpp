@@ -267,7 +267,10 @@ void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
-  std::cout << "perf_test_dual results: \n\ttime: " << duration.count() << "us" << std::endl;
+  std::cout << "perf_test_dual results:" 
+    << "\n\tsize:  " << size
+    << "\n\tsteps: " << steps
+    << "\n\ttime:  " << duration.count() << "us" << std::endl;
 }
 
 void perf_test_classic(const size_t size, const size_t steps, const auto& op) {
@@ -289,15 +292,32 @@ void perf_test_classic(const size_t size, const size_t steps, const auto& op) {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
-  std::cout << "perf_test results: \n\ttime: " << duration.count() << "us" << std::endl;
+  std::cout << "perf_test results:" 
+    << "\n\tsize:  " << size
+    << "\n\tsteps: " << steps
+    << "\n\ttime:  " << duration.count() << "us" << std::endl;
 }
 
 TYPED_TEST(HaloDual, perf_test_dual_dv) {
-  perf_test_dual(DISTRIBUTED_VECTOR_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+  size_t size = DISTRIBUTED_VECTOR_SIZE;
+  size_t steps = N_STEPS;
+
+  for (int i = 0; i < 5; i++) {
+    perf_test_dual(size, steps, stencil1d_subrange_op__heavy);
+    size /= 10;
+    steps *= 10;
+  }
 }
 
 TYPED_TEST(HaloDual, perf_test_classic_dv) {
-  perf_test_classic(DISTRIBUTED_VECTOR_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+  size_t size = DISTRIBUTED_VECTOR_SIZE;
+  size_t steps = N_STEPS;
+
+  for (int i = 0; i < 5; i++) {
+    perf_test_classic(size, steps, stencil1d_subrange_op__heavy);
+    size /= 10;
+    steps *= 10;
+  }
 }
 
 // auto is_local = [](const auto &segment) {
