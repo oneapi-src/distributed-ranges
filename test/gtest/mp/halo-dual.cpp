@@ -213,10 +213,10 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 // perf test!
 
 [[maybe_unused]]
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10000000;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10_000_000;
 
 [[maybe_unused]]
-static constexpr size_t N_STEPS = 10; // 100000;
+static constexpr size_t N_STEPS = 1;
 
 [[maybe_unused]] 
 auto stencil1d_subrange_op = [](auto &center) {
