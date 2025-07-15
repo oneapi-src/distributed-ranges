@@ -213,13 +213,16 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 // perf test!
 
 [[maybe_unused]]
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000000;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
  
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 1;
 
 [[maybe_unused]]
-static constexpr size_t N_KERNEL_STEPS = 1000;
+static constexpr size_t N_KERNEL_STEPS = 100000;
+
+[[maybe_unused]]
+static constexpr size_t N_TEST_ITERATIONS = 3;
 
 [[maybe_unused]] 
 auto stencil1d_subrange_op = [](auto &center) {
@@ -302,7 +305,7 @@ TYPED_TEST(HaloDual, perf_test_dual_dv) {
   size_t size = DISTRIBUTED_VECTOR_SIZE;
   size_t steps = N_STEPS;
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < N_TEST_ITERATIONS; i++) {
     perf_test_dual(size, steps, stencil1d_subrange_op__heavy);
     size /= 10;
     steps *= 10;
@@ -313,7 +316,7 @@ TYPED_TEST(HaloDual, perf_test_classic_dv) {
   size_t size = DISTRIBUTED_VECTOR_SIZE;
   size_t steps = N_STEPS;
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < N_TEST_ITERATIONS; i++) {
     perf_test_classic(size, steps, stencil1d_subrange_op__heavy);
     size /= 10;
     steps *= 10;
