@@ -312,16 +312,16 @@ TYPED_TEST(HaloDual, perf_test_dual_dv) {
   }
 }
 
-TYPED_TEST(HaloDual, perf_test_classic_dv) {
-  size_t size = DISTRIBUTED_VECTOR_SIZE;
-  size_t steps = N_STEPS;
+// TYPED_TEST(HaloDual, perf_test_classic_dv) {
+//   size_t size = DISTRIBUTED_VECTOR_SIZE;
+//   size_t steps = N_STEPS;
 
-  for (int i = 0; i < N_TEST_ITERATIONS; i++) {
-    perf_test_classic(size, steps, stencil1d_subrange_op__heavy);
-    size /= 10;
-    steps *= 10;
-  }
-}
+//   for (int i = 0; i < N_TEST_ITERATIONS; i++) {
+//     perf_test_classic(size, steps, stencil1d_subrange_op__heavy);
+//     size /= 10;
+//     steps *= 10;
+//   }
+// }
 
 // auto is_local = [](const auto &segment) {
 //   return dr::ranges::rank(segment) == dr::mp::default_comm().rank();
