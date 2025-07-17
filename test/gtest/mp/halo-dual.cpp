@@ -230,6 +230,7 @@ auto stencil1d_subrange_op = [](auto &center) {
   center = win[-1] + win[0] + win[1];
 };
 
+[[maybe_unused]]
 auto stencil1d_subrange_op__heavy = [](auto &center) {
   auto win = &center;
   auto result = win[-1] + win[0] + win[1];
@@ -246,6 +247,7 @@ auto stencil1d_subrange_op__heavy = [](auto &center) {
   return result;
 };
 
+[[maybe_unused]]
 void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
   dr::mp::dual_distributed_vector<int> dv(size, dr::mp::distribution().halo(1, 1));
   DRLOG("perf_test_dual TEST START");
@@ -276,6 +278,7 @@ void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
     << "\n\ttime:  " << duration.count() << "us" << std::endl;
 }
 
+[[maybe_unused]]
 void perf_test_classic(const size_t size, const size_t steps, const auto& op) {
   dr::mp::distributed_vector<int> dv(size, dr::mp::distribution().halo(1, 1));
   DRLOG("perf_test TEST START");
