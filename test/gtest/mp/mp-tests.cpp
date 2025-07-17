@@ -15,7 +15,7 @@ void dr_init() {
   if (options.count("sycl")) {
     sycl::queue q;
     if (comm_rank == 0) {
-      fmt::print("Enable sycl device {}: {} \n", comm_rank
+      fmt::print("Enable sycl device {}: {} \n", comm_rank,
                  q.get_device().get_info<sycl::info::device::name>());
     }
     dr::mp::init(q, options.count("device-memory") ? sycl::usm::alloc::device
