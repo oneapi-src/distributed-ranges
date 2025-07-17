@@ -61,7 +61,7 @@ void partial_for_each(dual_vector_range auto &&dr, auto op) {
 
     seg.swap_state();
   }
-  barrier();
+  // barrier();
 }
 
 // Collective for_each on distributed range
@@ -90,7 +90,7 @@ void for_each(dr::distributed_range auto &&dr, auto op) {
       rng::for_each(s, op);
     }
   }
-  barrier();
+  // barrier();
 }
 
 /// Collective for_each on iterator/sentinel for a distributed range
