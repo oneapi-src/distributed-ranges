@@ -261,13 +261,13 @@ void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < steps; i++) {
-    dv.halo().partial_exchange_begin();
+    //dv.halo().partial_exchange_begin();
     partial_for_each(dv, op);
-    dv.halo().partial_exchange_finalize();
+    //dv.halo().partial_exchange_finalize();
 
-    dv.halo().partial_exchange_begin();
+    //dv.halo().partial_exchange_begin();
     partial_for_each(dv, op);
-    dv.halo().partial_exchange_finalize();
+    //dv.halo().partial_exchange_finalize();
   }
 
   auto end = std::chrono::high_resolution_clock::now();
