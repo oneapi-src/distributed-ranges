@@ -293,7 +293,7 @@ void perf_test_classic(const size_t size, const size_t steps, const auto& op) {
 
   for (size_t i = 0; i < steps; i++) {
     for_each(dv, op);
-    dv.halo().exchange();
+    // dv.halo().exchange();
   }
 
   auto end = std::chrono::high_resolution_clock::now();
