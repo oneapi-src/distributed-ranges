@@ -213,16 +213,16 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 // perf test!
 
 [[maybe_unused]]
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10000000;
  
 [[maybe_unused]]
-static constexpr size_t HALO_SIZE = 20000;
+static constexpr size_t HALO_SIZE = 200000;
 
 [[maybe_unused]]
-static constexpr size_t N_STEPS = 10000;
+static constexpr size_t N_STEPS = 100000;
 
 [[maybe_unused]]
-static constexpr size_t N_KERNEL_STEPS = 1000;
+static constexpr size_t N_KERNEL_STEPS = 100;
 
 [[maybe_unused]]
 static constexpr size_t N_TEST_ITERATIONS = 1;
