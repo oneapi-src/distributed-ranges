@@ -216,10 +216,13 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000;
  
 [[maybe_unused]]
+static constexpr size_t HALO_SIZE = 100;
+
+[[maybe_unused]]
 static constexpr size_t N_STEPS = 10000;
 
 [[maybe_unused]]
-static constexpr size_t N_KERNEL_STEPS = 100;
+static constexpr size_t N_KERNEL_STEPS = 1000;
 
 [[maybe_unused]]
 static constexpr size_t N_TEST_ITERATIONS = 1;
@@ -249,7 +252,7 @@ auto stencil1d_subrange_op__heavy = [](auto &center) {
 
 [[maybe_unused]]
 void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
-  dr::mp::dual_distributed_vector<int> dv(size, dr::mp::distribution().halo(1, 1));
+  dr::mp::dual_distributed_vector<int> dv(size, dr::mp::distribution().halo(HALO_SIZE, HALO_SIZE));
   DRLOG("perf_test_dual TEST START");
   iota(dv, 0);
   DRLOG("exchange start");
@@ -280,7 +283,7 @@ void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
 
 [[maybe_unused]]
 void perf_test_classic(const size_t size, const size_t steps, const auto& op) {
-  dr::mp::distributed_vector<int> dv(size, dr::mp::distribution().halo(1, 1));
+  dr::mp::distributed_vector<int> dv(size, dr::mp::distribution().halo(HALO_SIZE, HALO_SIZE));
   DRLOG("perf_test TEST START");
   iota(dv, 0);
   DRLOG("exchange start");
