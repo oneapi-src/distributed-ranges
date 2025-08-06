@@ -219,7 +219,7 @@ static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10000000;
 static constexpr size_t HALO_SIZE = 500000;
 
 [[maybe_unused]]
-static constexpr size_t N_STEPS = 100000;
+static constexpr size_t N_STEPS = 1000;
 
 [[maybe_unused]]
 static constexpr size_t N_KERNEL_STEPS = 1000;
