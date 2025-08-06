@@ -216,10 +216,10 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10000000;
  
 [[maybe_unused]]
-static constexpr size_t HALO_SIZE = 000000;
+static constexpr size_t HALO_SIZE = 50000;
 
 [[maybe_unused]]
-static constexpr size_t N_STEPS = 1000;
+static constexpr size_t N_STEPS = 100;
 
 [[maybe_unused]]
 static constexpr size_t N_KERNEL_STEPS = 1000;
@@ -264,13 +264,13 @@ void perf_test_dual(const size_t size, const size_t steps, const auto& op) {
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < steps; i++) {
-    //dv.halo().partial_exchange_begin();
+    dv.halo().partial_exchange_begin();
     partial_for_each(dv, op);
-    //dv.halo().partial_exchange_finalize();
+    dv.halo().partial_exchange_finalize();
 
-    //dv.halo().partial_exchange_begin();
+    dv.halo().partial_exchange_begin();
     partial_for_each(dv, op);
-    //dv.halo().partial_exchange_finalize();
+    dv.halo().partial_exchange_finalize();
   }
 
   auto end = std::chrono::high_resolution_clock::now();
@@ -296,7 +296,7 @@ void perf_test_classic(const size_t size, const size_t steps, const auto& op) {
 
   for (size_t i = 0; i < steps; i++) {
     for_each(dv, op);
-    // dv.halo().exchange();
+    dv.halo().exchange();
   }
 
   auto end = std::chrono::high_resolution_clock::now();
