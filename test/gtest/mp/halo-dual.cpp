@@ -216,7 +216,7 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10000000;
  
 [[maybe_unused]]
-static constexpr size_t HALO_SIZE = 50000;
+static constexpr size_t HALO_SIZE = 500000;
 
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 100;
