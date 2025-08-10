@@ -303,7 +303,7 @@ TYPED_TEST(HaloDual, perf_test_dual_dv) {
 
   for (size_t size = 1000; size < max_size; size *= 10) {
     for (size_t halo_size = 1; halo_size < size / 10; halo_size *= 10) {
-      std::cout << "size/halo/kernel: " size << "/" halo_size << "/" << N_KERNEL_STEPS << "\n";
+      std::cout << "size/halo/kernel: " size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
       perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
     }
   }
@@ -314,7 +314,7 @@ TYPED_TEST(HaloDual, perf_test_classic_dv) {
 
   for (size_t size = 1000; size < max_size; size *= 10) {
     for (size_t halo_size = 1; halo_size < size / 10; halo_size *= 10) {
-      std::cout << "size/halo/kernel: " size << "/" halo_size << "/" << N_KERNEL_STEPS << "\n";
+      std::cout << "size/halo/kernel: " size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
       perf_test_classic(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
     }
   }
