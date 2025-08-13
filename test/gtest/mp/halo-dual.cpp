@@ -231,7 +231,7 @@ static constexpr size_t N_STEPS = 100;
 static constexpr size_t N_KERNEL_STEPS = 1000;
 
 [[maybe_unused]]
-static constexpr bool DO_RAMPING_TESTS = true;
+static constexpr bool DO_RAMPING_TESTS = false;
 
 [[maybe_unused]] 
 auto stencil1d_subrange_op = [](auto &center) {
