@@ -289,7 +289,7 @@ KERNEL_WITH_STEPS(kernel_19, 1 << 19)
 KERNEL_WITH_STEPS(kernel_20, 1 << 20)
 
 [[maybe_unused]]
-const std::vector kernels {
+const std::vector kernels { {
   kernel_0, 
   kernel_1, 
   kernel_2, 
@@ -311,7 +311,7 @@ const std::vector kernels {
   kernel_18,
   kernel_19,
   kernel_20,
-};
+} };
 
 [[maybe_unused]]
 void perf_test_dual(const size_t size, const size_t halo_size, const size_t steps, const auto& op) {
