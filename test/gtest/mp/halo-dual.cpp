@@ -379,9 +379,9 @@ void perf_test_classic(const size_t size, const size_t halo_size, const size_t s
 
 #define VARIED_KERNEL_TEST_CASE(vec_size, halo_size, kernel_log_size)\
       std::cout << "dual size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
-      perf_test_dual(vec_size, halo_size, N_STEPS, kernel##kernel_log_size);\
+      perf_test_dual(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
       std::cout << "classic size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
-      perf_test_classic(vec_size, halo_size, N_STEPS, kernel##kernel_log_size);\
+      perf_test_classic(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
 
 TYPED_TEST(HaloDual, perf_test_both) {
   size_t max_size = DISTRIBUTED_VECTOR_SIZE;
