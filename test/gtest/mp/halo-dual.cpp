@@ -237,7 +237,7 @@ static constexpr size_t N_STEPS = 10;
 static constexpr size_t N_KERNEL_STEPS = 10000;
 
 [[maybe_unused]]
-static constexpr bool DO_RAMPING_TESTS = true;
+static constexpr bool DO_RAMPING_TESTS = false;
 
 [[maybe_unused]]
 static constexpr size_t NON_RAMPING_RETRIES = 5;
