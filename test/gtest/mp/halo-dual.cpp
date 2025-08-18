@@ -248,21 +248,67 @@ auto stencil1d_subrange_op = [](auto &center) {
   center = win[-1] + win[0] + win[1];
 };
 
+#define KERNEL_WITH_STEPS(NAME, N) \
+  [[maybe_unused]] \
+  auto NAME = [](auto &center) { \
+    auto win = &center;\
+    auto result = win[-1] + win[0] + win[1];\
+    for (int i = 1; i < N_KERNEL_STEPS; i++) {\
+      if (i % 2 == 0) {\
+        result *= i;\
+      } else {\
+        result /= i;\
+      }\
+    }\
+    center = result;\
+    return result;\
+  };
+
+KERNEL_WITH_STEPS(kernel_0,  1 << 0)
+KERNEL_WITH_STEPS(kernel_1,  1 << 1)
+KERNEL_WITH_STEPS(kernel_2,  1 << 2)
+KERNEL_WITH_STEPS(kernel_3,  1 << 3)
+KERNEL_WITH_STEPS(kernel_4,  1 << 4)
+KERNEL_WITH_STEPS(kernel_5,  1 << 5)
+KERNEL_WITH_STEPS(kernel_6,  1 << 6)
+KERNEL_WITH_STEPS(kernel_7,  1 << 7)
+KERNEL_WITH_STEPS(kernel_8,  1 << 8)
+KERNEL_WITH_STEPS(kernel_9,  1 << 9)
+KERNEL_WITH_STEPS(kernel_10, 1 << 10)
+KERNEL_WITH_STEPS(kernel_11, 1 << 11)
+KERNEL_WITH_STEPS(kernel_12, 1 << 12)
+KERNEL_WITH_STEPS(kernel_13, 1 << 13)
+KERNEL_WITH_STEPS(kernel_14, 1 << 14)
+KERNEL_WITH_STEPS(kernel_15, 1 << 15)
+KERNEL_WITH_STEPS(kernel_16, 1 << 16)
+KERNEL_WITH_STEPS(kernel_17, 1 << 17)
+KERNEL_WITH_STEPS(kernel_18, 1 << 18)
+KERNEL_WITH_STEPS(kernel_19, 1 << 19)
+KERNEL_WITH_STEPS(kernel_20, 1 << 20)
+
 [[maybe_unused]]
-auto stencil1d_subrange_op__heavy = [](auto &center) {
-  auto win = &center;
-  auto result = win[-1] + win[0] + win[1];
-
-  for (int i = 1; i < N_KERNEL_STEPS; i++) {
-    if (i % 2 == 0) {
-      result *= i;
-    } else {
-      result /= i;
-    }
-  }
-
-  center = result;
-  return result;
+const std::vector kernels {
+  kernel_0, 
+  kernel_1, 
+  kernel_2, 
+  kernel_3, 
+  kernel_4, 
+  kernel_5, 
+  kernel_6, 
+  kernel_7, 
+  kernel_8, 
+  kernel_9, 
+  kernel_10,
+  kernel_11,
+  kernel_12,
+  kernel_13,
+  kernel_14,
+  kernel_15,
+  kernel_16,
+  kernel_17,
+  kernel_18,
+  kernel_19,
+  kernel_20,
 };
 
 [[maybe_unused]]
@@ -367,7 +413,7 @@ TYPED_TEST(HaloDual, perf_test_both) {
       return;
   }
 
-  for (size_t size = 1000; size <= max_size; size *= 10) {
+  for (size_t size = max_size; size <= max_size; size *= 10) {
     for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
       std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
       perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
