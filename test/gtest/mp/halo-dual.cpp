@@ -264,6 +264,8 @@ auto stencil1d_subrange_op = [](auto &center) {
     return result;\
   };
 
+KERNEL_WITH_STEPS(stencil1d_subrange_op__heavy, N_KERNEL_STEPS)
+
 KERNEL_WITH_STEPS(kernel_0,  1 << 0)
 KERNEL_WITH_STEPS(kernel_1,  1 << 1)
 KERNEL_WITH_STEPS(kernel_2,  1 << 2)
