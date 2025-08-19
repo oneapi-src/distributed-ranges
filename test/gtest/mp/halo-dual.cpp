@@ -253,7 +253,7 @@ auto stencil1d_subrange_op = [](auto &center) {
   auto NAME = [](auto &center) { \
     auto win = &center;\
     auto result = win[-1] + win[0] + win[1];\
-    for (int i = 1; i < N_KERNEL_STEPS; i++) {\
+    for (int i = 1; i < N; i++) {\
       if (i % 2 == 0) {\
         result *= i;\
       } else {\
