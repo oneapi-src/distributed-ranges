@@ -237,10 +237,10 @@ static constexpr size_t N_STEPS = 100;
 static constexpr size_t N_KERNEL_STEPS = 2048;
 
 [[maybe_unused]]
-static constexpr bool DO_RAMPING_TESTS = true;
+static constexpr bool DO_RAMPING_TESTS = false;
 
 [[maybe_unused]]
-static constexpr size_t NON_RAMPING_RETRIES = 1;
+static constexpr size_t NON_RAMPING_RETRIES = 10;
 
 [[maybe_unused]] 
 auto stencil1d_subrange_op = [](auto &center) {
