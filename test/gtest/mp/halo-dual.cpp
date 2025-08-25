@@ -15,8 +15,8 @@ template <typename T> class HaloDual : public testing::Test {};
 
 TYPED_TEST_SUITE(HaloDual, ::testing::Types<dr::mp::dual_distributed_vector<int>>);
 
-[[maybe_unused]]
 template <typename DV>
+[[maybe_unused]]
 void check_matching(DV &dv, int idx, int expected_value) {
   typename DV::value_type *local_ptr = (dv.begin() + idx).local();
   EXPECT_TRUE(local_ptr != nullptr);
@@ -31,8 +31,8 @@ void check_matching(DV &dv, int idx, int expected_value) {
   EXPECT_EQ(value_on_host, expected_value);
 }
 
-[[maybe_unused]]
 template <typename DV>
+[[maybe_unused]]
 void local_is_accessible_in_halo_region(const int halo_prev,
                                         const int halo_next) {
 
@@ -120,8 +120,8 @@ void local_is_accessible_in_halo_region(const int halo_prev,
 //   local_is_accessible_in_halo_region<TypeParam>(0, 1);
 // }
 
-[[maybe_unused]]
 template <typename DV>
+[[maybe_unused]]
 void local_is_accessible_in_halo_region__partial(const int halo_prev,
                                                  const int halo_next) {
 
