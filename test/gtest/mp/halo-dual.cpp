@@ -306,7 +306,6 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
       dv.halo().partial_exchange_begin();
       dv.halo().partial_exchange_finalize();
     });
-    comm_thread_1.
     partial_for_each(dv, op);
     comm_thread_1.join();
 
