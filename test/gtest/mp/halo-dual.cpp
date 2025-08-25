@@ -288,8 +288,10 @@ KERNEL_WITH_STEPS(kernel_18, 1 << 18)
 KERNEL_WITH_STEPS(kernel_19, 1 << 19)
 KERNEL_WITH_STEPS(kernel_20, 1 << 20)
 
+
+
 [[maybe_unused]]
-void perf_test_dual(const size_t size, const size_t halo_size, const size_t steps, const auto& op) {
+void perf_test_dual_parallel(const size_t size, const size_t halo_size, const size_t steps, const auto& op) {
   dr::mp::dual_distributed_vector<int> dv(size, dr::mp::distribution().halo(halo_size, halo_size));
   DRLOG("perf_test_dual TEST START");
   iota(dv, 0);
@@ -300,6 +302,38 @@ void perf_test_dual(const size_t size, const size_t halo_size, const size_t step
   dv.halo().exchange();
 
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
+
+  for (size_t i = 0; i < steps; i++) {
+    std::thread comm_thread_1 = [&dv]{
+      dv.halo().partial_exchange_begin();
+      dv.halo().partial_exchange_finalize();
+    };
+    partial_for_each(dv, op);
+    comm_thread_1.join();
+
+    std::thread comm_thread_2 = [&dv]{
+      dv.halo().partial_exchange_begin();
+      dv.halo().partial_exchange_finalize();
+    };
+    partial_for_each(dv, op);
+    comm_thread_2.join();
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "\ttime: " << duration.count() << "us" << std::endl;
+}
+
+[[maybe_unused]]
+void perf_test_dual(const size_t size, const size_t halo_size, const size_t steps, const auto& op) {
+  dr::mp::dual_distributed_vector<int> dv(size, dr::mp::distribution().halo(halo_size, halo_size));
+  DRLOG("perf_test_dual TEST START");
+  iota(dv, 0);
+  DRLOG("exchange start");
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  dv.halo().exchange();
 
   for (size_t i = 0; i < steps; i++) {
     dv.halo().partial_exchange_begin();
@@ -326,8 +360,6 @@ void perf_test_classic(const size_t size, const size_t halo_size, const size_t s
   auto start = std::chrono::high_resolution_clock::now();
 
   dv.halo().exchange();
-
-  // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < steps; i++) {
     for_each(dv, op);
@@ -378,6 +410,8 @@ void perf_test_classic(const size_t size, const size_t halo_size, const size_t s
 // }
 
 #define VARIED_KERNEL_TEST_CASE(vec_size, halo_size, kernel_log_size)\
+      std::cout << "dual parallel size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
+      perf_test_dual_parallel(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
       std::cout << "dual size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
       perf_test_dual(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
       std::cout << "classic size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
@@ -388,6 +422,8 @@ TYPED_TEST(HaloDual, perf_test_both) {
 
   if (!DO_RAMPING_TESTS) {
       for (int i = 0; i < NON_RAMPING_RETRIES; i++) {
+        std::cout << "dual parallel size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
+        perf_test_dual_parallel(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
         std::cout << "dual size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
         perf_test_dual(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
         std::cout << "classic size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
