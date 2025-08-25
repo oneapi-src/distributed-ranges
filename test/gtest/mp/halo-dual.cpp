@@ -310,6 +310,7 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
       dv.halo().partial_exchange_begin();
       dv.halo().partial_exchange_finalize();
       finished_communicating = true;
+      should_communicate = false;
       lock.unlock();
       cv.notify_one();
     }
@@ -323,6 +324,7 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
     {
       std::lock_guard lock(mut);
       should_communicate = true;
+      finished_communicating = false;
     }
     cv.notify_one();
 
