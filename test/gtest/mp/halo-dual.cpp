@@ -219,25 +219,25 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 // static constexpr size_t HALO_SIZE = 500000;
 
 // these are good
+// [[maybe_unused]]
+// static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
+// [[maybe_unused]]
+// static constexpr size_t HALO_SIZE = 2048;
+
 [[maybe_unused]]
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
-[[maybe_unused]]
-static constexpr size_t HALO_SIZE = 2048;
-
-// [[maybe_unused]]
-// static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000000;
  
-// [[maybe_unused]]
-// static constexpr size_t HALO_SIZE = 500000;
+[[maybe_unused]]
+static constexpr size_t HALO_SIZE = 500000;
 
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 100;
 
 [[maybe_unused]]
-static constexpr size_t N_KERNEL_STEPS = 2048;
+static constexpr size_t N_KERNEL_STEPS = 1000;
 
 [[maybe_unused]]
-static constexpr bool DO_RAMPING_TESTS = false;
+static constexpr bool DO_RAMPING_TESTS = true;
 
 [[maybe_unused]]
 static constexpr size_t NON_RAMPING_RETRIES = 10;
@@ -288,8 +288,6 @@ KERNEL_WITH_STEPS(kernel_18, 1 << 18)
 KERNEL_WITH_STEPS(kernel_19, 1 << 19)
 KERNEL_WITH_STEPS(kernel_20, 1 << 20)
 
-
-
 [[maybe_unused]]
 void perf_test_dual_parallel(const size_t size, const size_t halo_size, const size_t steps, const auto& op) {
   dr::mp::dual_distributed_vector<int> dv(size, dr::mp::distribution().halo(halo_size, halo_size));
@@ -308,6 +306,7 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
       dv.halo().partial_exchange_begin();
       dv.halo().partial_exchange_finalize();
     });
+    comm_thread_1.
     partial_for_each(dv, op);
     comm_thread_1.join();
 
