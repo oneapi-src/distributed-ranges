@@ -304,17 +304,17 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
   // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < steps; i++) {
-    std::thread comm_thread_1 = [&dv]{
+    std::thread comm_thread_1([&dv]{
       dv.halo().partial_exchange_begin();
       dv.halo().partial_exchange_finalize();
-    };
+    });
     partial_for_each(dv, op);
     comm_thread_1.join();
 
-    std::thread comm_thread_2 = [&dv]{
+    std::thread comm_thread_2([&dv]{
       dv.halo().partial_exchange_begin();
       dv.halo().partial_exchange_finalize();
-    };
+    });
     partial_for_each(dv, op);
     comm_thread_2.join();
   }
