@@ -306,7 +306,7 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
   std::thread comm_thread([&] {
     for (size_t i = 0; i < 2 * steps; i++) {
       std::unique_lock lock(mut);
-      cv.wait(lock, [] { return should_communicate; });
+      cv.wait(lock, [&] { return should_communicate; });
       dv.halo().partial_exchange_begin();
       dv.halo().partial_exchange_finalize();
       finished_communicating = true;
@@ -330,7 +330,7 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
 
     {
       std::unique_lock lock(mut);
-      cv.wait(lock, [] { return finished_communicating; });
+      cv.wait(lock, [&] { return finished_communicating; });
     }
   }
 
