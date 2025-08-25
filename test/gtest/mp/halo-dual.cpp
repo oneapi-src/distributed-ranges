@@ -298,29 +298,63 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
   iota(dv, 0);
   DRLOG("exchange start");
 
+  std::mutex mut;
+  std::condition_variable cv;
+  bool should_communicate = false;
+  bool finished_communicating = false;
+
+  std::thread comm_thread([&dv, &mut, &cv, &should_communicate, &finished_communicating] {
+    for (size_t i = 0; i < 2 * steps; i++) {
+      std::lock_guard lock(mut);
+      cv.wait(lock, [&] { return should_communicate; });
+      dv.halo().partial_exchange_begin();
+      dv.halo().partial_exchange_finalize();
+      finished_communicating = true;
+      lock.unlock();
+      cv.notify_one();
+    }
+  });
+
   auto start = std::chrono::high_resolution_clock::now();
 
   dv.halo().exchange();
 
-  for (size_t i = 0; i < steps; i++) {
-    std::thread comm_thread_1([&dv]{
-      dv.halo().partial_exchange_begin();
-      dv.halo().partial_exchange_finalize();
-    });
-    partial_for_each(dv, op);
-    comm_thread_1.join();
+  for (size_t i = 0; i < 2 * steps; i++) {
+    {
+      std::lock_guard lock(mut);
+      should_communicate = true;
+    }
+    cv.notify_one();
 
-    std::thread comm_thread_2([&dv]{
-      dv.halo().partial_exchange_begin();
-      dv.halo().partial_exchange_finalize();
-    });
     partial_for_each(dv, op);
-    comm_thread_2.join();
+
+    {
+      std::lock_guard lock(mut);
+      cv.wait(lock, [] { return finished_communicating; });
+    }
   }
+
+  // for (size_t i = 0; i < steps; i++) {
+  //   std::thread comm_thread_1([&dv]{
+  //     dv.halo().partial_exchange_begin();
+  //     dv.halo().partial_exchange_finalize();
+  //   });
+  //   partial_for_each(dv, op);
+  //   comm_thread_1.join();
+
+  //   std::thread comm_thread_2([&dv]{
+  //     dv.halo().partial_exchange_begin();
+  //     dv.halo().partial_exchange_finalize();
+  //   });
+  //   partial_for_each(dv, op);
+  //   comm_thread_2.join();
+  // }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
   std::cout << "\ttime: " << duration.count() << "us" << std::endl;
+
+  comm_thread.join();
 }
 
 [[maybe_unused]]
