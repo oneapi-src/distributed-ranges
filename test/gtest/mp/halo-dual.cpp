@@ -303,7 +303,7 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
   bool should_communicate = false;
   bool finished_communicating = false;
 
-  std::thread comm_thread([&dv, &mut, &cv, &should_communicate, &finished_communicating] {
+  std::thread comm_thread([&] {
     for (size_t i = 0; i < 2 * steps; i++) {
       std::unique_lock lock(mut);
       cv.wait(lock, [] { return should_communicate; });
