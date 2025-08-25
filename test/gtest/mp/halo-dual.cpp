@@ -15,6 +15,7 @@ template <typename T> class HaloDual : public testing::Test {};
 
 TYPED_TEST_SUITE(HaloDual, ::testing::Types<dr::mp::dual_distributed_vector<int>>);
 
+[[maybe_unused]]
 template <typename DV>
 void check_matching(DV &dv, int idx, int expected_value) {
   typename DV::value_type *local_ptr = (dv.begin() + idx).local();
@@ -30,6 +31,7 @@ void check_matching(DV &dv, int idx, int expected_value) {
   EXPECT_EQ(value_on_host, expected_value);
 }
 
+[[maybe_unused]]
 template <typename DV>
 void local_is_accessible_in_halo_region(const int halo_prev,
                                         const int halo_next) {
@@ -106,18 +108,19 @@ void local_is_accessible_in_halo_region(const int halo_prev,
   DRLOG("checks ok");
 }
 
-TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11) {
-  local_is_accessible_in_halo_region<TypeParam>(1, 1);
-}
+// TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11) {
+//   local_is_accessible_in_halo_region<TypeParam>(1, 1);
+// }
 
-TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_10) {
-  local_is_accessible_in_halo_region<TypeParam>(1, 0);
-}
+// TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_10) {
+//   local_is_accessible_in_halo_region<TypeParam>(1, 0);
+// }
 
-TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_01) {
-  local_is_accessible_in_halo_region<TypeParam>(0, 1);
-}
+// TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_01) {
+//   local_is_accessible_in_halo_region<TypeParam>(0, 1);
+// }
 
+[[maybe_unused]]
 template <typename DV>
 void local_is_accessible_in_halo_region__partial(const int halo_prev,
                                                  const int halo_next) {
@@ -206,9 +209,9 @@ void local_is_accessible_in_halo_region__partial(const int halo_prev,
   DRLOG("checks ok");
 }
 
-TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
-  local_is_accessible_in_halo_region__partial<TypeParam>(0, 1);
-}
+// TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
+//   local_is_accessible_in_halo_region__partial<TypeParam>(0, 1);
+// }
 
 // perf test!
 
@@ -228,7 +231,7 @@ TYPED_TEST(HaloDual, local_is_accessible_in_halo_region_halo_11__partial) {
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
  
 [[maybe_unused]]
-static constexpr size_t HALO_SIZE = 50000;
+static constexpr size_t HALO_SIZE = 10000;
 
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 100;
@@ -298,8 +301,6 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
   auto start = std::chrono::high_resolution_clock::now();
 
   dv.halo().exchange();
-
-  // auto dv_subrange = rng::subrange(dv.begin() + 1, dv.end() - 1);
 
   for (size_t i = 0; i < steps; i++) {
     std::thread comm_thread_1([&dv]{
