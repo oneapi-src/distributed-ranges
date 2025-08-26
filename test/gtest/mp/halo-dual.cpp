@@ -225,10 +225,10 @@ static constexpr size_t HALO_SIZE = 10000000;
 static constexpr size_t N_STEPS = 100;
 
 [[maybe_unused]]
-static constexpr size_t N_KERNEL_STEPS = 500;
+static constexpr size_t N_KERNEL_STEPS = 1000;
 
 [[maybe_unused]]
-static constexpr bool DO_RAMPING_TESTS = false;
+static constexpr bool DO_RAMPING_TESTS = true;
 
 [[maybe_unused]]
 static constexpr size_t NON_RAMPING_RETRIES = 1;
@@ -400,11 +400,17 @@ void perf_test_classic(const size_t size, const size_t halo_size, const size_t s
   std::cout << "\ttime: " << duration.count() << "us" << std::endl;
 }
 
+// #define VARIED_KERNEL_TEST_CASE(vec_size, halo_size, kernel_log_size)\
+//       std::cout << "dual parallel size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
+//       perf_test_dual_parallel(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
+//       std::cout << "dual size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
+//       perf_test_dual(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
+//       std::cout << "classic size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
+//       perf_test_classic(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
+
 #define VARIED_KERNEL_TEST_CASE(vec_size, halo_size, kernel_log_size)\
       std::cout << "dual parallel size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
       perf_test_dual_parallel(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
-      std::cout << "dual size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
-      perf_test_dual(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
       std::cout << "classic size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
       perf_test_classic(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);\
 
@@ -415,8 +421,8 @@ TYPED_TEST(HaloDual, perf_test_both) {
       for (int i = 0; i < NON_RAMPING_RETRIES; i++) {
         std::cout << "dual parallel size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
         perf_test_dual_parallel(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
-        std::cout << "dual size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
-        perf_test_dual(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+        // std::cout << "dual size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
+        // perf_test_dual(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
         std::cout << "classic size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
         perf_test_classic(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
       }
@@ -427,8 +433,8 @@ TYPED_TEST(HaloDual, perf_test_both) {
     for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
       std::cout << "dual parallel size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
       perf_test_dual_parallel(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
-      std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
-      perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
+      // std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
+      // perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
       std::cout << "classic size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
       perf_test_classic(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
       // VARIED_KERNEL_TEST_CASE(size, halo_size, 0)
