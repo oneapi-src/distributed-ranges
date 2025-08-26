@@ -215,18 +215,6 @@ void local_is_accessible_in_halo_region__partial(const int halo_prev,
 
 // perf test!
 
-// these are good
-// [[maybe_unused]]
-// static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 10000000;
-// [[maybe_unused]]
-// static constexpr size_t HALO_SIZE = 500000;
-
-// these are good
-// [[maybe_unused]]
-// static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
-// [[maybe_unused]]
-// static constexpr size_t HALO_SIZE = 2048;
-
 [[maybe_unused]]
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000000;
  
@@ -307,8 +295,26 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
     for (size_t i = 0; i < 2 * steps; i++) {
       std::unique_lock lock(mut);
       cv.wait(lock, [&] { return should_communicate; });
-      dv.halo().partial_exchange_begin();
-      dv.halo().partial_exchange_finalize();
+
+      auto my_rank = dr::mp::default_comm().rank();
+      auto other_rank = 1 - my_rank;
+
+      bool sending_left = (steps % 2 == 0) ? (my_rank == 0) : (my_rank == 1);
+
+      std::vector<int> isend_data(halo_size);
+      std::vector<int> irecv_data(halo_size);
+      
+      std::memcpy(isend_data.data(), dv.data() + (sending_left ? 0 : dv.data_size() - halo_size), isend_data.size());
+
+      std::vector<MPI_Request> requests(2);
+      int completed_wait_1, completed_wait_2;
+      comm_.isend(isend_data.data(), isend_data.size(), other_rank, my_rank,    &requests[0]);
+      comm_.irecv(irecv_data.data(), irecv_data.size(), other_rank, other_rank, &requests[1]);
+      MPI_Waitany(requests.size(), requests.data(), &completed_wait_1, MPI_STATUS_IGNORE);
+      MPI_Waitany(requests.size(), requests.data(), &completed_wait_2, MPI_STATUS_IGNORE);
+
+      std::memcpy(dv.data() + (sending_left ? dv.data_size() - 2 * halo_size : halo_size), irecv_data.data(), isend_data.size());
+      
       finished_communicating = true;
       should_communicate = false;
       lock.unlock();
@@ -335,22 +341,6 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
       cv.wait(lock, [&] { return finished_communicating; });
     }
   }
-
-  // for (size_t i = 0; i < steps; i++) {
-  //   std::thread comm_thread_1([&dv]{
-  //     dv.halo().partial_exchange_begin();
-  //     dv.halo().partial_exchange_finalize();
-  //   });
-  //   partial_for_each(dv, op);
-  //   comm_thread_1.join();
-
-  //   std::thread comm_thread_2([&dv]{
-  //     dv.halo().partial_exchange_begin();
-  //     dv.halo().partial_exchange_finalize();
-  //   });
-  //   partial_for_each(dv, op);
-  //   comm_thread_2.join();
-  // }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
@@ -405,44 +395,6 @@ void perf_test_classic(const size_t size, const size_t halo_size, const size_t s
   auto duration = duration_cast<std::chrono::microseconds>(end - start);
   std::cout << "\ttime: " << duration.count() << "us" << std::endl;
 }
-
-// TYPED_TEST(HaloDual, perf_test_dual_dv) {
-//   size_t max_size = DISTRIBUTED_VECTOR_SIZE;
-
-//   if (!DO_RAMPING_TESTS) {
-//       for (int i = 0; i < NON_RAMPING_RETRIES; i++) {
-//         std::cout << "dual size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
-//         perf_test_dual(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
-//       }
-//       return;
-//   }
-
-//   for (size_t size = 1000; size <= max_size; size *= 10) {
-//     for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
-//       std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
-//       perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
-//     }
-//   }
-// }
-
-// TYPED_TEST(HaloDual, perf_test_classic_dv) {
-//   size_t max_size = DISTRIBUTED_VECTOR_SIZE;
-
-//   if (!DO_RAMPING_TESTS) {
-//       for (int i = 0; i < NON_RAMPING_RETRIES; i++) {
-//         std::cout << "classic size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
-//         perf_test_classic(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
-//       }
-//       return;
-//   }
-
-//   for (size_t size = 1000; size <= max_size; size *= 10) {
-//     for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
-//       std::cout << "classic size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
-//       perf_test_classic(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
-//     }
-//   }
-// }
 
 #define VARIED_KERNEL_TEST_CASE(vec_size, halo_size, kernel_log_size)\
       std::cout << "dual parallel size/halo/kernel: " << vec_size << "/" << halo_size << "/" << (1 << kernel_log_size) << "\n";\
@@ -499,6 +451,67 @@ TYPED_TEST(HaloDual, perf_test_both) {
     }
   }
 }
+
+
+// old thread loop
+//
+// for (size_t i = 0; i < steps; i++) {
+//   std::thread comm_thread_1([&dv]{
+//     dv.halo().partial_exchange_begin();
+//     dv.halo().partial_exchange_finalize();
+//   });
+//   partial_for_each(dv, op);
+//   comm_thread_1.join();
+
+//   std::thread comm_thread_2([&dv]{
+//     dv.halo().partial_exchange_begin();
+//     dv.halo().partial_exchange_finalize();
+//   });
+//   partial_for_each(dv, op);
+//   comm_thread_2.join();
+// }
+
+
+
+
+
+// TYPED_TEST(HaloDual, perf_test_dual_dv) {
+//   size_t max_size = DISTRIBUTED_VECTOR_SIZE;
+
+//   if (!DO_RAMPING_TESTS) {
+//       for (int i = 0; i < NON_RAMPING_RETRIES; i++) {
+//         std::cout << "dual size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
+//         perf_test_dual(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+//       }
+//       return;
+//   }
+
+//   for (size_t size = 1000; size <= max_size; size *= 10) {
+//     for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
+//       std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
+//       perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
+//     }
+//   }
+// }
+
+// TYPED_TEST(HaloDual, perf_test_classic_dv) {
+//   size_t max_size = DISTRIBUTED_VECTOR_SIZE;
+
+//   if (!DO_RAMPING_TESTS) {
+//       for (int i = 0; i < NON_RAMPING_RETRIES; i++) {
+//         std::cout << "classic size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
+//         perf_test_classic(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+//       }
+//       return;
+//   }
+
+//   for (size_t size = 1000; size <= max_size; size *= 10) {
+//     for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
+//       std::cout << "classic size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
+//       perf_test_classic(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
+//     }
+//   }
+// }
 
 // auto is_local = [](const auto &segment) {
 //   return dr::ranges::rank(segment) == dr::mp::default_comm().rank();
