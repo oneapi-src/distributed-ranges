@@ -309,8 +309,8 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
 
         std::vector<MPI_Request> requests(2);
         int completed_wait_1, completed_wait_2;
-        comm_.isend(isend_data.data(), isend_data.size(), other_rank, my_rank,    &requests[0]);
-        comm_.irecv(irecv_data.data(), irecv_data.size(), other_rank, other_rank, &requests[1]);
+        dr::mp::default_comm().isend(isend_data.data(), isend_data.size(), other_rank, my_rank,    &requests[0]);
+        dr::mp::default_comm().irecv(irecv_data.data(), irecv_data.size(), other_rank, other_rank, &requests[1]);
         MPI_Waitany(requests.size(), requests.data(), &completed_wait_1, MPI_STATUS_IGNORE);
         MPI_Waitany(requests.size(), requests.data(), &completed_wait_2, MPI_STATUS_IGNORE);
 
