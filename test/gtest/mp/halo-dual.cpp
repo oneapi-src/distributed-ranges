@@ -296,24 +296,26 @@ void perf_test_dual_parallel(const size_t size, const size_t halo_size, const si
       std::unique_lock lock(mut);
       cv.wait(lock, [&] { return should_communicate; });
 
-      auto my_rank = dr::mp::default_comm().rank();
-      auto other_rank = 1 - my_rank;
+      {
+        auto my_rank = dr::mp::default_comm().rank();
+        auto other_rank = 1 - my_rank;
 
-      bool sending_left = (steps % 2 == 0) ? (my_rank == 0) : (my_rank == 1);
+        bool sending_left = (steps % 2 == 0) ? (my_rank == 0) : (my_rank == 1);
 
-      std::vector<int> isend_data(halo_size);
-      std::vector<int> irecv_data(halo_size);
-      
-      std::memcpy(isend_data.data(), dv.data() + (sending_left ? 0 : dv.data_size() - halo_size), isend_data.size());
+        std::vector<int> isend_data(halo_size);
+        std::vector<int> irecv_data(halo_size);
+        
+        std::memcpy(isend_data.data(), dv.data(steps % 2 == 0 ? 10 : 0) + (sending_left ? 0 : dv.data_size() - halo_size), isend_data.size());
 
-      std::vector<MPI_Request> requests(2);
-      int completed_wait_1, completed_wait_2;
-      comm_.isend(isend_data.data(), isend_data.size(), other_rank, my_rank,    &requests[0]);
-      comm_.irecv(irecv_data.data(), irecv_data.size(), other_rank, other_rank, &requests[1]);
-      MPI_Waitany(requests.size(), requests.data(), &completed_wait_1, MPI_STATUS_IGNORE);
-      MPI_Waitany(requests.size(), requests.data(), &completed_wait_2, MPI_STATUS_IGNORE);
+        std::vector<MPI_Request> requests(2);
+        int completed_wait_1, completed_wait_2;
+        comm_.isend(isend_data.data(), isend_data.size(), other_rank, my_rank,    &requests[0]);
+        comm_.irecv(irecv_data.data(), irecv_data.size(), other_rank, other_rank, &requests[1]);
+        MPI_Waitany(requests.size(), requests.data(), &completed_wait_1, MPI_STATUS_IGNORE);
+        MPI_Waitany(requests.size(), requests.data(), &completed_wait_2, MPI_STATUS_IGNORE);
 
-      std::memcpy(dv.data() + (sending_left ? dv.data_size() - 2 * halo_size : halo_size), irecv_data.data(), isend_data.size());
+        std::memcpy(dv.data(steps % 2 == 0 ? 10 : 0) + (sending_left ? dv.data_size() - 2 * halo_size : halo_size), irecv_data.data(), isend_data.size());
+      }
       
       finished_communicating = true;
       should_communicate = false;
