@@ -216,10 +216,10 @@ void local_is_accessible_in_halo_region__partial(const int halo_prev,
 // perf test!
 
 [[maybe_unused]]
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000000;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
  
 [[maybe_unused]]
-static constexpr size_t HALO_SIZE = 10000000;
+static constexpr size_t HALO_SIZE = 100000;
 
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 100;
@@ -421,31 +421,31 @@ TYPED_TEST(HaloDual, perf_test_both) {
       return;
   }
 
-  for (size_t size = 1000; size <= max_size; size *= 10) {
+  for (size_t size = max_size; size <= max_size; size *= 10) {
     for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
-      std::cout << "dual parallel size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
-      perf_test_dual_parallel(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
-      // std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
-      // perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
-      std::cout << "classic size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
-      perf_test_classic(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 0)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 1)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 2)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 3)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 4)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 5)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 6)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 7)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 8)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 9)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 10)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 11)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 12)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 13)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 14)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 15)
-      // VARIED_KERNEL_TEST_CASE(size, halo_size, 16)
+      // std::cout << "dual parallel size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
+      // perf_test_dual_parallel(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
+      // // std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
+      // // perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
+      // std::cout << "classic size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
+      // perf_test_classic(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 0)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 1)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 2)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 3)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 4)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 5)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 6)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 7)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 8)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 9)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 10)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 11)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 12)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 13)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 14)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 15)
+      VARIED_KERNEL_TEST_CASE(size, halo_size, 16)
       // VARIED_KERNEL_TEST_CASE(size, halo_size, 17)
       // VARIED_KERNEL_TEST_CASE(size, halo_size, 18)
       // VARIED_KERNEL_TEST_CASE(size, halo_size, 19)
