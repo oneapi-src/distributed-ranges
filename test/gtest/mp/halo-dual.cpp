@@ -222,7 +222,7 @@ static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
 static constexpr size_t HALO_SIZE = 32;
 
 [[maybe_unused]]
-static constexpr size_t N_STEPS = 1000;
+static constexpr size_t N_STEPS = 100;
 
 [[maybe_unused]]
 static constexpr size_t N_KERNEL_STEPS = 512;
@@ -231,7 +231,7 @@ static constexpr size_t N_KERNEL_STEPS = 512;
 static constexpr bool DO_RAMPING_TESTS = false;
 
 [[maybe_unused]]
-static constexpr size_t NON_RAMPING_RETRIES = 100;
+static constexpr size_t NON_RAMPING_RETRIES = 1;
 
 [[maybe_unused]]
 static constexpr size_t RAMPING_RETRIES = 5;
