@@ -216,22 +216,29 @@ void local_is_accessible_in_halo_region__partial(const int halo_prev,
 // perf test!
 
 [[maybe_unused]]
-static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
+static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 100000000;
  
 [[maybe_unused]]
-static constexpr size_t HALO_SIZE = 100000;
+static constexpr size_t HALO_SIZE = 10000000;
 
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 100;
 
 [[maybe_unused]]
-static constexpr size_t N_KERNEL_STEPS = 512;
+static constexpr size_t N_KERNEL_STEPS = 500;
 
 [[maybe_unused]]
-static constexpr bool DO_RAMPING_TESTS = false;
+enum class DualTestType {
+  NON_RAMPING,
+  RAMPING_1D,
+  RAMPING_2D,
+}
 
 [[maybe_unused]]
-static constexpr size_t NON_RAMPING_RETRIES = 1;
+static constexpr DualTestType TEST_TYPE = DualTestType::RAMPING_1D;
+
+[[maybe_unused]]
+static constexpr size_t NON_RAMPING_RETRIES = 10;
 
 [[maybe_unused]]
 static constexpr size_t RAMPING_RETRIES = 5;
@@ -410,27 +417,43 @@ void perf_test_classic(const size_t size, const size_t halo_size, const size_t s
       perf_test_classic(vec_size, halo_size, N_STEPS, kernel_##kernel_log_size);
 
 TYPED_TEST(HaloDual, perf_test_both) {
-  size_t max_size = DISTRIBUTED_VECTOR_SIZE;
+  if (TEST_TYPE == DualTestType::NON_RAMPING) {
+    for (size_t i = 0; i < NON_RAMPING_RETRIES; i++) {
+      std::cout << "dual parallel size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
+      perf_test_dual_parallel(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+      std::cout << "classic size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
+      perf_test_classic(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+    }
+    return;
+  }
 
-  if (!DO_RAMPING_TESTS) {
-      for (int i = 0; i < NON_RAMPING_RETRIES; i++) {
-        std::cout << "dual parallel size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
-        perf_test_dual_parallel(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
-        // std::cout << "dual size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
-        // perf_test_dual(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
-        std::cout << "classic size/halo/kernel: " << DISTRIBUTED_VECTOR_SIZE << "/" << HALO_SIZE << "/" << N_KERNEL_STEPS << "\n";
-        perf_test_classic(DISTRIBUTED_VECTOR_SIZE, HALO_SIZE, N_STEPS, stencil1d_subrange_op__heavy);
+  if (TEST_TYPE == DualTestType::RAMPING_1D) {
+    for (size_t i = 0; i < RAMPING_RETRIES; i++) {
+      for (size_t i = 0; i < NON_RAMPING_RETRIES; i++) {
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 0)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 1)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 2)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 3)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 4)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 5)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 6)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 7)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 8)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 9)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 10)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 11)
+        VARIED_KERNEL_TEST_CASE(size, halo_size, 12)
       }
-      return;
+    }
+
+    return;
   }
 
   for (size_t retry = 0; retry < RAMPING_RETRIES; retry++) {
-    for (size_t size = max_size; size <= max_size; size *= 10) {
+    for (size_t size = DISTRIBUTED_VECTOR_SIZE; size <= DISTRIBUTED_VECTOR_SIZE; size *= 10) {
       for (size_t halo_size = 1; halo_size <= size / 10; halo_size *= 2) {
         // std::cout << "dual parallel size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
         // perf_test_dual_parallel(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
-        // // std::cout << "dual size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
-        // // perf_test_dual(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
         // std::cout << "classic size/halo/kernel: " << size << "/" << halo_size << "/" << N_KERNEL_STEPS << "\n";
         // perf_test_classic(size, halo_size, N_STEPS, stencil1d_subrange_op__heavy);
         VARIED_KERNEL_TEST_CASE(size, halo_size, 0)
