@@ -219,7 +219,7 @@ void local_is_accessible_in_halo_region__partial(const int halo_prev,
 static constexpr size_t DISTRIBUTED_VECTOR_SIZE = 1000000;
  
 [[maybe_unused]]
-static constexpr size_t HALO_SIZE = 32;
+static constexpr size_t HALO_SIZE = 100000;
 
 [[maybe_unused]]
 static constexpr size_t N_STEPS = 100;
