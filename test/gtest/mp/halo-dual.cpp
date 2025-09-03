@@ -227,7 +227,6 @@ static constexpr size_t N_STEPS = 100;
 [[maybe_unused]]
 static constexpr size_t N_KERNEL_STEPS = 500;
 
-[[maybe_unused]]
 enum class DualTestType {
   NON_RAMPING,
   RAMPING_1D,
