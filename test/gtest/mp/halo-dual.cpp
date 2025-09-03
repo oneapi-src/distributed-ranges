@@ -232,7 +232,7 @@ enum class DualTestType {
   NON_RAMPING,
   RAMPING_1D,
   RAMPING_2D,
-}
+};
 
 [[maybe_unused]]
 static constexpr DualTestType TEST_TYPE = DualTestType::RAMPING_1D;
