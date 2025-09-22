@@ -2,7 +2,7 @@
 ..
 .. SPDX-License-Identifier: BSD-3-Clause
 
-## DISCONTINUATION OF PROJECT.
+DISCONTINUATION OF PROJECT.
 
 This project will no longer be maintained by Intel.
 
