@@ -120,8 +120,10 @@ sycl::event copy_async(InputIt first, InputIt last, OutputIt d_first) {
     auto local_last = first;
     rng::advance(local_last, n_to_copy);
 
+    auto &&q = __detail::queue(ranges::rank(segment));
+
     events.emplace_back(
-        dr::sp::copy_async(first, local_last, rng::begin(segment)));
+        dr::sp::copy_async(q, first, local_last, rng::begin(segment)));
 
     ++segment_iter;
     rng::advance(first, n_to_copy);
