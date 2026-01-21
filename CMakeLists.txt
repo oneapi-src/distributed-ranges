@@ -170,7 +170,7 @@ function(add_mp_ctest_impl)
   endif()
 
   if(AMC_OFFLOAD OR ENABLE_ISHMEM)
-    set(extra_mpiflags "-genv;I_MPI_OFFLOAD;1")
+    set(extra_mpiflags "-genv;I_MPI_OFFLOAD;1;-genv;I_MPI_OFFLOAD_IPC;0")
   endif()
 
   if(ENABLE_ISHMEM)

@@ -17,20 +17,21 @@ public:
   distributed_mdarray(dr::__detail::dr_extents<Rank> shape,
                       distribution dist = distribution())
       : tile_shape_(tile_shape(shape)), dv_(dv_size(), dv_dist(dist, shape)),
-        md_view_(make_md_view(dv_, shape, tile_shape_)) {}
+        md_view_(make_md_view(dv_, shape, tile_shape_, dist)), dist_(dist) {}
 
   auto begin() const { return rng::begin(md_view_); }
   auto end() const { return rng::end(md_view_); }
   auto size() const { return rng::size(md_view_); }
   auto operator[](auto n) { return md_view_[n]; }
 
-  auto segments() { return dr::ranges::segments(md_view_); }
+  auto segments() const { return dr::ranges::segments(md_view_); }
   auto &halo() const { return dr::mp::halo(dv_); }
 
   auto mdspan() const { return md_view_.mdspan(); }
   auto extent(std::size_t r) const { return mdspan().extent(r); }
   auto grid() { return md_view_.grid(); }
   auto view() const { return md_view_; }
+  auto dist() const { return dist_; }
 
   auto operator==(const distributed_mdarray &other) const {
     return std::equal(begin(), end(), other.begin());
@@ -70,16 +71,17 @@ private:
   // This wrapper seems to avoid an issue with template argument
   // deduction for mdspan_view
   static auto make_md_view(const DV &dv, shape_type shape,
-                           shape_type tile_shape) {
-    return views::mdspan(dv, shape, tile_shape);
+                           shape_type tile_shape, distribution dist) {
+    return views::mdspan(dv, shape, tile_shape, dist);
   }
 
   shape_type tile_shape_;
   DV dv_;
-  using mdspan_type =
-      decltype(make_md_view(std::declval<DV>(), std::declval<shape_type>(),
-                            std::declval<shape_type>()));
+  using mdspan_type = decltype(make_md_view(
+      std::declval<DV>(), std::declval<shape_type>(),
+      std::declval<shape_type>(), std::declval<distribution>()));
   mdspan_type md_view_;
+  distribution dist_;
 };
 
 template <typename T, std::size_t Rank>

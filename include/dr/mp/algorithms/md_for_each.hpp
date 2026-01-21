@@ -26,12 +26,12 @@ struct any {
 
 template <typename F, typename Arg1>
 concept one_argument = requires(F &f) {
-  { f(Arg1{}) };
+  {f(Arg1{})};
 };
 
 template <typename F, typename Arg1, typename Arg2>
 concept two_arguments = requires(F &f) {
-  { f(Arg1{}, Arg2{}) };
+  {f(Arg1{}, Arg2{})};
 };
 
 }; // namespace dr::mp::__detail
